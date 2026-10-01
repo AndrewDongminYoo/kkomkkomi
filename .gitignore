@@ -122,3 +122,6 @@ lib/firebase_options.dart
 
 # Firebase CLI deploy cache
 .firebase/
+
+# Worktrees that agent sessions create inside the checkout
+.claude/worktrees/
