@@ -196,6 +196,23 @@ void main() {
       expect(await repository.visitById('visit-1'), after);
     });
 
+    test('applies saves in the order of the calls, and a read that is called after them reads the last', () async {
+      Visit noted(String note) => visit(
+        'visit-1',
+        records: [ZoneRecord(zoneId: 'zone-1', zoneName: '로비', note: note)],
+      );
+
+      // A screen that saves on each change does not wait for a save before it sends the next.
+      final saves = [
+        for (final note in ['유', '유리', '유리 닦음']) repository.save(noted(note)),
+      ];
+      final read = repository.visitById('visit-1');
+
+      expect(await read, noted('유리 닦음'));
+      await Future.wait(saves);
+      expect(await repository.visitById('visit-1'), noted('유리 닦음'));
+    });
+
     test('refuses a record for a zone of another client and saves nothing', () async {
       await clients.save(
         client('client-2'),
