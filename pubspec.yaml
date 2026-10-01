@@ -34,6 +34,9 @@ dev_dependencies:
   very_good_analysis: ^11.0.0
 
 flutter:
+  assets:
+    - assets/fonts/NotoSansKR-Regular.ttf
+    - assets/fonts/OFL.txt
   generate: true
   uses-material-design: true
 
