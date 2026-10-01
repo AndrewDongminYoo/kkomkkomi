@@ -28,7 +28,7 @@ The operator created the project later on 2026-10-01, so the "Phase B" section b
 
 ## Units
 
-The code is split into five units under `lib/`.
+The code is split into six units under `lib/`.
 Each unit depends only on the units listed for it.
 
 | Unit            | Holds                                                                   | May import                                    |
@@ -37,9 +37,11 @@ Each unit depends only on the units listed for it.
 | `application/`  | Repository interfaces, port interfaces, use cases                       | `domain/`                                     |
 | `persistence/`  | SQLite schema and repository implementations                            | `domain/`, `application/`, `sqflite`, `path`  |
 | `export/`       | Report document builder and PDF renderer                                | `domain/`, `pdf`                              |
+| `firebase/`     | Firebase adapters of the ports, for the production flavor               | `domain/`, `application/`, FlutterFire        |
 | `presentation/` | One folder per screen with `cubit/` and `view/`, plus the port adapters | `domain/`, `application/`, `export/`, Flutter |
 
 `lib/app/` stays the composition root, and `lib/bootstrap.dart` opens the database and builds the repositories.
+`firebase/` came with brief 5 of Phase B: no other unit imports a FlutterFire package, and only `lib/main_production.dart` imports `firebase/`.
 A test in `test/domain/` fails when a file under `lib/domain/` imports anything outside the Dart core libraries and `lib/domain/`.
 
 ## Domain model
