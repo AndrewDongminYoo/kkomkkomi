@@ -16,20 +16,15 @@ A worker can do the whole M1 flow on one phone without a network:
 4. Share a completion report as a PDF through the OS share sheet.
 5. Start the next visit with the same zones and see the previous photos.
 
-## What this build leaves out
+## Two phases
 
-M1 in `CLAUDE.md` also names the web report and the upload queue.
-Both need a Firebase project, and no Firebase project exists.
-Creating one, and choosing its billing plan, is the operator's decision.
+Phase A is the flow above: briefs 1 to 4, local storage and the PDF, with no backend.
+Phase B publishes a report as a web link: briefs 5 to 7, on the Firebase project `kkomkkomi`.
 
-This build therefore leaves out:
+The first version of this document left Phase B out, because no Firebase project existed.
+The operator created the project later on 2026-10-01, so the "Phase B" section below replaces that exclusion.
 
-- Firebase Auth, Firestore, Storage, and Hosting.
-- The upload queue and the web report link.
-- Link expiry, reissue, and access removal.
-
-The PDF is the only report output of this build.
-`CLAUDE.md` calls the PDF a secondary output, and it stays secondary: the web link takes the primary place when the backend exists.
+`CLAUDE.md` calls the PDF a secondary output, and it stays secondary: the web link takes the primary place when Phase B ships.
 
 ## Units
 
@@ -109,11 +104,66 @@ The PDF embeds a Korean font that ships with the app under its own license file.
 iOS and Android are the targets of this build.
 The Windows build must keep passing in CI, and Windows runtime behavior is not a goal of this build.
 
+## Phase B: publish a report as a web link
+
+### State of the Firebase project on 2026-10-01
+
+- Firestore exists in `asia-northeast3`, and its rules deny every read and write.
+- Anonymous sign-in is enabled.
+- Hosting serves `web/` at `https://kkomkkomi.web.app`, and the landing page is live there.
+- Storage is not set up. The Firebase console must set it up, and that is the operator's action. Brief 6 cannot start before it.
+
+### Decisions
+
+- **One-way publish.** SQLite on the phone stays the source of truth. The backend holds only published reports, and nothing syncs back to the phone.
+- **Production flavor only.** The development and staging flavors do not initialize Firebase. Their publish port reports that publishing is unavailable, and their screens offer the PDF only.
+- **No tracked import of the generated options.** `.gitignore` keeps `lib/firebase_options.dart` and the native config files out of the repository. Tracked code must not import that file. The app calls `Firebase.initializeApp()` without options, which reads the native config on Android and iOS, so CI needs no secret.
+- **Identity.** The app signs in anonymously, and the user ID owns what it publishes. An uninstall loses that account, and with it the right to update the published pages. Linking the account to a durable sign-in is a later decision.
+- **Fixed client page.** Each client gets one page ID of at least 128 random bits. The page ID is the client's fixed URL, and every published visit is a report under it.
+
+### Data
+
+- `clientPages/{pageId}`: `ownerUid`, `companyName`, `clientName`, `createdAt`, `revokedAt`.
+- `clientPages/{pageId}/reports/{visitId}`: `visitDate`, `publishedAt`, and the zone list with each zone's name, note, and photo paths.
+- Storage objects under `clientPages/{pageId}/{visitId}/`.
+
+### Security rules
+
+These rules make published reports readable without sign-in, which is what a link opened from KakaoTalk needs.
+The operator must review them before they are deployed.
+
+- Anyone can read one client page by its ID, and its reports, while `revokedAt` is unset.
+- No one can list the `clientPages` collection.
+- Only the owner can write a client page, its reports, and its photos.
+- A photo upload must be a JPEG under a size limit.
+
+Access removal sets `revokedAt`.
+Reissue creates a new page ID and publishes again.
+Link expiry is not in this build, which leaves one item of the product rule in `CLAUDE.md` open.
+The app tells the company, at the first share, that anyone with the link can open the report.
+
+### Upload queue
+
+A table of publish jobs lives in SQLite.
+A job uploads the photos, then writes the report document, and each step is safe to repeat.
+The queue retries with a growing delay, and it resumes at launch and when the network returns.
+
+### Web report page
+
+A static page under `web/` shows one report, and a second view lists the reports of the client page.
+Hosting rewrites the report paths to that page.
+The footer prints "꼼꼬미로 만든 보고서".
+The link preview in KakaoTalk uses fixed tags in this build, because a preview for each report needs server rendering.
+View tracking and the confirm button belong to M2.
+
 ## Delivery
 
-Four pull requests, in this order, each with its own brief under `docs/plans/`:
+Seven pull requests, in this order, each with its own brief under `docs/plans/`:
 
 1. Domain model and SQLite persistence.
 2. Client list, client detail, and company profile screens.
 3. Visit capture.
 4. Report PDF and share.
+5. Firebase startup and anonymous sign-in for the production flavor.
+6. Publish queue and security rules. Blocked until Storage is set up.
+7. Web report page and link share.

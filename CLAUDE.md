@@ -19,7 +19,13 @@ Until then, keep pricing, validation criteria, sales channels, and unit economic
 The operator directed implementation to start on 2026-10-01, and M1 is the milestone in progress.
 The code is still the Very Good CLI scaffold, and its only feature is the template `counter`.
 No Firebase package or domain model exists yet.
-The planned stack is Flutter with Firebase (Auth, Firestore, Storage, Hosting).
+The stack is Flutter with Firebase (Auth, Firestore, Storage, Hosting), and the Firebase project is `kkomkkomi`.
+The "Phase B" section of `docs/specs/2026-10-01-m1-local-first-design.md` owns the state of that project and the backend decisions.
+
+Firebase is for the production flavor only.
+Android skips the google-services task for the development and staging variants, and only the production entry point may start Firebase.
+`.gitignore` keeps the generated FlutterFire files out of the repository, so tracked code must not import `lib/firebase_options.dart`.
+A fresh clone needs `flutterfire configure` before a production build for Android, iOS, or macOS.
 
 ### Milestones
 
@@ -98,7 +104,7 @@ Other code imports a feature through its barrel, for example `package:kkomkkomi/
 - **Entry points.** `lib/main_development.dart`, `lib/main_staging.dart`, and `lib/main_production.dart` each call `bootstrap()` from `lib/bootstrap.dart`. `bootstrap()` installs the `FlutterError.onError` handler and `AppBlocObserver`, then runs the app. Configuration that all flavors share goes in `bootstrap()`, and configuration for one flavor goes in its `main_*.dart`.
 - **Flavors.** Android defines them in `android/app/build.gradle.kts` with the application ID suffixes `.dev` and `.stg`. iOS and macOS define them as Xcode schemes. `windows/` has no flavor configuration, so a Windows build selects its entry point with `--target` alone. The `.vscode/launch.json` configurations pass the matching `--flavor` and `--target`.
 - **State.** Each page widget creates its Cubit in a `BlocProvider` and renders a separate view widget that reads it, as `CounterPage` and `CounterView` do. This split lets a widget test inject a mock Cubit into the view.
-- **Web.** No Flutter web app is planned. `web/` is the deploy root of the static landing page, which lives in this repository and not in a separate one, and `web/index.html` is that page (operator decision, 2026-10-01). It is one hand-written HTML file, so no Flutter build produces or checks it.
+- **Web.** No Flutter web app is planned. `web/` is the deploy root of the static landing page, which lives in this repository and not in a separate one, and `web/index.html` is that page (operator decision, 2026-10-01). It is one hand-written HTML file, so no Flutter build produces or checks it. Firebase Hosting serves `web/` at `https://kkomkkomi.web.app`, and `firebase deploy --only hosting` publishes it. A deploy, and a change to the deployed security rules, needs the operator's approval each time.
 - **Localization.** All user-facing strings come from `lib/l10n/arb/` through `context.l10n`, which `lib/l10n/l10n.dart` defines. `app_en.arb` is the template and `app_ko.arb` is the Korean locale, so each new key goes in both files. A new locale also needs an entry in `CFBundleLocalizations` in `ios/Runner/Info.plist`.
 - **Tests.** `test/` mirrors `lib/`. Widget tests use `tester.pumpApp()` from `test/helpers/`, which wraps the widget in a `MaterialApp` with the localization delegates. Cubit tests use `blocTest`, and view tests mock the Cubit with `MockCubit` from `bloc_test` and stub it with `mocktail`.
 
