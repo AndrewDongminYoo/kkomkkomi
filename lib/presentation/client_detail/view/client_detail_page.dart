@@ -9,7 +9,14 @@ import 'package:kkomkkomi/presentation/shared/confirm_dialog.dart';
 import 'package:kkomkkomi/presentation/shared/load_failure.dart';
 import 'package:kkomkkomi/presentation/shared/name_dialog.dart';
 import 'package:kkomkkomi/presentation/shared/save_guard.dart';
+import 'package:kkomkkomi/presentation/visit_capture/visit_capture.dart';
 import 'package:material_ui/material_ui.dart';
+
+/// The largest text scale inside the date picker of a visit.
+///
+/// The header of the `material_ui` date picker has a fixed height, and above this scale its text overflows on a
+/// screen 320 pixels wide.
+const _datePickerMaxTextScale = 2.0;
 
 /// The screen of one client: its name, its zone list, its past visits, and the control that starts a visit.
 class ClientDetailPage extends StatelessWidget {
@@ -29,6 +36,12 @@ class ClientDetailPage extends StatelessWidget {
           clients: context.read<ClientRepository>(),
           visits: context.read<VisitRepository>(),
           idGenerator: context.read<IdGenerator>(),
+          startVisit: StartVisit(
+            clients: context.read<ClientRepository>(),
+            visits: context.read<VisitRepository>(),
+            idGenerator: context.read<IdGenerator>(),
+            clock: context.read<Clock>(),
+          ),
         );
         unawaited(cubit.load());
         return cubit;
@@ -48,6 +61,9 @@ class ClientDetailView extends StatelessWidget {
       listenWhen: (previous, current) => previous.status != current.status,
       listener: (context, state) {
         if (state.status == ClientDetailStatus.archived) Navigator.of(context).pop();
+        if (state.startedVisitId case final visitId? when state.status == ClientDetailStatus.visitStarted) {
+          Navigator.of(context).push(VisitCapturePage.route(visitId: visitId));
+        }
         if (state.status == ClientDetailStatus.saveFailed) {
           ScaffoldMessenger.of(context)
             ..hideCurrentSnackBar()
@@ -56,7 +72,8 @@ class ClientDetailView extends StatelessWidget {
       },
       builder: (context, state) {
         final client = state.client;
-        // The archived status closes the top route, so the screen must still be that route when storage answers.
+        // The archived status closes the top route and a started visit opens over it, so the screen must still be
+        // that route when storage answers.
         return SaveGuard(
           isSaving: state.status == ClientDetailStatus.saving,
           child: Scaffold(
@@ -74,7 +91,8 @@ class ClientDetailView extends StatelessWidget {
                 ClientDetailStatus.ready ||
                 ClientDetailStatus.saving ||
                 ClientDetailStatus.saveFailed ||
-                ClientDetailStatus.archived => _ClientContent(zones: state.activeZones, visits: state.visits),
+                ClientDetailStatus.archived ||
+                ClientDetailStatus.visitStarted => _ClientContent(zones: state.activeZones, visits: state.visits),
               },
             ),
           ),
@@ -157,8 +175,11 @@ class _ClientContent extends StatelessWidget {
         children: [
           Padding(
             padding: const EdgeInsets.fromLTRB(16, 16, 16, 0),
-            // Visit capture is not built yet, so the control has no destination and stays disabled.
-            child: FilledButton(onPressed: null, child: Text(l10n.clientDetailStartVisitButton)),
+            // A visit keeps the zones that it started with, so a client without zones has no visit to start.
+            child: FilledButton(
+              onPressed: zones.isEmpty ? null : () => unawaited(_pickDateAndStartVisit(context)),
+              child: Text(l10n.clientDetailStartVisitButton),
+            ),
           ),
           _SectionTitle(l10n.zoneSectionTitle),
           if (zones.isEmpty) _SectionMessage(l10n.zoneEmptyMessage),
@@ -185,10 +206,33 @@ class _ClientContent extends StatelessWidget {
               title: Text(
                 l10n.visitDateLabel(DateTime(visit.visitDate.year, visit.visitDate.month, visit.visitDate.day)),
               ),
+              trailing: const Icon(Icons.chevron_right),
+              onTap: () => Navigator.of(context).push(VisitCapturePage.route(visitId: visit.id)),
             ),
         ],
       ),
     );
+  }
+
+  /// Asks for the visit date, which is today unless the person picks an earlier day, and starts the visit.
+  ///
+  /// A visit records a cleaning that took place, so the picker offers no day after today.
+  Future<void> _pickDateAndStartVisit(BuildContext context) async {
+    final l10n = context.l10n;
+    final cubit = context.read<ClientDetailCubit>();
+    final today = DateUtils.dateOnly(context.read<Clock>().now().toLocal());
+    final picked = await showDatePicker(
+      context: context,
+      initialDate: today,
+      firstDate: DateTime(2000),
+      lastDate: today,
+      helpText: l10n.visitDatePickerHelp,
+      cancelText: l10n.dialogCancelButton,
+      confirmText: l10n.clientDetailStartVisitButton,
+      builder: (context, child) =>
+          MediaQuery.withClampedTextScaling(maxScaleFactor: _datePickerMaxTextScale, child: child!),
+    );
+    if (picked != null) await cubit.startVisit(VisitDate.fromDateTime(picked));
   }
 
   void _showAddZoneDialog(BuildContext context) {

@@ -21,6 +21,9 @@ enum ClientDetailStatus {
 
   /// The client is archived, so the screen has nothing more to show.
   archived,
+
+  /// Storage took a new visit, which [ClientDetailState.startedVisitId] names, and the state holds what storage has.
+  visitStarted,
 }
 
 final class ClientDetailState {
@@ -30,6 +33,7 @@ final class ClientDetailState {
     this.zones,
     this.visits = const [],
     this.entry = NameEntry.editing,
+    this.startedVisitId,
   });
 
   final ClientDetailStatus status;
@@ -46,8 +50,17 @@ final class ClientDetailState {
   /// What became of the name that a name dialog of the screen last submitted.
   final NameEntry entry;
 
+  /// The visit that the screen last started, or null when it started none.
+  final String? startedVisitId;
+
   /// The zones that the screen lists, in position order.
   List<Zone> get activeZones => zones?.active ?? const [];
+
+  /// Whether a person can change the client, its zones, and its visits in this status.
+  bool get takesChange =>
+      status == ClientDetailStatus.ready ||
+      status == ClientDetailStatus.saveFailed ||
+      status == ClientDetailStatus.visitStarted;
 
   ClientDetailState copyWith({
     ClientDetailStatus? status,
@@ -55,12 +68,14 @@ final class ClientDetailState {
     ClientZones? zones,
     List<Visit>? visits,
     NameEntry? entry,
+    String? startedVisitId,
   }) => ClientDetailState(
     status: status ?? this.status,
     client: client ?? this.client,
     zones: zones ?? this.zones,
     visits: visits ?? this.visits,
     entry: entry ?? this.entry,
+    startedVisitId: startedVisitId ?? this.startedVisitId,
   );
 
   @override
@@ -70,8 +85,9 @@ final class ClientDetailState {
       other.client == client &&
       other.zones == zones &&
       other.entry == entry &&
+      other.startedVisitId == startedVisitId &&
       sameElements(other.visits, visits);
 
   @override
-  int get hashCode => Object.hash(status, client, zones, entry, Object.hashAll(visits));
+  int get hashCode => Object.hash(status, client, zones, entry, startedVisitId, Object.hashAll(visits));
 }

@@ -164,13 +164,91 @@
     },
     "visitDateLabel": "{date}",
     "@visitDateLabel": {
-        "description": "The date of a visit in the list of past visits",
+        "description": "The date of a visit, in the list of past visits and as the title of the visit screen",
         "placeholders": {
             "date": {
                 "type": "DateTime",
                 "format": "yMMMMd"
             }
         }
+    },
+    "visitDatePickerHelp": "Visit date",
+    "@visitDatePickerHelp": {
+        "description": "Heading of the date picker that opens before a visit starts"
+    },
+    "visitCaptureLoadFailedMessage": "Can't load this visit. Try again.",
+    "@visitCaptureLoadFailedMessage": {
+        "description": "Message shown in place of the visit screen when the visit did not load"
+    },
+    "visitCaptureEmptyMessage": "This visit has no zones. To take photos, add zones to the client, then start a new visit.",
+    "@visitCaptureEmptyMessage": {
+        "description": "Text shown in place of the zones on the visit screen when the visit holds no zone"
+    },
+    "photoTakeBeforeButton": "Take Before Photo",
+    "@photoTakeBeforeButton": {
+        "description": "Label of the control of a zone that opens the camera for the photo before cleaning, when the zone has none"
+    },
+    "photoTakeAfterButton": "Take After Photo",
+    "@photoTakeAfterButton": {
+        "description": "Label of the control of a zone that opens the camera for the photo after cleaning, when the zone has none"
+    },
+    "photoRetakeBeforeButton": "Retake Before Photo",
+    "@photoRetakeBeforeButton": {
+        "description": "Label of the control of a zone that opens the camera to replace the photo before cleaning"
+    },
+    "photoRetakeAfterButton": "Retake After Photo",
+    "@photoRetakeAfterButton": {
+        "description": "Label of the control of a zone that opens the camera to replace the photo after cleaning"
+    },
+    "photoCaptureFailedMessage": "Can't take the photo right now. Try again.",
+    "@photoCaptureFailedMessage": {
+        "description": "Message shown when the camera gave no photo or the photo could not be kept"
+    },
+    "photoCaptureDeniedMessage": "Camera access is off. To take photos, turn it on in Settings.",
+    "@photoCaptureDeniedMessage": {
+        "description": "Message shown when the person did not allow the app to use the camera"
+    },
+    "previousPhotosTitle": "Photos from the visit on {date}",
+    "@previousPhotosTitle": {
+        "description": "Heading above the photos that an earlier visit took for the same zone",
+        "placeholders": {
+            "date": {
+                "type": "DateTime",
+                "format": "yMMMMd"
+            }
+        }
+    },
+    "previousBeforePhotoLabel": "Before photo from the earlier visit",
+    "@previousBeforePhotoLabel": {
+        "description": "What a screen reader says for the photo that an earlier visit took before cleaning"
+    },
+    "previousAfterPhotoLabel": "After photo from the earlier visit",
+    "@previousAfterPhotoLabel": {
+        "description": "What a screen reader says for the photo that an earlier visit took after cleaning"
+    },
+    "visitUnsavedMessage": "Can't save your notes right now.",
+    "@visitUnsavedMessage": {
+        "description": "Notice that stays at the top of the visit screen while a note is not saved"
+    },
+    "visitSaveAgainButton": "Save Again",
+    "@visitSaveAgainButton": {
+        "description": "Label of the button in the notice of unsaved notes that saves the notes again"
+    },
+    "visitLeaveUnsavedDialogTitle": "Leave without saving?",
+    "@visitLeaveUnsavedDialogTitle": {
+        "description": "Title of the dialog that asks before the person leaves the visit screen with a note that is not saved"
+    },
+    "visitLeaveUnsavedDialogMessage": "Your unsaved notes will be lost.",
+    "@visitLeaveUnsavedDialogMessage": {
+        "description": "Text of the dialog that asks before the person leaves the visit screen with a note that is not saved"
+    },
+    "visitLeaveUnsavedConfirmButton": "Leave",
+    "@visitLeaveUnsavedConfirmButton": {
+        "description": "Label of the button that leaves the visit screen without the unsaved notes"
+    },
+    "noteFieldLabel": "Note",
+    "@noteFieldLabel": {
+        "description": "Label of the field for the note of a zone on the visit screen"
     },
     "companyProfileTitle": "Company profile",
     "@companyProfileTitle": {

@@ -146,7 +146,79 @@
     },
     "visitDateLabel": "{date}",
     "@visitDateLabel": {
-        "description": "지난 방문 목록에 표시되는 방문 날짜"
+        "description": "지난 방문 목록과 방문 화면 제목에 표시되는 방문 날짜"
+    },
+    "visitDatePickerHelp": "방문 날짜",
+    "@visitDatePickerHelp": {
+        "description": "방문을 시작하기 전에 열리는 날짜 선택 창의 제목"
+    },
+    "visitCaptureLoadFailedMessage": "방문 기록을 불러오지 못했어요. 다시 시도해 주세요.",
+    "@visitCaptureLoadFailedMessage": {
+        "description": "방문 기록을 불러오지 못했을 때 방문 화면 대신 표시되는 문구"
+    },
+    "visitCaptureEmptyMessage": "이 방문에는 구역이 없어요. 거래처에 구역을 추가한 뒤 방문을 새로 시작하면 사진을 찍을 수 있어요.",
+    "@visitCaptureEmptyMessage": {
+        "description": "방문에 구역이 하나도 없을 때 방문 화면에서 구역 대신 표시되는 문구"
+    },
+    "photoTakeBeforeButton": "청소 전 사진 찍기",
+    "@photoTakeBeforeButton": {
+        "description": "구역에 청소 전 사진이 없을 때, 그 사진을 찍으려고 카메라를 여는 버튼의 라벨"
+    },
+    "photoTakeAfterButton": "청소 후 사진 찍기",
+    "@photoTakeAfterButton": {
+        "description": "구역에 청소 후 사진이 없을 때, 그 사진을 찍으려고 카메라를 여는 버튼의 라벨"
+    },
+    "photoRetakeBeforeButton": "청소 전 사진 다시 찍기",
+    "@photoRetakeBeforeButton": {
+        "description": "구역의 청소 전 사진을 바꾸려고 카메라를 여는 버튼의 라벨"
+    },
+    "photoRetakeAfterButton": "청소 후 사진 다시 찍기",
+    "@photoRetakeAfterButton": {
+        "description": "구역의 청소 후 사진을 바꾸려고 카메라를 여는 버튼의 라벨"
+    },
+    "photoCaptureFailedMessage": "사진을 찍지 못했어요. 다시 시도해 주세요.",
+    "@photoCaptureFailedMessage": {
+        "description": "카메라가 사진을 주지 않았거나 사진을 보관하지 못했을 때 표시되는 문구"
+    },
+    "photoCaptureDeniedMessage": "카메라를 쓸 수 없어요. 설정에서 카메라를 허용하면 사진을 찍을 수 있어요.",
+    "@photoCaptureDeniedMessage": {
+        "description": "앱이 카메라를 쓰도록 허용하지 않았을 때 표시되는 문구"
+    },
+    "previousPhotosTitle": "{date} 방문 사진",
+    "@previousPhotosTitle": {
+        "description": "같은 구역을 이전 방문에서 찍은 사진 위에 표시되는 제목"
+    },
+    "previousBeforePhotoLabel": "지난 방문의 청소 전 사진",
+    "@previousBeforePhotoLabel": {
+        "description": "이전 방문에서 찍은 청소 전 사진을 화면 낭독기가 읽는 문구"
+    },
+    "previousAfterPhotoLabel": "지난 방문의 청소 후 사진",
+    "@previousAfterPhotoLabel": {
+        "description": "이전 방문에서 찍은 청소 후 사진을 화면 낭독기가 읽는 문구"
+    },
+    "visitUnsavedMessage": "메모를 저장하지 못했어요.",
+    "@visitUnsavedMessage": {
+        "description": "메모를 저장하지 못한 동안 방문 화면 맨 위에 계속 표시되는 안내 문구"
+    },
+    "visitSaveAgainButton": "다시 저장하기",
+    "@visitSaveAgainButton": {
+        "description": "메모 미저장 안내에서 메모를 다시 저장하는 버튼의 라벨"
+    },
+    "visitLeaveUnsavedDialogTitle": "저장하지 않고 나갈까요?",
+    "@visitLeaveUnsavedDialogTitle": {
+        "description": "저장하지 못한 메모가 있는 채로 방문 화면을 나가기 전에 묻는 대화상자의 제목"
+    },
+    "visitLeaveUnsavedDialogMessage": "저장하지 못한 메모가 사라져요.",
+    "@visitLeaveUnsavedDialogMessage": {
+        "description": "저장하지 못한 메모가 있는 채로 방문 화면을 나가기 전에 묻는 대화상자의 본문"
+    },
+    "visitLeaveUnsavedConfirmButton": "나가기",
+    "@visitLeaveUnsavedConfirmButton": {
+        "description": "저장하지 못한 메모를 두고 방문 화면을 나가는 버튼의 라벨"
+    },
+    "noteFieldLabel": "메모",
+    "@noteFieldLabel": {
+        "description": "방문 화면에 있는 구역 메모 입력란의 라벨"
     },
     "companyProfileTitle": "회사 정보",
     "@companyProfileTitle": {

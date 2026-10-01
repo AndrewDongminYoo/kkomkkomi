@@ -38,16 +38,22 @@ void main() {
       'such as a lobby or a restroom.';
 
   late FakeClientRepository clients;
+  late FakeVisitRepository visitRepository;
 
   /// Opens the client screen from a host screen, so that the client screen can close itself.
+  ///
+  /// The clock shows noon of [today] in the time zone of the test, so that the day does not depend on that zone.
   Future<void> pumpPage(
     WidgetTester tester, {
     ClientZones? savedZones,
     List<Visit> visits = const [],
     Locale? locale,
     Exception? loadFailure,
+    VisitDate? today,
   }) async {
     clients = FakeClientRepository(clients: [office], zones: [savedZones ?? zones])..failure = loadFailure;
+    visitRepository = FakeVisitRepository(visits: visits);
+    final day = today ?? VisitDate(2026, 10, 20);
     await tester.pumpApp(
       Builder(
         builder: (context) => Scaffold(
@@ -60,9 +66,10 @@ void main() {
       locale: locale,
       repositories: Repositories(
         clients: clients,
-        visits: FakeVisitRepository(visits: visits),
+        visits: visitRepository,
         companyProfile: FakeCompanyProfileRepository(),
       ),
+      clock: FixedClock(DateTime(day.year, day.month, day.day, 12)),
     );
     await tester.tap(find.text('host'));
     await tester.pumpAndSettle();
@@ -70,7 +77,8 @@ void main() {
 
   List<String?> listedZoneNames(WidgetTester tester) => tester
       .widgetList<ListTile>(find.descendant(of: find.byType(ReorderableListView), matching: find.byType(ListTile)))
-      .where((tile) => tile.trailing != null)
+      // A zone row has the drag handle in front, and a visit row has none.
+      .where((tile) => tile.leading != null)
       .map((tile) => (tile.title! as Text).data)
       .toList();
 
@@ -130,13 +138,159 @@ void main() {
       expect(find.widgetWithText(OutlinedButton, 'Add Zone'), findsOneWidget);
     });
 
-    testWidgets('shows the control that starts a visit as disabled, because its destination is not built', (
-      tester,
-    ) async {
-      await pumpPage(tester);
+    testWidgets('shows the control that starts a visit as disabled while the client has no zone', (tester) async {
+      await pumpPage(tester, savedZones: ClientZones(clientId: clientId));
 
       final start = tester.widget<FilledButton>(find.widgetWithText(FilledButton, 'Start Visit'));
       expect(start.onPressed, isNull);
+    });
+
+    group('visit start', () {
+      final startButton = find.widgetWithText(FilledButton, 'Start Visit');
+      final confirmButton = find.widgetWithText(TextButton, 'Start Visit');
+
+      testWidgets('asks for the visit date with today picked, starts the visit, and opens its screen', (tester) async {
+        await pumpPage(tester, visits: [september]);
+
+        await tester.tap(startButton);
+        await tester.pumpAndSettle();
+        expect(find.byType(DatePickerDialog), findsOneWidget);
+        expect(find.descendant(of: find.byType(DatePickerDialog), matching: find.text('Visit date')), findsOneWidget);
+        expect(tester.widget<DatePickerDialog>(find.byType(DatePickerDialog)).initialDate, DateTime(2026, 10, 20));
+        await tester.tap(confirmButton);
+        await tester.pumpAndSettle();
+
+        expect(find.byType(VisitCapturePage), findsOneWidget);
+        expect(find.widgetWithText(AppBar, 'October 20, 2026'), findsOneWidget);
+        final started = (await visitRepository.visitsOf(clientId)).first;
+        expect(started.id, 'id-1');
+        expect(started.visitDate, VisitDate(2026, 10, 20));
+        expect(started.zoneRecords.map((record) => record.zoneName), ['로비', '복도', '탕비실']);
+      });
+
+      testWidgets('lists the started visit when the person comes back from its screen', (tester) async {
+        await pumpPage(tester, visits: [september]);
+
+        await tester.tap(startButton);
+        await tester.pumpAndSettle();
+        await tester.tap(confirmButton);
+        await tester.pumpAndSettle();
+        await tester.pageBack();
+        await tester.pumpAndSettle();
+        await tester.scrollUntilVisible(find.text('September 16, 2026'), 100);
+
+        expect(find.byType(VisitCapturePage), findsNothing);
+        expect(
+          tester.getTopLeft(find.text('October 20, 2026')).dy,
+          lessThan(tester.getTopLeft(find.text('September 16, 2026')).dy),
+        );
+      });
+
+      testWidgets('starts the visit on an earlier day that the person picks', (tester) async {
+        await pumpPage(tester);
+
+        await tester.tap(startButton);
+        await tester.pumpAndSettle();
+        await tester.tap(find.text('15'));
+        await tester.pumpAndSettle();
+        await tester.tap(confirmButton);
+        await tester.pumpAndSettle();
+
+        expect(find.widgetWithText(AppBar, 'October 15, 2026'), findsOneWidget);
+        expect((await visitRepository.visitsOf(clientId)).single.visitDate, VisitDate(2026, 10, 15));
+      });
+
+      testWidgets('offers no day after today, because a visit records a cleaning that took place', (tester) async {
+        await pumpPage(tester);
+
+        await tester.tap(startButton);
+        await tester.pumpAndSettle();
+        expect(tester.widget<DatePickerDialog>(find.byType(DatePickerDialog)).lastDate, DateTime(2026, 10, 20));
+        await tester.tap(find.text('21'), warnIfMissed: false);
+        await tester.pumpAndSettle();
+        await tester.tap(confirmButton);
+        await tester.pumpAndSettle();
+
+        expect((await visitRepository.visitsOf(clientId)).single.visitDate, VisitDate(2026, 10, 20));
+      });
+
+      testWidgets('starts no visit when the person closes the date picker', (tester) async {
+        await pumpPage(tester);
+
+        await tester.tap(startButton);
+        await tester.pumpAndSettle();
+        await tester.tap(find.widgetWithText(TextButton, 'Cancel'));
+        await tester.pumpAndSettle();
+
+        expect(find.byType(DatePickerDialog), findsNothing);
+        expect(find.byType(VisitCapturePage), findsNothing);
+        expect(await visitRepository.visitsOf(clientId), isEmpty);
+      });
+
+      testWidgets('stays on the client screen and shows a message when storage does not take the visit', (
+        tester,
+      ) async {
+        await pumpPage(tester);
+        visitRepository.failure = failure;
+
+        await tester.tap(startButton);
+        await tester.pumpAndSettle();
+        await tester.tap(confirmButton);
+        await tester.pumpAndSettle();
+
+        expect(find.byType(VisitCapturePage), findsNothing);
+        expect(find.widgetWithText(SnackBar, "Can't save right now. Try again."), findsOneWidget);
+      });
+
+      testWidgets('takes no touch and no back press while the visit is on its way to storage', (tester) async {
+        await pumpPage(tester);
+        visitRepository.gate = Completer<void>();
+
+        await tester.tap(startButton);
+        await tester.pumpAndSettle();
+        await tester.tap(confirmButton);
+        await tester.pumpAndSettle();
+        await tester.tap(find.widgetWithText(OutlinedButton, 'Add Zone'), warnIfMissed: false);
+        await tester.pumpAndSettle();
+        expect(find.byType(NameDialog), findsNothing);
+        await tester.binding.handlePopRoute();
+        await tester.pumpAndSettle();
+        expect(find.byType(ClientDetailPage), findsOneWidget);
+
+        visitRepository.gate!.complete();
+        await tester.pumpAndSettle();
+
+        expect(find.byType(VisitCapturePage), findsOneWidget);
+        expect(await visitRepository.visitsOf(clientId), hasLength(1));
+      });
+
+      testWidgets('names the date picker and its buttons in Korean', (tester) async {
+        await pumpPage(tester, locale: const Locale('ko'));
+
+        await tester.tap(find.widgetWithText(FilledButton, '방문 시작하기'));
+        await tester.pumpAndSettle();
+
+        final picker = find.byType(DatePickerDialog);
+        expect(find.descendant(of: picker, matching: find.text('방문 날짜')), findsOneWidget);
+        expect(find.descendant(of: picker, matching: find.widgetWithText(TextButton, '닫기')), findsOneWidget);
+        expect(find.descendant(of: picker, matching: find.widgetWithText(TextButton, '방문 시작하기')), findsOneWidget);
+      });
+    });
+
+    testWidgets('reopens a past visit from the list', (tester) async {
+      await pumpPage(tester, visits: [september, october]);
+      await tester.scrollUntilVisible(find.text('September 16, 2026'), 100);
+
+      await tester.tap(find.text('September 16, 2026'));
+      await tester.pumpAndSettle();
+
+      expect(find.byType(VisitCapturePage), findsOneWidget);
+      expect(find.widgetWithText(AppBar, 'September 16, 2026'), findsOneWidget);
+
+      await tester.pageBack();
+      await tester.pumpAndSettle();
+      expect(find.byType(ClientDetailPage), findsOneWidget);
+      expect(find.byType(VisitCapturePage), findsNothing);
     });
 
     testWidgets('lists the past visits by date, newest first', (tester) async {
@@ -561,6 +715,33 @@ void main() {
         });
       }
 
+      for (final (locale, start, help, cancel) in [
+        (const Locale('en'), 'Start Visit', 'Visit date', 'Cancel'),
+        (const Locale('ko'), '방문 시작하기', '방문 날짜', '닫기'),
+      ]) {
+        testWidgets('fits the date picker of a visit and its buttons in ${locale.languageCode}', (tester) async {
+          tester.useNarrowScreenWithLargestText();
+          await pumpPage(tester, savedZones: longZones, locale: locale);
+
+          await tester.tap(find.widgetWithText(FilledButton, start));
+          await tester.pumpAndSettle();
+
+          // The picker has a text scale limit of its own, without which its header overflows on this screen.
+          final picker = find.byType(DatePickerDialog);
+          expect(find.descendant(of: picker, matching: find.text(help)), findsOneWidget);
+          expect(find.descendant(of: picker, matching: find.widgetWithText(TextButton, cancel)), findsOneWidget);
+          tester
+            ..expectWholeText(help)
+            ..expectWholeText(cancel)
+            ..expectWholeText(start);
+          expect(MediaQuery.textScalerOf(tester.element(picker)).scale(10), 20);
+          await tester.tap(find.descendant(of: picker, matching: find.widgetWithText(TextButton, start)));
+          await tester.pumpAndSettle();
+
+          expect(find.byType(VisitCapturePage), findsOneWidget);
+        });
+      }
+
       for (final (locale, rename, archive, title, message, cancel) in [
         (
           const Locale('en'),
@@ -710,11 +891,24 @@ void main() {
   group('ClientDetailView', () {
     late ClientDetailCubit cubit;
 
+    setUpAll(() => registerFallbackValue(VisitDate(2026, 10, 1)));
+
     setUp(() => cubit = _MockClientDetailCubit());
+
+    /// Pumps the view under the repositories and the clock that its date picker and the visit screen read.
+    Future<void> pumpClientView(WidgetTester tester) => tester.pumpApp(
+      BlocProvider.value(value: cubit, child: const ClientDetailView()),
+      repositories: Repositories(
+        clients: FakeClientRepository(),
+        visits: FakeVisitRepository(visits: [october]),
+        companyProfile: FakeCompanyProfileRepository(),
+      ),
+      clock: FixedClock(DateTime(2026, 10, 20, 12)),
+    );
 
     Future<void> pumpView(WidgetTester tester, ClientDetailState state) async {
       when(() => cubit.state).thenReturn(state);
-      await tester.pumpApp(BlocProvider.value(value: cubit, child: const ClientDetailView()));
+      await pumpClientView(tester);
     }
 
     testWidgets('shows a progress indicator and no client menu while the client loads', (tester) async {
@@ -724,7 +918,12 @@ void main() {
       expect(clientMenu, findsNothing);
     });
 
-    for (final status in [ClientDetailStatus.saving, ClientDetailStatus.saveFailed, ClientDetailStatus.archived]) {
+    for (final status in [
+      ClientDetailStatus.saving,
+      ClientDetailStatus.saveFailed,
+      ClientDetailStatus.archived,
+      ClientDetailStatus.visitStarted,
+    ]) {
       testWidgets('keeps the client on the screen in the ${status.name} status', (tester) async {
         await pumpView(tester, ClientDetailState(status: status, client: office, zones: zones));
 
@@ -766,12 +965,54 @@ void main() {
       ]);
     });
 
+    testWidgets('passes the picked visit date to the cubit', (tester) async {
+      when(() => cubit.startVisit(any())).thenAnswer((_) async {});
+      await pumpView(tester, ClientDetailState(status: ClientDetailStatus.ready, client: office, zones: zones));
+
+      await tester.tap(find.widgetWithText(FilledButton, 'Start Visit'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('7'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.widgetWithText(TextButton, 'Start Visit'));
+      await tester.pumpAndSettle();
+
+      verify(() => cubit.startVisit(VisitDate(2026, 10, 7))).called(1);
+    });
+
+    testWidgets('opens the screen of a started visit once, when the status changes to it', (tester) async {
+      final states = StreamController<ClientDetailState>();
+      addTearDown(states.close);
+      final ready = ClientDetailState(status: ClientDetailStatus.ready, client: office, zones: zones);
+      whenListen(cubit, states.stream, initialState: ready);
+      await pumpClientView(tester);
+
+      states.add(ready.copyWith(status: ClientDetailStatus.visitStarted, visits: [october], startedVisitId: 'visit-2'));
+      await tester.pumpAndSettle();
+      expect(find.byType(VisitCapturePage), findsOneWidget);
+      expect(find.widgetWithText(AppBar, 'October 1, 2026'), findsOneWidget);
+      await tester.pageBack();
+      await tester.pumpAndSettle();
+
+      // A later state with the same status, such as a refused name, is no new visit.
+      states.add(
+        ready.copyWith(
+          status: ClientDetailStatus.visitStarted,
+          visits: [october],
+          startedVisitId: 'visit-2',
+          entry: NameEntry.empty,
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      expect(find.byType(VisitCapturePage), findsNothing);
+    });
+
     testWidgets('shows the message of a failed save once, when the status changes to it', (tester) async {
       final states = StreamController<ClientDetailState>();
       addTearDown(states.close);
       final ready = ClientDetailState(status: ClientDetailStatus.ready, client: office, zones: zones);
       whenListen(cubit, states.stream, initialState: ready);
-      await tester.pumpApp(BlocProvider.value(value: cubit, child: const ClientDetailView()));
+      await pumpClientView(tester);
 
       states.add(ready.copyWith(status: ClientDetailStatus.saveFailed));
       await tester.pumpAndSettle();

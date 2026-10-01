@@ -83,19 +83,94 @@ class FakeVisitRepository implements VisitRepository {
 
   final List<Visit> _visits;
 
+  /// The exception that every call throws while it is set.
+  Exception? failure;
+
+  /// A save waits for this completer while it is set, so that a test can act while a save is on its way.
+  Completer<void>? gate;
+
   @override
   Future<void> save(Visit visit) async {
+    await gate?.future;
+    _throwFailure();
     _visits
       ..removeWhere((saved) => saved.id == visit.id)
       ..add(visit);
   }
 
   @override
-  Future<Visit?> visitById(String id) async => _visits.where((visit) => visit.id == id).firstOrNull;
+  Future<Visit?> visitById(String id) async {
+    _throwFailure();
+    return _visits.where((visit) => visit.id == id).firstOrNull;
+  }
 
   @override
-  Future<List<Visit>> visitsOf(String clientId) async =>
-      _visits.where((visit) => visit.clientId == clientId).toList()..sort((a, b) => b.compareChronologically(a));
+  Future<List<Visit>> visitsOf(String clientId) async {
+    _throwFailure();
+    return _visits.where((visit) => visit.clientId == clientId).toList()..sort((a, b) => b.compareChronologically(a));
+  }
+
+  void _throwFailure() {
+    if (failure case final failure?) throw failure;
+  }
+}
+
+/// A camera that gives what a test put in [results], and never opens a camera.
+class FakePhotoCapture implements PhotoCapture {
+  /// What the next calls give, in order: the path of a photo file, null for a camera that the person closed, or
+  /// an exception that the call throws.
+  final results = <Object?>[];
+
+  /// How many times the camera was opened.
+  int calls = 0;
+
+  /// A call waits for this completer while it is set, so that a test can act while the camera is open.
+  Completer<void>? gate;
+
+  @override
+  Future<String?> takePhoto() async {
+    calls++;
+    await gate?.future;
+    final result = results.removeAt(0);
+    if (result is Exception) throw result;
+    return result as String?;
+  }
+}
+
+/// Keeps no file. It remembers which photo it gave for which source file and which photos it deleted.
+class FakePhotoStore implements PhotoStore {
+  /// The directory that the store gives as the root of every photo path.
+  static const directory = '/documents';
+
+  /// The source file of each photo that the store holds.
+  final sources = <PhotoRef, String>{};
+
+  /// The photos that the store was asked to delete, in order.
+  final deleted = <PhotoRef>[];
+
+  /// The exception that a save throws while it is set.
+  Exception? saveFailure;
+
+  /// The exception that a delete throws while it is set.
+  Exception? deleteFailure;
+
+  @override
+  Future<PhotoRef> save({required String sourcePath, required String visitId, required String photoId}) async {
+    if (saveFailure case final failure?) throw failure;
+    final photo = PhotoRef('photos/$visitId/$photoId.jpg');
+    sources[photo] = sourcePath;
+    return photo;
+  }
+
+  @override
+  Future<void> delete(PhotoRef photo) async {
+    if (deleteFailure case final failure?) throw failure;
+    deleted.add(photo);
+    sources.remove(photo);
+  }
+
+  @override
+  Future<String> directoryPath() async => directory;
 }
 
 /// Keeps the company profile in memory.

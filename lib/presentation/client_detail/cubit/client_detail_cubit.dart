@@ -5,19 +5,22 @@ import 'package:kkomkkomi/presentation/shared/name_entry.dart';
 
 part 'client_detail_state.dart';
 
-/// Loads one client with its zones and visits, and saves each change to the client and to its zone list.
+/// Loads one client with its zones and visits, saves each change to the client and to its zone list, and starts a
+/// visit.
 class ClientDetailCubit extends Cubit<ClientDetailState> {
   new({
     required this._clientId,
     required this._clients,
     required this._visits,
     required this._idGenerator,
+    required this._startVisit,
   }) : super(const ClientDetailState());
 
   final String _clientId;
   final ClientRepository _clients;
   final VisitRepository _visits;
   final IdGenerator _idGenerator;
+  final StartVisit _startVisit;
 
   /// Reads the client, its zones, and its visits from storage.
   ///
@@ -65,6 +68,33 @@ class ClientDetailCubit extends Cubit<ClientDetailState> {
   Future<void> archive() =>
       _save((client, zones) => (client.archive(), zones), statusAfter: ClientDetailStatus.archived);
 
+  /// Starts a visit on [visitDate] from the listed zones and saves it.
+  ///
+  /// The state ends with [ClientDetailStatus.visitStarted], lists the visit, and names it in
+  /// [ClientDetailState.startedVisitId] when storage takes it. A call does nothing while the client takes no change
+  /// and while it lists no zone, because a visit keeps the zones that it started with.
+  Future<void> startVisit(VisitDate visitDate) async {
+    if (!state.takesChange || state.activeZones.isEmpty) return;
+    emit(state.copyWith(status: ClientDetailStatus.saving));
+    try {
+      final visit = await _startVisit(clientId: _clientId, visitDate: visitDate);
+      if (isClosed) return;
+      emit(
+        state.copyWith(
+          status: ClientDetailStatus.visitStarted,
+          // The list keeps the order of the repository, newest first, without a second read that could fail after
+          // the visit is saved.
+          visits: [...state.visits, visit]..sort((a, b) => b.compareChronologically(a)),
+          startedVisitId: visit.id,
+        ),
+      );
+    } on Exception catch (error, stackTrace) {
+      if (isClosed) return;
+      addError(error, stackTrace);
+      emit(state.copyWith(status: ClientDetailStatus.saveFailed));
+    }
+  }
+
   /// Applies [change] to the client and its zones, shows the result at once, and saves it.
   ///
   /// The client and the zones go back to what they were when storage does not take the result. A name dialog reads
@@ -79,8 +109,7 @@ class ClientDetailCubit extends Cubit<ClientDetailState> {
   }) async {
     final before = state;
     final (client, zones) = (before.client, before.zones);
-    final canChange = before.status == ClientDetailStatus.ready || before.status == ClientDetailStatus.saveFailed;
-    if (client == null || zones == null || !canChange) return;
+    if (client == null || zones == null || !before.takesChange) return;
 
     final (Client, ClientZones) changed;
     try {

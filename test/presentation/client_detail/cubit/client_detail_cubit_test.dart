@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:bloc_test/bloc_test.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:kkomkkomi/application/application.dart';
 import 'package:kkomkkomi/domain/domain.dart';
 import 'package:kkomkkomi/presentation/presentation.dart';
 import 'package:mocktail/mocktail.dart';
@@ -25,20 +26,40 @@ void main() {
   late MockClientRepository clients;
   late MockVisitRepository visits;
 
-  ClientDetailCubit build() =>
-      ClientDetailCubit(clientId: clientId, clients: clients, visits: visits, idGenerator: SequenceIdGenerator());
+  /// The visit that the cubit starts on [date]: the first identifier of the generator and the time of the clock.
+  Visit started(VisitDate date) =>
+      Visit.start(id: 'id-1', zones: zones, visitDate: date, createdAt: DateTime.utc(2026, 10, 1, 3));
+
+  ClientDetailCubit build() {
+    final idGenerator = SequenceIdGenerator();
+    return ClientDetailCubit(
+      clientId: clientId,
+      clients: clients,
+      visits: visits,
+      idGenerator: idGenerator,
+      startVisit: StartVisit(
+        clients: clients,
+        visits: visits,
+        idGenerator: idGenerator,
+        clock: FixedClock(DateTime.utc(2026, 10, 1, 3)),
+      ),
+    );
+  }
 
   ClientDetailState loaded({
     ClientDetailStatus status = ClientDetailStatus.ready,
     Client? client,
     ClientZones? zoneList,
     NameEntry entry = NameEntry.editing,
+    List<Visit>? visitList,
+    String? startedVisitId,
   }) => ClientDetailState(
     status: status,
     client: client ?? office,
     zones: zoneList ?? zones,
-    visits: [visit],
+    visits: visitList ?? [visit],
     entry: entry,
+    startedVisitId: startedVisitId,
   );
 
   void stubSave({Object? thrown}) {
@@ -53,6 +74,7 @@ void main() {
   setUpAll(() {
     registerFallbackValue(office);
     registerFallbackValue(zones);
+    registerFallbackValue(visit);
   });
 
   setUp(() {
@@ -61,6 +83,7 @@ void main() {
     when(() => clients.clientById(clientId)).thenAnswer((_) async => office);
     when(() => clients.zonesOf(clientId)).thenAnswer((_) async => zones);
     when(() => visits.visitsOf(clientId)).thenAnswer((_) async => [visit]);
+    when(() => visits.save(any())).thenAnswer((_) async {});
     stubSave();
   });
 
@@ -81,6 +104,21 @@ void main() {
       expect(loaded(), isNot(loaded(zoneList: zones.remove('zone-1'))));
       expect(loaded(), isNot(loaded(entry: NameEntry.saved)));
       expect(loaded(), isNot(loaded().copyWith(visits: [])));
+      expect(loaded(), isNot(loaded(startedVisitId: 'visit-1')));
+    });
+
+    test('copyWith keeps the started visit unless it is given another', () {
+      final started = loaded(startedVisitId: 'visit-1');
+
+      expect(started.copyWith(status: ClientDetailStatus.saving).startedVisitId, 'visit-1');
+      expect(started.copyWith(startedVisitId: 'visit-2').startedVisitId, 'visit-2');
+    });
+
+    test('takes a change only while the state holds what storage has', () {
+      expect(
+        ClientDetailStatus.values.where((status) => loaded(status: status).takesChange),
+        [ClientDetailStatus.ready, ClientDetailStatus.saveFailed, ClientDetailStatus.visitStarted],
+      );
     });
   });
 
@@ -439,6 +477,114 @@ void main() {
       );
     });
 
+    group('startVisit', () {
+      final october = VisitDate(2026, 10, 1);
+
+      blocTest<ClientDetailCubit, ClientDetailState>(
+        'saves a visit with the listed zones, lists it before the older visits, and names it',
+        build: build,
+        seed: loaded,
+        act: (cubit) => cubit.startVisit(october),
+        expect: () => [
+          loaded(status: ClientDetailStatus.saving),
+          loaded(
+            status: ClientDetailStatus.visitStarted,
+            visitList: [started(october), visit],
+            startedVisitId: 'id-1',
+          ),
+        ],
+        verify: (cubit) {
+          verify(() => visits.save(started(october))).called(1);
+          expect(cubit.state.visits.first.zoneRecords.map((record) => record.zoneName), ['로비', '복도']);
+        },
+      );
+
+      blocTest<ClientDetailCubit, ClientDetailState>(
+        'lists a visit on an earlier date after the newer visits',
+        build: build,
+        seed: loaded,
+        act: (cubit) => cubit.startVisit(VisitDate(2026, 9, 1)),
+        expect: () => [
+          loaded(status: ClientDetailStatus.saving),
+          loaded(
+            status: ClientDetailStatus.visitStarted,
+            visitList: [visit, started(VisitDate(2026, 9, 1))],
+            startedVisitId: 'id-1',
+          ),
+        ],
+      );
+
+      blocTest<ClientDetailCubit, ClientDetailState>(
+        'starts a second visit after the first, and names the second',
+        build: build,
+        seed: () => loaded(status: ClientDetailStatus.visitStarted, startedVisitId: 'visit-1'),
+        act: (cubit) => cubit.startVisit(october),
+        expect: () => [
+          loaded(status: ClientDetailStatus.saving, startedVisitId: 'visit-1'),
+          loaded(
+            status: ClientDetailStatus.visitStarted,
+            visitList: [started(october), visit],
+            startedVisitId: 'id-1',
+          ),
+        ],
+      );
+
+      blocTest<ClientDetailCubit, ClientDetailState>(
+        'reports a failure of storage in the status and lists no new visit',
+        setUp: () => when(() => visits.save(any())).thenThrow(failure),
+        build: build,
+        seed: loaded,
+        act: (cubit) => cubit.startVisit(october),
+        expect: () => [
+          loaded(status: ClientDetailStatus.saving),
+          loaded(status: ClientDetailStatus.saveFailed),
+        ],
+        errors: () => [failure],
+      );
+
+      blocTest<ClientDetailCubit, ClientDetailState>(
+        'reports a client that storage does not have in the status',
+        setUp: () => when(() => clients.clientById(clientId)).thenAnswer((_) async => null),
+        build: build,
+        seed: loaded,
+        act: (cubit) => cubit.startVisit(october),
+        expect: () => [
+          loaded(status: ClientDetailStatus.saving),
+          loaded(status: ClientDetailStatus.saveFailed),
+        ],
+        errors: () => [isA<ClientNotFoundException>()],
+        verify: (_) => verifyNever(() => visits.save(any())),
+      );
+
+      blocTest<ClientDetailCubit, ClientDetailState>(
+        'does nothing while the client lists no zone, because the visit would hold no record',
+        build: build,
+        seed: () => loaded(zoneList: zones.remove('zone-1').remove('zone-2')),
+        act: (cubit) => cubit.startVisit(october),
+        expect: () => isEmpty,
+        verify: (_) => verifyNever(() => visits.save(any())),
+      );
+
+      for (final (description, answerSave) in <(String, void Function(Completer<void>))>[
+        ('storage answers', (answer) => answer.complete()),
+        ('storage fails', (answer) => answer.completeError(failure)),
+      ]) {
+        test('emits nothing more when the cubit closes before $description', () async {
+          final answer = Completer<void>();
+          when(() => visits.save(any())).thenAnswer((_) => answer.future);
+          final cubit = build();
+          await cubit.load();
+
+          final start = cubit.startVisit(october);
+          await cubit.close();
+          answerSave(answer);
+          await start;
+
+          expect(cubit.state, loaded(status: ClientDetailStatus.saving));
+        });
+      }
+    });
+
     group('a change', () {
       for (final status in [
         ClientDetailStatus.loading,
@@ -457,16 +603,34 @@ void main() {
             await cubit.moveZone(0, 1);
             await cubit.removeZone('zone-1');
             await cubit.archive();
+            await cubit.startVisit(VisitDate(2026, 10, 1));
           },
           expect: () => isEmpty,
-          verify: (_) => verifyNever(() => clients.save(any(), zones: any(named: 'zones'))),
+          verify: (_) {
+            verifyNever(() => clients.save(any(), zones: any(named: 'zones')));
+            verifyNever(() => visits.save(any()));
+          },
         );
       }
 
       blocTest<ClientDetailCubit, ClientDetailState>(
+        'works after a visit was started',
+        build: build,
+        seed: () => loaded(status: ClientDetailStatus.visitStarted, startedVisitId: 'visit-1'),
+        act: (cubit) => cubit.removeZone('zone-1'),
+        expect: () => [
+          loaded(status: ClientDetailStatus.saving, zoneList: zones.remove('zone-1'), startedVisitId: 'visit-1'),
+          loaded(zoneList: zones.remove('zone-1'), startedVisitId: 'visit-1'),
+        ],
+      );
+
+      blocTest<ClientDetailCubit, ClientDetailState>(
         'does nothing while the client is not loaded',
         build: build,
-        act: (cubit) => cubit.addZone('탕비실'),
+        act: (cubit) async {
+          await cubit.addZone('탕비실');
+          await cubit.startVisit(VisitDate(2026, 10, 1));
+        },
         expect: () => isEmpty,
       );
 

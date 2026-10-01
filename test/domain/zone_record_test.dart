@@ -42,5 +42,25 @@ void main() {
       expect(record(), isNot(record(after: 'photos/visit-1/other.jpg')));
       expect(record(), isNot(record(note: '')));
     });
+
+    test('photoIn gives the photo of the slot, or null when the record has none', () {
+      expect(record().photoIn(PhotoSlot.before), PhotoRef('photos/visit-1/before.jpg'));
+      expect(record().photoIn(PhotoSlot.after), PhotoRef('photos/visit-1/after.jpg'));
+      expect(record(before: null).photoIn(PhotoSlot.before), isNull);
+      expect(record(after: null).photoIn(PhotoSlot.after), isNull);
+    });
+
+    test('withPhoto replaces the photo of one slot and keeps the rest', () {
+      final retaken = PhotoRef('photos/visit-1/retaken.jpg');
+
+      expect(record().withPhoto(PhotoSlot.before, retaken), record(before: 'photos/visit-1/retaken.jpg'));
+      expect(record().withPhoto(PhotoSlot.after, retaken), record(after: 'photos/visit-1/retaken.jpg'));
+      expect(record(after: null).withPhoto(PhotoSlot.after, retaken), record(after: 'photos/visit-1/retaken.jpg'));
+    });
+
+    test('withNote replaces the note as it is written and keeps the rest', () {
+      expect(record().withNote(' 유리 닦음\n'), record(note: ' 유리 닦음\n'));
+      expect(record().withNote(''), record(note: ''));
+    });
   });
 }

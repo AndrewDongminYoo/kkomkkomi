@@ -1,0 +1,18 @@
+import 'package:kkomkkomi/domain/domain.dart';
+
+/// Keeps the photo files of the visits under the application documents directory.
+abstract interface class PhotoStore {
+  /// Copies the file at [sourcePath] into `photos/<visitId>/` and returns the path of the copy.
+  ///
+  /// The path is relative to the application documents directory. The name of the copy is [photoId] with the
+  /// extension of [sourcePath], so a copy never replaces a file that another photo identifier named.
+  Future<PhotoRef> save({required String sourcePath, required String visitId, required String photoId});
+
+  /// Deletes the file of [photo]. A file that does not exist is no failure.
+  Future<void> delete(PhotoRef photo);
+
+  /// The absolute path of the directory that the path of every [PhotoRef] is relative to.
+  ///
+  /// The path can change between launches of the app, so it must not be stored.
+  Future<String> directoryPath();
+}

@@ -60,6 +60,26 @@ final class Visit {
     return null;
   }
 
+  /// This visit with [record] in place of the record that it holds for the same zone.
+  ///
+  /// Throws an [ArgumentError] when the visit holds no record for that zone, because a visit keeps the zones that it
+  /// started with.
+  Visit withRecord(ZoneRecord record) {
+    if (recordFor(record.zoneId) == null) {
+      throw ArgumentError.value(record.zoneId, 'record', 'The visit holds no record for this zone');
+    }
+    return Visit(
+      id: id,
+      clientId: clientId,
+      visitDate: visitDate,
+      createdAt: createdAt,
+      zoneRecords: [
+        for (final held in zoneRecords)
+          if (held.zoneId == record.zoneId) record else held,
+      ],
+    );
+  }
+
   /// Orders visits by [visitDate], and visits on one date by [createdAt].
   int compareChronologically(Visit other) {
     final byDate = visitDate.compareTo(other.visitDate);

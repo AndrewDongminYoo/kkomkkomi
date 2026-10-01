@@ -116,6 +116,22 @@ void main() {
       expect(recorded.recordFor('zone-9'), isNull);
     });
 
+    group('withRecord', () {
+      final lobby = ZoneRecord(zoneId: 'zone-1', zoneName: '로비');
+      final hall = ZoneRecord(zoneId: 'zone-2', zoneName: '복도');
+
+      test('replaces the record of the same zone and keeps the order and the other fields', () {
+        final noted = hall.withNote('바닥 왁스');
+
+        expect(visit(records: [lobby, hall]).withRecord(noted), visit(records: [lobby, noted]));
+        expect(visit(records: [hall, lobby]).withRecord(noted), visit(records: [noted, lobby]));
+      });
+
+      test('refuses a record for a zone that the visit does not hold', () {
+        expect(() => visit(records: [lobby]).withRecord(hall), throwsArgumentError);
+      });
+    });
+
     test('compareChronologically orders by visit date, then by creation time', () {
       final first = visit(date: VisitDate(2026, 9, 30), created: DateTime.utc(2026, 10, 5));
       final second = visit(created: DateTime.utc(2026, 10, 1, 8));

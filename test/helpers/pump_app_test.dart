@@ -43,6 +43,30 @@ void main() {
       expect(context.read<IdGenerator>().newId(), 'id-1');
       expect(context.read<Clock>(), same(clock));
     });
+
+    testWidgets('provides a fake camera and a fake photo store unless it is given others', (tester) async {
+      await tester.pumpApp(const SizedBox(), repositories: mockRepositories());
+
+      final context = tester.element(find.byType(SizedBox));
+      expect(context.read<PhotoCapture>(), isA<FakePhotoCapture>());
+      expect(context.read<PhotoStore>(), isA<FakePhotoStore>());
+    });
+
+    testWidgets('provides the camera and the photo store that it is given', (tester) async {
+      final photoCapture = FakePhotoCapture();
+      final photoStore = FakePhotoStore();
+
+      await tester.pumpApp(
+        const SizedBox(),
+        repositories: mockRepositories(),
+        photoCapture: photoCapture,
+        photoStore: photoStore,
+      );
+
+      final context = tester.element(find.byType(SizedBox));
+      expect(context.read<PhotoCapture>(), same(photoCapture));
+      expect(context.read<PhotoStore>(), same(photoStore));
+    });
   });
 
   group('useNarrowScreenWithLargestText', () {

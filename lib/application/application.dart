@@ -3,6 +3,8 @@ export 'clock.dart';
 export 'company_profile_repository.dart';
 export 'find_previous_photos.dart';
 export 'id_generator.dart';
+export 'photo_capture.dart';
+export 'photo_store.dart';
 export 'repositories.dart';
 export 'start_visit.dart';
 export 'visit_repository.dart';
