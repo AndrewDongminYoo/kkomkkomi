@@ -1,0 +1,429 @@
+<!doctype html>
+<html lang="ko">
+  <head>
+    <meta charset="utf-8" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      rel="stylesheet"
+      href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700;800&display=swap"
+    />
+    <style>
+      /*
+       * The source of web/og.png, the 1200x630 link preview card. render.sh makes the image.
+       * The color tokens and the entrance illustration are copies from web/index.html,
+       * so a change to them there must be repeated here.
+       */
+      :root {
+        --bg: #faf7f1;
+        --paper: #ffffff;
+        --paper-edge: #e6e0d4;
+        --ink: #16243b;
+        --ink-2: #4b5870;
+        --teal: #0f7f7a;
+        --teal-ink: #0a5e5a;
+        --teal-soft: #dff2ef;
+        --il-wall: #f1ebe0;
+        --il-floor: #d9cdb8;
+        --il-floor2: #cbbda4;
+        --il-line: #9f947f;
+        --il-glass: #dcecf0;
+        --il-frame: #5d6b84;
+        --il-dirt: #9c8f78;
+        --il-dirt2: #b7ab93;
+        --il-clean: #f7fbfb;
+      }
+      * {
+        box-sizing: border-box;
+      }
+      body {
+        margin: 0;
+        width: 1200px;
+        height: 630px;
+        overflow: hidden;
+        background: var(--bg);
+        color: var(--ink);
+        font-family: "Noto Sans KR", sans-serif;
+        -webkit-font-smoothing: antialiased;
+        word-break: keep-all;
+        display: grid;
+        grid-template-columns: 540px 1fr;
+        gap: 52px;
+        align-items: center;
+        padding: 0 72px;
+      }
+      .brand {
+        display: flex;
+        align-items: center;
+        gap: 14px;
+        font-size: 40px;
+        font-weight: 800;
+        letter-spacing: -0.02em;
+      }
+      .mark {
+        width: 52px;
+        height: 52px;
+        border-radius: 14px;
+        background: var(--teal);
+        display: grid;
+        place-items: center;
+      }
+      h1 {
+        margin: 36px 0 0;
+        font-size: 58px;
+        line-height: 1.22;
+        font-weight: 800;
+        letter-spacing: -0.01em;
+      }
+      h1 span {
+        display: block;
+        white-space: nowrap;
+      }
+      h1 em {
+        font-style: normal;
+        color: var(--teal-ink);
+      }
+      .sub {
+        margin: 26px 0 0;
+        font-size: 28px;
+        line-height: 1.5;
+        color: var(--ink-2);
+      }
+      .sheet {
+        background: var(--paper);
+        border: 2px solid var(--paper-edge);
+        border-radius: 22px;
+        box-shadow:
+          0 2px 4px rgba(22, 36, 59, 0.06),
+          0 24px 60px -28px rgba(22, 36, 59, 0.28);
+        overflow: hidden;
+      }
+      .sheet-head {
+        padding: 24px 28px;
+        border-bottom: 2px dashed var(--paper-edge);
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 16px;
+        font-size: 24px;
+        font-weight: 800;
+      }
+      .tag {
+        padding: 4px 16px;
+        border-radius: 999px;
+        background: var(--teal-soft);
+        color: var(--teal-ink);
+        font-size: 19px;
+        font-weight: 500;
+        white-space: nowrap;
+      }
+      .pair {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 16px;
+        padding: 24px 28px 28px;
+      }
+      .shot {
+        position: relative;
+        border-radius: 12px;
+        overflow: hidden;
+        border: 2px solid var(--paper-edge);
+        aspect-ratio: 4/3;
+      }
+      .shot svg {
+        display: block;
+        width: 100%;
+        height: 100%;
+      }
+      .lbl {
+        position: absolute;
+        left: 10px;
+        top: 10px;
+        background: var(--ink);
+        color: var(--bg);
+        font-size: 17px;
+        font-weight: 500;
+        line-height: 1.5;
+        padding: 1px 10px;
+        border-radius: 6px;
+      }
+      .lbl.after {
+        background: var(--teal);
+        color: #fff;
+      }
+    </style>
+  </head>
+  <body>
+    <div>
+      <div class="brand">
+        <span class="mark"
+          ><svg
+            width="32"
+            height="32"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="#fff"
+            stroke-width="3"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+          >
+            <path d="M5 12.5l4.5 4.5L19 7" /></svg
+        ></span>
+        꼼꼬미
+      </div>
+      <h1>
+        <span>청소는 <em>꼼꼼하게.</em></span
+        ><span>작업 보고는 간단하게.</span>
+      </h1>
+      <p class="sub">구역별 전후 사진을 거래처 보고서로</p>
+    </div>
+    <div class="sheet">
+      <div class="sheet-head">
+        <span>정기청소 작업 보고서</span><span class="tag">예시 보고서</span>
+      </div>
+      <div class="pair">
+        <div class="shot">
+          <span class="lbl">작업 전</span>
+          <svg viewBox="0 0 400 300" preserveAspectRatio="xMidYMid slice">
+            <rect width="400" height="300" fill="var(--il-wall)" />
+            <rect y="220" width="400" height="80" fill="var(--il-floor)" />
+            <rect
+              y="218"
+              width="400"
+              height="4"
+              fill="var(--il-line)"
+              opacity=".5"
+            />
+            <rect
+              x="110"
+              y="40"
+              width="180"
+              height="180"
+              rx="4"
+              fill="var(--il-frame)"
+            />
+            <rect
+              x="120"
+              y="50"
+              width="78"
+              height="160"
+              fill="var(--il-glass)"
+            />
+            <rect
+              x="202"
+              y="50"
+              width="78"
+              height="160"
+              fill="var(--il-glass)"
+            />
+            <rect
+              x="198"
+              y="50"
+              width="4"
+              height="160"
+              fill="var(--il-frame)"
+            />
+            <rect
+              x="186"
+              y="110"
+              width="7"
+              height="46"
+              rx="3"
+              fill="var(--il-frame)"
+            />
+            <rect
+              x="207"
+              y="110"
+              width="7"
+              height="46"
+              rx="3"
+              fill="var(--il-frame)"
+            />
+            <path
+              d="M128 60 L150 60 L132 160 L124 160 Z"
+              fill="var(--il-clean)"
+              opacity=".55"
+            />
+            <path
+              d="M212 60 L234 60 L216 160 L208 160 Z"
+              fill="var(--il-clean)"
+              opacity=".55"
+            />
+            <rect
+              x="130"
+              y="230"
+              width="140"
+              height="34"
+              rx="4"
+              fill="var(--il-floor2)"
+            />
+            <rect
+              x="136"
+              y="236"
+              width="128"
+              height="22"
+              rx="3"
+              fill="none"
+              stroke="var(--il-line)"
+              stroke-width="2"
+              opacity=".6"
+            />
+            <g fill="var(--il-dirt)" opacity=".55">
+              <ellipse
+                cx="150"
+                cy="120"
+                rx="16"
+                ry="9"
+                transform="rotate(-20 150 120)"
+              />
+              <ellipse cx="170" cy="150" rx="11" ry="7" />
+              <ellipse
+                cx="240"
+                cy="95"
+                rx="18"
+                ry="10"
+                transform="rotate(15 240 95)"
+              />
+              <ellipse
+                cx="258"
+                cy="170"
+                rx="13"
+                ry="8"
+                transform="rotate(-30 258 170)"
+              />
+              <circle cx="184" cy="95" r="5" />
+              <circle cx="226" cy="140" r="4" />
+            </g>
+            <g fill="var(--il-dirt2)" opacity=".8">
+              <ellipse
+                cx="160"
+                cy="246"
+                rx="9"
+                ry="14"
+                transform="rotate(-10 160 246)"
+              />
+              <ellipse
+                cx="178"
+                cy="250"
+                rx="9"
+                ry="14"
+                transform="rotate(10 178 250)"
+              />
+              <ellipse
+                cx="236"
+                cy="244"
+                rx="9"
+                ry="14"
+                transform="rotate(-10 236 244)"
+              />
+            </g>
+            <rect
+              x="300"
+              y="196"
+              width="36"
+              height="24"
+              rx="3"
+              fill="var(--il-dirt2)"
+            />
+            <rect
+              x="306"
+              y="186"
+              width="24"
+              height="12"
+              rx="2"
+              fill="var(--il-dirt)"
+            />
+          </svg>
+        </div>
+        <div class="shot">
+          <span class="lbl after">작업 후</span>
+          <svg viewBox="0 0 400 300" preserveAspectRatio="xMidYMid slice">
+            <rect width="400" height="300" fill="var(--il-wall)" />
+            <rect y="220" width="400" height="80" fill="var(--il-floor)" />
+            <rect
+              y="218"
+              width="400"
+              height="4"
+              fill="var(--il-line)"
+              opacity=".5"
+            />
+            <rect
+              x="110"
+              y="40"
+              width="180"
+              height="180"
+              rx="4"
+              fill="var(--il-frame)"
+            />
+            <rect
+              x="120"
+              y="50"
+              width="78"
+              height="160"
+              fill="var(--il-glass)"
+            />
+            <rect
+              x="202"
+              y="50"
+              width="78"
+              height="160"
+              fill="var(--il-glass)"
+            />
+            <rect
+              x="198"
+              y="50"
+              width="4"
+              height="160"
+              fill="var(--il-frame)"
+            />
+            <rect
+              x="186"
+              y="110"
+              width="7"
+              height="46"
+              rx="3"
+              fill="var(--il-frame)"
+            />
+            <rect
+              x="207"
+              y="110"
+              width="7"
+              height="46"
+              rx="3"
+              fill="var(--il-frame)"
+            />
+            <path
+              d="M128 60 L150 60 L132 160 L124 160 Z"
+              fill="var(--il-clean)"
+              opacity=".55"
+            />
+            <path
+              d="M212 60 L234 60 L216 160 L208 160 Z"
+              fill="var(--il-clean)"
+              opacity=".55"
+            />
+            <rect
+              x="130"
+              y="230"
+              width="140"
+              height="34"
+              rx="4"
+              fill="var(--il-floor2)"
+            />
+            <rect
+              x="136"
+              y="236"
+              width="128"
+              height="22"
+              rx="3"
+              fill="none"
+              stroke="var(--il-line)"
+              stroke-width="2"
+              opacity=".6"
+            />
+          </svg>
+        </div>
+      </div>
+    </div>
+  </body>
+</html>
