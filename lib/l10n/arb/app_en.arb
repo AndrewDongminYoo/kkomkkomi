@@ -3,5 +3,13 @@
     "counterAppBarTitle": "Counter",
     "@counterAppBarTitle": {
         "description": "Text shown in the AppBar of the Counter Page"
+    },
+    "startupFailureMessage": "Can't open your saved records. Try again.",
+    "@startupFailureMessage": {
+        "description": "Message shown in place of the app when the saved data does not open at startup"
+    },
+    "startupFailureRetryButton": "Try Again",
+    "@startupFailureRetryButton": {
+        "description": "Label of the button that opens the saved data again after a startup failure"
     }
 }
