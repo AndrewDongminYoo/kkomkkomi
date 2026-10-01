@@ -1,8 +1,12 @@
+import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 import java.io.FileInputStream
 import java.util.Properties
 
 plugins {
     id("com.android.application")
+    // START: FlutterFire Configuration
+    id("com.google.gms.google-services")
+    // END: FlutterFire Configuration
     id("kotlin-android")
     id("dev.flutter.flutter-gradle-plugin")
 }
@@ -21,10 +25,6 @@ android {
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_11
         targetCompatibility = JavaVersion.VERSION_11
-    }
-
-    kotlinOptions {
-        jvmTarget = JavaVersion.VERSION_11.toString()
     }
 
     defaultConfig {
@@ -88,10 +88,23 @@ android {
     }
 }
 
+kotlin {
+    compilerOptions {
+        jvmTarget = JvmTarget.JVM_11
+    }
+}
+
+// Firebase has an app for the production application ID only. The
+// google-services task fails when no client matches the application ID, so it
+// runs for the production variants and is skipped for development and staging.
+tasks.matching { it.name.startsWith("process") && it.name.endsWith("GoogleServices") }.configureEach {
+    enabled = name.contains("Production")
+}
+
 flutter {
     source = "../.."
 }
 
 dependencies {
-    implementation("org.jetbrains.kotlin:kotlin-stdlib:2.2.10")
+    implementation("org.jetbrains.kotlin:kotlin-stdlib:2.3.21")
 }
