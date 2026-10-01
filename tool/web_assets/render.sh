@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Renders web/og.png and the two icons under web/icons/ from the cards in this directory.
+# Renders web/og.png, the two icons under web/icons/, and the two favicon.png files from the cards in this directory.
 #
 # Usage: CHROME=/path/to/chrome-headless-shell tool/web_assets/render.sh
 #
@@ -22,3 +22,5 @@ render() {
 render og.html "${web}/og.png" 1200 630
 render icon.html "${web}/icons/Icon-192.png" 192 192
 render icon.html "${web}/icons/Icon-512.png" 512 512
+render icon.html "${web}/favicon.png" 32 32
+render icon.html "${web}/icons/favicon.png" 32 32
