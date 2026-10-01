@@ -348,9 +348,9 @@
     "@reportLinkWaitingMessage": {
         "description": "올리기에 실패해서 다시 올리기를 기다리는 동안 표시되는 문구"
     },
-    "reportLinkFailedMessage": "보고서를 올리지 못했어요. 다시 시도해 주세요.",
+    "reportLinkFailedMessage": "보고서를 올리지 못했어요. 지금은 PDF로 공유할 수 있어요.",
     "@reportLinkFailedMessage": {
-        "description": "보고서 올리기가 멈췄을 때 표시되는 문구"
+        "description": "다시 시도해도 해결되지 않는 이유로 보고서 올리기가 멈췄을 때 표시되는 문구"
     },
     "reportLinkRevokedMessage": "올리는 동안 이 거래처의 링크가 바뀌었어요. 다시 시도해 주세요.",
     "@reportLinkRevokedMessage": {
@@ -363,5 +363,9 @@
     "reportLinkPhotoUnusableMessage": "올릴 수 없는 사진이 있어요. 방문 화면에서 사진을 다시 찍은 뒤 다시 시도해 주세요.",
     "@reportLinkPhotoUnusableMessage": {
         "description": "사진이 JPEG 파일이 아니거나 너무 커서 올릴 수 없을 때 표시되는 문구"
+    },
+    "reportLinkPublishedMessage": "보고서를 올렸어요. 링크로 공유하기를 누르면 공유 창이 열려요.",
+    "@reportLinkPublishedMessage": {
+        "description": "다른 화면이나 PDF 공유 창이 열려 있는 동안 보고서를 다 올렸을 때 표시되는 문구"
     }
 }

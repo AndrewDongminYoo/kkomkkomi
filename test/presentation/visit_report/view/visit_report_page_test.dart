@@ -511,6 +511,56 @@ void main() {
         expect(linkShare.shared, hasLength(1));
       });
 
+      testWidgets('opens no share sheet over another screen, and shares on the next press', (tester) async {
+        final publisher = FakePublisher();
+        final gate = Completer<void>();
+        publisher.gates['writeReport'] = gate;
+        publishing.pages['page-1'] = ClientPage(id: 'page-1', clientId: client.id, createdAt: DateTime.utc(2026, 10));
+        await pumpPage(tester, companyName: null, publisher: publisher);
+
+        await tester.tap(linkButton());
+        await tester.pump();
+        await tester.tap(find.text('Add Company Name'));
+        await tester.pumpAndSettle();
+        expect(find.byType(CompanyProfilePage), findsOneWidget);
+        gate.complete();
+        await tester.pumpAndSettle();
+        expect(linkShare.shared, isEmpty);
+
+        await tester.pageBack();
+        await tester.pumpAndSettle();
+        expect(find.text('The report is uploaded. Press Share link to open the share sheet.'), findsOneWidget);
+        await tester.tap(linkButton());
+        await tester.pumpAndSettle();
+
+        expect(linkShare.shared, [Uri.parse('https://kkomkkomi.web.app/r/page-1/$visitId')]);
+        // The second press published the visit again, with the page as it is now.
+        expect(publisher.calls.where((call) => call == 'writePage page-1'), hasLength(2));
+      });
+
+      testWidgets('opens no share sheet of the link while the share sheet of the PDF is on its way', (tester) async {
+        final publisher = FakePublisher();
+        final uploadGate = Completer<void>();
+        publisher.gates['writeReport'] = uploadGate;
+        publishing.pages['page-1'] = ClientPage(id: 'page-1', clientId: client.id, createdAt: DateTime.utc(2026, 10));
+        await pumpPage(tester, publisher: publisher);
+        final pdfGate = Completer<void>();
+        reportShare.gate = pdfGate;
+
+        await tester.tap(linkButton());
+        await tester.pump();
+        await tester.tap(pdfButton());
+        await tester.pump();
+        uploadGate.complete();
+        await tester.pump();
+        pdfGate.complete();
+        await tester.pumpAndSettle();
+
+        expect(reportShare.shared, hasLength(1));
+        expect(linkShare.shared, isEmpty);
+        expect(find.text('The report is uploaded. Press Share link to open the share sheet.'), findsOneWidget);
+      });
+
       testWidgets('shows why the upload stopped, and shares nothing', (tester) async {
         final publisher = FakePublisher();
         publisher.failures['writePage'] = [const PublishException(PublishErrorKind.refused, 'permission-denied')];
@@ -520,7 +570,7 @@ void main() {
         await tester.tap(linkButton());
         await tester.pumpAndSettle();
 
-        expect(find.text("Can't upload the report. Try again."), findsOneWidget);
+        expect(find.text("Can't upload the report. You can share the PDF for now."), findsOneWidget);
         expect(isEnabled(tester, linkButton()), isTrue);
         expect(linkShare.shared, isEmpty);
       });
@@ -915,8 +965,8 @@ void main() {
         ),
         for (final failure in [null, PublishFailure.refused, PublishFailure.unavailable])
           ReportLinkState(status: ReportLinkStatus.failed, failure: failure): (
-            "Can't upload the report. Try again.",
-            '보고서를 올리지 못했어요. 다시 시도해 주세요.',
+            "Can't upload the report. You can share the PDF for now.",
+            '보고서를 올리지 못했어요. 지금은 PDF로 공유할 수 있어요.',
           ),
         const ReportLinkState(status: ReportLinkStatus.failed, failure: PublishFailure.revoked): (
           'The link of this client changed during the upload. Try again.',
@@ -925,6 +975,10 @@ void main() {
         const ReportLinkState(status: ReportLinkStatus.failed, failure: PublishFailure.photoMissing): (
           'A photo of this visit is missing. Retake it on the visit screen, then try again.',
           '이 방문의 사진 파일을 찾지 못했어요. 방문 화면에서 사진을 다시 찍은 뒤 다시 시도해 주세요.',
+        ),
+        const ReportLinkState(status: ReportLinkStatus.published): (
+          'The report is uploaded. Press Share link to open the share sheet.',
+          '보고서를 올렸어요. 링크로 공유하기를 누르면 공유 창이 열려요.',
         ),
         for (final failure in [PublishFailure.photoNotJpeg, PublishFailure.photoTooLarge])
           ReportLinkState(status: ReportLinkStatus.failed, failure: failure): (
@@ -958,15 +1012,28 @@ void main() {
         });
       }
 
-      testWidgets('passes a press to the cubit when the client has a page', (tester) async {
+      testWidgets('passes a press to the cubit, which may open the share sheet while the screen is on top', (
+        tester,
+      ) async {
         when(() => linkCubit.state).thenReturn(const ReportLinkState(status: ReportLinkStatus.ready));
-        when(() => linkCubit.share()).thenAnswer((_) async {});
+        when(
+          () => linkCubit.share(mayOpenShareSheet: any(named: 'mayOpenShareSheet')),
+        ).thenAnswer((_) async {});
         await pumpView(tester, shown(VisitReportStatus.ready));
 
         await tester.tap(find.widgetWithText(FilledButton, 'Share link'));
         await tester.pumpAndSettle();
 
-        verify(() => linkCubit.share()).called(1);
+        final mayOpen =
+            verify(
+                  () => linkCubit.share(mayOpenShareSheet: captureAny(named: 'mayOpenShareSheet')),
+                ).captured.single
+                as bool Function();
+        expect(mayOpen(), isTrue);
+
+        // A share of the PDF on its way keeps the share sheet of the link closed.
+        when(() => cubit.state).thenReturn(shown(VisitReportStatus.sharing));
+        expect(mayOpen(), isFalse);
       });
 
       testWidgets('shows the message of a link that did not reach the share sheet once', (tester) async {

@@ -25,6 +25,10 @@ enum ReportLinkStatus {
 
   /// The report is published, and the share sheet did not open with its link.
   shareFailed,
+
+  /// The report is published while the screen could not open the share sheet: another screen was on top, or the
+  /// share sheet of the PDF was on its way.
+  published,
 }
 
 final class ReportLinkState {
@@ -45,7 +49,8 @@ final class ReportLinkState {
     ReportLinkStatus.ready ||
     ReportLinkStatus.waitingForRetry ||
     ReportLinkStatus.failed ||
-    ReportLinkStatus.shareFailed => true,
+    ReportLinkStatus.shareFailed ||
+    ReportLinkStatus.published => true,
     ReportLinkStatus.loading || ReportLinkStatus.unavailable || ReportLinkStatus.publishing => false,
   };
 

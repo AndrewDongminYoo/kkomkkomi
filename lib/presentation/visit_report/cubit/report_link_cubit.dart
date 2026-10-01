@@ -24,6 +24,7 @@ class ReportLinkCubit extends Cubit<ReportLinkState> {
   final LinkShare _linkShare;
 
   StreamSubscription<PublishJob>? _updates;
+  bool Function()? _mayOpenShareSheet;
 
   /// Reads whether the flavor publishes, and whether the client of the visit has a page.
   ///
@@ -49,10 +50,14 @@ class ReportLinkCubit extends Cubit<ReportLinkState> {
   /// Publishes the visit as it is now, and opens the share sheet with the link of its report when the job is done.
   ///
   /// The state follows the job: [ReportLinkStatus.publishing] while it runs, [ReportLinkStatus.waitingForRetry]
-  /// while it waits for a retry, and [ReportLinkStatus.failed] when it stops. A call does nothing while the state
-  /// cannot share: see [ReportLinkState.canShare].
-  Future<void> share() async {
+  /// while it waits for a retry, and [ReportLinkStatus.failed] when it stops. A job can take minutes on a field
+  /// network, so when it is done the share sheet opens only while [mayOpenShareSheet] answers true, which the screen
+  /// answers while it is on top and no other share sheet is on its way. Otherwise the state is
+  /// [ReportLinkStatus.published], and the next share publishes the visit again as it is then. A call does nothing
+  /// while the state cannot share: see [ReportLinkState.canShare].
+  Future<void> share({bool Function()? mayOpenShareSheet}) async {
     if (!state.canShare) return;
+    _mayOpenShareSheet = mayOpenShareSheet;
     emit(ReportLinkState(status: ReportLinkStatus.publishing, isFirstShare: state.isFirstShare));
     _stopFollowing();
     // The cubit listens before the request, because the queue can finish the job before the request returns.
@@ -98,6 +103,10 @@ class ReportLinkCubit extends Cubit<ReportLinkState> {
         _show(ReportLinkState(status: ReportLinkStatus.failed, failure: job.failure));
       case PublishJobStatus.done:
         _stopFollowing();
+        if (!(_mayOpenShareSheet?.call() ?? true)) {
+          _show(const ReportLinkState(status: ReportLinkStatus.published));
+          return;
+        }
         try {
           await _linkShare.shareLink(reportLinkOf(pageId: job.pageId, visitId: _visitId));
           _show(const ReportLinkState(status: ReportLinkStatus.ready));

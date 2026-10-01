@@ -315,6 +315,55 @@ void main() {
         await cubit.close();
       });
 
+      test('follows only the generation that the request made, also when an earlier run ends first', () async {
+        await queue.start();
+        final pageGate = Completer<void>();
+        publisher
+          ..gates['writePage'] = pageGate
+          ..failures['writePage'] = [const PublishException(PublishErrorKind.transient, 'offline')];
+        final earlier = await queue.publishVisit(visitId);
+        await pumpEventQueue();
+        final enqueueGate = Completer<void>();
+        publishing.beforeEnqueueGate = enqueueGate;
+        final cubit = build();
+        await cubit.load();
+        final states = <ReportLinkState>[];
+        final subscription = cubit.stream.listen(states.add);
+
+        unawaited(cubit.share());
+        await pumpEventQueue();
+        // The earlier run fails before the request restarts the job, and its update names the job of the request in
+        // the generation before it.
+        pageGate.complete();
+        await pumpEventQueue();
+        expect(publishing.jobs[earlier.id]!.nextAttemptAt, isNotNull);
+
+        enqueueGate.complete();
+        await until(cubit, (state) => state.status == ReportLinkStatus.ready);
+
+        expect(states.map((state) => state.status), isNot(contains(ReportLinkStatus.waitingForRetry)));
+        expect(linkShare.shared, hasLength(1));
+        await subscription.cancel();
+        await cubit.close();
+      });
+
+      test('opens no share sheet when the screen may not open one, and the next share publishes again', () async {
+        final cubit = build();
+        await cubit.load();
+
+        await cubit.share(mayOpenShareSheet: () => false);
+        await until(cubit, (state) => state.status == ReportLinkStatus.published);
+        expect(cubit.state.canShare, isTrue);
+        expect(linkShare.shared, isEmpty);
+
+        await cubit.share(mayOpenShareSheet: () => true);
+        await until(cubit, (state) => state.status == ReportLinkStatus.ready);
+
+        expect(linkShare.shared, hasLength(1));
+        expect(publisher.calls.where((call) => call.startsWith('writeReport')), hasLength(2));
+        await cubit.close();
+      });
+
       test('fails and reports the error when the visit is not in storage', () async {
         final cubit = build(id: 'visit-unknown');
         await cubit.load();

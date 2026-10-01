@@ -308,9 +308,14 @@ class FakePublishRepository implements PublishRepository {
   /// before the request returns.
   Completer<void>? enqueueGate;
 
+  /// An enqueue waits for this completer before it reads the stored jobs while it is set, so that a test can change a
+  /// job before the request restarts it.
+  Completer<void>? beforeEnqueueGate;
+
   @override
   Future<PublishJob> enqueue(PublishJob job) async {
     _throwFailure();
+    await beforeEnqueueGate?.future;
     var stored = job;
     for (final pending in jobs.values) {
       if (pending.status == PublishJobStatus.pending &&

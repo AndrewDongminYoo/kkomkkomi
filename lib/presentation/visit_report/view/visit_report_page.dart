@@ -150,6 +150,13 @@ class _ReportScaffold extends StatelessWidget {
   /// open the reports, and the share starts only when they go on.
   static Future<void> _shareLink(BuildContext context, ReportLinkState linkState) async {
     final cubit = context.read<ReportLinkCubit>();
+    final report = context.read<VisitReportCubit>();
+    // The upload can end after the person opened another screen or started the share of the PDF. The share sheet of
+    // the link then waits for the next press, so that it never opens over another screen or another share sheet.
+    bool mayOpenShareSheet() =>
+        context.mounted &&
+        (ModalRoute.of(context)?.isCurrent ?? false) &&
+        report.state.status != VisitReportStatus.sharing;
     if (linkState.isFirstShare) {
       final l10n = context.l10n;
       final goOn = await showConfirmDialog(
@@ -160,7 +167,7 @@ class _ReportScaffold extends StatelessWidget {
       );
       if (!goOn) return;
     }
-    await cubit.share();
+    await cubit.share(mayOpenShareSheet: mayOpenShareSheet);
   }
 }
 
@@ -489,6 +496,7 @@ class _ShareBar extends StatelessWidget {
       PublishFailure.photoNotJpeg || PublishFailure.photoTooLarge => l10n.reportLinkPhotoUnusableMessage,
       PublishFailure.unavailable || PublishFailure.refused || null => l10n.reportLinkFailedMessage,
     },
+    ReportLinkStatus.published => l10n.reportLinkPublishedMessage,
     ReportLinkStatus.loading ||
     ReportLinkStatus.unavailable ||
     ReportLinkStatus.ready ||

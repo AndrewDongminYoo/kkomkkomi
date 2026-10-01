@@ -402,9 +402,9 @@
     "@reportLinkWaitingMessage": {
         "description": "Shown while a failed upload waits to run again"
     },
-    "reportLinkFailedMessage": "Can't upload the report. Try again.",
+    "reportLinkFailedMessage": "Can't upload the report. You can share the PDF for now.",
     "@reportLinkFailedMessage": {
-        "description": "Shown when the upload of the report stopped"
+        "description": "Shown when the upload of the report stopped for a reason that a retry does not fix"
     },
     "reportLinkRevokedMessage": "The link of this client changed during the upload. Try again.",
     "@reportLinkRevokedMessage": {
@@ -417,5 +417,9 @@
     "reportLinkPhotoUnusableMessage": "A photo of this visit can't be uploaded. Retake it on the visit screen, then try again.",
     "@reportLinkPhotoUnusableMessage": {
         "description": "Shown when a photo of the visit is not a JPEG file or is too large to upload"
+    },
+    "reportLinkPublishedMessage": "The report is uploaded. Press Share link to open the share sheet.",
+    "@reportLinkPublishedMessage": {
+        "description": "Shown when the report was uploaded while another screen or the PDF share sheet was open"
     }
 }
