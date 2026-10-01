@@ -140,6 +140,72 @@ void main() {
       });
     });
 
+    group('move', () {
+      test('moves an active zone down and gives the zones between it new positions', () {
+        final existing = zones([zone('zone-1', '로비', 0), zone('zone-2', '복도', 1), zone('zone-3', '탕비실', 2)]);
+
+        expect(existing.move(from: 0, to: 2).all, [
+          zone('zone-2', '복도', 0),
+          zone('zone-3', '탕비실', 1),
+          zone('zone-1', '로비', 2),
+        ]);
+      });
+
+      test('moves an active zone up', () {
+        final existing = zones([zone('zone-1', '로비', 0), zone('zone-2', '복도', 1), zone('zone-3', '탕비실', 2)]);
+
+        expect(existing.move(from: 2, to: 0).active.map((zone) => zone.id), ['zone-3', 'zone-1', 'zone-2']);
+      });
+
+      test('counts the active zones only and keeps a removed zone in its place', () {
+        final existing = zones([
+          zone('zone-1', '로비', 0),
+          zone('zone-2', '복도', 1, isActive: false),
+          zone('zone-3', '탕비실', 2),
+          zone('zone-4', '화장실', 3),
+        ]);
+
+        expect(existing.move(from: 2, to: 0).all, [
+          zone('zone-4', '화장실', 0),
+          zone('zone-2', '복도', 1, isActive: false),
+          zone('zone-1', '로비', 2),
+          zone('zone-3', '탕비실', 3),
+        ]);
+      });
+
+      test('gives every zone its own position when zones shared one', () {
+        final existing = zones([zone('zone-a', '로비', 4), zone('zone-b', '복도', 4), zone('zone-c', '탕비실', 9)]);
+
+        expect(existing.move(from: 1, to: 0).all, [
+          zone('zone-b', '복도', 0),
+          zone('zone-a', '로비', 1),
+          zone('zone-c', '탕비실', 2),
+        ]);
+      });
+
+      test('keeps the order when a zone moves to its own place', () {
+        final existing = zones([zone('zone-1', '로비', 0), zone('zone-2', '복도', 1)]);
+
+        expect(existing.move(from: 1, to: 1), existing);
+      });
+
+      test('does not change the list it is called on', () {
+        final existing = zones([zone('zone-1', '로비', 0), zone('zone-2', '복도', 1)]);
+
+        existing.move(from: 0, to: 1);
+
+        expect(existing.all, [zone('zone-1', '로비', 0), zone('zone-2', '복도', 1)]);
+      });
+
+      test('refuses an index that is not an index of the active zones', () {
+        final existing = zones([zone('zone-1', '로비', 0), zone('zone-2', '복도', 1, isActive: false)]);
+
+        expect(() => existing.move(from: 1, to: 0), throwsRangeError);
+        expect(() => existing.move(from: 0, to: 1), throwsRangeError);
+        expect(() => existing.move(from: -1, to: 0), throwsRangeError);
+      });
+    });
+
     test('is equal to a list of the same client with equal zones', () {
       final a = zones([zone('zone-1', '로비', 0), zone('zone-2', '복도', 1)]);
       final b = zones([zone('zone-2', '복도', 1), zone('zone-1', '로비', 0)]);

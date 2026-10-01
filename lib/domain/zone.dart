@@ -28,6 +28,8 @@ final class Zone {
 
   Zone deactivate() => Zone(id: id, clientId: clientId, name: name, position: position, isActive: false);
 
+  Zone moveTo(int position) => Zone(id: id, clientId: clientId, name: name, position: position, isActive: isActive);
+
   @override
   bool operator ==(Object other) =>
       other is Zone &&
