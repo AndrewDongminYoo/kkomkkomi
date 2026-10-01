@@ -99,9 +99,9 @@ When that directory is missing, `flutter analyze` reports `AppLocalizations` as 
 
 Trunk installs a format hook on commit and a check hook on push (`.trunk/trunk.yaml`).
 
-Codex is the only hosted reviewer, because CodeRabbit is not attached to this repository.
-The operator ruled on 2026-10-01 that a `/pr-loop` merge here needs three things: a clean Codex verdict on the head commit, every check passing, and no unresolved review thread.
-The loop does not wait for CodeRabbit, and its report states that one reviewer ran.
+Codex reviews every pull request, and CodeRabbit was attached on 2026-10-01 after pull request 1.
+`/pr-loop` keeps its usual terminal conditions, so a CodeRabbit verdict or skip notice counts when one arrives.
+If CodeRabbit posts nothing on a pull request, the operator's ruling of 2026-10-01 applies: the merge needs a clean Codex verdict on the head commit, every check passing, and no unresolved review thread, and the report states that one reviewer ran.
 
 ## Architecture
 
