@@ -113,3 +113,9 @@ app.*.map.json
 
 # Generated l10n files
 lib/l10n/gen/
+
+# FlutterFire
+ios/Runner/GoogleService-Info.plist
+android/app/google-services.json
+macos/Runner/GoogleService-Info.plist
+lib/firebase_options.dart
