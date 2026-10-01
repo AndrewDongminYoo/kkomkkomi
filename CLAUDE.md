@@ -26,6 +26,7 @@ Firebase is for the production flavor only.
 Android skips the google-services task for the development and staging variants, and only the production entry point may start Firebase.
 `.gitignore` keeps the generated FlutterFire files out of the repository, so tracked code must not import `lib/firebase_options.dart`.
 A fresh clone needs `flutterfire configure` before a production build for Android, iOS, or macOS.
+After `flutterfire configure`, run `dart format lib/firebase_options.dart`, because the local format check reads that file and CI never sees it.
 
 ### Milestones
 
