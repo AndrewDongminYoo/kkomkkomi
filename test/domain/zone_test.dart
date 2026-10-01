@@ -30,6 +30,10 @@ void main() {
       expect(zone(position: 2).deactivate(), zone(position: 2, isActive: false));
     });
 
+    test('moveTo keeps every field but position', () {
+      expect(zone(position: 2, isActive: false).moveTo(5), zone(position: 5, isActive: false));
+    });
+
     test('is equal to a zone with the same fields', () {
       expect(zone(), zone());
       expect(zone().hashCode, zone().hashCode);

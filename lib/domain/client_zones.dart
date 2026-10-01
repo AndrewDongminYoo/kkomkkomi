@@ -61,6 +61,26 @@ final class ClientZones {
   /// Removes the zone with [zoneId] from [active] and keeps it in [all].
   ClientZones remove(String zoneId) => _replace(zoneId, (zone) => zone.deactivate());
 
+  /// Moves the active zone at the index [from] to the index [to], where both count the [active] zones only.
+  ///
+  /// A removed zone keeps its place among the zones around it, and every zone gets a new position, so that no two
+  /// zones share one.
+  /// Throws a [RangeError] when [from] or [to] is not an index of [active].
+  ClientZones move({required int from, required int to}) {
+    final order = active.toList();
+    RangeError.checkValidIndex(from, order, 'from');
+    RangeError.checkValidIndex(to, order, 'to');
+    order.insert(to, order.removeAt(from));
+    final moved = order.iterator;
+    var position = 0;
+    return ClientZones(
+      clientId: clientId,
+      zones: [
+        for (final zone in all) (zone.isActive ? (moved..moveNext()).current : zone).moveTo(position++),
+      ],
+    );
+  }
+
   ClientZones _replace(String zoneId, Zone Function(Zone zone) change) {
     if (!all.any((zone) => zone.id == zoneId)) {
       throw ArgumentError.value(zoneId, 'zoneId', 'The client has no such zone');

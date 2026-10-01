@@ -96,6 +96,20 @@ void main() {
       expect(await database.query('zones'), hasLength(2));
     });
 
+    test('saves the new order of moved zones over the stored order', () async {
+      final zones = ClientZones(
+        clientId: 'client-1',
+        zones: [zone('zone-1', '로비', 0), zone('zone-2', '창고', 1, isActive: false), zone('zone-3', '복도', 2)],
+      );
+      await repository.save(client('client-1'), zones: zones);
+
+      await repository.save(client('client-1'), zones: zones.move(from: 1, to: 0));
+
+      final stored = await repository.zonesOf('client-1');
+      expect(stored.active.map((zone) => zone.id), ['zone-3', 'zone-1']);
+      expect(stored, zones.move(from: 1, to: 0));
+    });
+
     test('leaves the stored zones as they are when no zones are given', () async {
       final zones = ClientZones(clientId: 'client-1', zones: [zone('zone-1', '로비', 0)]);
       await repository.save(client('client-1'), zones: zones);

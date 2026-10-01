@@ -2,6 +2,7 @@ export 'client.dart';
 export 'client_zones.dart';
 export 'company_profile.dart';
 export 'domain_exception.dart';
+export 'equality.dart';
 export 'name.dart';
 export 'photo_ref.dart';
 export 'previous_photos.dart';
