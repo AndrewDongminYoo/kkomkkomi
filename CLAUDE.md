@@ -36,6 +36,12 @@ Android skips the google-services task for the development and staging variants,
 A fresh clone needs `flutterfire configure` before a production build for Android, iOS, or macOS.
 After `flutterfire configure`, run `dart format lib/firebase_options.dart`, because the local format check reads that file and CI never sees it.
 
+The deployed security rules are not the tracked ones.
+Since pull request 12 merged on 2026-10-01, `firestore.rules` and `storage.rules` let anyone read a client page, its reports, and their photos by page ID while the page is open.
+The rules deployed to the project still deny every read and write.
+Do not deploy rules to make the project match the repository: a deploy is the operator's decision, and the first deploy of `storage.rules` asks to grant the IAM role that its `firestore.get` needs.
+Until that deploy, a publish from the production flavor fails at the first write.
+
 ### Milestones
 
 Keep the work inside the milestone in progress.

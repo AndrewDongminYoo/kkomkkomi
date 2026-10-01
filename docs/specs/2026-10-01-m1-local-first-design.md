@@ -114,6 +114,7 @@ The Windows build must keep passing in CI, and Windows runtime behavior is not a
 - Anonymous sign-in is enabled.
 - Hosting serves `web/` at `https://kkomkkomi.web.app`, and the landing page is live there.
 - Storage is set up, and its rules deny every read and write. The operator set it up in the Firebase console later on 2026-10-01, after the first version of this section said it was absent.
+- The two items above describe the deployed rules. Pull request 12 changed the tracked `firestore.rules` and `storage.rules` to the rules in "Security rules" below, and nothing deployed them. The operator deploys them after review.
 
 ### Decisions
 
