@@ -86,7 +86,7 @@ function report() {
   };
 }
 
-function photoPath(pageId, fileName = "zone-1-before.jpg") {
+function photoPath(pageId, fileName = "zone-1-before-photo-1.jpg") {
   return `clientPages/${pageId}/${visit}/${fileName}`;
 }
 
@@ -315,7 +315,7 @@ describe("storage", () => {
   });
 
   test("the owner uploads a JPEG, and a non-owner and a reader cannot", async () => {
-    const path = photoPath(openPage, "zone-2-after.jpg");
+    const path = photoPath(openPage, "zone-2-after-photo-2.jpg");
     const metadata = { contentType: "image/jpeg" };
     await assertSucceeds(
       signedIn(owner).storage().ref(path).put(jpeg, metadata),
@@ -352,12 +352,12 @@ describe("storage", () => {
     const storage = signedIn(owner).storage();
     await assertFails(
       storage
-        .ref(photoPath(revokedPage, "zone-2-after.jpg"))
+        .ref(photoPath(revokedPage, "zone-2-after-photo-2.jpg"))
         .put(jpeg, metadata),
     );
     await assertFails(
       storage
-        .ref(photoPath("missing-page", "zone-2-after.jpg"))
+        .ref(photoPath("missing-page", "zone-2-after-photo-2.jpg"))
         .put(jpeg, metadata),
     );
   });

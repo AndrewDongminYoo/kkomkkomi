@@ -231,11 +231,33 @@ void main() {
     });
   });
 
-  test('photoObjectPath depends only on the page, the visit, the zone, and the slot', () {
-    expect(
-      photoObjectPath(pageId: 'page-1', visitId: 'visit-1', zoneId: 'zone-1', slot: PhotoSlot.after),
-      'clientPages/page-1/visit-1/zone-1-after.jpg',
-    );
+  group('photoObjectPath', () {
+    test('depends only on the page, the visit, the zone, the slot, and the name of the photo file', () {
+      expect(
+        photoObjectPath(
+          pageId: 'page-1',
+          visitId: 'visit-1',
+          zoneId: 'zone-1',
+          slot: PhotoSlot.after,
+          photo: PhotoRef('photos/visit-1/3f9a.jpg'),
+        ),
+        'clientPages/page-1/visit-1/zone-1-after-3f9a.jpg',
+      );
+    });
+
+    test('gives a retake of a slot, which is a new photo file, another object', () {
+      String path(String file) => photoObjectPath(
+        pageId: 'page-1',
+        visitId: 'visit-1',
+        zoneId: 'zone-1',
+        slot: PhotoSlot.before,
+        photo: PhotoRef('photos/visit-1/$file'),
+      );
+
+      expect(path('first.jpg'), isNot(path('second.jpg')));
+      expect(path('first.jpeg'), path('first.jpg'));
+      expect(path('first'), 'clientPages/page-1/visit-1/zone-1-before-first.jpg');
+    });
   });
 
   group('publishVisit', () {
@@ -251,8 +273,8 @@ void main() {
       expect(job.pageId, page.id);
       expect(job.visitId, 'visit-1');
       expect(page.createdAt, start);
-      final before = 'clientPages/${page.id}/visit-1/zone-1-before.jpg';
-      final after = 'clientPages/${page.id}/visit-1/zone-1-after.jpg';
+      final before = 'clientPages/${page.id}/visit-1/zone-1-before-before.jpg';
+      final after = 'clientPages/${page.id}/visit-1/zone-1-after-after.jpg';
       expect(publisher.calls, [
         'writePage ${page.id}',
         'uploadPhoto $before',
@@ -504,6 +526,65 @@ void main() {
       });
     }
 
+    test(
+      'a retake publishes the new photo to its own object, and an upload of the old photo cannot replace it',
+      () async {
+        final queue = newQueue();
+        final first = await queue.publishVisit('visit-2');
+        await settle();
+        final oldObject = 'clientPages/${first.pageId}/visit-2/zone-1-before-before.jpg';
+        expect(publisher.objects.keys, [oldObject]);
+
+        final retaken = PhotoRef('photos/visit-2/retaken.jpg');
+        final retakenBytes = Uint8List.fromList([0xff, 0xd8, 0xff, 0x01]);
+        photoStore.contents[retaken] = retakenBytes;
+        await repositories.visits.save(
+          visit2.withRecord(visit2.zoneRecords.single.withPhoto(PhotoSlot.before, retaken)),
+        );
+        publisher.calls.clear();
+        await queue.publishVisit('visit-2');
+        await settle();
+
+        final newObject = 'clientPages/${first.pageId}/visit-2/zone-1-before-retaken.jpg';
+        expect(publisher.calls, [
+          'writePage ${first.pageId}',
+          'uploadPhoto $newObject',
+          'writeReport ${first.pageId}/visit-2',
+          // The report no longer names the old object, so it is deleted after the report.
+          'deletePhoto $oldObject',
+        ]);
+        expect(publisher.reports['${first.pageId}/visit-2']?.zones.single.beforePhoto, newObject);
+        expect(publisher.objects, {newObject: retakenBytes});
+        expect(await repositories.publishing.uploadedObjects(first.pageId), [newObject]);
+      },
+    );
+
+    test('an old object that a delete did not remove is deleted at the next run, after the report', () async {
+      final queue = newQueue();
+      final first = await queue.publishVisit('visit-2');
+      await settle();
+      final retaken = PhotoRef('photos/visit-2/retaken.jpg');
+      await repositories.visits.save(
+        visit2.withRecord(visit2.zoneRecords.single.withPhoto(PhotoSlot.before, retaken)),
+      );
+      publisher.failures['deletePhoto'] = [_transient];
+
+      final second = await queue.publishVisit('visit-2');
+      await settle();
+      expect((await jobOf(second)).status, PublishJobStatus.pending);
+      publisher.calls.clear();
+      clock.time = start.add(const Duration(seconds: 5));
+      activeTimers().single.fire();
+      await settle();
+
+      expect(publisher.calls, [
+        'writePage ${first.pageId}',
+        'writeReport ${first.pageId}/visit-2',
+        'deletePhoto clientPages/${first.pageId}/visit-2/zone-1-before-before.jpg',
+      ]);
+      expect((await jobOf(second)).status, PublishJobStatus.done);
+    });
+
     test('a photo file that a retake deleted while the job ran: the job runs again with the new photo', () async {
       publisher.gate = Completer<void>();
       final queue = newQueue();
@@ -685,8 +766,8 @@ void main() {
       expect(await repositories.publishing.openPageOf('client-1'), isNull);
       expect(publisher.calls, [
         'revokePage $pageId',
-        'deletePhoto clientPages/$pageId/visit-1/zone-1-after.jpg',
-        'deletePhoto clientPages/$pageId/visit-1/zone-1-before.jpg',
+        'deletePhoto clientPages/$pageId/visit-1/zone-1-after-after.jpg',
+        'deletePhoto clientPages/$pageId/visit-1/zone-1-before-before.jpg',
       ]);
       expect(
         publisher.revokedPages[pageId],
@@ -717,7 +798,7 @@ void main() {
       final pageId = published.pageId;
       expect(publisher.calls, [
         'revokePage $pageId',
-        'deletePhoto clientPages/$pageId/visit-1/zone-1-before.jpg',
+        'deletePhoto clientPages/$pageId/visit-1/zone-1-before-before.jpg',
       ]);
       expect(await repositories.publishing.uploadedObjects(pageId), isEmpty);
     });

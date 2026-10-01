@@ -20,16 +20,25 @@ import 'package:kkomkkomi/domain/domain.dart';
 /// Starts a timer that calls [callback] once after [delay], as `Timer.new` does.
 typedef StartTimer = Timer Function(Duration delay, void Function() callback);
 
-/// The path of the object that holds the photo in [slot] of the zone with [zoneId], in the report of the visit with
-/// [visitId] under the page with [pageId].
+/// The path of the object that holds [photo], the photo in [slot] of the zone with [zoneId], in the report of the
+/// visit with [visitId] under the page with [pageId].
 ///
-/// The path depends on nothing else, so a repeated upload of a photo replaces the object that an earlier upload made.
+/// The path depends on nothing else, so a repeated upload of one photo file writes the object that an earlier upload
+/// wrote, with the same bytes. The name of the photo file is part of the path, because a retake is a new file: an
+/// upload of the old photo that is still on its way after a timeout then writes its own object, which the report no
+/// longer names, and never the object of the retake.
 String photoObjectPath({
   required String pageId,
   required String visitId,
   required String zoneId,
   required PhotoSlot slot,
-}) => 'clientPages/$pageId/$visitId/$zoneId-${slot.name}.jpg';
+  required PhotoRef photo,
+}) {
+  final fileName = photo.path.substring(photo.path.lastIndexOf('/') + 1);
+  final extension = fileName.lastIndexOf('.');
+  final name = extension > 0 ? fileName.substring(0, extension) : fileName;
+  return 'clientPages/$pageId/$visitId/$zoneId-${slot.name}-$name.jpg';
+}
 
 /// Publishes visits as reports under the client pages, and revokes and reissues client pages.
 ///
@@ -323,13 +332,30 @@ final class PublishQueue {
         report: PublishedReport(visitDate: visit.visitDate, zones: zones),
       ),
     );
+    // An object of the visit that the report no longer names, such as the photo before a retake, is deleted after
+    // the report, so that no report ever names a deleted object.
+    final named = {
+      for (final zone in zones) ...[?zone.beforePhoto, ?zone.afterPhoto],
+    };
+    final ofVisit = 'clientPages/${page.id}/${visit.id}/';
+    for (final objectPath in await _repository.uploadedObjects(page.id)) {
+      if (!objectPath.startsWith(ofVisit) || named.contains(objectPath)) continue;
+      await _step(_publisher.deletePhoto(objectPath));
+      await _repository.removeUploadedPhoto(pageId: page.id, objectPath: objectPath);
+    }
   }
 
   /// Uploads the photo in [slot] of [record] and returns the path of its object, or null when the slot is empty.
   Future<String?> _upload(String pageId, String visitId, ZoneRecord record, PhotoSlot slot) async {
     final photo = record.photoIn(slot);
     if (photo == null) return null;
-    final objectPath = photoObjectPath(pageId: pageId, visitId: visitId, zoneId: record.zoneId, slot: slot);
+    final objectPath = photoObjectPath(
+      pageId: pageId,
+      visitId: visitId,
+      zoneId: record.zoneId,
+      slot: slot,
+      photo: photo,
+    );
     if (await _repository.uploadedPhoto(pageId: pageId, objectPath: objectPath) == photo.path) return objectPath;
     final Uint8List bytes;
     try {
