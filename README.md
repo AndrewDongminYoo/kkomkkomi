@@ -82,9 +82,9 @@ This project follows the [official internationalization guide for Flutter][inter
 ```arb
 {
     "@@locale": "en",
-    "counterAppBarTitle": "Counter",
-    "@counterAppBarTitle": {
-        "description": "Text shown in the AppBar of the Counter Page"
+    "clientListTitle": "Clients",
+    "@clientListTitle": {
+        "description": "Title of the home screen, which lists the clients"
     },
     "helloWorld": "Hello World",
     "@helloWorld": {
@@ -139,9 +139,9 @@ Update the `CFBundleLocalizations` array in the `Info.plist` at `ios/Runner/Info
 ```arb
 {
     "@@locale": "ko",
-    "counterAppBarTitle": "카운터",
-    "@counterAppBarTitle": {
-        "description": "카운터 페이지의 AppBar에 표시되는 텍스트"
+    "clientListTitle": "거래처",
+    "@clientListTitle": {
+        "description": "거래처 목록을 보여주는 홈 화면의 제목"
     },
     "helloWorld": "안녕하세요",
     "@helloWorld": {
