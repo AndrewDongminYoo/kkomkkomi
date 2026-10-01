@@ -3,5 +3,13 @@
     "counterAppBarTitle": "카운터",
     "@counterAppBarTitle": {
         "description": "카운터 페이지의 AppBar에 표시되는 텍스트"
+    },
+    "startupFailureMessage": "저장한 기록을 열지 못했어요. 다시 시도해 주세요.",
+    "@startupFailureMessage": {
+        "description": "앱을 시작할 때 저장한 데이터를 열지 못하면 앱 대신 표시되는 안내 문구"
+    },
+    "startupFailureRetryButton": "다시 시도하기",
+    "@startupFailureRetryButton": {
+        "description": "시작 실패 후 저장한 데이터를 다시 여는 버튼의 라벨"
     }
 }
