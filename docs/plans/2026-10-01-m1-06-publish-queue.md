@@ -42,3 +42,14 @@ A worker publishes a visit, and the photos and the report document reach the bac
 - Rules tests cover: a reader gets one page by ID, a reader cannot list pages, a reader cannot read a revoked page, a non-owner cannot write, and a non-JPEG or oversize upload is refused.
 - `merry run check` passes.
 - `merry run coverage` passes at 100 percent.
+
+## Reconciliation, 2026-10-02
+
+This brief is the record of what was approved. The shipped code of pull request 12 (`5e1f3eb`) is the authority where the two differ, and the pull request body lists every decision.
+
+- "A photo upload uses a path that depends only on the page, the visit, the zone, and the slot": the path also carries the local file name of the photo, `clientPages/<page>/<visit>/<zone>-<slot>-<file>.jpg`. An upload that timed out kept running and could overwrite a retake at a fixed path (`6a206ec`). Each step is still safe to repeat, which is what the requirement was for.
+- The queue saves a job only while its row is still pending and has the same generation, so a revoke or a restart during a run is not overwritten (`b5fe70a`, `4d95b44`). The schema is version 2.
+- `publishedAt` and `revokedAt` come from the device clock, fixed before the first attempt, so a retry writes the same time (`1681d7a`).
+- Every upload path is recorded before the upload starts, so cleanup and revoke delete every object that may exist (`4d95b44`). Issue #13 holds the case that remains: an upload that finishes after a revoke.
+- The Storage rules read the client page through a cross-service `firestore.get`, which needs an IAM grant at the first deploy.
+- The rules in this pull request are not deployed. `CLAUDE.md` records that gap.

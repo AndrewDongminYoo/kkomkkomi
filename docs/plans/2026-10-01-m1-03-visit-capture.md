@@ -40,3 +40,9 @@ A worker starts a visit for a client and a date, then takes a before photo and a
 - A test pins that the stored path is relative.
 - `merry run check` passes.
 - `merry run coverage` passes at 100 percent.
+
+## Reconciliation, 2026-10-02
+
+This brief is the record of what was approved. The shipped code of pull request 6 (`1f9f527`) is the authority where the two differ.
+
+- "The camera usage descriptions that iOS and Android need": Android got no manifest entry, because `image_picker` takes the photo through the system camera app with an intent and needs no camera permission of its own. iOS got `NSCameraUsageDescription` and `NSPhotoLibraryUsageDescription`, in Korean only. Issue #8 holds the localization of those strings.
