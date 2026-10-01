@@ -105,6 +105,9 @@ Other code imports a feature through its barrel, for example `package:kkomkkomi/
 ## Documents
 
 Specs go in `docs/specs/`, implementation plans in `docs/plans/`, and working notes in `docs/notes/`.
+`docs/specs/2026-10-01-m1-local-first-design.md` is the design of the M1 build: its units, domain model, screens, and what it leaves out until a Firebase project exists.
+Read it before feature work and cite it instead of restating it.
+The briefs under `docs/plans/` split that design into pull requests.
 
 ## Conventions
 
