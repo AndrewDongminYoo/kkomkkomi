@@ -72,6 +72,36 @@ jobs:
       - name: Build the Windows app
         run: flutter build windows --release --target lib/main_production.dart
 
+  rules:
+    # Tests firestore.rules and storage.rules in the Firebase emulators. The
+    # project ID starts with demo-, which keeps the emulators away from every
+    # live project. The emulators need Java 21. The Firebase CLI is installed
+    # here and not through the lockfile of test/rules, because its dependency
+    # tree is large and only this job needs it.
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: test/rules/package-lock.json
+
+      - uses: actions/setup-java@de7274f081f381c8f8158605e0321c36c376e2e6 # v6.0.1
+        with:
+          distribution: temurin
+          java-version: 21
+
+      - name: Install the rules test packages
+        run: npm ci --prefix test/rules
+
+      - name: Install the Firebase CLI
+        run: npm install --global firebase-tools@15.24.0
+
+      - name: Test the security rules in the emulators
+        run: firebase emulators:exec --project demo-kkomkkomi --only firestore,storage "npm --prefix test/rules test"
+
   spell-check:
     uses: VeryGoodOpenSource/very_good_workflows/.github/workflows/spell_check.yml@61d25935870f12a1f2c23f2a04d5f193c83f4e5d # v1.21.1
     with:

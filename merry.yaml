@@ -59,6 +59,15 @@ postcoverage:
   (description): Generates an HTML coverage report from the coverage data.
   (scripts): genhtml coverage/lcov.info -o coverage/html --quiet
 
+rules:
+  # Not part of `check`: the Firebase emulators need Java 21 and the Firebase
+  # CLI. The project ID starts with demo-, which keeps the emulators away from
+  # every live project. CI runs the same command in the `rules` job.
+  (description): Tests firestore.rules and storage.rules in the Firebase emulators.
+  (scripts):
+    - npm ci --prefix test/rules
+    - firebase emulators:exec --project demo-kkomkkomi --only firestore,storage "npm --prefix test/rules test"
+
 precheck:
   # `dart format` reads analysis_options.yaml, whose `include:` entries are
   # package URIs, and analysis needs lib/l10n/gen, which `flutter pub get`
