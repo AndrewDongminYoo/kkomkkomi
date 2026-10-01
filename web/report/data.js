@@ -68,9 +68,14 @@ export function createReader({
         `The request did not reach Firestore: ${error}`,
       );
     }
-    // A revoked page and a page ID that does not exist both fail the rules, so both read as unavailable.
-    if (response.status === 403)
+    // A revoked page and a page ID that does not exist both fail the rules, so both read as unavailable. Google
+    // answers 403 also for an API key that may not call Firestore, and then names the reason in an `ErrorInfo`
+    // detail, which the rules never give: that read failed, and the link is not revoked.
+    if (response.status === 403) {
+      if (await namesErrorReason(response))
+        throw new ReadError("failed", "Google refused the request itself");
       throw new ReadError("unavailable", "The rules refused the read");
+    }
     if (response.status === 404)
       throw new ReadError("missing", "No document has this path");
     if (!response.ok)
@@ -113,12 +118,26 @@ export function createReader({
   };
 }
 
+/** Whether the body of a failed `response` names a reason in an `ErrorInfo` detail, such as a blocked API key. */
+async function namesErrorReason(response) {
+  try {
+    const body = await response.json();
+    const details = body?.error?.details;
+    return (
+      Array.isArray(details) &&
+      details.some((detail) => typeof detail?.reason === "string")
+    );
+  } catch {
+    return false;
+  }
+}
+
 /** The reports newest visit first, and of one date the one published last first. */
 export function sortNewestFirst(reports) {
+  // A timestamp of the REST API has 0, 3, 6, or 9 digits of fractions of a second, so it is compared as a time.
+  const timeOf = (report) => Date.parse(report.publishedAt) || 0;
   return [...reports].sort(
-    (a, b) =>
-      b.visitDate.localeCompare(a.visitDate) ||
-      b.publishedAt.localeCompare(a.publishedAt),
+    (a, b) => b.visitDate.localeCompare(a.visitDate) || timeOf(b) - timeOf(a),
   );
 }
 

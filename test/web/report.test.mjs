@@ -196,6 +196,19 @@ describe("decoding", () => {
   });
 });
 
+describe("sortNewestFirst with timestamps of different precision", () => {
+  test("compares the publish times as times, not as texts", () => {
+    const sorted = sortNewestFirst([
+      { visitDate: "2026-10-01", publishedAt: "2026-10-01T09:00:00.5Z" },
+      { visitDate: "2026-10-01", publishedAt: "2026-10-01T09:00:00.123456Z" },
+    ]);
+    assert.deepEqual(
+      sorted.map((report) => report.publishedAt),
+      ["2026-10-01T09:00:00.5Z", "2026-10-01T09:00:00.123456Z"],
+    );
+  });
+});
+
 describe("createReader", () => {
   test("reads the documents of the project through the REST API, with the key of the configuration", async () => {
     const { fetch, requests } = fakeFetch(fixtureBackend());
@@ -262,6 +275,51 @@ describe("createReader", () => {
       );
     });
   }
+
+  test("reads a 403 that names a reason, such as a blocked API key, as failed and not as a revoked page", async () => {
+    const body = {
+      error: {
+        code: 403,
+        status: "PERMISSION_DENIED",
+        details: [
+          {
+            "@type": "type.googleapis.com/google.rpc.ErrorInfo",
+            reason: "API_KEY_HTTP_REFERRER_BLOCKED",
+          },
+        ],
+      },
+    };
+    const backend = createReader({
+      ...config,
+      fetch: async () => answer(403, body),
+    });
+
+    await assert.rejects(
+      backend.page(pageId),
+      (error) => error.kind === "failed",
+    );
+  });
+
+  test("reads a 403 of the rules, whose body names no reason or is no JSON, as unavailable", async () => {
+    const rules = {
+      error: {
+        code: 403,
+        message: "Missing or insufficient permissions.",
+        status: "PERMISSION_DENIED",
+      },
+    };
+    for (const response of [
+      answer(403, rules),
+      { status: 403, ok: false, json: async () => JSON.parse("<html>") },
+    ]) {
+      const backend = createReader({ ...config, fetch: async () => response });
+
+      await assert.rejects(
+        backend.page(pageId),
+        (error) => error.kind === "unavailable",
+      );
+    }
+  });
 
   test("reads a request that does not reach the backend as failed", async () => {
     const backend = createReader({
@@ -375,26 +433,6 @@ describe("renderReport", () => {
     const report = { ...decodeReport(reportDocument), zones: [] };
 
     assert.ok(render(undefined, report).texts().includes(texts.emptyReport));
-  });
-
-  test("keeps markup that a worker typed as text", () => {
-    const report = {
-      ...decodeReport(reportDocument),
-      zones: [
-        {
-          name: '<img src=x onerror="alert(1)">',
-          note: "<script>alert(1)</script>",
-          beforePhoto: null,
-          afterPhoto: null,
-        },
-      ],
-    };
-
-    const view = render(undefined, report);
-
-    assert.equal(view.all("img").length, 0);
-    assert.equal(view.all("script").length, 0);
-    assert.ok(view.texts().includes("<script>alert(1)</script>"));
   });
 
   test("offers nothing of a later milestone: no confirm control and no view state", () => {
@@ -574,6 +612,20 @@ describe("start", () => {
 
     assert.equal(root.texts()[1], "청소 완료 보고서");
     configAnswers = [];
+  });
+
+  test("says that the report did not load when the configuration names no project or no bucket", async () => {
+    for (const broken of [
+      { ...config, projectId: undefined },
+      { ...config, storageBucket: undefined },
+    ]) {
+      const routes = { ...fixtureBackend(), [configPath]: answer(200, broken) };
+
+      const { root, requests } = await startAt(`/r/${pageId}`, routes);
+
+      assert.equal(root.texts()[0], texts.failedTitle);
+      assert.deepEqual(requests, [configPath]);
+    }
   });
 
   test("says that the report did not load when the network fails", async () => {

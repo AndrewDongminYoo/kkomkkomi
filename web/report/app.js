@@ -90,6 +90,13 @@ async function readConfig(fetch) {
       `The configuration answered ${response.status}`,
     );
   const { projectId, storageBucket, apiKey } = await response.json();
+  // Without the project or the bucket, every read would name a path that does not exist.
+  if (typeof projectId !== "string" || typeof storageBucket !== "string") {
+    throw new ReadError(
+      "failed",
+      "The configuration names no project or no bucket",
+    );
+  }
   return { projectId, storageBucket, apiKey };
 }
 
