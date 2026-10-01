@@ -1,10 +1,70 @@
 rules_version = '2';
 
+// A client page and its reports are readable without sign-in, by anyone who has the page ID, because a report link
+// is opened from KakaoTalk. The page ID is at least 128 random bits, so the link is hard to guess but not private.
+// Only the account that created a page writes it and its reports, and storage.rules gives its photos the same owner.
 service cloud.firestore {
   match /databases/{database}/documents {
-    // Locked until the report publishing change defines the data model.
-    match /{document=**} {
-      allow read, write: if false;
+    function signedIn() {
+      return request.auth != null;
+    }
+
+    function isPage(data) {
+      return data.keys().hasOnly(['ownerUid', 'companyName', 'clientName', 'createdAt', 'revokedAt'])
+        && data.keys().hasAll(['ownerUid', 'clientName', 'createdAt'])
+        && data.ownerUid is string
+        && data.clientName is string
+        && (data.get('companyName', null) == null || data.companyName is string)
+        && data.createdAt is timestamp
+        && (data.get('revokedAt', null) == null || data.revokedAt is timestamp);
+    }
+
+    function isReport(data) {
+      return data.keys().hasOnly(['visitDate', 'publishedAt', 'zones'])
+        && data.keys().hasAll(['visitDate', 'publishedAt', 'zones'])
+        && data.visitDate is string
+        && data.publishedAt is timestamp
+        && data.zones is list;
+    }
+
+    function pageOf(pageId) {
+      return get(/databases/$(database)/documents/clientPages/$(pageId)).data;
+    }
+
+    // A missing field reads as null, because the read of a missing field fails the rule.
+    function isOpen(page) {
+      return page.get('revokedAt', null) == null;
+    }
+
+    function owns(page) {
+      return signedIn() && page.ownerUid == request.auth.uid;
+    }
+
+    function ownsOpen(page) {
+      return owns(page) && isOpen(page);
+    }
+
+    match /clientPages/{pageId} {
+      // A get and no list: a reader opens one page by its ID and cannot find the IDs of the others.
+      allow get: if isOpen(resource.data);
+      // A page can be created revoked, so that a revoke does not depend on an earlier write that may not have
+      // arrived.
+      allow create: if signedIn()
+        && isPage(request.resource.data)
+        && request.resource.data.ownerUid == request.auth.uid;
+      // The owner stays the owner, and a revoked page stays revoked, because a reissue makes a new page. A repeated
+      // revoke of a revoked page is allowed, so that the step is safe to repeat.
+      allow update: if owns(resource.data)
+        && isPage(request.resource.data)
+        && request.resource.data.ownerUid == resource.data.ownerUid
+        && request.resource.data.createdAt == resource.data.createdAt
+        && (isOpen(resource.data) || !isOpen(request.resource.data));
+
+      match /reports/{visitId} {
+        // The history view of a page lists its reports.
+        allow get, list: if isOpen(pageOf(pageId));
+        allow create, update: if ownsOpen(pageOf(pageId)) && isReport(request.resource.data);
+      }
     }
   }
 }

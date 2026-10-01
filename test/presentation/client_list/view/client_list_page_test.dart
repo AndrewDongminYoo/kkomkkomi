@@ -32,7 +32,12 @@ void main() {
     await tester.pumpApp(
       const ClientListPage(),
       locale: locale,
-      repositories: Repositories(clients: clients, visits: FakeVisitRepository(), companyProfile: companyProfile),
+      repositories: Repositories(
+        clients: clients,
+        visits: FakeVisitRepository(),
+        companyProfile: companyProfile,
+        publishing: MockPublishRepository(),
+      ),
       clock: FixedClock(now),
     );
     await tester.pumpAndSettle();

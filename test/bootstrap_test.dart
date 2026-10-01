@@ -7,6 +7,7 @@ import 'package:kkomkkomi/application/application.dart';
 import 'package:kkomkkomi/bootstrap.dart';
 import 'package:kkomkkomi/presentation/presentation.dart';
 import 'package:material_ui/material_ui.dart';
+import 'package:mocktail/mocktail.dart';
 
 import 'helpers/helpers.dart';
 
@@ -52,6 +53,12 @@ Future<void> _settle(WidgetTester tester) async {
   await tester.pump();
 }
 
+/// A network monitor that fails when the queue listens to it.
+class _BrokenNetworkMonitor implements NetworkMonitor {
+  @override
+  Stream<void> get restored => throw StateError('no plugin');
+}
+
 /// The builder of the entry points.
 App _app(Repositories repositories, Identity identity) => App(repositories: repositories, identity: identity);
 
@@ -79,7 +86,13 @@ void main() {
       await _keepingGlobals(() async {
         final repositories = mockRepositories();
 
-        await bootstrap(_app, identity: FakeIdentity(), openRepositories: () async => repositories);
+        await bootstrap(
+          _app,
+          publisher: const UnavailablePublisher(),
+          networkMonitor: FakeNetworkMonitor(),
+          identity: FakeIdentity(),
+          openRepositories: () async => repositories,
+        );
         await tester.pump();
 
         expect(tester.widget<App>(find.byType(App)).repositories, same(repositories));
@@ -91,7 +104,13 @@ void main() {
       await _keepingGlobals(() async {
         final identity = FakeIdentity(userId: 'user-1');
 
-        await bootstrap(_app, identity: identity, openRepositories: () async => mockRepositories());
+        await bootstrap(
+          _app,
+          publisher: const UnavailablePublisher(),
+          networkMonitor: FakeNetworkMonitor(),
+          identity: identity,
+          openRepositories: () async => mockRepositories(),
+        );
         await tester.pump();
 
         expect(identity.calls, 1);
@@ -104,7 +123,13 @@ void main() {
       await _keepingGlobals(() async {
         final identity = FakeIdentity();
 
-        await bootstrap(_app, identity: identity, openRepositories: () async => mockRepositories());
+        await bootstrap(
+          _app,
+          publisher: const UnavailablePublisher(),
+          networkMonitor: FakeNetworkMonitor(),
+          identity: identity,
+          openRepositories: () async => mockRepositories(),
+        );
         await tester.pump();
 
         expect(identity.calls, 1);
@@ -120,7 +145,13 @@ void main() {
         await _keepingGlobals(() async {
           final identity = FakeIdentity()..failure = failure;
 
-          await bootstrap(_app, identity: identity, openRepositories: () async => mockRepositories());
+          await bootstrap(
+            _app,
+            publisher: const UnavailablePublisher(),
+            networkMonitor: FakeNetworkMonitor(),
+            identity: identity,
+            openRepositories: () async => mockRepositories(),
+          );
           await _settle(tester);
 
           expect(identity.calls, 1);
@@ -136,7 +167,15 @@ void main() {
         final identity = FakeIdentity()..gate = Completer<void>();
 
         // A `bootstrap` that waited for the sign-in would never answer, so the test does not wait for it either.
-        unawaited(bootstrap(_app, identity: identity, openRepositories: () async => mockRepositories()));
+        unawaited(
+          bootstrap(
+            _app,
+            publisher: const UnavailablePublisher(),
+            networkMonitor: FakeNetworkMonitor(),
+            identity: identity,
+            openRepositories: () async => mockRepositories(),
+          ),
+        );
         await _settle(tester);
 
         expect(identity.calls, 1);
@@ -144,9 +183,52 @@ void main() {
       });
     });
 
+    testWidgets('starts the publish queue on the opened repositories', (tester) async {
+      await _keepingGlobals(() async {
+        final repositories = mockRepositories();
+        final network = FakeNetworkMonitor();
+
+        await bootstrap(
+          _app,
+          identity: FakeIdentity(),
+          publisher: const UnavailablePublisher(),
+          networkMonitor: network,
+          openRepositories: () async => repositories,
+        );
+        await _settle(tester);
+
+        // The queue listens for the return of the network and reads the jobs that an earlier launch left.
+        expect(network.hasListener, isTrue);
+        verify(repositories.publishing.clearRetryDelays).called(1);
+        verify(repositories.publishing.pendingJobs).called(greaterThanOrEqualTo(1));
+      });
+    });
+
+    testWidgets('opens the app when the publish queue does not start', (tester) async {
+      await _keepingGlobals(() async {
+        await bootstrap(
+          _app,
+          identity: FakeIdentity(),
+          publisher: const UnavailablePublisher(),
+          networkMonitor: _BrokenNetworkMonitor(),
+          openRepositories: () async => mockRepositories(),
+        );
+        await _settle(tester);
+
+        expect(find.byType(ClientListPage), findsOneWidget);
+        expect(tester.takeException(), isNull);
+      });
+    });
+
     testWidgets('installs the bloc observer and an error handler that reports without throwing', (tester) async {
       await _keepingGlobals(() async {
-        await bootstrap(_app, identity: FakeIdentity(), openRepositories: () async => mockRepositories());
+        await bootstrap(
+          _app,
+          publisher: const UnavailablePublisher(),
+          networkMonitor: FakeNetworkMonitor(),
+          identity: FakeIdentity(),
+          openRepositories: () async => mockRepositories(),
+        );
         await tester.pump();
 
         expect(Bloc.observer, isA<AppBlocObserver>());
@@ -179,6 +261,8 @@ void main() {
               return App(repositories: opened, identity: identity);
             },
             identity: identity,
+            publisher: const UnavailablePublisher(),
+            networkMonitor: FakeNetworkMonitor(),
             openRepositories: open,
           ),
         );
@@ -216,7 +300,15 @@ void main() {
           return attempts == 1 ? Future.error(Exception('open failed')) : opening.future;
         }
 
-        unawaited(bootstrap(_app, identity: FakeIdentity(), openRepositories: open));
+        unawaited(
+          bootstrap(
+            _app,
+            publisher: const UnavailablePublisher(),
+            networkMonitor: FakeNetworkMonitor(),
+            identity: FakeIdentity(),
+            openRepositories: open,
+          ),
+        );
         await _settle(tester);
         // The handler that `bootstrap` installed only logs, so a failure inside the retry control would stay unseen.
         final reported = <Object>[];

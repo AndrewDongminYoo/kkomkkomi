@@ -1,12 +1,31 @@
 rules_version = '2';
 
-// Craft rules based on data in your Firestore database
-// allow write: if firestore.get(
-//    /databases/(default)/documents/users/$(request.auth.uid)).data.isAdmin;
+// The photos of a published report, under the client page that firestore.rules describes. A rule here reads that
+// page through `firestore.get`, which needs the IAM role that the Firebase CLI asks to grant at the first deploy of
+// these rules. Without the role, every rule that reads the page denies.
 service firebase.storage {
   match /b/{bucket}/o {
-    match /{allPaths=**} {
-      allow read, write: if false;
+    function pageOf(pageId) {
+      return firestore.get(/databases/(default)/documents/clientPages/$(pageId)).data;
+    }
+
+    // A missing field reads as null, because the read of a missing field fails the rule.
+    function isOpen(page) {
+      return page.get('revokedAt', null) == null;
+    }
+
+    match /clientPages/{pageId}/{visitId}/{fileName} {
+      // A get and no list, while the page is not revoked.
+      allow get: if isOpen(pageOf(pageId));
+      // A photo declares the JPEG content type and has at most 5 MiB. The rules cannot read the bytes, so the app
+      // checks that a photo starts like a JPEG before it uploads one. The app stores a photo at 1600 pixels on each
+      // side at most, with the JPEG quality 80, which is far below the limit.
+      allow create, update: if request.auth != null
+        && pageOf(pageId).ownerUid == request.auth.uid
+        && isOpen(pageOf(pageId))
+        && request.resource.contentType == 'image/jpeg'
+        && request.resource.size <= 5 * 1024 * 1024;
+      allow delete: if request.auth != null && pageOf(pageId).ownerUid == request.auth.uid;
     }
   }
 }

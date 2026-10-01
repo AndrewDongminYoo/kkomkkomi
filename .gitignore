@@ -126,5 +126,11 @@ lib/firebase_options.dart
 # Firebase CLI deploy cache
 .firebase/
 
+# The packages of the security rules tests under test/rules/, and the logs of
+# the emulators that run them
+node_modules/
+firebase-debug.log
+firestore-debug.log
+
 # Worktrees that agent sessions create inside the checkout
 .claude/worktrees/

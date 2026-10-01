@@ -1,0 +1,19 @@
+{
+  "name": "kkomkkomi-rules-tests",
+  "private": true,
+  "description": "Tests of firestore.rules and storage.rules against the Firebase emulators.",
+  "type": "module",
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "test": "node --test"
+  },
+  "devDependencies": {
+    "@firebase/rules-unit-testing": "^5.0.2",
+    "firebase": "^12.19.0"
+  },
+  "overrides": {
+    "@grpc/grpc-js": "^1.14.5"
+  }
+}

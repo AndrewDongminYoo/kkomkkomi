@@ -95,6 +95,7 @@ void main() {
         clients: FakeClientRepository(),
         visits: visits,
         companyProfile: FakeCompanyProfileRepository(),
+        publishing: MockPublishRepository(),
       ),
       photoCapture: photoCapture,
       photoStore: photoStore,

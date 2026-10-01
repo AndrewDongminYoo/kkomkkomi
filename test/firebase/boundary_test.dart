@@ -131,24 +131,28 @@ void main() {
     expect(_trackedLibFilesWhere((source, _) => namesGeneratedOptions(source)), isEmpty);
   });
 
-  // No test runs an entry point: `main` would start the real plugin. So these two tests read the text of the entry
-  // points, and they are what pins which flavor gives `bootstrap` which adapter.
+  // No test runs an entry point: `main` would start the real plugin. So these tests read the text of the entry
+  // points, and they are what pins which flavor gives `bootstrap` which adapters.
   group('the entry points', () {
     String sourceOf(String flavor) => File('lib/main_$flavor.dart').readAsStringSync();
 
-    test('production gives bootstrap the Firebase identity and no other', () {
+    test('production gives bootstrap the Firebase identity and publisher and no other', () {
       final source = sourceOf('production');
 
       expect(source, contains('identity: FirebaseIdentity(),'));
+      expect(source, contains('publisher: FirebasePublisher(),'));
       expect(source, isNot(contains('UnavailableIdentity')));
+      expect(source, isNot(contains('UnavailablePublisher')));
     });
 
     for (final flavor in ['development', 'staging']) {
-      test('$flavor gives bootstrap the unavailable identity and no Firebase', () {
+      test('$flavor gives bootstrap the unavailable identity and publisher and no Firebase', () {
         final source = sourceOf(flavor);
 
         expect(source, contains('identity: const UnavailableIdentity(),'));
+        expect(source, contains('publisher: const UnavailablePublisher(),'));
         expect(source, isNot(contains('FirebaseIdentity')));
+        expect(source, isNot(contains('FirebasePublisher')));
       });
     }
   });
