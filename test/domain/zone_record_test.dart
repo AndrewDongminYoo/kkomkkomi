@@ -50,6 +50,29 @@ void main() {
       expect(record(after: null).photoIn(PhotoSlot.after), isNull);
     });
 
+    test('emptySlots lists the slots without a photo, the before slot first', () {
+      expect(record().emptySlots, isEmpty);
+      expect(record(before: null).emptySlots, [PhotoSlot.before]);
+      expect(record(after: null).emptySlots, [PhotoSlot.after]);
+      expect(record(before: null, after: null).emptySlots, [PhotoSlot.before, PhotoSlot.after]);
+    });
+
+    test('hasNote is true for a note with text, and false for a note of spaces and line breaks', () {
+      expect(record().hasNote, isTrue);
+      expect(record(note: ' 왁스 ').hasNote, isTrue);
+      expect(record(note: '').hasNote, isFalse);
+      expect(record(note: ' \n\t ').hasNote, isFalse);
+    });
+
+    test('hasContent is true for a record with a photo or a note', () {
+      expect(record().hasContent, isTrue);
+      expect(record(after: null, note: '').hasContent, isTrue);
+      expect(record(before: null, note: '').hasContent, isTrue);
+      expect(record(before: null, after: null).hasContent, isTrue);
+      expect(record(before: null, after: null, note: '').hasContent, isFalse);
+      expect(record(before: null, after: null, note: ' \n').hasContent, isFalse);
+    });
+
     test('withPhoto replaces the photo of one slot and keeps the rest', () {
       final retaken = PhotoRef('photos/visit-1/retaken.jpg');
 

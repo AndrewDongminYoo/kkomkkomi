@@ -30,6 +30,18 @@ final class ZoneRecord {
     PhotoSlot.after => afterPhoto,
   };
 
+  /// The slots that hold no photo, in the order of [PhotoSlot.values].
+  List<PhotoSlot> get emptySlots => [
+    for (final slot in PhotoSlot.values)
+      if (photoIn(slot) == null) slot,
+  ];
+
+  /// Whether the note holds text. A note of spaces and line breaks alone holds none.
+  bool get hasNote => note.trim().isNotEmpty;
+
+  /// Whether the record holds a photo or a note, which is what a report can print for the zone.
+  bool get hasContent => beforePhoto != null || afterPhoto != null || hasNote;
+
   /// This record with [photo] in [slot], in place of the photo that it holds there.
   ZoneRecord withPhoto(PhotoSlot slot, PhotoRef photo) => ZoneRecord(
     zoneId: zoneId,
