@@ -1,41 +1,49 @@
 <!doctype html>
-<html>
+<html lang="ko">
   <head>
-    <meta charset="utf8" />
+    <meta charset="utf-8" />
     <meta
       name="viewport"
       content="width=device-width,initial-scale=1,viewport-fit=cover"
     />
-    <style>
-      :root {
-        color-scheme: light;
-        box-sizing: border-box;
-        padding-top: env(safe-area-inset-top, 0px);
-        padding-bottom: env(safe-area-inset-bottom, 0px);
-      }
-      html {
-        scroll-padding-top: env(safe-area-inset-top, 0px);
-      }
-      body {
-        margin: 0;
-        padding: 0;
-        font:
-          14px -apple-system,
-          BlinkMacSystemFont,
-          sans-serif;
-        background: #faf9f5;
-        color: #141413;
-      }
-      img {
-        max-width: 100%;
-      }
-      [hidden]:not([hidden="until-found" i]) {
-        display: none !important;
-      }
-    </style>
-  </head>
-  <body>
     <title>꼼꼬미 | 청소 작업 사진을 거래처 보고서로</title>
+    <meta
+      name="description"
+      content="사무실·상가 정기청소 업체를 위한 작업 보고 서비스입니다. 구역별 전후 사진과 특이사항을 거래처가 한눈에 확인할 수 있는 보고서로 정리합니다."
+    />
+    <!-- A messenger builds the link preview from these tags, and it needs an absolute image URL. -->
+    <meta property="og:type" content="website" />
+    <meta property="og:site_name" content="꼼꼬미" />
+    <meta property="og:locale" content="ko_KR" />
+    <meta property="og:url" content="https://kkomkkomi.web.app/" />
+    <meta
+      property="og:title"
+      content="꼼꼬미 | 청소 작업 사진을 거래처 보고서로"
+    />
+    <meta
+      property="og:description"
+      content="구역별 전후 사진과 특이사항을 거래처가 한눈에 확인할 수 있는 보고서로 정리합니다."
+    />
+    <meta property="og:image" content="https://kkomkkomi.web.app/og.png" />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta
+      property="og:image:alt"
+      content="꼼꼬미: 청소는 꼼꼼하게, 작업 보고는 간단하게. 출입구의 작업 전후를 나란히 보여 주는 예시 보고서."
+    />
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta
+      name="theme-color"
+      content="#faf7f1"
+      media="(prefers-color-scheme: light)"
+    />
+    <meta
+      name="theme-color"
+      content="#121a28"
+      media="(prefers-color-scheme: dark)"
+    />
+    <link rel="manifest" href="manifest.json" />
+    <link rel="apple-touch-icon" href="icons/Icon-192.png" />
     <link
       rel="icon"
       href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%230f7f7a'/%3E%3Cpath d='M9 16.5l5 5 9-10' fill='none' stroke='%23fff' stroke-width='3.2' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E"
@@ -49,13 +57,18 @@
     <style>
       /* Layout: a report sheet is the hero object; sections read as a stack of labelled work records on warm paper. */
       :root {
+        color-scheme: light;
+        padding-top: env(safe-area-inset-top, 0px);
+        padding-bottom: env(safe-area-inset-bottom, 0px);
         --bg: #faf7f1; /* warm white ground */
         --paper: #ffffff; /* report sheet */
         --paper-edge: #e6e0d4; /* sheet rule */
         --ink: #16243b; /* navy body */
         --ink-2: #4b5870; /* secondary */
-        --ink-3: #8a93a5; /* captions */
+        --ink-3: #667085; /* captions */
+        --field-edge: #7f899c; /* input border, 3:1 on the ground and the sheet */
         --teal: #0f7f7a; /* accent */
+        --on-teal: #ffffff; /* text and marks on the accent */
         --teal-ink: #0a5e5a; /* accent on light, for text */
         --teal-soft: #dff2ef; /* accent tint */
         --warn: #9a5b12; /* "예정"/notice labels */
@@ -92,8 +105,10 @@
           --paper-edge: #2c3850;
           --ink: #eef1f6;
           --ink-2: #b6bfd0;
-          --ink-3: #7f8aa1;
+          --ink-3: #8f9ab0;
+          --field-edge: #66728d;
           --teal: #3fb8b1;
+          --on-teal: #121a28;
           --teal-ink: #6fd3cc;
           --teal-soft: #15332f;
           --warn: #e0a85c;
@@ -122,8 +137,10 @@
         --paper-edge: #2c3850;
         --ink: #eef1f6;
         --ink-2: #b6bfd0;
-        --ink-3: #7f8aa1;
+        --ink-3: #8f9ab0;
+        --field-edge: #66728d;
         --teal: #3fb8b1;
+        --on-teal: #121a28;
         --teal-ink: #6fd3cc;
         --teal-soft: #15332f;
         --warn: #e0a85c;
@@ -151,6 +168,8 @@
       }
       html {
         scroll-behavior: smooth;
+        /* the sticky header covers the top 64px of an in-page link target */
+        scroll-padding-top: calc(64px + env(safe-area-inset-top, 0px));
       }
       @media (prefers-reduced-motion: reduce) {
         html {
@@ -229,12 +248,10 @@
         display: inline-flex;
         align-items: center;
         gap: 8px;
-        font-family: var(--font-mono);
-        font-size: 0.78rem;
-        letter-spacing: 0.08em;
-        text-transform: uppercase;
+        font-size: 0.82rem;
+        letter-spacing: 0.02em;
         color: var(--teal-ink);
-        font-weight: 500;
+        font-weight: 700;
       }
       .eyebrow::before {
         content: "";
@@ -259,9 +276,7 @@
         gap: 6px;
         padding: 3px 10px;
         border-radius: 999px;
-        font-family: var(--font-mono);
-        font-size: 0.74rem;
-        letter-spacing: 0.03em;
+        font-size: 0.82rem;
         font-weight: 500;
         line-height: 1.6;
         white-space: nowrap;
@@ -301,7 +316,7 @@
       }
       .btn-primary {
         background: var(--teal);
-        color: #fff;
+        color: var(--on-teal);
         border-color: var(--teal);
       }
       .btn-primary:hover {
@@ -316,7 +331,7 @@
         border-color: var(--ink-3);
       }
       .btn-sm {
-        min-height: 40px;
+        min-height: 44px;
         padding: 6px 14px;
         font-size: 0.92rem;
       }
@@ -341,6 +356,7 @@
         display: inline-flex;
         align-items: center;
         gap: 9px;
+        min-height: 44px;
         text-decoration: none;
         color: var(--ink);
         font-weight: 800;
@@ -352,6 +368,7 @@
         height: 28px;
         border-radius: 8px;
         background: var(--teal);
+        color: var(--on-teal);
         display: grid;
         place-items: center;
         flex: none;
@@ -365,7 +382,10 @@
         align-items: center;
         gap: 4px;
       }
-      .nav a {
+      .nav a:not(.btn) {
+        display: inline-flex;
+        align-items: center;
+        min-height: 44px;
         color: var(--ink-2);
         text-decoration: none;
         font-size: 0.95rem;
@@ -373,7 +393,7 @@
         border-radius: 8px;
         font-weight: 500;
       }
-      .nav a:hover {
+      .nav a:not(.btn):hover {
         color: var(--ink);
         background: var(--paper);
       }
@@ -425,7 +445,7 @@
       .cta-note {
         margin-top: 18px;
         font-size: 0.92rem;
-        color: var(--ink-3);
+        color: var(--ink-2);
         max-width: 46ch;
       }
 
@@ -462,10 +482,8 @@
       }
       .sheet-meta dt {
         color: var(--ink-3);
-        font-family: var(--font-mono);
-        font-size: 0.76rem;
-        letter-spacing: 0.04em;
-        padding-top: 3px;
+        font-size: 0.82rem;
+        padding-top: 2px;
       }
       .sheet-meta dd {
         margin: 0;
@@ -487,6 +505,9 @@
         color: var(--ink-3);
       }
       .sheet-foot a {
+        display: inline-flex;
+        align-items: center;
+        min-height: 44px;
         font-weight: 600;
       }
       .zone-row {
@@ -499,9 +520,10 @@
         gap: 10px;
         flex-wrap: wrap;
       }
-      .zone-row-head h4 {
+      .zone-row-head .zone-name {
         font-size: 1rem;
         font-weight: 700;
+        line-height: 1.3;
       }
       .pair {
         display: grid;
@@ -528,15 +550,15 @@
         top: 8px;
         background: var(--ink);
         color: var(--bg);
-        font-family: var(--font-mono);
-        font-size: 0.72rem;
-        letter-spacing: 0.06em;
+        font-size: 0.82rem;
+        font-weight: 500;
+        line-height: 1.5;
         padding: 2px 8px;
         border-radius: 4px;
       }
       .shot .lbl.after {
         background: var(--teal);
-        color: #fff;
+        color: var(--on-teal);
       }
       .note-line {
         display: grid;
@@ -546,11 +568,9 @@
         font-size: 0.95rem;
       }
       .note-line .k {
-        font-family: var(--font-mono);
-        font-size: 0.74rem;
-        letter-spacing: 0.04em;
+        font-size: 0.82rem;
         color: var(--ink-3);
-        padding-top: 5px;
+        padding-top: 3px;
         white-space: nowrap;
       }
       .note-line.special .k {
@@ -581,7 +601,7 @@
       }
       .sample-caption {
         font-size: 0.86rem;
-        color: var(--ink-3);
+        color: var(--ink-2);
         margin-top: 10px;
         display: flex;
         gap: 8px;
@@ -607,10 +627,9 @@
         background: var(--paper);
       }
       .prob .n {
-        font-family: var(--font-mono);
         color: var(--ink-3);
-        font-size: 0.8rem;
-        letter-spacing: 0.06em;
+        font-size: 0.82rem;
+        font-weight: 500;
       }
       .prob p {
         margin-top: 8px;
@@ -649,7 +668,7 @@
         background: transparent;
         border-radius: 7px;
         padding: 7px 14px;
-        min-height: 40px;
+        min-height: 44px;
         font-weight: 600;
         color: var(--ink-2);
         cursor: pointer;
@@ -657,12 +676,10 @@
       .seg button[aria-pressed="true"],
       .seg button[aria-selected="true"] {
         background: var(--teal);
-        color: #fff;
+        color: var(--on-teal);
       }
       .seg-label {
-        font-family: var(--font-mono);
-        font-size: 0.74rem;
-        letter-spacing: 0.05em;
+        font-size: 0.82rem;
         color: var(--ink-3);
         margin-right: 8px;
       }
@@ -677,7 +694,7 @@
         background: var(--paper);
         border-radius: 999px;
         padding: 7px 16px;
-        min-height: 40px;
+        min-height: 44px;
         font-weight: 600;
         color: var(--ink-2);
         cursor: pointer;
@@ -699,15 +716,19 @@
         aspect-ratio: 4/3;
       }
       .sample-panel .shot .lbl {
-        font-size: 0.8rem;
+        font-size: 0.85rem;
         padding: 3px 10px;
       }
       @media (max-width: 640px) {
+        /* the pair stays side by side on a phone, because the comparison is the point of the report */
         .sample-panel .pair {
-          grid-template-columns: 1fr;
+          gap: 8px;
         }
-        .hero .pair {
-          grid-template-columns: 1fr 1fr;
+        .sample-panel .shot .lbl {
+          left: 6px;
+          top: 6px;
+          font-size: 0.82rem;
+          padding: 2px 8px;
         }
       }
       .sample-notes {
@@ -782,8 +803,8 @@
         border: 1px solid var(--paper-edge);
         background: var(--paper);
         border-radius: 8px;
-        padding: 4px 10px;
-        min-height: 36px;
+        padding: 4px 14px;
+        min-height: 44px;
         font-size: 0.86rem;
         cursor: pointer;
         font-weight: 600;
@@ -932,11 +953,6 @@
         font-weight: 800;
         letter-spacing: -0.01em;
       }
-      .price-box .big small {
-        font-size: 1rem;
-        font-weight: 600;
-        color: var(--ink-2);
-      }
       .price-box p {
         color: var(--ink-2);
         font-size: 0.95rem;
@@ -1031,14 +1047,12 @@
       }
       .field label .req {
         color: var(--teal-ink);
-        font-size: 0.8rem;
-        font-family: var(--font-mono);
+        font-size: 0.82rem;
         margin-left: 6px;
       }
       .field label .opt {
         color: var(--ink-3);
-        font-size: 0.8rem;
-        font-family: var(--font-mono);
+        font-size: 0.82rem;
         margin-left: 6px;
         font-weight: 400;
       }
@@ -1048,7 +1062,7 @@
         width: 100%;
         min-height: 48px;
         padding: 10px 14px;
-        border: 1.5px solid var(--paper-edge);
+        border: 1.5px solid var(--field-edge);
         border-radius: 10px;
         background: var(--bg);
         color: var(--ink);
@@ -1058,6 +1072,11 @@
       .field textarea {
         min-height: 110px;
         resize: vertical;
+      }
+      .field input::placeholder,
+      .field textarea::placeholder {
+        color: var(--ink-3);
+        opacity: 1;
       }
       .field input:focus,
       .field select:focus,
@@ -1079,7 +1098,7 @@
         display: block;
       }
       .field .hint {
-        color: var(--ink-3);
+        color: var(--ink-2);
         font-size: 0.86rem;
       }
       .form-actions {
@@ -1150,6 +1169,16 @@
         font-weight: 500;
         min-width: 0;
       }
+      @media (max-width: 520px) {
+        /* one column, so that an email address keeps the whole row */
+        .review {
+          grid-template-columns: 1fr;
+          gap: 2px;
+        }
+        .review dd + dt {
+          margin-top: 10px;
+        }
+      }
       .dlg-actions {
         display: flex;
         flex-wrap: wrap;
@@ -1159,7 +1188,7 @@
 
       /* footer */
       footer {
-        padding-block: 48px 120px;
+        padding-block: 48px 64px;
         color: var(--ink-2);
       }
       footer .wrap {
@@ -1177,38 +1206,9 @@
         font-size: 0.9rem;
         color: var(--ink-3);
       }
-      @media (min-width: 821px) {
-        footer {
-          padding-bottom: 64px;
-        }
-      }
-
-      /* mobile bottom CTA */
-      .mobile-cta {
-        position: fixed;
-        left: 0;
-        right: 0;
-        bottom: 0;
-        z-index: 30;
-        padding: 10px 16px calc(10px + env(safe-area-inset-bottom, 0px));
-        background: color-mix(in srgb, var(--bg) 92%, transparent);
-        backdrop-filter: blur(10px);
-        border-top: 1px solid var(--paper-edge);
-        display: none;
-      }
-      .mobile-cta .btn {
-        width: 100%;
-      }
-      @media (max-width: 820px) {
-        .mobile-cta {
-          display: block;
-        }
-        .mobile-cta[hidden] {
-          display: none;
-        }
-      }
     </style>
-
+  </head>
+  <body>
     <header class="site-header">
       <div class="wrap">
         <a class="brand" href="#top" aria-label="꼼꼬미 홈">
@@ -1216,7 +1216,7 @@
             ><svg
               viewBox="0 0 24 24"
               fill="none"
-              stroke="#fff"
+              stroke="currentColor"
               stroke-width="3"
               stroke-linecap="round"
               stroke-linejoin="round"
@@ -1229,7 +1229,7 @@
           <a href="#sample">보고서 샘플</a>
           <a href="#how">이용 방식</a>
           <a href="#pilot">파일럿 안내</a>
-          <a class="btn btn-primary btn-sm" href="#apply">참여 문의</a>
+          <a class="btn btn-primary btn-sm" href="#apply">문의 미리보기</a>
         </nav>
       </div>
     </header>
@@ -1249,7 +1249,7 @@
               작업 기록을 한눈에 확인할 수 있는 보고서로 모아드립니다.
             </p>
             <div class="cta-row">
-              <a class="btn btn-primary" href="#apply">4주 파일럿 참여 문의</a>
+              <a class="btn btn-primary" href="#apply">문의 화면 미리보기</a>
               <a class="btn btn-ghost" href="#sample" id="hero-sample-btn"
                 >보고서 샘플 보기</a
               >
@@ -1272,13 +1272,13 @@
                 <dt>거래처</dt>
                 <dd>한빛오피스 (가상 거래처)</dd>
                 <dt>방문일</dt>
-                <dd>2026-09-29 (월)</dd>
+                <dd>2026-09-29 (화)</dd>
               </dl>
               <div class="sheet-body">
                 <div class="zone-row">
                   <div class="zone-row-head">
                     <span class="tag tag-zone">구역 1</span>
-                    <h4>출입구</h4>
+                    <p class="zone-name">출입구</p>
                   </div>
                   <div class="pair">
                     <figure class="shot" style="margin: 0">
@@ -1309,7 +1309,10 @@
                   </div>
                   <div class="note-line special">
                     <span class="k">특이사항</span
-                    ><span>공용 공간 바닥의 기존 긁힘을 확인했습니다.</span>
+                    ><span
+                      >현관 매트가 닳아 교체 시기를 거래처와 확인하면
+                      좋겠습니다.</span
+                    >
                   </div>
                 </div>
               </div>
@@ -1318,7 +1321,7 @@
                   >구역 3곳 중 1곳 표시 · 설명을 위한 가상 데이터와 예시
                   이미지입니다.</span
                 >
-                <a href="#sample">이전 방문 보기</a>
+                <a href="#sample" id="hero-prev-visit">이전 방문 보기</a>
               </div>
             </article>
           </div>
@@ -1403,15 +1406,8 @@
                 "
               >
                 <dt>방문일</dt>
-                <dd
-                  id="visit-date"
-                  style="
-                    font-family: var(--font-mono);
-                    font-size: 0.95rem;
-                    font-variant-numeric: tabular-nums;
-                  "
-                >
-                  2026-09-29 (월)
+                <dd id="visit-date" style="font-variant-numeric: tabular-nums">
+                  2026-09-29 (화)
                 </dd>
               </dl>
             </div>
@@ -1479,8 +1475,8 @@
                 </div>
               </div>
             </div>
-            <details class="hist" id="history">
-              <summary>방문 이력 <span class="sr-only">펼치기</span></summary>
+            <details class="hist" id="history" open>
+              <summary>방문 이력</summary>
               <ul class="hist-list" id="hist-list"></ul>
             </details>
           </article>
@@ -1541,30 +1537,26 @@
               align-items: center;
             "
           >
-            <h3 id="planned-title" style="font-size: 1.25rem">
+            <h2 id="planned-title" style="font-size: 1.25rem">
               향후 앱에서 준비하는 기능
-            </h3>
+            </h2>
             <span class="tag tag-plan">개발 예정</span>
           </div>
           <div class="planned-grid">
             <div class="planned-item">
-              <span class="tag tag-plan">개발 예정</span
-              ><strong>구역 목록 재사용</strong>
+              <strong>구역 목록 재사용</strong>
               <p>거래처마다 저장된 구역 목록을 다음 방문에 다시 불러옵니다.</p>
             </div>
             <div class="planned-item">
-              <span class="tag tag-plan">개발 예정</span
-              ><strong>같은 구도 촬영 가이드</strong>
+              <strong>같은 구도 촬영 가이드</strong>
               <p>지난 사진을 반투명하게 겹쳐 같은 구도로 찍도록 돕습니다.</p>
             </div>
             <div class="planned-item">
-              <span class="tag tag-plan">개발 예정</span
-              ><strong>거래처별 방문 이력</strong>
+              <strong>거래처별 방문 이력</strong>
               <p>거래처 한 곳의 방문 기록을 한 페이지에서 확인합니다.</p>
             </div>
             <div class="planned-item">
-              <span class="tag tag-plan">개발 예정</span
-              ><strong>월간 묶음 보고서</strong>
+              <strong>월간 묶음 보고서</strong>
               <p>한 달 방문을 모아 정산 증빙용 보고서로 내보냅니다.</p>
             </div>
           </div>
@@ -1629,11 +1621,8 @@
             </div>
             <div class="price-box">
               <span class="eyebrow">가격 안내</span>
-              <div class="big">월 1~2만 원대 <small>검토 중</small></div>
-              <p>
-                정식 서비스는 월 1~2만 원대를 검토하고 있습니다. 가격과 제공
-                범위는 아직 확정되지 않았습니다.
-              </p>
+              <div class="big">검토 중</div>
+              <p>정식 서비스의 가격과 제공 범위는 아직 확정되지 않았습니다.</p>
               <p>파일럿 참여 비용과 지원 범위는 시작 전에 별도로 안내합니다.</p>
             </div>
           </div>
@@ -1643,7 +1632,7 @@
       <!-- FAQ -->
       <section id="faq" style="padding-top: 0">
         <div class="wrap">
-          <span class="eyebrow">자주 묻는 질문</span>
+          <h2 class="eyebrow">자주 묻는 질문</h2>
           <div class="faq">
             <details>
               <summary>지금 앱을 설치할 수 있나요?</summary>
@@ -1720,7 +1709,7 @@
                   않습니다.</span
                 >
               </div>
-              <form id="apply-form" novalidate autocomplete="off">
+              <form id="apply-form" novalidate>
                 <div
                   class="form-summary-err"
                   id="form-summary"
@@ -1735,6 +1724,7 @@
                     id="name"
                     name="name"
                     type="text"
+                    autocomplete="organization"
                     required
                     maxlength="60"
                     placeholder="예: 바른클린"
@@ -1751,6 +1741,7 @@
                     id="email"
                     name="email"
                     type="email"
+                    autocomplete="email"
                     required
                     inputmode="email"
                     placeholder="답장을 받을 주소"
@@ -1805,9 +1796,10 @@
                     id="pain"
                     name="pain"
                     maxlength="500"
+                    aria-describedby="pain-hint"
                     placeholder="예: 거래처마다 사진 순서를 맞춰 다시 보내는 일"
                   ></textarea>
-                  <span class="hint"
+                  <span class="hint" id="pain-hint"
                     >현장 사진이나 거래처 담당자 정보는 적지 말아 주세요.</span
                   >
                 </div>
@@ -1837,7 +1829,7 @@
             ><svg
               viewBox="0 0 24 24"
               fill="none"
-              stroke="#fff"
+              stroke="currentColor"
               stroke-width="3"
               stroke-linecap="round"
               stroke-linejoin="round"
@@ -1852,10 +1844,6 @@
         </p>
       </div>
     </footer>
-
-    <div class="mobile-cta" id="mobile-cta">
-      <a class="btn btn-primary" href="#apply">4주 파일럿 참여 문의</a>
-    </div>
 
     <dialog id="preview-dlg" aria-labelledby="dlg-title">
       <div class="dlg">
@@ -1896,9 +1884,12 @@
         "use strict";
 
         /* ---------- Illustrations: same room, same framing; "before" adds marks ---------- */
-        function svgWrap(inner) {
+        function svgWrap(zone, before, inner) {
           return (
-            '<svg viewBox="0 0 400 300" role="img" aria-hidden="true" focusable="false" preserveAspectRatio="xMidYMid slice">' +
+            '<svg viewBox="0 0 400 300" role="img" aria-label="' +
+            zone +
+            (before ? " 작업 전" : " 작업 후") +
+            ' 예시 그림" focusable="false" preserveAspectRatio="xMidYMid slice">' +
             inner +
             "</svg>"
           );
@@ -1938,7 +1929,7 @@
                 "</g>" +
                 '<rect x="300" y="196" width="36" height="24" rx="3" fill="var(--il-dirt2)"/><rect x="306" y="186" width="24" height="12" rx="2" fill="var(--il-dirt)"/>';
             }
-            return svgWrap(s);
+            return svgWrap("출입구", before, s);
           },
           common(before) {
             let s =
@@ -1976,7 +1967,7 @@
                 '<rect x="100" y="206" width="22" height="30" rx="3"/>' +
                 "</g>";
             }
-            return svgWrap(s);
+            return svgWrap("공용 공간", before, s);
           },
           restroom(before) {
             let s = '<rect width="400" height="300" fill="var(--il-tile)"/>';
@@ -2013,7 +2004,7 @@
                 "</g>" +
                 '<g fill="var(--il-dirt)" opacity=".4"><ellipse cx="150" cy="250" rx="34" ry="9"/><ellipse cx="300" cy="270" rx="26" ry="8"/></g>';
             }
-            return svgWrap(s);
+            return svgWrap("화장실", before, s);
           },
         };
 
@@ -2026,7 +2017,7 @@
         const VISITS = {
           v2: {
             label: "이번 방문",
-            date: "2026-09-29 (월)",
+            date: "2026-09-29 (화)",
             zones: {
               entrance: {
                 work: "출입구 유리와 손잡이 청소를 완료했습니다.",
@@ -2044,7 +2035,7 @@
           },
           v1: {
             label: "이전 방문",
-            date: "2026-09-22 (월)",
+            date: "2026-09-22 (화)",
             zones: {
               entrance: {
                 work: "출입구 유리와 손잡이, 현관 매트 청소를 완료했습니다.",
@@ -2130,6 +2121,13 @@
             curVisit = b.dataset.visit;
             render();
           });
+        // The link in the hero sheet scrolls to the sample, so the sample must show what the link names.
+        document
+          .getElementById("hero-prev-visit")
+          .addEventListener("click", function () {
+            curVisit = "v1";
+            render();
+          });
         const tabs = document.getElementById("zone-tabs");
         tabs.addEventListener("click", function (e) {
           const t = e.target.closest('[role="tab"]');
@@ -2203,6 +2201,12 @@
 
         function setInvalid(id, bad) {
           document.getElementById("f-" + id).classList.toggle("invalid", bad);
+          // The message is hidden while the field is valid, and a hidden element still describes
+          // the field that names it, so the link exists only while the message shows.
+          const input = document.getElementById(id);
+          input.setAttribute("aria-invalid", String(bad));
+          if (bad) input.setAttribute("aria-describedby", id + "-err");
+          else input.removeAttribute("aria-describedby");
         }
         function validate() {
           const name = form.name.value.trim();
@@ -2280,18 +2284,6 @@
         dlg.addEventListener("click", function (e) {
           if (e.target === dlg) closeDlg();
         });
-
-        /* ---------- Mobile bottom CTA: hide while the form section is on screen ---------- */
-        const mobileCta = document.getElementById("mobile-cta");
-        const applySec = document.getElementById("apply");
-        if ("IntersectionObserver" in window) {
-          new IntersectionObserver(
-            function (entries) {
-              mobileCta.hidden = entries[0].isIntersecting;
-            },
-            { threshold: 0.05 },
-          ).observe(applySec);
-        }
       })();
     </script>
   </body>
