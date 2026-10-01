@@ -24,11 +24,12 @@ abstract interface class Publisher {
   /// Writes the report of the visit with [visitId] under the client page with [pageId].
   Future<void> writeReport({required String pageId, required String visitId, required PublishedReport report});
 
-  /// Writes the client page with [pageId] as [page], revoked.
+  /// Writes the client page with [pageId] as [page], revoked at [revokedAt].
   ///
   /// A page that the backend does not hold yet is written revoked, so the call does not depend on an earlier
-  /// [writePage] that may not have reached the backend.
-  Future<void> revokePage(String pageId, PublishedPage page);
+  /// [writePage] that may not have reached the backend. The caller gives the time, so a repeated call writes the same
+  /// page.
+  Future<void> revokePage(String pageId, PublishedPage page, {required DateTime revokedAt});
 
   /// Deletes the object at [objectPath]. An object that does not exist is no failure.
   Future<void> deletePhoto(String objectPath);
@@ -86,22 +87,30 @@ final class PublishedPage {
 
 /// What the report of one visit shows.
 final class PublishedReport {
-  new({required this.visitDate, required Iterable<PublishedZone> zones}) : zones = List.unmodifiable(zones);
+  new({required this.visitDate, required DateTime publishedAt, required Iterable<PublishedZone> zones})
+    : publishedAt = publishedAt.toUtc(),
+      zones = List.unmodifiable(zones);
 
   final VisitDate visitDate;
+
+  /// The time of the publish request in UTC, which stays the same when a job writes the report again.
+  final DateTime publishedAt;
 
   /// The zones in the order of the visit.
   final List<PublishedZone> zones;
 
   @override
   bool operator ==(Object other) =>
-      other is PublishedReport && other.visitDate == visitDate && sameElements(other.zones, zones);
+      other is PublishedReport &&
+      other.visitDate == visitDate &&
+      other.publishedAt == publishedAt &&
+      sameElements(other.zones, zones);
 
   @override
-  int get hashCode => Object.hash(visitDate, Object.hashAll(zones));
+  int get hashCode => Object.hash(visitDate, publishedAt, Object.hashAll(zones));
 
   @override
-  String toString() => 'PublishedReport($visitDate, $zones)';
+  String toString() => 'PublishedReport($visitDate, $publishedAt, $zones)';
 }
 
 /// What a report shows for one zone. A photo is the path of its object, never a download URL.

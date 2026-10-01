@@ -330,7 +330,8 @@ final class PublishQueue {
       _publisher.writeReport(
         pageId: page.id,
         visitId: visit.id,
-        report: PublishedReport(visitDate: visit.visitDate, zones: zones),
+        // The time of the request, which a job keeps, so that a job that runs again writes the same report.
+        report: PublishedReport(visitDate: visit.visitDate, publishedAt: job.createdAt, zones: zones),
       ),
     );
     // An object of the visit that the report no longer names, such as the photo before a retake, is deleted after
@@ -381,7 +382,8 @@ final class PublishQueue {
 
   Future<void> _revoke(PublishJob job, String ownerUid) async {
     final page = (await _repository.pageById(job.pageId))!;
-    await _step(_publisher.revokePage(page.id, await _pageContent(page, ownerUid)));
+    // The time of the revoke, which the page keeps, so that a job that runs again writes the same page.
+    await _step(_publisher.revokePage(page.id, await _pageContent(page, ownerUid), revokedAt: page.revokedAt!));
     for (final objectPath in await _repository.uploadedObjects(page.id)) {
       await _step(_publisher.deletePhoto(objectPath));
       await _repository.removeUploadedPhoto(pageId: page.id, objectPath: objectPath);

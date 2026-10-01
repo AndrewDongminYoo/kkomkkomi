@@ -292,6 +292,7 @@ void main() {
         publisher.reports['${page.id}/visit-1'],
         PublishedReport(
           visitDate: VisitDate(2026, 10, 2),
+          publishedAt: start,
           zones: [
             PublishedZone(name: '입구', note: '바닥', beforePhoto: before, afterPhoto: after),
             const PublishedZone(name: '창고', note: '정리함', beforePhoto: null, afterPhoto: null),
@@ -568,14 +569,19 @@ void main() {
         visit2.withRecord(visit2.zoneRecords.single.withPhoto(PhotoSlot.before, retaken)),
       );
       publisher.failures['deletePhoto'] = [_transient];
+      final requested = start.add(const Duration(minutes: 1));
+      clock.time = requested;
 
       final second = await queue.publishVisit('visit-2');
       await settle();
       expect((await jobOf(second)).status, PublishJobStatus.pending);
       publisher.calls.clear();
-      clock.time = start.add(const Duration(seconds: 5));
+      clock.time = requested.add(const Duration(seconds: 5));
       activeTimers().single.fire();
       await settle();
+
+      // The report written again by the retry keeps the time of the publish request, not the time of the retry.
+      expect(publisher.reports['${first.pageId}/visit-2']?.publishedAt, requested);
 
       expect(publisher.calls, [
         'writePage ${first.pageId}',
@@ -788,10 +794,12 @@ void main() {
         ..calls.clear()
         ..failures['deletePhoto'] = [null, Exception('offline')];
 
+      final revokedAt = start.add(const Duration(minutes: 1));
+      clock.time = revokedAt;
       await queue.revokeClientPage('client-1');
       await settle();
       publisher.calls.clear();
-      clock.time = start.add(const Duration(seconds: 5));
+      clock.time = revokedAt.add(const Duration(seconds: 5));
       activeTimers().single.fire();
       await settle();
 
@@ -800,6 +808,8 @@ void main() {
         'revokePage $pageId',
         'deletePhoto clientPages/$pageId/visit-1/zone-1-before-before.jpg',
       ]);
+      // The revoke written again by the retry keeps the time of the revoke, not the time of the retry.
+      expect(publisher.revokedAt[pageId], revokedAt);
       expect(await repositories.publishing.uploadedObjects(pageId), isEmpty);
     });
 

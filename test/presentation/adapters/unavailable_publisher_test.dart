@@ -24,11 +24,11 @@ void main() {
         publisher.writeReport(
           pageId: 'p',
           visitId: 'v',
-          report: PublishedReport(visitDate: VisitDate(2026, 10, 2), zones: const []),
+          report: PublishedReport(visitDate: VisitDate(2026, 10, 2), publishedAt: DateTime.utc(2026), zones: const []),
         ),
         refused,
       );
-      await expectLater(publisher.revokePage('p', page), refused);
+      await expectLater(publisher.revokePage('p', page, revokedAt: DateTime.utc(2026)), refused);
       await expectLater(publisher.deletePhoto('o'), refused);
     });
   });

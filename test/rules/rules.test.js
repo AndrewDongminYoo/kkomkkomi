@@ -225,6 +225,29 @@ describe("firestore: writers", () => {
     );
   });
 
+  test("a repeated revoke write and a repeated report write pass, as a job that runs again makes them", async () => {
+    const db = signedIn(owner).firestore();
+    const revoked = {
+      ...page(owner),
+      revokedAt: new Date("2026-10-02T09:00:00Z"),
+    };
+    await assertSucceeds(
+      db.doc(`clientPages/${openPage}/reports/visit-2`).set(report()),
+    );
+    await assertSucceeds(
+      db.doc(`clientPages/${openPage}/reports/visit-2`).set(report()),
+    );
+    await assertSucceeds(db.doc(`clientPages/${openPage}`).set(revoked));
+    await assertSucceeds(db.doc(`clientPages/${openPage}`).set(revoked));
+    // A revoke of a revoked page with another time passes too, so a retry is never refused for its time.
+    await assertSucceeds(
+      db.doc(`clientPages/${openPage}`).set({
+        ...page(owner),
+        revokedAt: firebase.firestore.FieldValue.serverTimestamp(),
+      }),
+    );
+  });
+
   test("the owner cannot give its page to another owner", async () => {
     await assertFails(
       signedIn(owner)

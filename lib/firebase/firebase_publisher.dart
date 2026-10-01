@@ -37,7 +37,7 @@ final class FirebasePublisher implements Publisher {
       _guard(
         () => _database.doc('clientPages/$pageId/reports/$visitId').set({
           'visitDate': report.visitDate.toString(),
-          'publishedAt': FieldValue.serverTimestamp(),
+          'publishedAt': Timestamp.fromDate(report.publishedAt),
           'zones': [
             for (final zone in report.zones)
               {
@@ -51,8 +51,8 @@ final class FirebasePublisher implements Publisher {
       );
 
   @override
-  Future<void> revokePage(String pageId, PublishedPage page) => _guard(
-    () => _database.doc('clientPages/$pageId').set({..._pageData(page), 'revokedAt': FieldValue.serverTimestamp()}),
+  Future<void> revokePage(String pageId, PublishedPage page, {required DateTime revokedAt}) => _guard(
+    () => _database.doc('clientPages/$pageId').set({..._pageData(page), 'revokedAt': Timestamp.fromDate(revokedAt)}),
   );
 
   @override

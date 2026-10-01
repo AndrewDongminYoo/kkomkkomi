@@ -24,7 +24,7 @@ final class UnavailablePublisher implements Publisher {
       throw _unavailable;
 
   @override
-  Future<void> revokePage(String pageId, PublishedPage page) async => throw _unavailable;
+  Future<void> revokePage(String pageId, PublishedPage page, {required DateTime revokedAt}) async => throw _unavailable;
 
   @override
   Future<void> deletePhoto(String objectPath) async => throw _unavailable;

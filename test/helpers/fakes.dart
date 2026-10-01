@@ -297,6 +297,9 @@ class FakePublisher implements Publisher {
   /// The pages that were written as revoked, by page ID.
   final revokedPages = <String, PublishedPage>{};
 
+  /// The revoke time that the last revoke of each page wrote, by page ID.
+  final revokedAt = <String, DateTime>{};
+
   /// The bytes of each uploaded object, by object path.
   final objects = <String, Uint8List>{};
 
@@ -339,9 +342,10 @@ class FakePublisher implements Publisher {
   }
 
   @override
-  Future<void> revokePage(String pageId, PublishedPage page) async {
+  Future<void> revokePage(String pageId, PublishedPage page, {required DateTime revokedAt}) async {
     await _call('revokePage', pageId);
     revokedPages[pageId] = page;
+    this.revokedAt[pageId] = revokedAt;
   }
 
   @override

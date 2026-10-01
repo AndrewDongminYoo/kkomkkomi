@@ -83,28 +83,29 @@ void main() {
       });
     });
 
-    test('writes a page as revoked at the time of the server', () async {
-      await publisher.revokePage('page-1', page);
+    test('writes a page as revoked at the time that it is given, so that a repeated write changes nothing', () async {
+      await publisher.revokePage('page-1', page, revokedAt: DateTime.utc(2026, 10, 3, 8));
 
       final data = written('clientPages/page-1');
       expect(data.keys, ['ownerUid', 'companyName', 'clientName', 'createdAt', 'revokedAt']);
       expect(data['ownerUid'], 'owner-1');
-      expect(data['revokedAt'], isA<FieldValue>());
+      expect(data['revokedAt'], Timestamp.fromDate(DateTime.utc(2026, 10, 3, 8)));
     });
 
-    test('writes a report under its page, with the paths of its photos and the time of the server', () async {
+    test('writes a report under its page, with the paths of its photos and the time that it is given', () async {
       await publisher.writeReport(
         pageId: 'page-1',
         visitId: 'visit-1',
         report: PublishedReport(
           visitDate: VisitDate(2026, 10, 2),
+          publishedAt: DateTime.utc(2026, 10, 2, 9, 30),
           zones: const [PublishedZone(name: '입구', note: '바닥', beforePhoto: 'a.jpg', afterPhoto: null)],
         ),
       );
 
       final data = written('clientPages/page-1/reports/visit-1');
       expect(data['visitDate'], '2026-10-02');
-      expect(data['publishedAt'], isA<FieldValue>());
+      expect(data['publishedAt'], Timestamp.fromDate(DateTime.utc(2026, 10, 2, 9, 30)));
       expect(data['zones'], [
         {'name': '입구', 'note': '바닥', 'beforePhoto': 'a.jpg', 'afterPhoto': null},
       ]);
