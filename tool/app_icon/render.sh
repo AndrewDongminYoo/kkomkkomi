@@ -5,8 +5,13 @@
 #
 # CHROME is a headless Chromium binary.
 #
-# symbol.svg is the master of the mark. These files hold a copy of its two paths,
-# so a change to the mark must be repeated in each of them:
+# symbol.svg is the master of the mark: the double consonant of the name as a pair of matching strokes.
+# The left stroke is the before photo and the right stroke is the after photo.
+# On the brand color #0f7f7a the right stroke is #ffffff and the left stroke is #87bfbd.
+# The left stroke has a solid color, because Icon Composer drew a stroke with fill-opacity as opaque.
+# The format hook strips the comments of an SVG file, so this description is here.
+#
+# These files hold a copy of the two paths of the mark, so a change to the mark must be repeated in each of them:
 #   tool/app_icon/launcher-*.svg
 #   android/app/src/*/res/drawable/ic_launcher_foreground.xml
 #   ios/Runner/AppIcons/*.icon/Assets/Logo.svg
