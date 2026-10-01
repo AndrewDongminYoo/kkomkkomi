@@ -2,7 +2,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:kkomkkomi/presentation/presentation.dart';
 import 'package:material_ui/material_ui.dart';
 
-import '../../../helpers/helpers.dart';
+import '../../helpers/helpers.dart';
 
 void main() {
   const path = '/documents/photos/visit-1/photo-1.jpg';
@@ -16,6 +16,12 @@ void main() {
       expect(image.fit, BoxFit.cover);
       expect((image.image as ResizeImage).width, 600);
       expect((image.image as ResizeImage).height, isNull);
+    });
+
+    testWidgets('shows the whole photo when it is told to', (tester) async {
+      await tester.pumpApp(const PhotoThumbnail(path: path, fit: BoxFit.contain));
+
+      expect(tester.widget<Image>(find.byType(Image)).fit, BoxFit.contain);
     });
 
     testWidgets('is not in the semantics tree without a label', (tester) async {

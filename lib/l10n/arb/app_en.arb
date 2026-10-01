@@ -269,5 +269,113 @@
     "companyProfileLoadFailedMessage": "Can't load your company profile. Try again.",
     "@companyProfileLoadFailedMessage": {
         "description": "Message shown in place of the company profile form when the profile did not load"
+    },
+    "visitReportOpenButton": "View Report",
+    "@visitReportOpenButton": {
+        "description": "Label of the button under the zones of the visit screen that opens the report screen"
+    },
+    "visitReportTitle": "Report",
+    "@visitReportTitle": {
+        "description": "Title of the report screen"
+    },
+    "visitReportLoadFailedMessage": "Can't load this report. Try again.",
+    "@visitReportLoadFailedMessage": {
+        "description": "Message shown in place of the report screen when the report did not load"
+    },
+    "reportCompanyNameMissingMessage": "No company name yet. Add one, and the report shows it at the top.",
+    "@reportCompanyNameMissingMessage": {
+        "description": "Notice on the report screen while no company name is saved. The report can still be shared."
+    },
+    "reportCompanyNameAddButton": "Add Company Name",
+    "@reportCompanyNameAddButton": {
+        "description": "Label of the button in the company name notice that opens the company profile screen"
+    },
+    "reportMissingPhotosTitle": "Some zones are missing photos",
+    "@reportMissingPhotosTitle": {
+        "description": "Heading on the report screen above the list of zones that lack a photo"
+    },
+    "reportMissingPhotosMessage": "The report shows an empty slot where a photo is missing.",
+    "@reportMissingPhotosMessage": {
+        "description": "Text under the heading of the list of zones that lack a photo, which says what the report prints for a missing photo"
+    },
+    "reportMissingBeforePhoto": "{zone}: before photo",
+    "@reportMissingBeforePhoto": {
+        "description": "Item in the list of zones that lack a photo, for a zone without the photo before cleaning",
+        "placeholders": {
+            "zone": {
+                "type": "String",
+                "example": "Lobby"
+            }
+        }
+    },
+    "reportMissingAfterPhoto": "{zone}: after photo",
+    "@reportMissingAfterPhoto": {
+        "description": "Item in the list of zones that lack a photo, for a zone without the photo after cleaning",
+        "placeholders": {
+            "zone": {
+                "type": "String",
+                "example": "Lobby"
+            }
+        }
+    },
+    "reportMissingBothPhotos": "{zone}: before photo and after photo",
+    "@reportMissingBothPhotos": {
+        "description": "Item in the list of zones that lack a photo, for a zone that has a note and neither photo",
+        "placeholders": {
+            "zone": {
+                "type": "String",
+                "example": "Lobby"
+            }
+        }
+    },
+    "reportZoneLeftOut": "{zone}: not in the report, because it has no photo and no note.",
+    "@reportZoneLeftOut": {
+        "description": "Item in the list of zones that lack a photo, for a zone that the report leaves out because it has no photo and no note",
+        "placeholders": {
+            "zone": {
+                "type": "String",
+                "example": "Lobby"
+            }
+        }
+    },
+    "reportPreviewTitle": "Preview",
+    "@reportPreviewTitle": {
+        "description": "Heading on the report screen above the preview of the report"
+    },
+    "reportDocumentTitle": "Cleaning Report",
+    "@reportDocumentTitle": {
+        "description": "Heading of the report in the preview and in the PDF, and the first part of the PDF file name"
+    },
+    "reportBeforePhotoLabel": "Before",
+    "@reportBeforePhotoLabel": {
+        "description": "Label above the photo before cleaning of a zone, in the preview and in the PDF"
+    },
+    "reportAfterPhotoLabel": "After",
+    "@reportAfterPhotoLabel": {
+        "description": "Label above the photo after cleaning of a zone, in the preview and in the PDF"
+    },
+    "reportNoPhotoLabel": "No photo",
+    "@reportNoPhotoLabel": {
+        "description": "Text in an empty photo slot of the PDF, and what a screen reader says for an empty photo slot of the preview"
+    },
+    "reportNoteLabel": "Note",
+    "@reportNoteLabel": {
+        "description": "Label above the note of a zone, in the preview and in the PDF"
+    },
+    "reportFooter": "Report made with Kkomkkomi",
+    "@reportFooter": {
+        "description": "Text at the foot of the preview and of every page of the PDF"
+    },
+    "reportEmptyMessage": "Nothing to put in the report yet. Take a photo or write a note on the visit screen, and it shows here.",
+    "@reportEmptyMessage": {
+        "description": "Text shown in place of the zones of the preview when no zone of the visit has a photo or a note"
+    },
+    "reportShareButton": "Share PDF",
+    "@reportShareButton": {
+        "description": "Label of the button on the report screen that opens the share sheet with the PDF of the report"
+    },
+    "reportShareFailedMessage": "Can't share the report right now. Try again.",
+    "@reportShareFailedMessage": {
+        "description": "Message shown when the PDF could not be made or the share sheet did not open"
     }
 }

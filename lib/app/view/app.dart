@@ -11,6 +11,8 @@ class App extends StatelessWidget {
     this.clock = const SystemClock(),
     this.photoCapture = const ImagePickerPhotoCapture(),
     this.photoStore = const DocumentsPhotoStore(),
+    this.reportFont = const AssetReportFont(),
+    this.reportShare = const PrintingReportShare(),
     super.key,
   });
 
@@ -29,6 +31,12 @@ class App extends StatelessWidget {
   /// The keeper of the photo files, which the widgets below read through `RepositoryProvider`.
   final PhotoStore photoStore;
 
+  /// The font file of the report, which the widgets below read through `RepositoryProvider`.
+  final ReportFont reportFont;
+
+  /// The share sheet for a report, which the widgets below read through `RepositoryProvider`.
+  final ReportShare reportShare;
+
   @override
   Widget build(BuildContext context) {
     return MultiRepositoryProvider(
@@ -40,6 +48,8 @@ class App extends StatelessWidget {
         RepositoryProvider<Clock>.value(value: clock),
         RepositoryProvider<PhotoCapture>.value(value: photoCapture),
         RepositoryProvider<PhotoStore>.value(value: photoStore),
+        RepositoryProvider<ReportFont>.value(value: reportFont),
+        RepositoryProvider<ReportShare>.value(value: reportShare),
       ],
       child: MaterialApp(
         theme: ThemeData(
