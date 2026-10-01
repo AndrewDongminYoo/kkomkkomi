@@ -8,6 +8,7 @@
     "dongminyu.commit-quill",
     "dongminyu.copy-code-as-snippet",
     "dongminyu.vscode-merry-scripts",
-    "dongminyu.turbo-flutter-log"
+    "dongminyu.turbo-flutter-log",
+    "toba.vsfire"
   ]
 }
