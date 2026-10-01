@@ -16,14 +16,16 @@ extension PumpApp on WidgetTester {
   /// Pumps [widget] as the home of a `MaterialApp` that has the localization delegates of the app.
   ///
   /// The app shows the strings of [locale] when one is given, and the English strings otherwise.
-  /// When [repositories] is given, the widgets read its members, [idGenerator], and [clock] through
-  /// `RepositoryProvider`, as they do under the app.
+  /// When [repositories] is given, the widgets read its members, [idGenerator], [clock], [photoCapture], and
+  /// [photoStore] through `RepositoryProvider`, as they do under the app. A port that is not given is a fake.
   Future<void> pumpApp(
     Widget widget, {
     Locale? locale,
     Repositories? repositories,
     IdGenerator? idGenerator,
     Clock? clock,
+    PhotoCapture? photoCapture,
+    PhotoStore? photoStore,
   }) {
     final app = MaterialApp(
       locale: locale,
@@ -40,6 +42,8 @@ extension PumpApp on WidgetTester {
           RepositoryProvider<CompanyProfileRepository>.value(value: repositories.companyProfile),
           RepositoryProvider<IdGenerator>.value(value: idGenerator ?? SequenceIdGenerator()),
           RepositoryProvider<Clock>.value(value: clock ?? FixedClock(DateTime.utc(2026, 10))),
+          RepositoryProvider<PhotoCapture>.value(value: photoCapture ?? FakePhotoCapture()),
+          RepositoryProvider<PhotoStore>.value(value: photoStore ?? FakePhotoStore()),
         ],
         child: app,
       ),

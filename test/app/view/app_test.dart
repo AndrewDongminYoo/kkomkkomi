@@ -48,6 +48,28 @@ void main() {
       expect(context.read<Clock>(), same(clock));
     });
 
+    testWidgets('provides the camera of the picker and the photo store of the documents directory unless it is '
+        'given others', (tester) async {
+      await tester.pumpWidget(App(repositories: mockRepositories()));
+
+      final context = tester.element(find.byType(ClientListPage));
+      expect(context.read<PhotoCapture>(), isA<ImagePickerPhotoCapture>());
+      expect(context.read<PhotoStore>(), isA<DocumentsPhotoStore>());
+    });
+
+    testWidgets('provides the camera and the photo store that it is given', (tester) async {
+      final photoCapture = FakePhotoCapture();
+      final photoStore = FakePhotoStore();
+
+      await tester.pumpWidget(
+        App(repositories: mockRepositories(), photoCapture: photoCapture, photoStore: photoStore),
+      );
+
+      final context = tester.element(find.byType(ClientListPage));
+      expect(context.read<PhotoCapture>(), same(photoCapture));
+      expect(context.read<PhotoStore>(), same(photoStore));
+    });
+
     testWidgets('shows the home screen and the Material widgets in Korean under the Korean locale', (tester) async {
       tester.platformDispatcher.localesTestValue = const [Locale('ko', 'KR')];
       addTearDown(tester.platformDispatcher.clearLocalesTestValue);

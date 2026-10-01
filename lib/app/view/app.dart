@@ -9,6 +9,8 @@ class App extends StatelessWidget {
     required this.repositories,
     this.idGenerator = const RandomIdGenerator(),
     this.clock = const SystemClock(),
+    this.photoCapture = const ImagePickerPhotoCapture(),
+    this.photoStore = const DocumentsPhotoStore(),
     super.key,
   });
 
@@ -21,6 +23,12 @@ class App extends StatelessWidget {
   /// The source of the time, which the widgets below read through `RepositoryProvider`.
   final Clock clock;
 
+  /// The camera, which the widgets below read through `RepositoryProvider`.
+  final PhotoCapture photoCapture;
+
+  /// The keeper of the photo files, which the widgets below read through `RepositoryProvider`.
+  final PhotoStore photoStore;
+
   @override
   Widget build(BuildContext context) {
     return MultiRepositoryProvider(
@@ -30,6 +38,8 @@ class App extends StatelessWidget {
         RepositoryProvider<CompanyProfileRepository>.value(value: repositories.companyProfile),
         RepositoryProvider<IdGenerator>.value(value: idGenerator),
         RepositoryProvider<Clock>.value(value: clock),
+        RepositoryProvider<PhotoCapture>.value(value: photoCapture),
+        RepositoryProvider<PhotoStore>.value(value: photoStore),
       ],
       child: MaterialApp(
         theme: ThemeData(
