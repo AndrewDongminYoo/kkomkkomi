@@ -37,5 +37,28 @@
   "useGitignore": true,
   "ignoreWords": ["meta-data", "plaintext"],
   "ignorePaths": [".git", ".gitignore", ".metadata"],
-  "words": ["donminzzi", "KakaoTalk", "Kkomkkomi"]
+  "overrides": [
+    {
+      "filename": ["**/*.html", "cspell.json"],
+      "ignoreWords": ["white-space"]
+    },
+    {
+      "filename": ["**/*.xib", "cspell.json"],
+      "ignoreWords": ["Instantitation"]
+    }
+  ],
+  "words": [
+    "dongminyu",
+    "donminzzi",
+    "felixangelov",
+    "firerules",
+    "KakaoTalk",
+    "Kkomkkomi",
+    "postcoverage",
+    "precheck",
+    "probs",
+    "subosito",
+    "toba",
+    "vsfire"
+  ]
 }

@@ -7,6 +7,8 @@ because a resource compiler can refuse a PNG entry below that size.
 The script reads the 8-bit RGB and RGBA images that a Chromium screenshot writes.
 """
 
+# cspell:ignore BBBBHHII IIBBBBB
+
 import struct
 import sys
 import zlib
