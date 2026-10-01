@@ -22,6 +22,7 @@ lint:
   enabled:
     - dart@SYSTEM: { commands: [format] }
     - pinact@4.1.1: { commands: [lint, upgrade] }
+    - cspell@10.3.6
     - actionlint@1.7.12
     - checkov@3.3.21
     - git-diff-check
