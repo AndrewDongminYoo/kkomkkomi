@@ -68,6 +68,13 @@ rules:
     - npm ci --prefix test/rules
     - firebase emulators:exec --project demo-kkomkkomi --only firestore,storage "npm --prefix test/rules test"
 
+web:
+  # The page is plain JavaScript without a build step, and the tests use only
+  # Node: a fake fetch gives fixture documents and a fake document makes the
+  # nodes, so no browser and no network is involved.
+  (description): Tests the web report page under web/report/ with fixture data.
+  (scripts): node --test 'test/web/*.test.mjs'
+
 precheck:
   # `dart format` reads analysis_options.yaml, whose `include:` entries are
   # package URIs, and analysis needs lib/l10n/gen, which `flutter pub get`
@@ -76,13 +83,14 @@ precheck:
   (scripts): flutter pub get
 
 check:
-  (description): The full local gate before committing — format, analyze, bloc lint, test.
+  (description): The full local gate before committing — format, analyze, bloc lint, test, web page test.
   (execution): once
   (scripts):
     - $format:check
     - $analyze
     - $lint
     - $test
+    - $web
 
 # --- Code generation --------------------------------------------------------
 l10n:
