@@ -4,8 +4,8 @@
     <meta charset="utf-8" />
     <style>
       /*
-       * The source of web/icons/Icon-192.png and Icon-512.png. render.sh makes the images.
-       * It is the brand mark of web/index.html, full bleed, because each platform cuts its own corner shape.
+       * The source of web/icons/Icon-192.png, web/icons/Icon-512.png, and the two favicon.png files.
+       * render.sh makes the images. It is the brand mark, full bleed, because each platform cuts its own corner shape.
        */
       html,
       body {
@@ -23,16 +23,19 @@
     </style>
   </head>
   <body>
-    <svg viewBox="0 0 32 32">
-      <rect width="32" height="32" fill="#0f7f7a" />
-      <path
-        d="M9 16.5l5 5 9-10"
-        fill="none"
-        stroke="#fff"
-        stroke-width="3.2"
-        stroke-linecap="round"
-        stroke-linejoin="round"
-      />
+    <svg viewBox="0 0 256 256">
+      <rect width="256" height="256" fill="#0f7f7a" />
+      <!-- The two paths of tool/app_icon/symbol.svg, at 52 percent of the icon width. -->
+      <g transform="translate(128 128) scale(0.64) translate(-128 -128)">
+        <path
+          fill="#87bfbd"
+          d="M41 36H84A32 32 0 0 1 116 68V202A18 18 0 0 1 80 202V76A6 6 0 0 0 74 70H41A17 17 0 0 1 41 36Z"
+        />
+        <path
+          fill="#fff"
+          d="M157 36H200A32 32 0 0 1 232 68V202A18 18 0 0 1 196 202V76A6 6 0 0 0 190 70H157A17 17 0 0 1 157 36Z"
+        />
+      </g>
     </svg>
   </body>
 </html>

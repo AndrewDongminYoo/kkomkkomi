@@ -1,0 +1,46 @@
+<!doctype html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <style>
+      /*
+       * One legacy Android launcher image. The URL fragment names the source set and the shape,
+       * for example legacy.html#staging,round. The picture shows the middle 72 of the 108 units,
+       * which is the part of an adaptive icon that a launcher shows.
+       */
+      html,
+      body {
+        margin: 0;
+        width: 100vw;
+        height: 100vh;
+        overflow: hidden;
+        background: transparent;
+      }
+      #tile {
+        width: 100vw;
+        height: 100vh;
+        overflow: hidden;
+      }
+      #tile.square {
+        border-radius: 18%;
+      }
+      #tile.round {
+        border-radius: 50%;
+      }
+      img {
+        display: block;
+        width: 150vw;
+        height: 150vh;
+        margin: -25vh 0 0 -25vw;
+      }
+    </style>
+  </head>
+  <body>
+    <div id="tile"><img id="art" alt="" /></div>
+    <script>
+      const [flavor, shape] = location.hash.slice(1).split(",");
+      document.getElementById("art").src = "launcher-" + flavor + ".svg";
+      document.getElementById("tile").className = shape;
+    </script>
+  </body>
+</html>
