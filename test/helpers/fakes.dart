@@ -258,6 +258,188 @@ class FakeReportShare implements ReportShare {
   }
 }
 
+/// A share sheet for links that opens nothing. It remembers the links that it was given.
+class FakeLinkShare implements LinkShare {
+  /// The links that were shared, in order.
+  final shared = <Uri>[];
+
+  /// The exception that a share throws while it is set.
+  Exception? failure;
+
+  @override
+  Future<void> shareLink(Uri link) async {
+    if (failure case final failure?) throw failure;
+    shared.add(link);
+  }
+}
+
+/// Keeps the client pages, the publish jobs, and the uploaded photos in memory, as the SQLite repository keeps them.
+///
+/// A widget test runs in fake time, where a database does not answer, so a screen test that runs the publish queue
+/// uses this store. A revoke is not implemented, because no screen revokes a page.
+class FakePublishRepository implements PublishRepository {
+  final pages = <String, ClientPage>{};
+  final jobs = <String, PublishJob>{};
+  final _uploads = <String, ({String photoPath, bool arrived})>{};
+
+  /// What every call throws while it is set.
+  Exception? failure;
+
+  void _throwFailure() {
+    if (failure case final failure?) throw failure;
+  }
+
+  @override
+  Future<ClientPage?> openPageOf(String clientId, {ClientPage Function()? create}) async {
+    _throwFailure();
+    for (final page in pages.values) {
+      if (page.clientId == clientId && !page.isRevoked) return page;
+    }
+    if (create == null) return null;
+    final page = create();
+    pages[page.id] = page;
+    return page;
+  }
+
+  @override
+  Future<ClientPage?> pageById(String id) async => pages[id];
+
+  /// An enqueue stores its job and then waits for this completer while it is set, so that a test can run the job
+  /// before the request returns.
+  Completer<void>? enqueueGate;
+
+  /// An enqueue waits for this completer before it reads the stored jobs while it is set, so that a test can change a
+  /// job before the request restarts it.
+  Completer<void>? beforeEnqueueGate;
+
+  @override
+  Future<PublishJob> enqueue(PublishJob job) async {
+    _throwFailure();
+    await beforeEnqueueGate?.future;
+    var stored = job;
+    for (final pending in jobs.values) {
+      if (pending.status == PublishJobStatus.pending &&
+          pending.kind == job.kind &&
+          pending.pageId == job.pageId &&
+          pending.visitId == job.visitId) {
+        stored = pending.restart();
+        break;
+      }
+    }
+    jobs[stored.id] = stored;
+    await enqueueGate?.future;
+    return stored;
+  }
+
+  @override
+  Future<bool> revoke(
+    ClientPage page, {
+    required DateTime at,
+    required PublishJob revokeJob,
+    ClientPage? replacement,
+    PublishJob Function(String visitId)? republish,
+  }) => throw UnimplementedError('No screen revokes a page');
+
+  @override
+  Future<bool> saveJob(PublishJob job) async {
+    final stored = jobs[job.id];
+    if (stored == null || stored.status != PublishJobStatus.pending || stored.generation != job.generation) {
+      return false;
+    }
+    jobs[job.id] = job;
+    return true;
+  }
+
+  @override
+  Future<List<PublishJob>> pendingJobs() async => [
+    for (final job in jobs.values)
+      if (job.status == PublishJobStatus.pending) job,
+  ]..sort((a, b) => a.createdAt.compareTo(b.createdAt));
+
+  @override
+  Future<List<PublishJob>> jobsOfPage(String pageId) async => [
+    for (final job in jobs.values)
+      if (job.pageId == pageId) job,
+  ];
+
+  @override
+  Future<void> clearRetryDelays() async {
+    for (final job in [...jobs.values]) {
+      if (job.status != PublishJobStatus.pending || job.nextAttemptAt == null) continue;
+      jobs[job.id] = PublishJob(
+        id: job.id,
+        kind: job.kind,
+        pageId: job.pageId,
+        visitId: job.visitId,
+        createdAt: job.createdAt,
+        attempts: job.attempts,
+        generation: job.generation,
+      );
+    }
+  }
+
+  @override
+  Future<String?> uploadedPhoto({required String pageId, required String objectPath}) async {
+    final upload = _uploads[objectPath];
+    return upload != null && upload.arrived ? upload.photoPath : null;
+  }
+
+  @override
+  Future<void> recordUploadIntent({
+    required String pageId,
+    required String objectPath,
+    required String photoPath,
+  }) async {
+    if (_uploads[objectPath]?.arrived ?? false) return;
+    _uploads[objectPath] = (photoPath: photoPath, arrived: false);
+  }
+
+  @override
+  Future<void> saveUploadedPhoto({
+    required String pageId,
+    required String objectPath,
+    required String photoPath,
+  }) async {
+    _uploads[objectPath] = (photoPath: photoPath, arrived: true);
+  }
+
+  @override
+  Future<List<String>> uploadedObjects(String pageId) async => [
+    for (final path in _uploads.keys)
+      if (path.startsWith('clientPages/$pageId/')) path,
+  ]..sort();
+
+  @override
+  Future<void> removeUploadedPhoto({required String pageId, required String objectPath}) async {
+    _uploads.remove(objectPath);
+  }
+}
+
+/// A publish queue that a test does not start, over the stores of [repositories] and the backend of [publisher].
+///
+/// The publisher is a [FakePublisher] that is unavailable unless a test gives another, so that a screen offers the
+/// PDF only, as it does in the development and staging flavors.
+PublishQueue publishQueueOf(
+  Repositories repositories, {
+  Publisher? publisher,
+  Identity? identity,
+  PhotoStore? photoStore,
+  NetworkMonitor? networkMonitor,
+  IdGenerator? idGenerator,
+  Clock? clock,
+}) => PublishQueue(
+  repository: repositories.publishing,
+  clients: repositories.clients,
+  visits: repositories.visits,
+  companyProfile: repositories.companyProfile,
+  photoStore: photoStore ?? FakePhotoStore(),
+  publisher: publisher ?? (FakePublisher()..isAvailable = false),
+  identity: identity ?? FakeIdentity(userId: 'user-1'),
+  networkMonitor: networkMonitor ?? FakeNetworkMonitor(),
+  idGenerator: idGenerator ?? SequenceIdGenerator(),
+  clock: clock ?? FixedClock(DateTime.utc(2026, 10)),
+);
+
 /// Keeps the company profile in memory.
 class FakeCompanyProfileRepository implements CompanyProfileRepository {
   new({this.profile});

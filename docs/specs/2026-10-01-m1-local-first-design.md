@@ -168,6 +168,15 @@ The footer prints "꼼꼬미로 만든 보고서".
 The link preview in KakaoTalk uses fixed tags in this build, because a preview for each report needs server rendering.
 View tracking and the confirm button belong to M2.
 
+Brief 7 settled these details:
+
+- The page is `web/report/index.html`, and `firebase.json` rewrites `/r/**` to it. `/r/<pageId>/<visitId>` shows one report, and `/r/<pageId>` lists the reports of the page, newest visit first.
+- The page reads the configuration of the project from `/__/firebase/init.json`. The reserved `/__/firebase/init.js` initializes only the Firebase JavaScript SDK of version 8 and earlier (https://firebase.google.com/docs/hosting/reserved-urls), so the page loads no SDK.
+- The page reads the page document and the reports through the Firestore REST API, and loads each photo from the Storage REST API by its object path without a download token. The rules check each read, so a revoke stops each read at once, also of a photo that issue #13 leaves in Storage.
+- A revoked page and an unknown page ID fail the same rule, and the page shows one message for both.
+- The app shares the link of a report only after the publish job of the visit is done, so the page and the report exist when the link opens.
+- The notice that anyone with the link can open the reports shows before the first link of each client, which is the share that creates the client page.
+
 ## Delivery
 
 Seven pull requests, in this order, each with its own brief under `docs/plans/`:

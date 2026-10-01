@@ -109,6 +109,12 @@ final class PublishQueue {
   /// Each job after a run of it changed its state, for a screen that shows where a job is and why it stopped.
   Stream<PublishJob> get updates => _updates.stream;
 
+  /// Whether the flavor has a backend. Every job of a flavor without one stops with [PublishFailure.unavailable].
+  bool get isAvailable => _publisher.isAvailable;
+
+  /// Whether the client with [clientId] has an open page, which it gets at its first publish.
+  Future<bool> hasOpenPage(String clientId) async => await _repository.openPageOf(clientId) != null;
+
   /// Runs every pending job now, the jobs that an earlier launch left too, and then each time the network returns.
   Future<void> start() async {
     _network ??= _networkMonitor.restored.listen(

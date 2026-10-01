@@ -15,6 +15,8 @@ import '../../../helpers/helpers.dart';
 
 class _MockVisitReportCubit extends MockCubit<VisitReportState> implements VisitReportCubit;
 
+class _MockReportLinkCubit extends MockCubit<ReportLinkState> implements ReportLinkCubit;
+
 void main() {
   const visitId = 'visit-1';
   final client = Client(id: 'client-1', name: '행복빌딩', createdAt: DateTime.utc(2026, 9));
@@ -50,6 +52,8 @@ void main() {
   late FakeCompanyProfileRepository companyProfile;
   late FakePhotoStore photoStore;
   late FakeReportShare reportShare;
+  late FakePublishRepository publishing;
+  late FakeLinkShare linkShare;
 
   /// Makes the screen as wide as a phone and tall enough for the whole report of [current], until the test ends.
   void useTallPhoneScreen(WidgetTester tester) {
@@ -69,6 +73,7 @@ void main() {
     Locale? locale,
     Exception? loadFailure,
     bool keepScreen = false,
+    FakePublisher? publisher,
   }) async {
     if (!keepScreen) useTallPhoneScreen(tester);
     visits = FakeVisitRepository(visits: [visit ?? current])..failure = loadFailure;
@@ -77,6 +82,13 @@ void main() {
     );
     photoStore = FakePhotoStore();
     reportShare = FakeReportShare();
+    linkShare = FakeLinkShare();
+    final repositories = Repositories(
+      clients: FakeClientRepository(clients: [client]),
+      visits: visits,
+      companyProfile: companyProfile,
+      publishing: publishing,
+    );
     await tester.pumpApp(
       Builder(
         builder: (context) => Scaffold(
@@ -87,18 +99,18 @@ void main() {
         ),
       ),
       locale: locale,
-      repositories: Repositories(
-        clients: FakeClientRepository(clients: [client]),
-        visits: visits,
-        companyProfile: companyProfile,
-        publishing: MockPublishRepository(),
-      ),
+      repositories: repositories,
+      // The queue has no backend unless the test gives one, as in the development and staging flavors.
+      publishQueue: publishQueueOf(repositories, publisher: publisher, photoStore: photoStore),
       photoStore: photoStore,
       reportShare: reportShare,
+      linkShare: linkShare,
     );
     await tester.tap(find.text('host'));
     await tester.pumpAndSettle();
   }
+
+  setUp(() => publishing = FakePublishRepository());
 
   Finder shareButton([String label = 'Share PDF']) => find.widgetWithText(FilledButton, label);
 
@@ -408,6 +420,183 @@ void main() {
       });
     });
 
+    group('link share', () {
+      const notice =
+          'Anyone who has the link can open the reports of this client without signing in. '
+          'Send it only to the people who receive the reports.';
+      Finder linkButton([String label = 'Share link']) => find.widgetWithText(FilledButton, label);
+      Finder pdfButton([String label = 'Share PDF']) => find.widgetWithText(OutlinedButton, label);
+
+      testWidgets('offers the link first and the PDF under it in a flavor with a backend', (tester) async {
+        await pumpPage(tester, publisher: FakePublisher());
+
+        expect(isEnabled(tester, linkButton()), isTrue);
+        expect(tester.widget<OutlinedButton>(pdfButton()).onPressed, isNotNull);
+        expect(tester.getTopLeft(linkButton()).dy, lessThan(tester.getTopLeft(pdfButton()).dy));
+      });
+
+      testWidgets('offers the PDF alone in a flavor without a backend', (tester) async {
+        await pumpPage(tester);
+
+        expect(find.text('Share link'), findsNothing);
+        expect(isEnabled(tester, shareButton()), isTrue);
+      });
+
+      testWidgets('says before the first link of a client that anyone with the link can open the reports, and '
+          'publishes nothing when the person closes the notice', (tester) async {
+        final publisher = FakePublisher();
+        await pumpPage(tester, publisher: publisher);
+
+        await tester.tap(linkButton());
+        await tester.pumpAndSettle();
+        expect(find.widgetWithText(AlertDialog, 'Share a link?'), findsOneWidget);
+        expect(find.text(notice), findsOneWidget);
+
+        await tester.tap(find.widgetWithText(TextButton, 'Cancel'));
+        await tester.pumpAndSettle();
+
+        expect(find.byType(AlertDialog), findsNothing);
+        expect(publishing.jobs, isEmpty);
+        expect(publisher.calls, isEmpty);
+        expect(linkShare.shared, isEmpty);
+      });
+
+      testWidgets('publishes the visit after the notice, and then shares the link of its report', (tester) async {
+        final publisher = FakePublisher();
+        await pumpPage(tester, publisher: publisher);
+
+        await tester.tap(linkButton());
+        await tester.pumpAndSettle();
+        await tester.tap(find.widgetWithText(FilledButton, 'Share'));
+        await tester.pumpAndSettle();
+
+        final page = publishing.pages.values.single;
+        expect(publisher.reports.keys, ['${page.id}/$visitId']);
+        expect(linkShare.shared, [Uri.parse('https://kkomkkomi.web.app/r/${page.id}/$visitId')]);
+        expect(find.byType(SnackBar), findsNothing);
+      });
+
+      testWidgets('shares without the notice when the client has a page', (tester) async {
+        final page = ClientPage(id: 'page-1', clientId: client.id, createdAt: DateTime.utc(2026, 10));
+        publishing.pages[page.id] = page;
+        await pumpPage(tester, publisher: FakePublisher());
+
+        await tester.tap(linkButton());
+        await tester.pumpAndSettle();
+
+        expect(find.byType(AlertDialog), findsNothing);
+        expect(linkShare.shared, [Uri.parse('https://kkomkkomi.web.app/r/page-1/$visitId')]);
+      });
+
+      testWidgets('shows that the report uploads while the job runs, and takes no second press', (tester) async {
+        final publisher = FakePublisher();
+        final gate = Completer<void>();
+        publisher.gates['writeReport'] = gate;
+        publishing.pages['page-1'] = ClientPage(id: 'page-1', clientId: client.id, createdAt: DateTime.utc(2026, 10));
+        await pumpPage(tester, publisher: publisher);
+
+        await tester.tap(linkButton());
+        await tester.pump();
+
+        expect(find.text("Uploading the report. The share sheet opens when it's done."), findsOneWidget);
+        final button = find.ancestor(of: find.byType(CircularProgressIndicator), matching: find.byType(FilledButton));
+        expect(tester.widget<FilledButton>(button).onPressed, isNull);
+        // The PDF does not wait for the link.
+        expect(tester.widget<OutlinedButton>(pdfButton()).onPressed, isNotNull);
+
+        gate.complete();
+        await tester.pumpAndSettle();
+
+        expect(find.text("Uploading the report. The share sheet opens when it's done."), findsNothing);
+        expect(linkShare.shared, hasLength(1));
+      });
+
+      testWidgets('opens no share sheet over another screen, and shares on the next press', (tester) async {
+        final publisher = FakePublisher();
+        final gate = Completer<void>();
+        publisher.gates['writeReport'] = gate;
+        publishing.pages['page-1'] = ClientPage(id: 'page-1', clientId: client.id, createdAt: DateTime.utc(2026, 10));
+        await pumpPage(tester, companyName: null, publisher: publisher);
+
+        await tester.tap(linkButton());
+        await tester.pump();
+        await tester.tap(find.text('Add Company Name'));
+        await tester.pumpAndSettle();
+        expect(find.byType(CompanyProfilePage), findsOneWidget);
+        gate.complete();
+        await tester.pumpAndSettle();
+        expect(linkShare.shared, isEmpty);
+
+        await tester.pageBack();
+        await tester.pumpAndSettle();
+        expect(find.text('The report is uploaded. Press Share link to open the share sheet.'), findsOneWidget);
+        await tester.tap(linkButton());
+        await tester.pumpAndSettle();
+
+        expect(linkShare.shared, [Uri.parse('https://kkomkkomi.web.app/r/page-1/$visitId')]);
+        // The second press published the visit again, with the page as it is now.
+        expect(publisher.calls.where((call) => call == 'writePage page-1'), hasLength(2));
+      });
+
+      testWidgets('opens no share sheet of the link while the share sheet of the PDF is on its way', (tester) async {
+        final publisher = FakePublisher();
+        final uploadGate = Completer<void>();
+        publisher.gates['writeReport'] = uploadGate;
+        publishing.pages['page-1'] = ClientPage(id: 'page-1', clientId: client.id, createdAt: DateTime.utc(2026, 10));
+        await pumpPage(tester, publisher: publisher);
+        final pdfGate = Completer<void>();
+        reportShare.gate = pdfGate;
+
+        await tester.tap(linkButton());
+        await tester.pump();
+        await tester.tap(pdfButton());
+        await tester.pump();
+        uploadGate.complete();
+        await tester.pump();
+        pdfGate.complete();
+        await tester.pumpAndSettle();
+
+        expect(reportShare.shared, hasLength(1));
+        expect(linkShare.shared, isEmpty);
+        expect(find.text('The report is uploaded. Press Share link to open the share sheet.'), findsOneWidget);
+      });
+
+      testWidgets('shows why the upload stopped, and shares nothing', (tester) async {
+        final publisher = FakePublisher();
+        publisher.failures['writePage'] = [const PublishException(PublishErrorKind.refused, 'permission-denied')];
+        publishing.pages['page-1'] = ClientPage(id: 'page-1', clientId: client.id, createdAt: DateTime.utc(2026, 10));
+        await pumpPage(tester, publisher: publisher);
+
+        await tester.tap(linkButton());
+        await tester.pumpAndSettle();
+
+        expect(find.text("Can't upload the report. You can share the PDF for now."), findsOneWidget);
+        expect(isEnabled(tester, linkButton()), isTrue);
+        expect(linkShare.shared, isEmpty);
+      });
+
+      testWidgets('shows a message when the share sheet does not open with the link', (tester) async {
+        publishing.pages['page-1'] = ClientPage(id: 'page-1', clientId: client.id, createdAt: DateTime.utc(2026, 10));
+        await pumpPage(tester, publisher: FakePublisher());
+        linkShare.failure = const ReportShareException();
+
+        await tester.tap(linkButton());
+        await tester.pumpAndSettle();
+
+        expect(find.widgetWithText(SnackBar, "Can't share the report right now. Try again."), findsOneWidget);
+      });
+
+      testWidgets('offers no link when no zone has a photo or a note', (tester) async {
+        await pumpPage(
+          tester,
+          visit: visitWith([ZoneRecord(zoneId: 'zone-1', zoneName: '로비')]),
+          publisher: FakePublisher(),
+        );
+
+        expect(isEnabled(tester, linkButton()), isFalse);
+      });
+    });
+
     testWidgets('says so and offers no share when no zone has a photo or a note', (tester) async {
       await pumpPage(
         tester,
@@ -586,6 +775,46 @@ void main() {
           tester.expectWholeText(message);
         });
       }
+
+      for (final (locale, link, title, notice, close, confirm) in [
+        (
+          const Locale('en'),
+          'Share link',
+          'Share a link?',
+          'Anyone who has the link can open the reports of this client without signing in. '
+              'Send it only to the people who receive the reports.',
+          'Cancel',
+          'Share',
+        ),
+        (
+          const Locale('ko'),
+          '링크로 공유하기',
+          '링크로 공유할까요?',
+          '링크가 있으면 누구나 로그인 없이 이 거래처의 보고서를 볼 수 있어요. 보고서를 받을 분에게만 보내 주세요.',
+          '닫기',
+          '공유하기',
+        ),
+      ]) {
+        testWidgets('fits the link control and the notice before the first link in ${locale.languageCode}', (
+          tester,
+        ) async {
+          tester.useNarrowScreenWithLargestText();
+          await pumpPage(tester, visit: longVisit, locale: locale, keepScreen: true, publisher: FakePublisher());
+          tester.expectWholeText(link);
+
+          await tester.tap(find.text(link));
+          await tester.pumpAndSettle();
+
+          for (final text in [title, notice, close, confirm]) {
+            await tester.scrollUntilVisible(
+              find.text(text),
+              100,
+              scrollable: find.descendant(of: find.byType(AlertDialog), matching: find.byType(Scrollable)).first,
+            );
+            tester.expectWholeText(text);
+          }
+        });
+      }
     });
   });
 
@@ -633,12 +862,29 @@ void main() {
       ),
     );
 
-    setUp(() => cubit = _MockVisitReportCubit());
+    late ReportLinkCubit linkCubit;
+
+    setUp(() {
+      cubit = _MockVisitReportCubit();
+      linkCubit = _MockReportLinkCubit();
+      when(() => linkCubit.state).thenReturn(const ReportLinkState(status: ReportLinkStatus.unavailable));
+    });
+
+    /// Pumps the view under [cubit] and [linkCubit].
+    Future<void> pumpCubits(WidgetTester tester) => tester.pumpApp(
+      MultiBlocProvider(
+        providers: [
+          BlocProvider<VisitReportCubit>.value(value: cubit),
+          BlocProvider<ReportLinkCubit>.value(value: linkCubit),
+        ],
+        child: const VisitReportView(),
+      ),
+    );
 
     Future<void> pumpView(WidgetTester tester, VisitReportState state) async {
       useTallPhoneScreen(tester);
       when(() => cubit.state).thenReturn(state);
-      await tester.pumpApp(BlocProvider.value(value: cubit, child: const VisitReportView()));
+      await pumpCubits(tester);
     }
 
     testWidgets('shows a progress indicator and no share control while the report loads', (tester) async {
@@ -691,7 +937,7 @@ void main() {
       addTearDown(states.close);
       whenListen(cubit, states.stream, initialState: shown(VisitReportStatus.sharing));
       useTallPhoneScreen(tester);
-      await tester.pumpApp(BlocProvider.value(value: cubit, child: const VisitReportView()));
+      await pumpCubits(tester);
 
       states.add(shown(VisitReportStatus.shareFailed));
       await tester.pumpAndSettle();
@@ -706,12 +952,146 @@ void main() {
       expect(find.byType(SnackBar), findsNothing);
     });
 
+    group('link share', () {
+      /// What the screen says in each state of the link share, in English and in Korean.
+      final messages = <ReportLinkState, (String, String)>{
+        const ReportLinkState(status: ReportLinkStatus.publishing): (
+          "Uploading the report. The share sheet opens when it's done.",
+          '보고서를 올리고 있어요. 다 올리면 공유 창이 열려요.',
+        ),
+        const ReportLinkState(status: ReportLinkStatus.waitingForRetry): (
+          "Can't upload the report yet. It tries again soon, and the share sheet opens when it's done.",
+          '아직 보고서를 올리지 못했어요. 잠시 뒤에 다시 올리고, 다 올리면 공유 창이 열려요.',
+        ),
+        for (final failure in [null, PublishFailure.refused, PublishFailure.unavailable])
+          ReportLinkState(status: ReportLinkStatus.failed, failure: failure): (
+            "Can't upload the report. You can share the PDF for now.",
+            '보고서를 올리지 못했어요. 지금은 PDF로 공유할 수 있어요.',
+          ),
+        const ReportLinkState(status: ReportLinkStatus.failed, failure: PublishFailure.revoked): (
+          'The link of this client changed during the upload. Try again.',
+          '올리는 동안 이 거래처의 링크가 바뀌었어요. 다시 시도해 주세요.',
+        ),
+        const ReportLinkState(status: ReportLinkStatus.failed, failure: PublishFailure.photoMissing): (
+          'A photo of this visit is missing. Retake it on the visit screen, then try again.',
+          '이 방문의 사진 파일을 찾지 못했어요. 방문 화면에서 사진을 다시 찍은 뒤 다시 시도해 주세요.',
+        ),
+        const ReportLinkState(status: ReportLinkStatus.published): (
+          'The report is uploaded. Press Share link to open the share sheet.',
+          '보고서를 올렸어요. 링크로 공유하기를 누르면 공유 창이 열려요.',
+        ),
+        for (final failure in [PublishFailure.photoNotJpeg, PublishFailure.photoTooLarge])
+          ReportLinkState(status: ReportLinkStatus.failed, failure: failure): (
+            "A photo of this visit can't be uploaded. Retake it on the visit screen, then try again.",
+            '올릴 수 없는 사진이 있어요. 방문 화면에서 사진을 다시 찍은 뒤 다시 시도해 주세요.',
+          ),
+      };
+
+      for (final MapEntry(key: linkState, value: (english, _)) in messages.entries) {
+        testWidgets('says "$english" for $linkState', (tester) async {
+          when(() => linkCubit.state).thenReturn(linkState);
+
+          await pumpView(tester, shown(VisitReportStatus.ready));
+
+          expect(find.text(english), findsOneWidget);
+        });
+      }
+
+      for (final linkState in const [
+        ReportLinkState(),
+        ReportLinkState(status: ReportLinkStatus.ready),
+        ReportLinkState(status: ReportLinkStatus.shareFailed),
+      ]) {
+        testWidgets('says nothing about the link for $linkState', (tester) async {
+          when(() => linkCubit.state).thenReturn(linkState);
+
+          await pumpView(tester, shown(VisitReportStatus.ready));
+
+          final bar = find.ancestor(of: find.text('Share link'), matching: find.byType(Column)).first;
+          expect(find.descendant(of: bar, matching: find.byType(Text)), findsNWidgets(2));
+        });
+      }
+
+      testWidgets('passes a press to the cubit, which may open the share sheet while the screen is on top', (
+        tester,
+      ) async {
+        when(() => linkCubit.state).thenReturn(const ReportLinkState(status: ReportLinkStatus.ready));
+        when(
+          () => linkCubit.share(mayOpenShareSheet: any(named: 'mayOpenShareSheet')),
+        ).thenAnswer((_) async {});
+        await pumpView(tester, shown(VisitReportStatus.ready));
+
+        await tester.tap(find.widgetWithText(FilledButton, 'Share link'));
+        await tester.pumpAndSettle();
+
+        final mayOpen =
+            verify(
+                  () => linkCubit.share(mayOpenShareSheet: captureAny(named: 'mayOpenShareSheet')),
+                ).captured.single
+                as bool Function();
+        expect(mayOpen(), isTrue);
+
+        // A share of the PDF on its way keeps the share sheet of the link closed.
+        when(() => cubit.state).thenReturn(shown(VisitReportStatus.sharing));
+        expect(mayOpen(), isFalse);
+      });
+
+      testWidgets('shows the message of a link that did not reach the share sheet once', (tester) async {
+        final states = StreamController<ReportLinkState>();
+        addTearDown(states.close);
+        whenListen(linkCubit, states.stream, initialState: const ReportLinkState(status: ReportLinkStatus.publishing));
+        await pumpView(tester, shown(VisitReportStatus.ready));
+
+        states.add(const ReportLinkState(status: ReportLinkStatus.shareFailed));
+        await tester.pumpAndSettle();
+        expect(find.widgetWithText(SnackBar, "Can't share the report right now. Try again."), findsOneWidget);
+
+        ScaffoldMessenger.of(tester.element(find.byType(Scaffold))).removeCurrentSnackBar();
+        await tester.pumpAndSettle();
+        states.add(const ReportLinkState(status: ReportLinkStatus.shareFailed, isFirstShare: true));
+        await tester.pumpAndSettle();
+
+        expect(find.byType(SnackBar), findsNothing);
+      });
+
+      group('on a screen 320 pixels wide at the largest text size', () {
+        for (final (locale, link, pdf) in [
+          (const Locale('en'), 'Share link', 'Share PDF'),
+          (const Locale('ko'), '링크로 공유하기', 'PDF로 공유하기'),
+        ]) {
+          for (final MapEntry(key: linkState, value: (english, korean)) in messages.entries) {
+            testWidgets('fits the message and both controls in ${locale.languageCode} for $linkState', (tester) async {
+              tester.useNarrowScreenWithLargestText();
+              when(() => linkCubit.state).thenReturn(linkState);
+              when(() => cubit.state).thenReturn(shown(VisitReportStatus.ready));
+
+              await tester.pumpApp(
+                MultiBlocProvider(
+                  providers: [
+                    BlocProvider<VisitReportCubit>.value(value: cubit),
+                    BlocProvider<ReportLinkCubit>.value(value: linkCubit),
+                  ],
+                  child: const VisitReportView(),
+                ),
+                locale: locale,
+              );
+
+              tester
+                ..expectWholeText(locale.languageCode == 'en' ? english : korean)
+                ..expectWholeText(pdf);
+              if (linkState.status != ReportLinkStatus.publishing) tester.expectWholeText(link);
+            });
+          }
+        }
+      });
+    });
+
     testWidgets('shows no message when the share sheet opened', (tester) async {
       final states = StreamController<VisitReportState>();
       addTearDown(states.close);
       whenListen(cubit, states.stream, initialState: shown(VisitReportStatus.sharing));
       useTallPhoneScreen(tester);
-      await tester.pumpApp(BlocProvider.value(value: cubit, child: const VisitReportView()));
+      await pumpCubits(tester);
 
       states.add(shown(VisitReportStatus.ready));
       await tester.pumpAndSettle();

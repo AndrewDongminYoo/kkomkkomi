@@ -1,0 +1,49 @@
+<!doctype html>
+<html lang="ko">
+  <head>
+    <meta charset="utf-8" />
+    <meta
+      name="viewport"
+      content="width=device-width,initial-scale=1,viewport-fit=cover"
+    />
+    <!-- The page reads only its own files, the configuration that Hosting gives, Firestore, and the photos in Storage. -->
+    <meta
+      http-equiv="Content-Security-Policy"
+      content="default-src 'none'; script-src 'self'; style-src 'self'; img-src https://firebasestorage.googleapis.com; connect-src 'self' https://firestore.googleapis.com; base-uri 'none'; form-action 'none'"
+    />
+    <!-- A report link holds the page ID, so no request of the page tells another site where it came from. -->
+    <meta name="referrer" content="no-referrer" />
+    <meta name="robots" content="noindex, nofollow" />
+    <title>청소 완료 보고서</title>
+    <!-- Every report link gets the same preview: a preview of each report needs server rendering. -->
+    <meta property="og:type" content="website" />
+    <meta property="og:site_name" content="꼼꼬미" />
+    <meta property="og:locale" content="ko_KR" />
+    <meta property="og:title" content="청소 완료 보고서" />
+    <meta
+      property="og:description"
+      content="청소 전후 사진과 메모를 담은 보고서예요."
+    />
+    <meta
+      name="theme-color"
+      content="#faf7f1"
+      media="(prefers-color-scheme: light)"
+    />
+    <meta
+      name="theme-color"
+      content="#121a28"
+      media="(prefers-color-scheme: dark)"
+    />
+    <link rel="stylesheet" href="/report/report.css" />
+    <script type="module" src="/report/main.js"></script>
+  </head>
+  <body>
+    <main id="app">
+      <noscript>
+        <p class="status">
+          브라우저에서 자바스크립트를 켜면 보고서를 볼 수 있어요.
+        </p>
+      </noscript>
+    </main>
+  </body>
+</html>

@@ -272,6 +272,30 @@ void main() {
     });
   });
 
+  group('isAvailable', () {
+    test('says whether the publisher of the flavor has a backend', () {
+      final queue = newQueue();
+      expect(queue.isAvailable, isTrue);
+
+      publisher.isAvailable = false;
+      expect(queue.isAvailable, isFalse);
+    });
+  });
+
+  group('hasOpenPage', () {
+    test('is false before the first publish of a client, true after it, and false after a revoke', () async {
+      final queue = newQueue();
+      expect(await queue.hasOpenPage('client-1'), isFalse);
+
+      await queue.publishVisit(visit1.id);
+      await settle();
+      expect(await queue.hasOpenPage('client-1'), isTrue);
+
+      await queue.revokeClientPage('client-1');
+      expect(await queue.hasOpenPage('client-1'), isFalse);
+    });
+  });
+
   group('publishVisit', () {
     test('writes the page, uploads the photos, and then writes the report, and the job is done', () async {
       final queue = newQueue();

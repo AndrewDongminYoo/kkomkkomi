@@ -6,9 +6,11 @@ import 'package:kkomkkomi/domain/domain.dart';
 import 'package:kkomkkomi/export/export.dart';
 import 'package:kkomkkomi/l10n/l10n.dart';
 import 'package:kkomkkomi/presentation/company_profile/company_profile.dart';
+import 'package:kkomkkomi/presentation/shared/confirm_dialog.dart';
 import 'package:kkomkkomi/presentation/shared/load_failure.dart';
 import 'package:kkomkkomi/presentation/shared/photo_thumbnail.dart';
 import 'package:kkomkkomi/presentation/shared/save_guard.dart';
+import 'package:kkomkkomi/presentation/visit_report/cubit/report_link_cubit.dart';
 import 'package:kkomkkomi/presentation/visit_report/cubit/visit_report_cubit.dart';
 import 'package:material_ui/material_ui.dart';
 
@@ -23,7 +25,8 @@ ReportLabels reportLabelsOf(AppLocalizations l10n, VisitDate visitDate) => Repor
   footer: l10n.reportFooter,
 );
 
-/// The screen of the report of one visit: what the report lacks, a preview, and the control that shares the PDF.
+/// The screen of the report of one visit: what the report lacks, a preview, and the controls that share the link
+/// and the PDF.
 class VisitReportPage extends StatelessWidget {
   const new({required this.visitId, super.key});
 
@@ -34,20 +37,36 @@ class VisitReportPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return BlocProvider(
-      create: (context) {
-        final cubit = VisitReportCubit(
-          visitId: visitId,
-          visits: context.read<VisitRepository>(),
-          clients: context.read<ClientRepository>(),
-          companyProfile: context.read<CompanyProfileRepository>(),
-          photoStore: context.read<PhotoStore>(),
-          reportFont: context.read<ReportFont>(),
-          reportShare: context.read<ReportShare>(),
-        );
-        unawaited(cubit.load());
-        return cubit;
-      },
+    return MultiBlocProvider(
+      providers: [
+        BlocProvider(
+          create: (context) {
+            final cubit = VisitReportCubit(
+              visitId: visitId,
+              visits: context.read<VisitRepository>(),
+              clients: context.read<ClientRepository>(),
+              companyProfile: context.read<CompanyProfileRepository>(),
+              photoStore: context.read<PhotoStore>(),
+              reportFont: context.read<ReportFont>(),
+              reportShare: context.read<ReportShare>(),
+            );
+            unawaited(cubit.load());
+            return cubit;
+          },
+        ),
+        BlocProvider(
+          create: (context) {
+            final cubit = ReportLinkCubit(
+              visitId: visitId,
+              visits: context.read<VisitRepository>(),
+              publishQueue: context.read<PublishQueue>(),
+              linkShare: context.read<LinkShare>(),
+            );
+            unawaited(cubit.load());
+            return cubit;
+          },
+        ),
+      ],
       child: const VisitReportView(),
     );
   }
@@ -59,12 +78,36 @@ class VisitReportView extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final l10n = context.l10n;
-    return BlocConsumer<VisitReportCubit, VisitReportState>(
-      listenWhen: (previous, current) =>
-          previous.status != current.status && current.status == VisitReportStatus.shareFailed,
-      listener: (context, _) => ScaffoldMessenger.of(context)
-        ..hideCurrentSnackBar()
-        ..showSnackBar(SnackBar(content: Text(l10n.reportShareFailedMessage))),
+    void showShareFailed() => ScaffoldMessenger.of(context)
+      ..hideCurrentSnackBar()
+      ..showSnackBar(SnackBar(content: Text(l10n.reportShareFailedMessage)));
+    return MultiBlocListener(
+      listeners: [
+        BlocListener<VisitReportCubit, VisitReportState>(
+          listenWhen: (previous, current) =>
+              previous.status != current.status && current.status == VisitReportStatus.shareFailed,
+          listener: (_, _) => showShareFailed(),
+        ),
+        BlocListener<ReportLinkCubit, ReportLinkState>(
+          listenWhen: (previous, current) =>
+              previous.status != current.status && current.status == ReportLinkStatus.shareFailed,
+          listener: (_, _) => showShareFailed(),
+        ),
+      ],
+      child: const _ReportScaffold(),
+    );
+  }
+}
+
+/// The scaffold of the report screen, under the listeners that show the share failures.
+class _ReportScaffold extends StatelessWidget {
+  const new();
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = context.l10n;
+    final linkState = context.watch<ReportLinkCubit>().state;
+    return BlocBuilder<VisitReportCubit, VisitReportState>(
       builder: (context, state) {
         final document = state.document;
         // A person who leaves while the PDF is on its way would get a share sheet over another screen.
@@ -91,11 +134,40 @@ class VisitReportView extends StatelessWidget {
                             context.read<VisitReportCubit>().share(reportLabelsOf(l10n, document.visitDate)),
                           )
                         : null,
+                    linkState: linkState,
+                    // The link shares the same zones as the PDF, so it waits for a report that prints a zone too.
+                    onShareLink: linkState.canShare && document.zones.isNotEmpty
+                        ? () => unawaited(_shareLink(context, linkState))
+                        : null,
                   ),
           ),
         );
       },
     );
+  }
+
+  /// Starts the link share. Before the first link of the client, the person learns that anyone with the link can
+  /// open the reports, and the share starts only when they go on.
+  static Future<void> _shareLink(BuildContext context, ReportLinkState linkState) async {
+    final cubit = context.read<ReportLinkCubit>();
+    final report = context.read<VisitReportCubit>();
+    // The upload can end after the person opened another screen or started the share of the PDF. The share sheet of
+    // the link then waits for the next press, so that it never opens over another screen or another share sheet.
+    bool mayOpenShareSheet() =>
+        context.mounted &&
+        (ModalRoute.of(context)?.isCurrent ?? false) &&
+        report.state.status != VisitReportStatus.sharing;
+    if (linkState.isFirstShare) {
+      final l10n = context.l10n;
+      final goOn = await showConfirmDialog(
+        context: context,
+        title: l10n.reportLinkNoticeTitle,
+        message: l10n.reportLinkNoticeMessage,
+        confirmLabel: l10n.reportLinkNoticeConfirmButton,
+      );
+      if (!goOn) return;
+    }
+    await cubit.share(mayOpenShareSheet: mayOpenShareSheet);
   }
 }
 
@@ -354,29 +426,80 @@ class _PreviewSlot extends StatelessWidget {
   }
 }
 
-/// The control that shares the PDF. It stays at the foot of the screen, under the preview.
+/// The controls that share the link and the PDF. They stay at the foot of the screen, under the preview.
+///
+/// The link is the main way to send a report, so its control comes first. A flavor without a backend shows the PDF
+/// control alone.
 class _ShareBar extends StatelessWidget {
-  const new({required this.isSharing, required this.onShare});
+  const new({required this.isSharing, required this.onShare, required this.linkState, required this.onShareLink});
 
   final bool isSharing;
 
-  /// Starts the share, or null while the report cannot be shared.
+  /// Starts the share of the PDF, or null while the report cannot be shared.
   final VoidCallback? onShare;
+
+  final ReportLinkState linkState;
+
+  /// Starts the share of the link, or null while it cannot start.
+  final VoidCallback? onShareLink;
 
   @override
   Widget build(BuildContext context) {
+    final l10n = context.l10n;
+    final hasLink = linkState.status != ReportLinkStatus.unavailable;
+    final pdfLabel = isSharing
+        ? const SizedBox.square(dimension: 20, child: CircularProgressIndicator(strokeWidth: 2))
+        : Text(l10n.reportShareButton);
+    final message = _linkMessageOf(linkState, l10n);
     return SafeArea(
       minimum: const EdgeInsets.all(16),
-      // A bar at the foot of a scaffold gets loose constraints, and the button fills the width.
-      child: SizedBox(
-        width: double.infinity,
-        child: FilledButton(
-          onPressed: onShare,
-          child: isSharing
-              ? const SizedBox.square(dimension: 20, child: CircularProgressIndicator(strokeWidth: 2))
-              : Text(context.l10n.reportShareButton),
+      // At a large text size the message and the two controls can be taller than the screen allows a bar, so the bar
+      // takes at most half of the screen and scrolls. It starts at its end, where the controls are.
+      child: ConstrainedBox(
+        constraints: BoxConstraints(maxHeight: MediaQuery.sizeOf(context).height / 2),
+        child: SingleChildScrollView(
+          reverse: true,
+          // A bar at the foot of a scaffold gets loose constraints, and the buttons fill the width.
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              if (message != null) ...[
+                Semantics(liveRegion: true, child: Text(message)),
+                const SizedBox(height: 8),
+              ],
+              if (hasLink) ...[
+                FilledButton(
+                  onPressed: onShareLink,
+                  child: linkState.status == ReportLinkStatus.publishing
+                      ? const SizedBox.square(dimension: 20, child: CircularProgressIndicator(strokeWidth: 2))
+                      : Text(l10n.reportLinkShareButton),
+                ),
+                const SizedBox(height: 8),
+                OutlinedButton(onPressed: onShare, child: pdfLabel),
+              ] else
+                FilledButton(onPressed: onShare, child: pdfLabel),
+            ],
+          ),
         ),
       ),
     );
   }
+
+  /// What the screen says about the link share in [state], or null when it says nothing.
+  static String? _linkMessageOf(ReportLinkState state, AppLocalizations l10n) => switch (state.status) {
+    ReportLinkStatus.publishing => l10n.reportLinkPublishingMessage,
+    ReportLinkStatus.waitingForRetry => l10n.reportLinkWaitingMessage,
+    ReportLinkStatus.failed => switch (state.failure) {
+      PublishFailure.revoked => l10n.reportLinkRevokedMessage,
+      PublishFailure.photoMissing => l10n.reportLinkPhotoMissingMessage,
+      PublishFailure.photoNotJpeg || PublishFailure.photoTooLarge => l10n.reportLinkPhotoUnusableMessage,
+      PublishFailure.unavailable || PublishFailure.refused || null => l10n.reportLinkFailedMessage,
+    },
+    ReportLinkStatus.published => l10n.reportLinkPublishedMessage,
+    ReportLinkStatus.loading ||
+    ReportLinkStatus.unavailable ||
+    ReportLinkStatus.ready ||
+    ReportLinkStatus.shareFailed => null,
+  };
 }

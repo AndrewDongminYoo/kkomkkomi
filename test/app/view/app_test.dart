@@ -10,7 +10,13 @@ import '../../helpers/helpers.dart';
 void main() {
   group('App', () {
     testWidgets('shows the client list as the home screen', (tester) async {
-      await tester.pumpWidget(App(repositories: mockRepositories(), identity: FakeIdentity()));
+      await tester.pumpWidget(
+        App(
+          repositories: mockRepositories(),
+          identity: FakeIdentity(),
+          publishQueue: publishQueueOf(mockRepositories()),
+        ),
+      );
       await tester.pumpAndSettle();
 
       expect(find.byType(ClientListPage), findsOneWidget);
@@ -21,7 +27,9 @@ void main() {
     testWidgets('provides each repository to the widgets below it', (tester) async {
       final repositories = mockRepositories();
 
-      await tester.pumpWidget(App(repositories: repositories, identity: FakeIdentity()));
+      await tester.pumpWidget(
+        App(repositories: repositories, identity: FakeIdentity(), publishQueue: publishQueueOf(repositories)),
+      );
 
       final context = tester.element(find.byType(ClientListPage));
       expect(context.read<ClientRepository>(), same(repositories.clients));
@@ -32,13 +40,21 @@ void main() {
     testWidgets('provides the identity that it is given', (tester) async {
       final identity = FakeIdentity(userId: 'user-1');
 
-      await tester.pumpWidget(App(repositories: mockRepositories(), identity: identity));
+      await tester.pumpWidget(
+        App(repositories: mockRepositories(), identity: identity, publishQueue: publishQueueOf(mockRepositories())),
+      );
 
       expect(tester.element(find.byType(ClientListPage)).read<Identity>(), same(identity));
     });
 
     testWidgets('provides the random identifiers and the device time unless it is given others', (tester) async {
-      await tester.pumpWidget(App(repositories: mockRepositories(), identity: FakeIdentity()));
+      await tester.pumpWidget(
+        App(
+          repositories: mockRepositories(),
+          identity: FakeIdentity(),
+          publishQueue: publishQueueOf(mockRepositories()),
+        ),
+      );
 
       final context = tester.element(find.byType(ClientListPage));
       expect(context.read<IdGenerator>(), isA<RandomIdGenerator>());
@@ -50,7 +66,13 @@ void main() {
       final clock = FixedClock(DateTime.utc(2026, 10));
 
       await tester.pumpWidget(
-        App(repositories: mockRepositories(), identity: FakeIdentity(), idGenerator: idGenerator, clock: clock),
+        App(
+          repositories: mockRepositories(),
+          identity: FakeIdentity(),
+          publishQueue: publishQueueOf(mockRepositories()),
+          idGenerator: idGenerator,
+          clock: clock,
+        ),
       );
 
       final context = tester.element(find.byType(ClientListPage));
@@ -60,7 +82,13 @@ void main() {
 
     testWidgets('provides the camera of the picker and the photo store of the documents directory unless it is '
         'given others', (tester) async {
-      await tester.pumpWidget(App(repositories: mockRepositories(), identity: FakeIdentity()));
+      await tester.pumpWidget(
+        App(
+          repositories: mockRepositories(),
+          identity: FakeIdentity(),
+          publishQueue: publishQueueOf(mockRepositories()),
+        ),
+      );
 
       final context = tester.element(find.byType(ClientListPage));
       expect(context.read<PhotoCapture>(), isA<ImagePickerPhotoCapture>());
@@ -68,44 +96,67 @@ void main() {
     });
 
     testWidgets(
-      'provides the font of the assets and the share sheet of the printing plugin unless it is given others',
+      'provides the font of the assets and the share sheets of the plugins unless it is given others',
       (
         tester,
       ) async {
-        await tester.pumpWidget(App(repositories: mockRepositories(), identity: FakeIdentity()));
+        await tester.pumpWidget(
+          App(
+            repositories: mockRepositories(),
+            identity: FakeIdentity(),
+            publishQueue: publishQueueOf(mockRepositories()),
+          ),
+        );
 
         final context = tester.element(find.byType(ClientListPage));
         expect(context.read<ReportFont>(), isA<AssetReportFont>());
         expect(context.read<ReportShare>(), isA<PrintingReportShare>());
+        expect(context.read<LinkShare>(), isA<SharePlusLinkShare>());
       },
     );
 
-    testWidgets('provides the report font and the share sheet that it is given', (tester) async {
+    testWidgets('provides the report font and the share sheets that it is given', (tester) async {
+      final repositories = mockRepositories();
       const reportFont = FileReportFont();
       final reportShare = FakeReportShare();
+      final linkShare = FakeLinkShare();
 
       await tester.pumpWidget(
         App(
-          repositories: mockRepositories(),
+          repositories: repositories,
           identity: FakeIdentity(),
+          publishQueue: publishQueueOf(repositories),
           reportFont: reportFont,
           reportShare: reportShare,
+          linkShare: linkShare,
         ),
       );
 
       final context = tester.element(find.byType(ClientListPage));
       expect(context.read<ReportFont>(), same(reportFont));
       expect(context.read<ReportShare>(), same(reportShare));
+      expect(context.read<LinkShare>(), same(linkShare));
+    });
+
+    testWidgets('provides the publish queue that it is given', (tester) async {
+      final repositories = mockRepositories();
+      final publishQueue = publishQueueOf(repositories);
+
+      await tester.pumpWidget(App(repositories: repositories, identity: FakeIdentity(), publishQueue: publishQueue));
+
+      expect(tester.element(find.byType(ClientListPage)).read<PublishQueue>(), same(publishQueue));
     });
 
     testWidgets('provides the camera and the photo store that it is given', (tester) async {
+      final repositories = mockRepositories();
       final photoCapture = FakePhotoCapture();
       final photoStore = FakePhotoStore();
 
       await tester.pumpWidget(
         App(
-          repositories: mockRepositories(),
+          repositories: repositories,
           identity: FakeIdentity(),
+          publishQueue: publishQueueOf(repositories),
           photoCapture: photoCapture,
           photoStore: photoStore,
         ),
@@ -120,7 +171,13 @@ void main() {
       tester.platformDispatcher.localesTestValue = const [Locale('ko', 'KR')];
       addTearDown(tester.platformDispatcher.clearLocalesTestValue);
 
-      await tester.pumpWidget(App(repositories: mockRepositories(), identity: FakeIdentity()));
+      await tester.pumpWidget(
+        App(
+          repositories: mockRepositories(),
+          identity: FakeIdentity(),
+          publishQueue: publishQueueOf(mockRepositories()),
+        ),
+      );
       await tester.pumpAndSettle();
 
       expect(find.widgetWithText(AppBar, '거래처'), findsOneWidget);

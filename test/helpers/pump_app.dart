@@ -16,20 +16,22 @@ extension PumpApp on WidgetTester {
   /// Pumps [widget] as the home of a `MaterialApp` that has the localization delegates of the app.
   ///
   /// The app shows the strings of [locale] when one is given, and the English strings otherwise.
-  /// When [repositories] is given, the widgets read its members, [identity], [idGenerator], [clock], [photoCapture],
-  /// [photoStore], [reportFont], and [reportShare] through `RepositoryProvider`, as they do under the app. A port
-  /// that is not given is a fake.
+  /// When [repositories] is given, the widgets read its members, [identity], [publishQueue], [idGenerator], [clock],
+  /// [photoCapture], [photoStore], [reportFont], [reportShare], and [linkShare] through `RepositoryProvider`, as they
+  /// do under the app. A port that is not given is a fake, and the publish queue that is not given has no backend.
   Future<void> pumpApp(
     Widget widget, {
     Locale? locale,
     Repositories? repositories,
     Identity? identity,
+    PublishQueue? publishQueue,
     IdGenerator? idGenerator,
     Clock? clock,
     PhotoCapture? photoCapture,
     PhotoStore? photoStore,
     ReportFont? reportFont,
     ReportShare? reportShare,
+    LinkShare? linkShare,
   }) {
     final app = MaterialApp(
       locale: locale,
@@ -45,12 +47,14 @@ extension PumpApp on WidgetTester {
           RepositoryProvider<VisitRepository>.value(value: repositories.visits),
           RepositoryProvider<CompanyProfileRepository>.value(value: repositories.companyProfile),
           RepositoryProvider<Identity>.value(value: identity ?? FakeIdentity()),
+          RepositoryProvider<PublishQueue>.value(value: publishQueue ?? publishQueueOf(repositories)),
           RepositoryProvider<IdGenerator>.value(value: idGenerator ?? SequenceIdGenerator()),
           RepositoryProvider<Clock>.value(value: clock ?? FixedClock(DateTime.utc(2026, 10))),
           RepositoryProvider<PhotoCapture>.value(value: photoCapture ?? FakePhotoCapture()),
           RepositoryProvider<PhotoStore>.value(value: photoStore ?? FakePhotoStore()),
           RepositoryProvider<ReportFont>.value(value: reportFont ?? const FileReportFont()),
           RepositoryProvider<ReportShare>.value(value: reportShare ?? FakeReportShare()),
+          RepositoryProvider<LinkShare>.value(value: linkShare ?? FakeLinkShare()),
         ],
         child: app,
       ),

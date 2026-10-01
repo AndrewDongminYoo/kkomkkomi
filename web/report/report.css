@@ -1,0 +1,227 @@
+/* The report page: one sheet on a warm ground, in the colors of the landing page. Phone first, from 320 px. */
+:root {
+  color-scheme: light;
+  --bg: #faf7f1;
+  --paper: #ffffff;
+  --paper-edge: #e6e0d4;
+  --ink: #16243b;
+  --ink-2: #4b5870;
+  --ink-3: #667085;
+  --teal: #0f7f7a;
+  --on-teal: #ffffff;
+  --teal-ink: #0a5e5a;
+  --slot: #f1ebe0;
+  --font-body:
+    -apple-system, "Apple SD Gothic Neo", "Noto Sans KR", "Malgun Gothic",
+    system-ui, sans-serif;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    color-scheme: dark;
+    --bg: #121a28;
+    --paper: #1a2435;
+    --paper-edge: #2c3850;
+    --ink: #eef1f6;
+    --ink-2: #b6bfd0;
+    --ink-3: #8f9ab0;
+    --teal: #3fb8b1;
+    --on-teal: #121a28;
+    --teal-ink: #6fd3cc;
+    --slot: #2a3345;
+  }
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html {
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
+}
+
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--ink);
+  font-family: var(--font-body);
+  font-size: 1rem;
+  line-height: 1.6;
+  word-break: keep-all;
+  overflow-wrap: anywhere;
+}
+
+main {
+  max-width: 44rem;
+  margin: 0 auto;
+  padding: max(1rem, env(safe-area-inset-top))
+    max(0.75rem, env(safe-area-inset-right))
+    max(1.5rem, env(safe-area-inset-bottom))
+    max(0.75rem, env(safe-area-inset-left));
+}
+
+.sheet {
+  background: var(--paper);
+  border: 1px solid var(--paper-edge);
+  border-radius: 10px;
+  padding: 1.25rem 1rem;
+}
+
+.sheet-head {
+  border-bottom: 1px solid var(--paper-edge);
+  padding-bottom: 1rem;
+  margin-bottom: 0.5rem;
+}
+
+.sheet-head p,
+.notice p {
+  margin: 0;
+}
+
+.company,
+.date,
+.label,
+figcaption {
+  color: var(--ink-2);
+  font-size: 0.875rem;
+}
+
+h1 {
+  font-size: 1.375rem;
+  line-height: 1.35;
+  margin: 0.125rem 0 0.25rem;
+}
+
+.client {
+  font-size: 1.125rem;
+  font-weight: 600;
+}
+
+.zone {
+  padding: 1rem 0;
+  border-bottom: 1px solid var(--paper-edge);
+}
+
+h2 {
+  font-size: 1.125rem;
+  line-height: 1.4;
+  margin: 0 0 0.5rem;
+}
+
+.slots {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.5rem;
+}
+
+.slot {
+  margin: 0;
+  min-width: 0;
+}
+
+/* The ratio of a slot of the PDF, 4:3. The whole photo shows, as in the PDF. */
+.frame {
+  aspect-ratio: 4 / 3;
+  background: var(--slot);
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  margin-top: 0.25rem;
+}
+
+.frame img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+
+.empty {
+  color: var(--ink-3);
+  font-size: 0.8125rem;
+  padding: 0.25rem;
+  text-align: center;
+}
+
+.note {
+  margin-top: 0.75rem;
+}
+
+.note p {
+  margin: 0;
+}
+
+.note-text {
+  white-space: pre-line;
+}
+
+.history {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.history li {
+  border-bottom: 1px solid var(--paper-edge);
+}
+
+.history a,
+.more a {
+  display: block;
+  padding: 0.75rem 0;
+  color: var(--teal-ink);
+  font-weight: 600;
+  text-decoration: underline;
+  text-underline-offset: 0.2em;
+}
+
+.more {
+  margin-top: 0.75rem;
+}
+
+.message,
+.status {
+  margin: 1rem 0;
+  color: var(--ink-2);
+}
+
+button {
+  font: inherit;
+  min-height: 2.75rem;
+  width: 100%;
+  border: 0;
+  border-radius: 8px;
+  background: var(--teal);
+  color: var(--on-teal);
+  font-weight: 600;
+  padding: 0.5rem 1rem;
+  cursor: pointer;
+}
+
+a:focus-visible,
+button:focus-visible {
+  outline: 3px solid var(--teal);
+  outline-offset: 2px;
+}
+
+.footer {
+  margin-top: 1.25rem;
+  color: var(--ink-3);
+  font-size: 0.8125rem;
+  text-align: center;
+}
+
+@media (min-width: 40rem) {
+  main {
+    padding-top: 2rem;
+  }
+
+  .sheet {
+    padding: 2rem;
+  }
+}
