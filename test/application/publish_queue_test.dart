@@ -83,7 +83,7 @@ class _GatedRepository implements PublishRepository {
   }) => _inner.revoke(page, at: at, revokeJob: revokeJob, replacement: replacement, republish: republish);
 
   @override
-  Future<void> saveJob(PublishJob job) => _inner.saveJob(job);
+  Future<bool> saveJob(PublishJob job) => _inner.saveJob(job);
 
   @override
   Future<List<PublishJob>> jobsOfPage(String pageId) => _inner.jobsOfPage(pageId);
@@ -828,6 +828,36 @@ void main() {
       expect(publisher.reports.keys.where((key) => key.endsWith('visit-2')), isEmpty);
       expect((await jobOf(second)).failure, PublishFailure.revoked);
     });
+
+    for (final (outcome, Object? failure) in [
+      ('ends', null),
+      ('fails for a reason that a retry can fix', _transient),
+    ]) {
+      test('keeps a job revoked that the page revoke stopped while a step of it ran and then $outcome', () async {
+        final queue = newQueue();
+        final updates = <PublishJob>[];
+        queue.updates.listen(updates.add);
+        publisher
+          ..gate = Completer<void>()
+          ..failures['writePage'] = [failure];
+        final running = await queue.publishVisit('visit-2');
+        await settle();
+        expect(publisher.calls, ['writePage ${running.pageId}']);
+
+        await queue.revokeClientPage('client-1');
+        publisher.gate!.complete();
+        await settle();
+
+        expect(await jobOf(running), running.fail(PublishFailure.revoked));
+        expect(updates.where((update) => update.id == running.id), isEmpty);
+        // The revoke job runs after the stopped run, so the page is revoked on the backend after the run's last write.
+        expect(
+          publisher.calls.indexOf('revokePage ${running.pageId}'),
+          greaterThan(publisher.calls.lastIndexOf('writePage ${running.pageId}')),
+        );
+        expect(publisher.revokedPages.keys, [running.pageId]);
+      });
+    }
 
     test('revokes a page once when two revokes come at one time', () async {
       final queue = newQueue();

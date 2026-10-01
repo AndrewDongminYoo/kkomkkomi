@@ -32,8 +32,11 @@ abstract interface class PublishRepository {
     PublishJob Function(String visitId)? republish,
   });
 
-  /// Saves [job] in place of the stored job with its ID.
-  Future<void> saveJob(PublishJob job);
+  /// Saves [job] in place of the stored job with its ID while the stored job is pending, and returns whether it did.
+  ///
+  /// A job that ended or stopped keeps its state, so a run that read a job before a revoke stopped it cannot make it
+  /// done or pending again.
+  Future<bool> saveJob(PublishJob job);
 
   /// The pending jobs, oldest first.
   Future<List<PublishJob>> pendingJobs();

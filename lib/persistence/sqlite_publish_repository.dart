@@ -88,7 +88,15 @@ final class SqlitePublishRepository implements PublishRepository {
   });
 
   @override
-  Future<void> saveJob(PublishJob job) => _updateJob(_database, job);
+  Future<bool> saveJob(PublishJob job) async {
+    final saved = await _database.update(
+      'publish_jobs',
+      _jobToRow(job),
+      where: 'id = ? AND status = ?',
+      whereArgs: [job.id, PublishJobStatus.pending.name],
+    );
+    return saved == 1;
+  }
 
   @override
   Future<List<PublishJob>> pendingJobs() async {

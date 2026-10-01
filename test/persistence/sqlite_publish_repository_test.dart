@@ -136,6 +136,24 @@ void main() {
       expect(await repository.jobsOfPage('page-1'), [retried, failed]);
     });
 
+    test('saveJob saves only over a pending job, and says whether it saved', () async {
+      await repository.enqueue(job('job-1'));
+      await repository.enqueue(job('job-2', visitId: 'visit-2', minute: 1));
+      await repository.revoke(page('page-1'), at: DateTime.utc(2026, 10, 2), revokeJob: job('revoke-1', minute: 2));
+
+      // A run that read job-1 before the revoke ends after it.
+      expect(await repository.saveJob(job('job-1').succeed()), isFalse);
+      expect(await repository.saveJob(job('job-1').retryAt(DateTime.utc(2026, 10, 3))), isFalse);
+      expect(await repository.saveJob(job('revoke-1', minute: 2).succeed()), isTrue);
+      expect(await repository.saveJob(job('job-9')), isFalse);
+
+      expect((await repository.jobsOfPage('page-1')).map((job) => (job.id, job.status, job.failure)), [
+        ('job-1', PublishJobStatus.failed, PublishFailure.revoked),
+        ('job-2', PublishJobStatus.failed, PublishFailure.revoked),
+        ('revoke-1', PublishJobStatus.done, null),
+      ]);
+    });
+
     test('pendingJobs gives the oldest job first', () async {
       await repository.enqueue(job('job-b', visitId: 'visit-2', minute: 3));
       await repository.enqueue(job('job-a', minute: 1));

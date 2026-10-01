@@ -288,8 +288,9 @@ final class PublishQueue {
     _currentJobId = null;
     // A request for the same visit that came during the run may hold a change that the run did not read.
     if (_requestedAgain) result = job.restart();
-    await _repository.saveJob(result);
-    if (!_disposed) _updates.add(result);
+    // The job was read before its steps, and a revoke that came during them stopped it. The store saves over a
+    // pending job only, so the run never undoes that stop, and then it reports no change.
+    if (await _repository.saveJob(result) && !_disposed) _updates.add(result);
   }
 
   Future<T> _step<T>(Future<T> step) => step.timeout(_stepTimeout);
