@@ -88,11 +88,12 @@ When that directory is missing, `flutter analyze` reports `AppLocalizations` as 
 
 ## CI
 
-`.github/workflows/main.yaml` calls the Very Good reusable workflows for the title check, the Flutter gate, and the spell check, and it adds one Windows build job.
+`.github/workflows/main.yaml` calls the Very Good reusable workflows for the title check, the Flutter gate, and the spell check, and it adds an Android build job and a Windows build job.
 
 - Coverage must be 100% for `lib`, and CI counts only the files that a test imports. `merry run check` does not measure coverage, so run `merry run coverage` before a push.
 - The pull request title must be a conventional commit.
 - cspell checks every Markdown file and the pull request title against `cspell.json`. Project words go in `words` there, and general vocabulary goes in `.cspell/custom-dictionary.txt`.
+- The `android` job builds the development debug APK. It cannot build a production variant, because those read `google-services.json`, which the repository does not hold, so no CI job checks the Firebase wiring or the release signing.
 - The `windows` job is the only verification of the Windows build. Do not add a local Windows build script.
 
 Trunk installs a format hook on commit and a check hook on push (`.trunk/trunk.yaml`).
