@@ -6,6 +6,7 @@ import 'package:flutter/widgets.dart';
 import 'package:kkomkkomi/app/app.dart';
 import 'package:kkomkkomi/application/application.dart';
 import 'package:kkomkkomi/persistence/persistence.dart';
+import 'package:kkomkkomi/presentation/presentation.dart';
 
 class AppBlocObserver extends BlocObserver {
   const new();
@@ -30,10 +31,16 @@ class AppBlocObserver extends BlocObserver {
 ///
 /// [identity] is asked for the user ID once, which starts the sign-in of a flavor that has one. The app does not
 /// wait for the answer, and it opens also when [identity] fails.
+///
+/// When the database is open, a [PublishQueue] with [publisher] starts and runs the publish jobs that an earlier
+/// launch left. [networkMonitor] and [photoStore] replace the adapters of the device in a test.
 Future<void> bootstrap(
   FutureOr<Widget> Function(Repositories repositories, Identity identity) builder, {
   required Identity identity,
+  required Publisher publisher,
   Future<Repositories> Function() openRepositories = openDeviceRepositories,
+  NetworkMonitor networkMonitor = const ConnectivityNetworkMonitor(),
+  PhotoStore photoStore = const DocumentsPhotoStore(),
 }) async {
   // The database plugin uses a platform channel before `runApp` creates the binding.
   WidgetsFlutterBinding.ensureInitialized();
@@ -49,7 +56,34 @@ Future<void> bootstrap(
   // A sign-in needs the network, and a field network can keep it waiting, so the first screen does not wait for it.
   unawaited(_startIdentity(identity));
 
-  runApp(await builder(await _openUntilSuccess(openRepositories), identity));
+  final repositories = await _openUntilSuccess(openRepositories);
+  unawaited(
+    _startPublishing(
+      PublishQueue(
+        repository: repositories.publishing,
+        clients: repositories.clients,
+        visits: repositories.visits,
+        companyProfile: repositories.companyProfile,
+        photoStore: photoStore,
+        publisher: publisher,
+        identity: identity,
+        networkMonitor: networkMonitor,
+        idGenerator: const RandomIdGenerator(),
+        clock: const SystemClock(),
+      ),
+    ),
+  );
+
+  runApp(await builder(repositories, identity));
+}
+
+Future<void> _startPublishing(PublishQueue queue) async {
+  try {
+    await queue.start();
+  } on Object catch (error, stackTrace) {
+    // The queue logs the failures of its jobs itself. A failure here must not close the app either.
+    log('The publish queue did not start: $error', stackTrace: stackTrace);
+  }
 }
 
 Future<void> _startIdentity(Identity identity) async {

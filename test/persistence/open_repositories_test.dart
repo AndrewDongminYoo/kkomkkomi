@@ -1,6 +1,7 @@
 import 'dart:io';
 
 import 'package:flutter_test/flutter_test.dart';
+import 'package:kkomkkomi/application/application.dart';
 import 'package:kkomkkomi/domain/domain.dart';
 import 'package:kkomkkomi/persistence/persistence.dart';
 import 'package:path/path.dart' as p;
@@ -20,15 +21,52 @@ void main() {
   });
 
   group('openAppDatabase', () {
-    test('creates the version 1 schema with one table for each entity', () async {
+    test('creates the version 2 schema with one table for each entity and the tables of publishing', () async {
       final database = await openMemoryDatabase();
       addTearDown(database.close);
 
       final tables = await database.query('sqlite_master', columns: ['name'], where: "type = 'table'", orderBy: 'name');
 
-      expect(tables.map((row) => row['name']), ['clients', 'company_profile', 'visits', 'zone_records', 'zones']);
+      expect(tables.map((row) => row['name']), [
+        'client_pages',
+        'clients',
+        'company_profile',
+        'publish_jobs',
+        'published_photos',
+        'visits',
+        'zone_records',
+        'zones',
+      ]);
       expect(await database.getVersion(), schemaVersion);
-      expect(schemaVersion, 1);
+      expect(schemaVersion, 2);
+    });
+
+    test('takes a version 1 file to version 2 and keeps its data', () async {
+      final path = p.join(directory.path, databaseFileName);
+      final client = Client(id: 'client-1', name: '한빛 사무실', createdAt: DateTime.utc(2026, 9));
+      final old = await testDatabaseFactory.openDatabase(
+        path,
+        options: OpenDatabaseOptions(
+          version: 1,
+          onCreate: (database, _) => upgradeSchema(database, from: 0, to: 1),
+        ),
+      );
+      await sqliteRepositories(old).clients.save(client);
+      expect(
+        await old.query('sqlite_master', where: "type = 'table' AND name = ?", whereArgs: ['publish_jobs']),
+        isEmpty,
+      );
+      await old.close();
+
+      final upgraded = await openAppDatabase(testDatabaseFactory, path);
+      addTearDown(upgraded.close);
+      final repositories = sqliteRepositories(upgraded);
+      final page = ClientPage(id: 'page-1', clientId: 'client-1', createdAt: DateTime.utc(2026, 10));
+
+      expect(await upgraded.getVersion(), 2);
+      expect(await repositories.clients.clientById('client-1'), client);
+      expect(await repositories.publishing.openPageOf('client-1', create: () => page), page);
+      expect(await repositories.publishing.pendingJobs(), isEmpty);
     });
 
     test('enforces foreign keys', () async {

@@ -27,6 +27,7 @@ void main() {
         clients: FakeClientRepository(),
         visits: FakeVisitRepository(),
         companyProfile: companyProfile,
+        publishing: MockPublishRepository(),
       ),
     );
     await tester.pumpAndSettle();
@@ -124,6 +125,7 @@ void main() {
           clients: FakeClientRepository(),
           visits: FakeVisitRepository(),
           companyProfile: companyProfile,
+          publishing: MockPublishRepository(),
         ),
       );
       await tester.tap(find.text('host'));

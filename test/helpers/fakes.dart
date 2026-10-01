@@ -285,3 +285,84 @@ class FakeCompanyProfileRepository implements CompanyProfileRepository {
     this.profile = profile;
   }
 }
+
+/// A backend in memory. It remembers what each call wrote, and a test can make a call fail or wait.
+class FakePublisher implements Publisher {
+  @override
+  bool isAvailable = true;
+
+  /// The pages that were written, by page ID.
+  final pages = <String, PublishedPage>{};
+
+  /// The pages that were written as revoked, by page ID.
+  final revokedPages = <String, PublishedPage>{};
+
+  /// The bytes of each uploaded object, by object path.
+  final objects = <String, Uint8List>{};
+
+  /// The reports that were written, by `<pageId>/<visitId>`.
+  final reports = <String, PublishedReport>{};
+
+  /// Each call in order, as `<method> <first argument>`.
+  final calls = <String>[];
+
+  /// What the next calls of a method throw, in order, by the name of the method. A null lets that call succeed.
+  final failures = <String, List<Object?>>{};
+
+  /// A call waits for this completer while it is set, so that a test can act while a call is on its way.
+  Completer<void>? gate;
+
+  Future<void> _call(String method, String argument) async {
+    calls.add('$method $argument');
+    await gate?.future;
+    final queued = failures[method];
+    if (queued == null || queued.isEmpty) return;
+    if (queued.removeAt(0) case final failure?) Error.throwWithStackTrace(failure, StackTrace.current);
+  }
+
+  @override
+  Future<void> writePage(String pageId, PublishedPage page) async {
+    await _call('writePage', pageId);
+    pages[pageId] = page;
+  }
+
+  @override
+  Future<void> uploadPhoto(String objectPath, Uint8List bytes) async {
+    await _call('uploadPhoto', objectPath);
+    objects[objectPath] = bytes;
+  }
+
+  @override
+  Future<void> writeReport({required String pageId, required String visitId, required PublishedReport report}) async {
+    await _call('writeReport', '$pageId/$visitId');
+    reports['$pageId/$visitId'] = report;
+  }
+
+  @override
+  Future<void> revokePage(String pageId, PublishedPage page) async {
+    await _call('revokePage', pageId);
+    revokedPages[pageId] = page;
+  }
+
+  @override
+  Future<void> deletePhoto(String objectPath) async {
+    await _call('deletePhoto', objectPath);
+    objects.remove(objectPath);
+  }
+}
+
+/// A network monitor that reports a return of the network when a test calls [restore].
+class FakeNetworkMonitor implements NetworkMonitor {
+  final _restored = StreamController<void>.broadcast();
+
+  @override
+  Stream<void> get restored => _restored.stream;
+
+  /// Whether something listens for the return of the network.
+  bool get hasListener => _restored.hasListener;
+
+  void restore() => _restored.add(null);
+
+  /// Reports [error] in place of a state, as a plugin that cannot read the network state does.
+  void fail(Object error) => _restored.addError(error);
+}

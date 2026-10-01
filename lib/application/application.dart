@@ -1,11 +1,17 @@
+export 'client_page.dart';
 export 'client_repository.dart';
 export 'clock.dart';
 export 'company_profile_repository.dart';
 export 'find_previous_photos.dart';
 export 'id_generator.dart';
 export 'identity.dart';
+export 'network_monitor.dart';
 export 'photo_capture.dart';
 export 'photo_store.dart';
+export 'publish_job.dart';
+export 'publish_queue.dart';
+export 'publish_repository.dart';
+export 'publisher.dart';
 export 'report_font.dart';
 export 'report_share.dart';
 export 'repositories.dart';

@@ -68,6 +68,7 @@ void main() {
         clients: clients,
         visits: visitRepository,
         companyProfile: FakeCompanyProfileRepository(),
+        publishing: MockPublishRepository(),
       ),
       clock: FixedClock(DateTime(day.year, day.month, day.day, 12)),
     );
@@ -902,6 +903,7 @@ void main() {
         clients: FakeClientRepository(),
         visits: FakeVisitRepository(visits: [october]),
         companyProfile: FakeCompanyProfileRepository(),
+        publishing: MockPublishRepository(),
       ),
       clock: FixedClock(DateTime(2026, 10, 20, 12)),
     );

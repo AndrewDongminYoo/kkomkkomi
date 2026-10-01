@@ -6,5 +6,6 @@ Future<void> main() async {
   await bootstrap(
     (repositories, identity) => App(repositories: repositories, identity: identity),
     identity: const UnavailableIdentity(),
+    publisher: const UnavailablePublisher(),
   );
 }
