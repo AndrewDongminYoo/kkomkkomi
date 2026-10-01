@@ -44,6 +44,22 @@ void main() {
       expect(context.read<Clock>(), same(clock));
     });
 
+    testWidgets('provides an identity that is unavailable unless it is given another', (tester) async {
+      await tester.pumpApp(const SizedBox(), repositories: mockRepositories());
+
+      final identity = tester.element(find.byType(SizedBox)).read<Identity>();
+      expect(identity, isA<FakeIdentity>());
+      expect(await identity.currentUserId(), isNull);
+    });
+
+    testWidgets('provides the identity that it is given', (tester) async {
+      final identity = FakeIdentity(userId: 'user-1');
+
+      await tester.pumpApp(const SizedBox(), repositories: mockRepositories(), identity: identity);
+
+      expect(tester.element(find.byType(SizedBox)).read<Identity>(), same(identity));
+    });
+
     testWidgets('provides a fake camera and a fake photo store unless it is given others', (tester) async {
       await tester.pumpApp(const SizedBox(), repositories: mockRepositories());
 

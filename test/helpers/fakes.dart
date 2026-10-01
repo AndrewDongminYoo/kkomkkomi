@@ -23,6 +23,31 @@ class FixedClock implements Clock {
   DateTime now() => time;
 }
 
+/// An identity that gives what a test put in [userId], and never starts a backend.
+class FakeIdentity implements Identity {
+  new({this.userId});
+
+  /// The ID that a call gives, or null for an identity that is unavailable.
+  String? userId;
+
+  /// What a call throws while it is set, for an adapter that breaks the rule of the port: an exception or an error.
+  Object? failure;
+
+  /// A call waits for this completer while it is set, so that a test can act while a sign-in is on its way.
+  Completer<void>? gate;
+
+  /// How many times the ID was asked for.
+  int calls = 0;
+
+  @override
+  Future<String?> currentUserId() async {
+    calls++;
+    await gate?.future;
+    if (failure case final failure?) Error.throwWithStackTrace(failure, StackTrace.current);
+    return userId;
+  }
+}
+
 /// Keeps the clients and their zones in memory, for a widget test that follows a change through the screens.
 ///
 /// A save replaces the whole zone list of the client, which is enough for callers that save every zone they read.

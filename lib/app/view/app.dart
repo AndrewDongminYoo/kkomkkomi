@@ -7,6 +7,7 @@ import 'package:material_ui/material_ui.dart';
 class App extends StatelessWidget {
   const new({
     required this.repositories,
+    required this.identity,
     this.idGenerator = const RandomIdGenerator(),
     this.clock = const SystemClock(),
     this.photoCapture = const ImagePickerPhotoCapture(),
@@ -18,6 +19,11 @@ class App extends StatelessWidget {
 
   /// The repositories that the widgets below read through `RepositoryProvider`.
   final Repositories repositories;
+
+  /// The source of the user ID, which the widgets below read through `RepositoryProvider`.
+  ///
+  /// It has no default, because the flavor decides it: only the production entry point gives the Firebase adapter.
+  final Identity identity;
 
   /// The source of the identifiers of new entities, which the widgets below read through `RepositoryProvider`.
   final IdGenerator idGenerator;
@@ -44,6 +50,7 @@ class App extends StatelessWidget {
         RepositoryProvider<ClientRepository>.value(value: repositories.clients),
         RepositoryProvider<VisitRepository>.value(value: repositories.visits),
         RepositoryProvider<CompanyProfileRepository>.value(value: repositories.companyProfile),
+        RepositoryProvider<Identity>.value(value: identity),
         RepositoryProvider<IdGenerator>.value(value: idGenerator),
         RepositoryProvider<Clock>.value(value: clock),
         RepositoryProvider<PhotoCapture>.value(value: photoCapture),

@@ -23,12 +23,16 @@ class AppBlocObserver extends BlocObserver {
   }
 }
 
-/// Opens the database, then runs the app that [builder] makes from the repositories.
+/// Opens the database, then runs the app that [builder] makes from the repositories and [identity].
 ///
 /// While the database does not open, the app shows a [StartupFailureApp], and its retry control opens the database
 /// again.
+///
+/// [identity] is asked for the user ID once, which starts the sign-in of a flavor that has one. The app does not
+/// wait for the answer, and it opens also when [identity] fails.
 Future<void> bootstrap(
-  FutureOr<Widget> Function(Repositories repositories) builder, {
+  FutureOr<Widget> Function(Repositories repositories, Identity identity) builder, {
+  required Identity identity,
   Future<Repositories> Function() openRepositories = openDeviceRepositories,
 }) async {
   // The database plugin uses a platform channel before `runApp` creates the binding.
@@ -42,7 +46,20 @@ Future<void> bootstrap(
 
   // Add cross-flavor configuration here
 
-  runApp(await builder(await _openUntilSuccess(openRepositories)));
+  // A sign-in needs the network, and a field network can keep it waiting, so the first screen does not wait for it.
+  unawaited(_startIdentity(identity));
+
+  runApp(await builder(await _openUntilSuccess(openRepositories), identity));
+}
+
+Future<void> _startIdentity(Identity identity) async {
+  try {
+    await identity.currentUserId();
+  } on Object catch (error, stackTrace) {
+    // The port says that the call does not throw. An adapter that breaks that rule must not close the app, and a
+    // plugin can fail with an Error, so the clause catches every object.
+    log('Identity did not start: $error', stackTrace: stackTrace);
+  }
 }
 
 Future<Repositories> _openUntilSuccess(Future<Repositories> Function() openRepositories) async {

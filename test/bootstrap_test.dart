@@ -1,10 +1,11 @@
 import 'dart:async';
 
-import 'package:bloc/bloc.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:kkomkkomi/app/app.dart';
 import 'package:kkomkkomi/application/application.dart';
 import 'package:kkomkkomi/bootstrap.dart';
+import 'package:kkomkkomi/presentation/presentation.dart';
 import 'package:material_ui/material_ui.dart';
 
 import 'helpers/helpers.dart';
@@ -51,6 +52,9 @@ Future<void> _settle(WidgetTester tester) async {
   await tester.pump();
 }
 
+/// The builder of the entry points.
+App _app(Repositories repositories, Identity identity) => App(repositories: repositories, identity: identity);
+
 void main() {
   group('AppBlocObserver', () {
     test('passes each change and each error of a bloc on', () async {
@@ -75,7 +79,7 @@ void main() {
       await _keepingGlobals(() async {
         final repositories = mockRepositories();
 
-        await bootstrap((opened) => App(repositories: opened), openRepositories: () async => repositories);
+        await bootstrap(_app, identity: FakeIdentity(), openRepositories: () async => repositories);
         await tester.pump();
 
         expect(tester.widget<App>(find.byType(App)).repositories, same(repositories));
@@ -83,9 +87,66 @@ void main() {
       });
     });
 
+    testWidgets('asks the identity for the user ID once and gives the identity to the builder', (tester) async {
+      await _keepingGlobals(() async {
+        final identity = FakeIdentity(userId: 'user-1');
+
+        await bootstrap(_app, identity: identity, openRepositories: () async => mockRepositories());
+        await tester.pump();
+
+        expect(identity.calls, 1);
+        expect(tester.widget<App>(find.byType(App)).identity, same(identity));
+        expect(tester.element(find.byType(ClientListPage)).read<Identity>(), same(identity));
+      });
+    });
+
+    testWidgets('opens the app while the identity is unavailable', (tester) async {
+      await _keepingGlobals(() async {
+        final identity = FakeIdentity();
+
+        await bootstrap(_app, identity: identity, openRepositories: () async => mockRepositories());
+        await tester.pump();
+
+        expect(identity.calls, 1);
+        expect(find.byType(ClientListPage), findsOneWidget);
+      });
+    });
+
+    for (final (kind, failure) in <(String, Object)>[
+      ('an exception', Exception('sign-in failed')),
+      ('an error', StateError('no Firebase app')),
+    ]) {
+      testWidgets('opens the app when the identity throws $kind', (tester) async {
+        await _keepingGlobals(() async {
+          final identity = FakeIdentity()..failure = failure;
+
+          await bootstrap(_app, identity: identity, openRepositories: () async => mockRepositories());
+          await _settle(tester);
+
+          expect(identity.calls, 1);
+          expect(find.byType(ClientListPage), findsOneWidget);
+          // A failure that `bootstrap` did not catch would reach the zone of the test and fail it here.
+          expect(tester.takeException(), isNull);
+        });
+      });
+    }
+
+    testWidgets('opens the app while the sign-in of the identity is on its way', (tester) async {
+      await _keepingGlobals(() async {
+        final identity = FakeIdentity()..gate = Completer<void>();
+
+        // A `bootstrap` that waited for the sign-in would never answer, so the test does not wait for it either.
+        unawaited(bootstrap(_app, identity: identity, openRepositories: () async => mockRepositories()));
+        await _settle(tester);
+
+        expect(identity.calls, 1);
+        expect(find.byType(ClientListPage), findsOneWidget);
+      });
+    });
+
     testWidgets('installs the bloc observer and an error handler that reports without throwing', (tester) async {
       await _keepingGlobals(() async {
-        await bootstrap((opened) => App(repositories: opened), openRepositories: () async => mockRepositories());
+        await bootstrap(_app, identity: FakeIdentity(), openRepositories: () async => mockRepositories());
         await tester.pump();
 
         expect(Bloc.observer, isA<AppBlocObserver>());
@@ -101,6 +162,7 @@ void main() {
     ) async {
       await _keepingGlobals(() async {
         final repositories = mockRepositories();
+        final identity = FakeIdentity();
         final failures = <Object>[StateError('databaseFactory not initialized'), Exception('open failed')];
         var attempts = 0;
         var builds = 0;
@@ -111,16 +173,22 @@ void main() {
         }
 
         unawaited(
-          bootstrap((opened) {
-            builds++;
-            return App(repositories: opened);
-          }, openRepositories: open),
+          bootstrap(
+            (opened, identity) {
+              builds++;
+              return App(repositories: opened, identity: identity);
+            },
+            identity: identity,
+            openRepositories: open,
+          ),
         );
         await _settle(tester);
 
         expect(find.byType(StartupFailureApp), findsOneWidget);
         expect(find.text("Can't open your saved records. Try again."), findsOneWidget);
         expect((attempts, builds), (1, 0));
+        // The sign-in does not wait for the database, so it started while the failure screen is up.
+        expect(identity.calls, 1);
 
         await tester.tap(find.byType(FilledButton));
         await _settle(tester);
@@ -134,6 +202,8 @@ void main() {
         expect(find.byType(StartupFailureApp), findsNothing);
         expect(tester.widget<App>(find.byType(App)).repositories, same(repositories));
         expect((attempts, builds), (3, 1));
+        // A retry opens the database again and does not ask the identity again.
+        expect(identity.calls, 1);
       });
     });
 
@@ -146,7 +216,7 @@ void main() {
           return attempts == 1 ? Future.error(Exception('open failed')) : opening.future;
         }
 
-        unawaited(bootstrap((opened) => App(repositories: opened), openRepositories: open));
+        unawaited(bootstrap(_app, identity: FakeIdentity(), openRepositories: open));
         await _settle(tester);
         // The handler that `bootstrap` installed only logs, so a failure inside the retry control would stay unseen.
         final reported = <Object>[];
