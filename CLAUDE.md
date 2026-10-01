@@ -17,8 +17,9 @@ Until then, keep pricing, validation criteria, sales channels, and unit economic
 ### Current state
 
 The operator directed implementation to start on 2026-10-01, and M1 is the milestone in progress.
-The code is still the Very Good CLI scaffold, and its only feature is the template `counter`.
-No Firebase package or domain model exists yet.
+The data layer of the M1 build exists: the domain model, the repository interfaces and use cases, and the SQLite repositories.
+No screen uses the data layer yet, so the only screen is still the template `counter` of the Very Good CLI scaffold.
+No Firebase package exists yet.
 The stack is Flutter with Firebase (Auth, Firestore, Storage, Hosting), and the Firebase project is `kkomkkomi`.
 The "Phase B" section of `docs/specs/2026-10-01-m1-local-first-design.md` owns the state of that project and the backend decisions.
 
@@ -102,13 +103,15 @@ Trunk installs a format hook on commit and a check hook on push (`.trunk/trunk.y
 
 The code follows the Very Good CLI layout: one folder per feature under `lib/`, with `cubit/` and `view/` subdirectories and a barrel file named after the feature.
 Other code imports a feature through its barrel, for example `package:kkomkkomi/counter/counter.dart`.
+The M1 design splits the code under `lib/` into units and owns the table of what each unit may import.
 
-- **Entry points.** `lib/main_development.dart`, `lib/main_staging.dart`, and `lib/main_production.dart` each call `bootstrap()` from `lib/bootstrap.dart`. `bootstrap()` installs the `FlutterError.onError` handler and `AppBlocObserver`, then runs the app. Configuration that all flavors share goes in `bootstrap()`, and configuration for one flavor goes in its `main_*.dart`.
+- **Units.** `lib/domain/`, `lib/application/`, and `lib/persistence/` exist, each with a barrel file named after the unit. `domain/` holds the entities and their rules, `application/` holds the repository interfaces, the `IdGenerator` and `Clock` ports, and the use cases, and `persistence/` holds the version 1 SQLite schema and the `sqflite` repositories. `test/domain/boundary_test.dart` fails when a file under `lib/domain/` imports a library that the design does not allow. That rule excludes `package:meta`, so a domain file that overrides `==` carries an `ignore_for_file` comment for the lint that asks for `@immutable`.
+- **Entry points.** `lib/main_development.dart`, `lib/main_staging.dart`, and `lib/main_production.dart` each call `bootstrap()` from `lib/bootstrap.dart`. `bootstrap()` installs the `FlutterError.onError` handler and `AppBlocObserver`, opens the database, and passes the repositories to the builder that makes the app. While the database does not open, it shows `StartupFailureApp`, and the retry control opens the database again. `App` provides each repository to the widgets below it through `RepositoryProvider`. Configuration that all flavors share goes in `bootstrap()`, and configuration for one flavor goes in its `main_*.dart`.
 - **Flavors.** Android defines them in `android/app/build.gradle.kts` with the application ID suffixes `.dev` and `.stg`. iOS and macOS define them as Xcode schemes. `windows/` has no flavor configuration, so a Windows build selects its entry point with `--target` alone. The `.vscode/launch.json` configurations pass the matching `--flavor` and `--target`.
 - **State.** Each page widget creates its Cubit in a `BlocProvider` and renders a separate view widget that reads it, as `CounterPage` and `CounterView` do. This split lets a widget test inject a mock Cubit into the view.
 - **Web.** No Flutter web app is planned. `web/` is the deploy root of the static landing page, which lives in this repository and not in a separate one, and `web/index.html` is that page (operator decision, 2026-10-01). It is one hand-written HTML file, so no Flutter build produces or checks it. Firebase Hosting serves `web/` at `https://kkomkkomi.web.app`, and `firebase deploy --only hosting` publishes it. A deploy, and a change to the deployed security rules, needs the operator's approval each time.
 - **Localization.** All user-facing strings come from `lib/l10n/arb/` through `context.l10n`, which `lib/l10n/l10n.dart` defines. `app_en.arb` is the template and `app_ko.arb` is the Korean locale, so each new key goes in both files. A new locale also needs an entry in `CFBundleLocalizations` in `ios/Runner/Info.plist`.
-- **Tests.** `test/` mirrors `lib/`. Widget tests use `tester.pumpApp()` from `test/helpers/`, which wraps the widget in a `MaterialApp` with the localization delegates. Cubit tests use `blocTest`, and view tests mock the Cubit with `MockCubit` from `bloc_test` and stub it with `mocktail`.
+- **Tests.** `test/` mirrors `lib/`. Widget tests use `tester.pumpApp()` from `test/helpers/`, which wraps the widget in a `MaterialApp` with the localization delegates. Cubit tests use `blocTest`, and view tests mock the Cubit with `MockCubit` from `bloc_test` and stub it with `mocktail`. Repository tests run the `sqflite` repositories against `sqflite_common_ffi`, and `test/persistence/support.dart` opens the in-memory database that they use. `mockRepositories()` from `test/helpers/` gives a widget test repositories that never reach a database.
 
 ## Documents
 
