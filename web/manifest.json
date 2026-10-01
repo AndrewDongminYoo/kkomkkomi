@@ -1,0 +1,23 @@
+{
+  "name": "Kkomkkomi",
+  "short_name": "Kkomkkomi",
+  "start_url": ".",
+  "display": "standalone",
+  "background_color": "#0175C2",
+  "theme_color": "#0175C2",
+  "description": "Kkomkkomi (꼼꼬미) is a mobile app for small cleaning companies in Korea: teams of one to five people that clean offices and shops on a recurring schedule.",
+  "orientation": "portrait-primary",
+  "prefer_related_applications": false,
+  "icons": [
+    {
+      "src": "icons/Icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "icons/Icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ]
+}
