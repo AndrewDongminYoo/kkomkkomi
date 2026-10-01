@@ -1,9 +1,5 @@
 {
     "@@locale": "en",
-    "counterAppBarTitle": "Counter",
-    "@counterAppBarTitle": {
-        "description": "Text shown in the AppBar of the Counter Page"
-    },
     "startupFailureMessage": "Can't open your saved records. Try again.",
     "@startupFailureMessage": {
         "description": "Message shown in place of the app when the saved data does not open at startup"
@@ -11,5 +7,189 @@
     "startupFailureRetryButton": "Try Again",
     "@startupFailureRetryButton": {
         "description": "Label of the button that opens the saved data again after a startup failure"
+    },
+    "dialogCancelButton": "Cancel",
+    "@dialogCancelButton": {
+        "description": "Label of the button that closes a dialog and changes nothing"
+    },
+    "nameSaveButton": "Save",
+    "@nameSaveButton": {
+        "description": "Label of the button that saves a changed name"
+    },
+    "nameAddButton": "Add",
+    "@nameAddButton": {
+        "description": "Label of the button in a dialog that adds the client or the zone with the entered name"
+    },
+    "nameEmptyError": "Enter a name.",
+    "@nameEmptyError": {
+        "description": "Error under a name field when the entered name is empty"
+    },
+    "saveFailedMessage": "Can't save right now. Try again.",
+    "@saveFailedMessage": {
+        "description": "Message shown when a change did not reach the saved data"
+    },
+    "loadRetryButton": "Try Again",
+    "@loadRetryButton": {
+        "description": "Label of the button that loads a screen again after its data did not load"
+    },
+    "clientListTitle": "Clients",
+    "@clientListTitle": {
+        "description": "Title of the home screen, which lists the clients"
+    },
+    "clientListEmptyTitle": "No clients yet",
+    "@clientListEmptyTitle": {
+        "description": "Headline of the client list when no client exists"
+    },
+    "clientListEmptyMessage": "A client is an office or a shop that you clean. Add one, then set up the zones to clean there.",
+    "@clientListEmptyMessage": {
+        "description": "Text under the headline of the empty client list, which explains what a client is"
+    },
+    "clientListAddButton": "Add Client",
+    "@clientListAddButton": {
+        "description": "Label of the button on the client list that opens the dialog to add a client"
+    },
+    "clientListLoadFailedMessage": "Can't load your clients. Try again.",
+    "@clientListLoadFailedMessage": {
+        "description": "Message shown in place of the client list when it did not load"
+    },
+    "clientAddDialogTitle": "Add Client",
+    "@clientAddDialogTitle": {
+        "description": "Title of the dialog that adds a client"
+    },
+    "clientNameFieldLabel": "Client name",
+    "@clientNameFieldLabel": {
+        "description": "Label of the field for the name of a client"
+    },
+    "clientDetailLoadFailedMessage": "Can't load this client. Try again.",
+    "@clientDetailLoadFailedMessage": {
+        "description": "Message shown in place of the client screen when the client did not load"
+    },
+    "clientDetailRenameAction": "Rename",
+    "@clientDetailRenameAction": {
+        "description": "Menu item on the client screen that opens the dialog to rename the client"
+    },
+    "clientDetailArchiveAction": "Archive",
+    "@clientDetailArchiveAction": {
+        "description": "Menu item on the client screen that asks to archive the client, and the label of the button that confirms it"
+    },
+    "clientRenameDialogTitle": "Rename Client",
+    "@clientRenameDialogTitle": {
+        "description": "Title of the dialog that renames a client"
+    },
+    "clientArchiveDialogTitle": "Archive this client?",
+    "@clientArchiveDialogTitle": {
+        "description": "Title of the dialog that asks before a client is archived"
+    },
+    "clientArchiveDialogMessage": "It leaves the client list, and you can't bring it back yet. Its visit records are kept.",
+    "@clientArchiveDialogMessage": {
+        "description": "Text of the dialog that asks before a client is archived. The app has no control that restores an archived client."
+    },
+    "clientDetailStartVisitButton": "Start Visit",
+    "@clientDetailStartVisitButton": {
+        "description": "Label of the button on the client screen that starts a visit"
+    },
+    "zoneSectionTitle": "Zones",
+    "@zoneSectionTitle": {
+        "description": "Heading of the zone list on the client screen"
+    },
+    "zoneEmptyMessage": "No zones yet. A zone is a place that gets a before photo and an after photo on each visit, such as a lobby or a restroom.",
+    "@zoneEmptyMessage": {
+        "description": "Text shown in place of the zone list when the client has no zone"
+    },
+    "zoneAddButton": "Add Zone",
+    "@zoneAddButton": {
+        "description": "Label of the button under the zone list that opens the dialog to add a zone"
+    },
+    "zoneAddDialogTitle": "Add Zone",
+    "@zoneAddDialogTitle": {
+        "description": "Title of the dialog that adds a zone"
+    },
+    "zoneNameFieldLabel": "Zone name",
+    "@zoneNameFieldLabel": {
+        "description": "Label of the field for the name of a zone"
+    },
+    "zoneRenameDialogTitle": "Rename Zone",
+    "@zoneRenameDialogTitle": {
+        "description": "Title of the dialog that renames a zone"
+    },
+    "zoneDuplicateNameError": "Another zone has this name. Enter a different name.",
+    "@zoneDuplicateNameError": {
+        "description": "Error under the zone name field when another zone of the client has the entered name"
+    },
+    "zoneRenameTooltip": "Rename {name}",
+    "@zoneRenameTooltip": {
+        "description": "Tooltip of the button in a zone row that opens the dialog to rename that zone",
+        "placeholders": {
+            "name": {
+                "type": "String",
+                "example": "Lobby"
+            }
+        }
+    },
+    "zoneRemoveTooltip": "Remove {name}",
+    "@zoneRemoveTooltip": {
+        "description": "Tooltip of the button in a zone row that asks to remove that zone",
+        "placeholders": {
+            "name": {
+                "type": "String",
+                "example": "Lobby"
+            }
+        }
+    },
+    "zoneRemoveDialogTitle": "Remove {name}?",
+    "@zoneRemoveDialogTitle": {
+        "description": "Title of the dialog that asks before a zone is removed",
+        "placeholders": {
+            "name": {
+                "type": "String",
+                "example": "Lobby"
+            }
+        }
+    },
+    "zoneRemoveDialogMessage": "New visits leave this zone out. Past visits keep their records of it.",
+    "@zoneRemoveDialogMessage": {
+        "description": "Text of the dialog that asks before a zone is removed"
+    },
+    "zoneRemoveConfirmButton": "Remove",
+    "@zoneRemoveConfirmButton": {
+        "description": "Label of the button that confirms the removal of a zone"
+    },
+    "visitSectionTitle": "Past visits",
+    "@visitSectionTitle": {
+        "description": "Heading of the list of past visits on the client screen"
+    },
+    "visitEmptyMessage": "No visits yet.",
+    "@visitEmptyMessage": {
+        "description": "Text shown in place of the list of past visits when the client has no visit"
+    },
+    "visitDateLabel": "{date}",
+    "@visitDateLabel": {
+        "description": "The date of a visit in the list of past visits",
+        "placeholders": {
+            "date": {
+                "type": "DateTime",
+                "format": "yMMMMd"
+            }
+        }
+    },
+    "companyProfileTitle": "Company profile",
+    "@companyProfileTitle": {
+        "description": "Title of the company profile screen, and the tooltip of the button on the client list that opens it"
+    },
+    "companyNameFieldLabel": "Company name",
+    "@companyNameFieldLabel": {
+        "description": "Label of the field for the name of the cleaning company"
+    },
+    "companyNameHelper": "Reports show this name at the top.",
+    "@companyNameHelper": {
+        "description": "Text under the company name field that says where the name is used"
+    },
+    "companyProfileSavedMessage": "Company name saved.",
+    "@companyProfileSavedMessage": {
+        "description": "Message shown after the company name was saved"
+    },
+    "companyProfileLoadFailedMessage": "Can't load your company profile. Try again.",
+    "@companyProfileLoadFailedMessage": {
+        "description": "Message shown in place of the company profile form when the profile did not load"
     }
 }

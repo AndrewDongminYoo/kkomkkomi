@@ -8,8 +8,10 @@ class MockVisitRepository extends Mock implements VisitRepository;
 class MockCompanyProfileRepository extends Mock implements CompanyProfileRepository;
 
 /// Repositories that are mocks, for a widget test that never reaches the database.
-Repositories mockRepositories() => Repositories(
-  clients: MockClientRepository(),
-  visits: MockVisitRepository(),
-  companyProfile: MockCompanyProfileRepository(),
-);
+///
+/// The client repository answers with no active client, which is all that the home screen reads.
+Repositories mockRepositories() {
+  final clients = MockClientRepository();
+  when(clients.activeClients).thenAnswer((_) async => []);
+  return Repositories(clients: clients, visits: MockVisitRepository(), companyProfile: MockCompanyProfileRepository());
+}

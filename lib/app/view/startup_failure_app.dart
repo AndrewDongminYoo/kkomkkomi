@@ -10,9 +10,7 @@ class StartupFailureApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      // The generated `AppLocalizations.localizationsDelegates` names the delegates of `flutter_localizations`, and
-      // those do not serve the widgets of `material_ui`, which then report a missing delegate for the Korean locale.
-      localizationsDelegates: const [AppLocalizations.delegate, ...GlobalMaterialLocalizations.delegates],
+      localizationsDelegates: appLocalizationsDelegates,
       supportedLocales: AppLocalizations.supportedLocales,
       home: Builder(
         builder: (context) {
