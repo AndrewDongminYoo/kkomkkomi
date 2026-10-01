@@ -60,7 +60,8 @@ class _BrokenNetworkMonitor implements NetworkMonitor {
 }
 
 /// The builder of the entry points.
-App _app(Repositories repositories, Identity identity) => App(repositories: repositories, identity: identity);
+App _app(Repositories repositories, Identity identity, PublishQueue publishQueue) =>
+    App(repositories: repositories, identity: identity, publishQueue: publishQueue);
 
 void main() {
   group('AppBlocObserver', () {
@@ -204,6 +205,30 @@ void main() {
       });
     });
 
+    testWidgets('gives the builder the one publish queue, with the publisher of the flavor', (tester) async {
+      await _keepingGlobals(() async {
+        final publishers = [FakePublisher(), FakePublisher()..isAvailable = false];
+        final queues = <PublishQueue>[];
+
+        for (final publisher in publishers) {
+          await bootstrap(
+            (repositories, identity, publishQueue) {
+              queues.add(publishQueue);
+              return _app(repositories, identity, publishQueue);
+            },
+            identity: FakeIdentity(),
+            publisher: publisher,
+            networkMonitor: FakeNetworkMonitor(),
+            openRepositories: () async => mockRepositories(),
+          );
+          await _settle(tester);
+        }
+
+        expect([for (final queue in queues) queue.isAvailable], [isTrue, isFalse]);
+        expect(tester.element(find.byType(ClientListPage)).read<PublishQueue>(), same(queues.last));
+      });
+    });
+
     testWidgets('opens the app when the publish queue does not start', (tester) async {
       await _keepingGlobals(() async {
         await bootstrap(
@@ -256,9 +281,9 @@ void main() {
 
         unawaited(
           bootstrap(
-            (opened, identity) {
+            (opened, identity, publishQueue) {
               builds++;
-              return App(repositories: opened, identity: identity);
+              return App(repositories: opened, identity: identity, publishQueue: publishQueue);
             },
             identity: identity,
             publisher: const UnavailablePublisher(),

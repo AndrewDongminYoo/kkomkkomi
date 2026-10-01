@@ -24,7 +24,8 @@ class AppBlocObserver extends BlocObserver {
   }
 }
 
-/// Opens the database, then runs the app that [builder] makes from the repositories and [identity].
+/// Opens the database, then runs the app that [builder] makes from the repositories, [identity], and the publish
+/// queue.
 ///
 /// While the database does not open, the app shows a [StartupFailureApp], and its retry control opens the database
 /// again.
@@ -33,9 +34,11 @@ class AppBlocObserver extends BlocObserver {
 /// wait for the answer, and it opens also when [identity] fails.
 ///
 /// When the database is open, a [PublishQueue] with [publisher] starts and runs the publish jobs that an earlier
-/// launch left. [networkMonitor] and [photoStore] replace the adapters of the device in a test.
+/// launch left. It is the one queue of the app, and [builder] gets it for the screens: a second queue on the same
+/// database would run the same job at the same time. [networkMonitor] and [photoStore] replace the adapters of the
+/// device in a test.
 Future<void> bootstrap(
-  FutureOr<Widget> Function(Repositories repositories, Identity identity) builder, {
+  FutureOr<Widget> Function(Repositories repositories, Identity identity, PublishQueue publishQueue) builder, {
   required Identity identity,
   required Publisher publisher,
   Future<Repositories> Function() openRepositories = openDeviceRepositories,
@@ -57,24 +60,21 @@ Future<void> bootstrap(
   unawaited(_startIdentity(identity));
 
   final repositories = await _openUntilSuccess(openRepositories);
-  unawaited(
-    _startPublishing(
-      PublishQueue(
-        repository: repositories.publishing,
-        clients: repositories.clients,
-        visits: repositories.visits,
-        companyProfile: repositories.companyProfile,
-        photoStore: photoStore,
-        publisher: publisher,
-        identity: identity,
-        networkMonitor: networkMonitor,
-        idGenerator: const RandomIdGenerator(),
-        clock: const SystemClock(),
-      ),
-    ),
+  final publishQueue = PublishQueue(
+    repository: repositories.publishing,
+    clients: repositories.clients,
+    visits: repositories.visits,
+    companyProfile: repositories.companyProfile,
+    photoStore: photoStore,
+    publisher: publisher,
+    identity: identity,
+    networkMonitor: networkMonitor,
+    idGenerator: const RandomIdGenerator(),
+    clock: const SystemClock(),
   );
+  unawaited(_startPublishing(publishQueue));
 
-  runApp(await builder(repositories, identity));
+  runApp(await builder(repositories, identity, publishQueue));
 }
 
 Future<void> _startPublishing(PublishQueue queue) async {

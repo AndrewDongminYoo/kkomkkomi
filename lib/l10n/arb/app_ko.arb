@@ -322,6 +322,46 @@
     },
     "reportShareFailedMessage": "보고서를 공유하지 못했어요. 다시 시도해 주세요.",
     "@reportShareFailedMessage": {
-        "description": "PDF를 만들지 못했거나 공유 창을 열지 못했을 때 표시되는 문구"
+        "description": "PDF를 만들지 못했거나 PDF나 링크로 공유 창을 열지 못했을 때 표시되는 문구"
+    },
+    "reportLinkShareButton": "링크로 공유하기",
+    "@reportLinkShareButton": {
+        "description": "보고서를 올리고 웹 링크를 공유하는 보고서 화면의 버튼"
+    },
+    "reportLinkNoticeTitle": "링크로 공유할까요?",
+    "@reportLinkNoticeTitle": {
+        "description": "거래처의 첫 링크를 공유하기 전에 보여주는 안내의 제목"
+    },
+    "reportLinkNoticeMessage": "링크가 있으면 누구나 로그인 없이 이 거래처의 보고서를 볼 수 있어요. 보고서를 받을 분에게만 보내 주세요.",
+    "@reportLinkNoticeMessage": {
+        "description": "거래처의 첫 링크를 공유하기 전에 보여주는 안내의 본문"
+    },
+    "reportLinkNoticeConfirmButton": "공유하기",
+    "@reportLinkNoticeConfirmButton": {
+        "description": "안내를 확인하고 링크 공유를 이어가는 버튼"
+    },
+    "reportLinkPublishingMessage": "보고서를 올리고 있어요. 다 올리면 공유 창이 열려요.",
+    "@reportLinkPublishingMessage": {
+        "description": "링크를 공유하기 전에 보고서를 올리는 동안 표시되는 문구"
+    },
+    "reportLinkWaitingMessage": "아직 보고서를 올리지 못했어요. 잠시 뒤에 다시 올리고, 다 올리면 공유 창이 열려요.",
+    "@reportLinkWaitingMessage": {
+        "description": "올리기에 실패해서 다시 올리기를 기다리는 동안 표시되는 문구"
+    },
+    "reportLinkFailedMessage": "보고서를 올리지 못했어요. 다시 시도해 주세요.",
+    "@reportLinkFailedMessage": {
+        "description": "보고서 올리기가 멈췄을 때 표시되는 문구"
+    },
+    "reportLinkRevokedMessage": "올리는 동안 이 거래처의 링크가 바뀌었어요. 다시 시도해 주세요.",
+    "@reportLinkRevokedMessage": {
+        "description": "보고서를 올리는 동안 거래처 페이지의 링크가 끊겼을 때 표시되는 문구"
+    },
+    "reportLinkPhotoMissingMessage": "이 방문의 사진 파일을 찾지 못했어요. 방문 화면에서 사진을 다시 찍은 뒤 다시 시도해 주세요.",
+    "@reportLinkPhotoMissingMessage": {
+        "description": "올릴 사진 파일을 읽지 못했을 때 표시되는 문구"
+    },
+    "reportLinkPhotoUnusableMessage": "올릴 수 없는 사진이 있어요. 방문 화면에서 사진을 다시 찍은 뒤 다시 시도해 주세요.",
+    "@reportLinkPhotoUnusableMessage": {
+        "description": "사진이 JPEG 파일이 아니거나 너무 커서 올릴 수 없을 때 표시되는 문구"
     }
 }

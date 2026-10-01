@@ -4,6 +4,7 @@ export 'adapters/documents_photo_store.dart';
 export 'adapters/image_picker_photo_capture.dart';
 export 'adapters/printing_report_share.dart';
 export 'adapters/random_id_generator.dart';
+export 'adapters/share_plus_link_share.dart';
 export 'adapters/system_clock.dart';
 export 'adapters/unavailable_identity.dart';
 export 'adapters/unavailable_publisher.dart';

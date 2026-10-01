@@ -376,6 +376,46 @@
     },
     "reportShareFailedMessage": "Can't share the report right now. Try again.",
     "@reportShareFailedMessage": {
-        "description": "Message shown when the PDF could not be made or the share sheet did not open"
+        "description": "Message shown when the PDF could not be made or the share sheet did not open with the PDF or the link"
+    },
+    "reportLinkShareButton": "Share link",
+    "@reportLinkShareButton": {
+        "description": "Button on the report screen that uploads the report and shares its web link"
+    },
+    "reportLinkNoticeTitle": "Share a link?",
+    "@reportLinkNoticeTitle": {
+        "description": "Title of the notice before the first link of a client is shared"
+    },
+    "reportLinkNoticeMessage": "Anyone who has the link can open the reports of this client without signing in. Send it only to the people who receive the reports.",
+    "@reportLinkNoticeMessage": {
+        "description": "Body of the notice before the first link of a client is shared"
+    },
+    "reportLinkNoticeConfirmButton": "Share",
+    "@reportLinkNoticeConfirmButton": {
+        "description": "Button of the notice that goes on with the link share"
+    },
+    "reportLinkPublishingMessage": "Uploading the report. The share sheet opens when it's done.",
+    "@reportLinkPublishingMessage": {
+        "description": "Shown while the report uploads before its link is shared"
+    },
+    "reportLinkWaitingMessage": "Can't upload the report yet. It tries again soon, and the share sheet opens when it's done.",
+    "@reportLinkWaitingMessage": {
+        "description": "Shown while a failed upload waits to run again"
+    },
+    "reportLinkFailedMessage": "Can't upload the report. Try again.",
+    "@reportLinkFailedMessage": {
+        "description": "Shown when the upload of the report stopped"
+    },
+    "reportLinkRevokedMessage": "The link of this client changed during the upload. Try again.",
+    "@reportLinkRevokedMessage": {
+        "description": "Shown when the page of the client was revoked while the report uploaded"
+    },
+    "reportLinkPhotoMissingMessage": "A photo of this visit is missing. Retake it on the visit screen, then try again.",
+    "@reportLinkPhotoMissingMessage": {
+        "description": "Shown when a photo file of the visit cannot be read for the upload"
+    },
+    "reportLinkPhotoUnusableMessage": "A photo of this visit can't be uploaded. Retake it on the visit screen, then try again.",
+    "@reportLinkPhotoUnusableMessage": {
+        "description": "Shown when a photo of the visit is not a JPEG file or is too large to upload"
     }
 }

@@ -4,7 +4,8 @@ import 'package:kkomkkomi/firebase/firebase.dart';
 
 Future<void> main() async {
   await bootstrap(
-    (repositories, identity) => App(repositories: repositories, identity: identity),
+    (repositories, identity, publishQueue) =>
+        App(repositories: repositories, identity: identity, publishQueue: publishQueue),
     identity: FirebaseIdentity(),
     publisher: FirebasePublisher(),
   );

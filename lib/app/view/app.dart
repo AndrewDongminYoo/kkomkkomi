@@ -8,12 +8,14 @@ class App extends StatelessWidget {
   const new({
     required this.repositories,
     required this.identity,
+    required this.publishQueue,
     this.idGenerator = const RandomIdGenerator(),
     this.clock = const SystemClock(),
     this.photoCapture = const ImagePickerPhotoCapture(),
     this.photoStore = const DocumentsPhotoStore(),
     this.reportFont = const AssetReportFont(),
     this.reportShare = const PrintingReportShare(),
+    this.linkShare = const SharePlusLinkShare(),
     super.key,
   });
 
@@ -24,6 +26,10 @@ class App extends StatelessWidget {
   ///
   /// It has no default, because the flavor decides it: only the production entry point gives the Firebase adapter.
   final Identity identity;
+
+  /// The one publish queue of the app, which `bootstrap` starts and the widgets below read through
+  /// `RepositoryProvider`.
+  final PublishQueue publishQueue;
 
   /// The source of the identifiers of new entities, which the widgets below read through `RepositoryProvider`.
   final IdGenerator idGenerator;
@@ -43,6 +49,9 @@ class App extends StatelessWidget {
   /// The share sheet for a report, which the widgets below read through `RepositoryProvider`.
   final ReportShare reportShare;
 
+  /// The share sheet for a report link, which the widgets below read through `RepositoryProvider`.
+  final LinkShare linkShare;
+
   @override
   Widget build(BuildContext context) {
     return MultiRepositoryProvider(
@@ -51,12 +60,14 @@ class App extends StatelessWidget {
         RepositoryProvider<VisitRepository>.value(value: repositories.visits),
         RepositoryProvider<CompanyProfileRepository>.value(value: repositories.companyProfile),
         RepositoryProvider<Identity>.value(value: identity),
+        RepositoryProvider<PublishQueue>.value(value: publishQueue),
         RepositoryProvider<IdGenerator>.value(value: idGenerator),
         RepositoryProvider<Clock>.value(value: clock),
         RepositoryProvider<PhotoCapture>.value(value: photoCapture),
         RepositoryProvider<PhotoStore>.value(value: photoStore),
         RepositoryProvider<ReportFont>.value(value: reportFont),
         RepositoryProvider<ReportShare>.value(value: reportShare),
+        RepositoryProvider<LinkShare>.value(value: linkShare),
       ],
       child: MaterialApp(
         theme: ThemeData(
