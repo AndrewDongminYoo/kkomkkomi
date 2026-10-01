@@ -111,7 +111,7 @@ The Windows build must keep passing in CI, and Windows runtime behavior is not a
 - Firestore exists in `asia-northeast3`, and its rules deny every read and write.
 - Anonymous sign-in is enabled.
 - Hosting serves `web/` at `https://kkomkkomi.web.app`, and the landing page is live there.
-- Storage is not set up. The Firebase console must set it up, and that is the operator's action. Brief 6 cannot start before it.
+- Storage is set up, and its rules deny every read and write. The operator set it up in the Firebase console later on 2026-10-01, after the first version of this section said it was absent.
 
 ### Decisions
 
@@ -165,5 +165,5 @@ Seven pull requests, in this order, each with its own brief under `docs/plans/`:
 3. Visit capture.
 4. Report PDF and share.
 5. Firebase startup and anonymous sign-in for the production flavor.
-6. Publish queue and security rules. Blocked until Storage is set up.
+6. Publish queue and security rules.
 7. Web report page and link share.

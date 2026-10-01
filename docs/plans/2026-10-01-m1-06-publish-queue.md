@@ -4,11 +4,10 @@ Design: `docs/specs/2026-10-01-m1-local-first-design.md`, section "Phase B".
 Read the design and `CLAUDE.md` before you write code.
 This brief depends on briefs 1 to 5.
 
-## Blocker
+## Starting state
 
-Firebase Storage is not set up on the project.
-Do not start this brief until `firebase deploy --only storage` can succeed.
-Setting up Storage is the operator's action in the Firebase console.
+Firestore and Storage both exist, and the deployed rules of both deny every read and write.
+`firestore.rules` and `storage.rules` in the repository match the deployed rules.
 
 ## Goal
 
