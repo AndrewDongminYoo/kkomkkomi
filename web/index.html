@@ -54,8 +54,10 @@
         --paper-edge: #e6e0d4; /* sheet rule */
         --ink: #16243b; /* navy body */
         --ink-2: #4b5870; /* secondary */
-        --ink-3: #8a93a5; /* captions */
+        --ink-3: #667085; /* captions */
+        --field-edge: #7f899c; /* input border, 3:1 on the ground and the sheet */
         --teal: #0f7f7a; /* accent */
+        --on-teal: #ffffff; /* text and marks on the accent */
         --teal-ink: #0a5e5a; /* accent on light, for text */
         --teal-soft: #dff2ef; /* accent tint */
         --warn: #9a5b12; /* "예정"/notice labels */
@@ -92,8 +94,10 @@
           --paper-edge: #2c3850;
           --ink: #eef1f6;
           --ink-2: #b6bfd0;
-          --ink-3: #7f8aa1;
+          --ink-3: #8f9ab0;
+          --field-edge: #66728d;
           --teal: #3fb8b1;
+          --on-teal: #121a28;
           --teal-ink: #6fd3cc;
           --teal-soft: #15332f;
           --warn: #e0a85c;
@@ -122,8 +126,10 @@
         --paper-edge: #2c3850;
         --ink: #eef1f6;
         --ink-2: #b6bfd0;
-        --ink-3: #7f8aa1;
+        --ink-3: #8f9ab0;
+        --field-edge: #66728d;
         --teal: #3fb8b1;
+        --on-teal: #121a28;
         --teal-ink: #6fd3cc;
         --teal-soft: #15332f;
         --warn: #e0a85c;
@@ -151,6 +157,8 @@
       }
       html {
         scroll-behavior: smooth;
+        /* the sticky header covers the top 64px of an in-page link target */
+        scroll-padding-top: calc(64px + env(safe-area-inset-top, 0px));
       }
       @media (prefers-reduced-motion: reduce) {
         html {
@@ -229,12 +237,10 @@
         display: inline-flex;
         align-items: center;
         gap: 8px;
-        font-family: var(--font-mono);
-        font-size: 0.78rem;
-        letter-spacing: 0.08em;
-        text-transform: uppercase;
+        font-size: 0.82rem;
+        letter-spacing: 0.02em;
         color: var(--teal-ink);
-        font-weight: 500;
+        font-weight: 700;
       }
       .eyebrow::before {
         content: "";
@@ -259,9 +265,7 @@
         gap: 6px;
         padding: 3px 10px;
         border-radius: 999px;
-        font-family: var(--font-mono);
-        font-size: 0.74rem;
-        letter-spacing: 0.03em;
+        font-size: 0.82rem;
         font-weight: 500;
         line-height: 1.6;
         white-space: nowrap;
@@ -301,7 +305,7 @@
       }
       .btn-primary {
         background: var(--teal);
-        color: #fff;
+        color: var(--on-teal);
         border-color: var(--teal);
       }
       .btn-primary:hover {
@@ -316,7 +320,7 @@
         border-color: var(--ink-3);
       }
       .btn-sm {
-        min-height: 40px;
+        min-height: 44px;
         padding: 6px 14px;
         font-size: 0.92rem;
       }
@@ -341,6 +345,7 @@
         display: inline-flex;
         align-items: center;
         gap: 9px;
+        min-height: 44px;
         text-decoration: none;
         color: var(--ink);
         font-weight: 800;
@@ -352,6 +357,7 @@
         height: 28px;
         border-radius: 8px;
         background: var(--teal);
+        color: var(--on-teal);
         display: grid;
         place-items: center;
         flex: none;
@@ -365,7 +371,10 @@
         align-items: center;
         gap: 4px;
       }
-      .nav a {
+      .nav a:not(.btn) {
+        display: inline-flex;
+        align-items: center;
+        min-height: 44px;
         color: var(--ink-2);
         text-decoration: none;
         font-size: 0.95rem;
@@ -373,7 +382,7 @@
         border-radius: 8px;
         font-weight: 500;
       }
-      .nav a:hover {
+      .nav a:not(.btn):hover {
         color: var(--ink);
         background: var(--paper);
       }
@@ -425,7 +434,7 @@
       .cta-note {
         margin-top: 18px;
         font-size: 0.92rem;
-        color: var(--ink-3);
+        color: var(--ink-2);
         max-width: 46ch;
       }
 
@@ -462,10 +471,8 @@
       }
       .sheet-meta dt {
         color: var(--ink-3);
-        font-family: var(--font-mono);
-        font-size: 0.76rem;
-        letter-spacing: 0.04em;
-        padding-top: 3px;
+        font-size: 0.82rem;
+        padding-top: 2px;
       }
       .sheet-meta dd {
         margin: 0;
@@ -487,6 +494,9 @@
         color: var(--ink-3);
       }
       .sheet-foot a {
+        display: inline-flex;
+        align-items: center;
+        min-height: 44px;
         font-weight: 600;
       }
       .zone-row {
@@ -499,9 +509,10 @@
         gap: 10px;
         flex-wrap: wrap;
       }
-      .zone-row-head h4 {
+      .zone-row-head .zone-name {
         font-size: 1rem;
         font-weight: 700;
+        line-height: 1.3;
       }
       .pair {
         display: grid;
@@ -528,15 +539,15 @@
         top: 8px;
         background: var(--ink);
         color: var(--bg);
-        font-family: var(--font-mono);
-        font-size: 0.72rem;
-        letter-spacing: 0.06em;
+        font-size: 0.82rem;
+        font-weight: 500;
+        line-height: 1.5;
         padding: 2px 8px;
         border-radius: 4px;
       }
       .shot .lbl.after {
         background: var(--teal);
-        color: #fff;
+        color: var(--on-teal);
       }
       .note-line {
         display: grid;
@@ -546,11 +557,9 @@
         font-size: 0.95rem;
       }
       .note-line .k {
-        font-family: var(--font-mono);
-        font-size: 0.74rem;
-        letter-spacing: 0.04em;
+        font-size: 0.82rem;
         color: var(--ink-3);
-        padding-top: 5px;
+        padding-top: 3px;
         white-space: nowrap;
       }
       .note-line.special .k {
@@ -581,7 +590,7 @@
       }
       .sample-caption {
         font-size: 0.86rem;
-        color: var(--ink-3);
+        color: var(--ink-2);
         margin-top: 10px;
         display: flex;
         gap: 8px;
@@ -607,10 +616,9 @@
         background: var(--paper);
       }
       .prob .n {
-        font-family: var(--font-mono);
         color: var(--ink-3);
-        font-size: 0.8rem;
-        letter-spacing: 0.06em;
+        font-size: 0.82rem;
+        font-weight: 500;
       }
       .prob p {
         margin-top: 8px;
@@ -649,7 +657,7 @@
         background: transparent;
         border-radius: 7px;
         padding: 7px 14px;
-        min-height: 40px;
+        min-height: 44px;
         font-weight: 600;
         color: var(--ink-2);
         cursor: pointer;
@@ -657,12 +665,10 @@
       .seg button[aria-pressed="true"],
       .seg button[aria-selected="true"] {
         background: var(--teal);
-        color: #fff;
+        color: var(--on-teal);
       }
       .seg-label {
-        font-family: var(--font-mono);
-        font-size: 0.74rem;
-        letter-spacing: 0.05em;
+        font-size: 0.82rem;
         color: var(--ink-3);
         margin-right: 8px;
       }
@@ -677,7 +683,7 @@
         background: var(--paper);
         border-radius: 999px;
         padding: 7px 16px;
-        min-height: 40px;
+        min-height: 44px;
         font-weight: 600;
         color: var(--ink-2);
         cursor: pointer;
@@ -699,7 +705,7 @@
         aspect-ratio: 4/3;
       }
       .sample-panel .shot .lbl {
-        font-size: 0.8rem;
+        font-size: 0.85rem;
         padding: 3px 10px;
       }
       @media (max-width: 640px) {
@@ -782,8 +788,8 @@
         border: 1px solid var(--paper-edge);
         background: var(--paper);
         border-radius: 8px;
-        padding: 4px 10px;
-        min-height: 36px;
+        padding: 4px 14px;
+        min-height: 44px;
         font-size: 0.86rem;
         cursor: pointer;
         font-weight: 600;
@@ -1031,14 +1037,12 @@
       }
       .field label .req {
         color: var(--teal-ink);
-        font-size: 0.8rem;
-        font-family: var(--font-mono);
+        font-size: 0.82rem;
         margin-left: 6px;
       }
       .field label .opt {
         color: var(--ink-3);
-        font-size: 0.8rem;
-        font-family: var(--font-mono);
+        font-size: 0.82rem;
         margin-left: 6px;
         font-weight: 400;
       }
@@ -1048,7 +1052,7 @@
         width: 100%;
         min-height: 48px;
         padding: 10px 14px;
-        border: 1.5px solid var(--paper-edge);
+        border: 1.5px solid var(--field-edge);
         border-radius: 10px;
         background: var(--bg);
         color: var(--ink);
@@ -1079,7 +1083,7 @@
         display: block;
       }
       .field .hint {
-        color: var(--ink-3);
+        color: var(--ink-2);
         font-size: 0.86rem;
       }
       .form-actions {
@@ -1150,6 +1154,16 @@
         font-weight: 500;
         min-width: 0;
       }
+      @media (max-width: 520px) {
+        /* one column, so that an email address keeps the whole row */
+        .review {
+          grid-template-columns: 1fr;
+          gap: 2px;
+        }
+        .review dd + dt {
+          margin-top: 10px;
+        }
+      }
       .dlg-actions {
         display: flex;
         flex-wrap: wrap;
@@ -1216,7 +1230,7 @@
             ><svg
               viewBox="0 0 24 24"
               fill="none"
-              stroke="#fff"
+              stroke="currentColor"
               stroke-width="3"
               stroke-linecap="round"
               stroke-linejoin="round"
@@ -1278,7 +1292,7 @@
                 <div class="zone-row">
                   <div class="zone-row-head">
                     <span class="tag tag-zone">구역 1</span>
-                    <h4>출입구</h4>
+                    <p class="zone-name">출입구</p>
                   </div>
                   <div class="pair">
                     <figure class="shot" style="margin: 0">
@@ -1403,14 +1417,7 @@
                 "
               >
                 <dt>방문일</dt>
-                <dd
-                  id="visit-date"
-                  style="
-                    font-family: var(--font-mono);
-                    font-size: 0.95rem;
-                    font-variant-numeric: tabular-nums;
-                  "
-                >
+                <dd id="visit-date" style="font-variant-numeric: tabular-nums">
                   2026-09-29 (월)
                 </dd>
               </dl>
@@ -1541,30 +1548,26 @@
               align-items: center;
             "
           >
-            <h3 id="planned-title" style="font-size: 1.25rem">
+            <h2 id="planned-title" style="font-size: 1.25rem">
               향후 앱에서 준비하는 기능
-            </h3>
+            </h2>
             <span class="tag tag-plan">개발 예정</span>
           </div>
           <div class="planned-grid">
             <div class="planned-item">
-              <span class="tag tag-plan">개발 예정</span
-              ><strong>구역 목록 재사용</strong>
+              <strong>구역 목록 재사용</strong>
               <p>거래처마다 저장된 구역 목록을 다음 방문에 다시 불러옵니다.</p>
             </div>
             <div class="planned-item">
-              <span class="tag tag-plan">개발 예정</span
-              ><strong>같은 구도 촬영 가이드</strong>
+              <strong>같은 구도 촬영 가이드</strong>
               <p>지난 사진을 반투명하게 겹쳐 같은 구도로 찍도록 돕습니다.</p>
             </div>
             <div class="planned-item">
-              <span class="tag tag-plan">개발 예정</span
-              ><strong>거래처별 방문 이력</strong>
+              <strong>거래처별 방문 이력</strong>
               <p>거래처 한 곳의 방문 기록을 한 페이지에서 확인합니다.</p>
             </div>
             <div class="planned-item">
-              <span class="tag tag-plan">개발 예정</span
-              ><strong>월간 묶음 보고서</strong>
+              <strong>월간 묶음 보고서</strong>
               <p>한 달 방문을 모아 정산 증빙용 보고서로 내보냅니다.</p>
             </div>
           </div>
@@ -1643,7 +1646,7 @@
       <!-- FAQ -->
       <section id="faq" style="padding-top: 0">
         <div class="wrap">
-          <span class="eyebrow">자주 묻는 질문</span>
+          <h2 class="eyebrow">자주 묻는 질문</h2>
           <div class="faq">
             <details>
               <summary>지금 앱을 설치할 수 있나요?</summary>
@@ -1720,7 +1723,7 @@
                   않습니다.</span
                 >
               </div>
-              <form id="apply-form" novalidate autocomplete="off">
+              <form id="apply-form" novalidate>
                 <div
                   class="form-summary-err"
                   id="form-summary"
@@ -1735,6 +1738,7 @@
                     id="name"
                     name="name"
                     type="text"
+                    autocomplete="organization"
                     required
                     maxlength="60"
                     placeholder="예: 바른클린"
@@ -1751,6 +1755,7 @@
                     id="email"
                     name="email"
                     type="email"
+                    autocomplete="email"
                     required
                     inputmode="email"
                     placeholder="답장을 받을 주소"
@@ -1805,9 +1810,10 @@
                     id="pain"
                     name="pain"
                     maxlength="500"
+                    aria-describedby="pain-hint"
                     placeholder="예: 거래처마다 사진 순서를 맞춰 다시 보내는 일"
                   ></textarea>
-                  <span class="hint"
+                  <span class="hint" id="pain-hint"
                     >현장 사진이나 거래처 담당자 정보는 적지 말아 주세요.</span
                   >
                 </div>
@@ -1837,7 +1843,7 @@
             ><svg
               viewBox="0 0 24 24"
               fill="none"
-              stroke="#fff"
+              stroke="currentColor"
               stroke-width="3"
               stroke-linecap="round"
               stroke-linejoin="round"
@@ -1896,9 +1902,12 @@
         "use strict";
 
         /* ---------- Illustrations: same room, same framing; "before" adds marks ---------- */
-        function svgWrap(inner) {
+        function svgWrap(zone, before, inner) {
           return (
-            '<svg viewBox="0 0 400 300" role="img" aria-hidden="true" focusable="false" preserveAspectRatio="xMidYMid slice">' +
+            '<svg viewBox="0 0 400 300" role="img" aria-label="' +
+            zone +
+            (before ? " 작업 전" : " 작업 후") +
+            ' 예시 그림" focusable="false" preserveAspectRatio="xMidYMid slice">' +
             inner +
             "</svg>"
           );
@@ -1938,7 +1947,7 @@
                 "</g>" +
                 '<rect x="300" y="196" width="36" height="24" rx="3" fill="var(--il-dirt2)"/><rect x="306" y="186" width="24" height="12" rx="2" fill="var(--il-dirt)"/>';
             }
-            return svgWrap(s);
+            return svgWrap("출입구", before, s);
           },
           common(before) {
             let s =
@@ -1976,7 +1985,7 @@
                 '<rect x="100" y="206" width="22" height="30" rx="3"/>' +
                 "</g>";
             }
-            return svgWrap(s);
+            return svgWrap("공용 공간", before, s);
           },
           restroom(before) {
             let s = '<rect width="400" height="300" fill="var(--il-tile)"/>';
@@ -2013,7 +2022,7 @@
                 "</g>" +
                 '<g fill="var(--il-dirt)" opacity=".4"><ellipse cx="150" cy="250" rx="34" ry="9"/><ellipse cx="300" cy="270" rx="26" ry="8"/></g>';
             }
-            return svgWrap(s);
+            return svgWrap("화장실", before, s);
           },
         };
 
@@ -2203,6 +2212,12 @@
 
         function setInvalid(id, bad) {
           document.getElementById("f-" + id).classList.toggle("invalid", bad);
+          // The message is hidden while the field is valid, and a hidden element still describes
+          // the field that names it, so the link exists only while the message shows.
+          const input = document.getElementById(id);
+          input.setAttribute("aria-invalid", String(bad));
+          if (bad) input.setAttribute("aria-describedby", id + "-err");
+          else input.removeAttribute("aria-describedby");
         }
         function validate() {
           const name = form.name.value.trim();
