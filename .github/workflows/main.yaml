@@ -12,8 +12,16 @@ on:
     branches:
       - main
 
+permissions:
+  contents: read
+
 jobs:
   semantic-pull-request:
+    # The workflow grants contents read only, the title check reads the pull
+    # request through the API, and the reusable workflow declares no
+    # permissions of its own.
+    permissions:
+      pull-requests: read
     uses: VeryGoodOpenSource/very_good_workflows/.github/workflows/semantic_pull_request.yml@61d25935870f12a1f2c23f2a04d5f193c83f4e5d # v1.21.1
 
   build:
@@ -21,6 +29,28 @@ jobs:
     with:
       flutter_version: 3.47.x
       run_bloc_lint: true
+      # Same as the analysis_options.yaml page_width.
+      format_line_length: 120
+
+  windows:
+    # The only place the Windows build is verified: no local script builds it.
+    # The runner has no flavor configuration, so the target alone picks the
+    # production entrypoint.
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - uses: subosito/flutter-action@1a449444c387b1966244ae4d4f8c696479add0b2 # v2.23.0
+        with:
+          flutter-version: 3.47.x
+          channel: stable
+          cache: true
+
+      - name: Install Flutter dependencies
+        run: flutter pub get
+
+      - name: Build the Windows app
+        run: flutter build windows --release --target lib/main_production.dart
 
   spell-check:
     uses: VeryGoodOpenSource/very_good_workflows/.github/workflows/spell_check.yml@61d25935870f12a1f2c23f2a04d5f193c83f4e5d # v1.21.1
@@ -28,3 +58,4 @@ jobs:
       includes: |
         **/*.md
       modified_files_only: false
+      config: cspell.json
