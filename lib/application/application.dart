@@ -5,6 +5,8 @@ export 'find_previous_photos.dart';
 export 'id_generator.dart';
 export 'photo_capture.dart';
 export 'photo_store.dart';
+export 'report_font.dart';
+export 'report_share.dart';
 export 'repositories.dart';
 export 'start_visit.dart';
 export 'visit_repository.dart';

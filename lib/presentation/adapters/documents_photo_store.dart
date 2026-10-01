@@ -1,4 +1,5 @@
 import 'dart:io';
+import 'dart:typed_data';
 
 import 'package:kkomkkomi/application/application.dart';
 import 'package:kkomkkomi/domain/domain.dart';
@@ -31,6 +32,9 @@ final class DocumentsPhotoStore implements PhotoStore {
       // The file is gone, which is what the caller wants.
     }
   }
+
+  @override
+  Future<Uint8List> read(PhotoRef photo) async => await (await _fileOf(photo)).readAsBytes();
 
   @override
   Future<String> directoryPath() async => (await _documentsDirectory()).path;
