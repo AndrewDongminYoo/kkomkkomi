@@ -59,6 +59,7 @@ final class PublishJob {
     this.attempts = 0,
     DateTime? nextAttemptAt,
     this.failure,
+    this.generation = 0,
   }) : createdAt = createdAt.toUtc(),
        nextAttemptAt = nextAttemptAt?.toUtc();
 
@@ -83,6 +84,10 @@ final class PublishJob {
   /// Why the job stopped, while [status] is [PublishJobStatus.failed].
   final PublishFailure? failure;
 
+  /// How many times a new request restarted the job. A run saves its result only over the job of the generation
+  /// that it read, so a restart during a run is not lost.
+  final int generation;
+
   /// This job, done.
   PublishJob succeed() => _copy(status: PublishJobStatus.done, attempts: attempts, nextAttemptAt: null, failure: null);
 
@@ -94,14 +99,21 @@ final class PublishJob {
   PublishJob fail(PublishFailure reason) =>
       _copy(status: PublishJobStatus.failed, attempts: attempts, nextAttemptAt: null, failure: reason);
 
-  /// This job, pending again with its delay and its count of failed runs cleared.
-  PublishJob restart() => _copy(status: PublishJobStatus.pending, attempts: 0, nextAttemptAt: null, failure: null);
+  /// This job, pending again with its delay and its count of failed runs cleared, in a new generation.
+  PublishJob restart() => _copy(
+    status: PublishJobStatus.pending,
+    attempts: 0,
+    nextAttemptAt: null,
+    failure: null,
+    generation: generation + 1,
+  );
 
   PublishJob _copy({
     required PublishJobStatus status,
     required int attempts,
     required DateTime? nextAttemptAt,
     required PublishFailure? failure,
+    int? generation,
   }) => PublishJob(
     id: id,
     kind: kind,
@@ -112,6 +124,7 @@ final class PublishJob {
     attempts: attempts,
     nextAttemptAt: nextAttemptAt,
     failure: failure,
+    generation: generation ?? this.generation,
   );
 
   @override
@@ -125,13 +138,15 @@ final class PublishJob {
       other.status == status &&
       other.attempts == attempts &&
       other.nextAttemptAt == nextAttemptAt &&
-      other.failure == failure;
+      other.failure == failure &&
+      other.generation == generation;
 
   @override
-  int get hashCode => Object.hash(id, kind, pageId, visitId, createdAt, status, attempts, nextAttemptAt, failure);
+  int get hashCode =>
+      Object.hash(id, kind, pageId, visitId, createdAt, status, attempts, nextAttemptAt, failure, generation);
 
   @override
   String toString() =>
       'PublishJob($id, ${kind.name}, $pageId, $visitId, ${status.name}, $attempts, $nextAttemptAt, '
-      '${failure?.name})';
+      '${failure?.name}, $generation)';
 }

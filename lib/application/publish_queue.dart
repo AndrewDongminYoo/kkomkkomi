@@ -106,10 +106,6 @@ final class PublishQueue {
   var _runAgain = false;
   var _disposed = false;
 
-  /// The ID of the job that runs now, and whether a request for the same job came while it ran.
-  String? _currentJobId;
-  var _requestedAgain = false;
-
   /// Each job after a run of it changed its state, for a screen that shows where a job is and why it stopped.
   Stream<PublishJob> get updates => _updates.stream;
 
@@ -134,8 +130,8 @@ final class PublishQueue {
   /// Adds a job that publishes the visit with [visitId] under the open page of its client, and returns the job.
   ///
   /// The client gets its page at its first publish. When a job for the same visit and page is pending, the queue
-  /// adds none and runs that job at once. When that job runs now, it runs again after this run, so that the visit as
-  /// it is now reaches the backend. Throws an [ArgumentError] when no visit has [visitId].
+  /// adds none and restarts that job. When that job runs now, it runs again after this run, so that the visit as it
+  /// is now reaches the backend. Throws an [ArgumentError] when no visit has [visitId].
   Future<PublishJob> publishVisit(String visitId) async {
     final visit = await _visits.visitById(visitId);
     if (visit == null) throw ArgumentError.value(visitId, 'visitId', 'No visit has this ID');
@@ -149,7 +145,6 @@ final class PublishQueue {
         createdAt: _clock.now(),
       ),
     );
-    if (job.id == _currentJobId) _requestedAgain = true;
     unawaited(_run());
     return job;
   }
@@ -258,8 +253,6 @@ final class PublishQueue {
   }
 
   Future<void> _runJob(PublishJob job) async {
-    _currentJobId = job.id;
-    _requestedAgain = false;
     PublishJob result;
     try {
       if (!_publisher.isAvailable) throw const _Stop(PublishFailure.unavailable);
@@ -285,11 +278,10 @@ final class PublishQueue {
         result = job.retryAt(_clock.now().add(retryDelay(job.attempts + 1)));
       }
     }
-    _currentJobId = null;
-    // A request for the same visit that came during the run may hold a change that the run did not read.
-    if (_requestedAgain) result = job.restart();
-    // The job was read before its steps, and a revoke that came during them stopped it. The store saves over a
-    // pending job only, so the run never undoes that stop, and then it reports no change.
+    // The run read the job before its steps. A revoke that stopped the job during them, or a publish request that
+    // restarted it with a new generation, changed the stored job, and the store saves over the job only while it is
+    // the pending job of the same generation. So the run never undoes a stop or loses a restart, and a restarted job
+    // runs again with the visit as it is now.
     if (await _repository.saveJob(result) && !_disposed) _updates.add(result);
   }
 
@@ -372,6 +364,9 @@ final class PublishQueue {
     }
     if (!_isJpeg(bytes)) throw const _Stop(PublishFailure.photoNotJpeg);
     if (bytes.length > maxPhotoBytes) throw const _Stop(PublishFailure.photoTooLarge);
+    // The object is recorded before the upload, because an upload that does not answer in time can still arrive
+    // later, and a cleanup or a revoke must know every object that may exist.
+    await _repository.recordUploadIntent(pageId: pageId, objectPath: objectPath, photoPath: photo.path);
     await _step(_publisher.uploadPhoto(objectPath, bytes));
     await _repository.saveUploadedPhoto(pageId: pageId, objectPath: objectPath, photoPath: photo.path);
     return objectPath;

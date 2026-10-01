@@ -62,7 +62,11 @@ void main() {
       expect(retried.status, PublishJobStatus.pending);
       expect(retried.attempts, 2);
       expect(retried.nextAttemptAt, DateTime(2026, 10, 2, 20).toUtc());
-      expect(retried.restart(), job);
+      final restarted = retried.restart();
+      expect((restarted.status, restarted.attempts, restarted.nextAttemptAt), (PublishJobStatus.pending, 0, null));
+      // A restart is a new generation, so a run that read the job before it cannot save over it.
+      expect((job.generation, restarted.generation, restarted.restart().generation), (0, 1, 2));
+      expect(restarted.toString(), endsWith(', 1)'));
     });
 
     test('keeps the count of retries when it is done or fails, and clears the delay', () {

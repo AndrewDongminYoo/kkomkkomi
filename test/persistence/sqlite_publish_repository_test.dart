@@ -109,8 +109,19 @@ void main() {
 
       final stored = await repository.enqueue(job('job-2', minute: 5));
 
-      expect(stored, job('job-1'));
-      expect(await repository.pendingJobs(), [job('job-1')]);
+      expect(stored, job('job-1').restart());
+      expect(stored.generation, 1);
+      expect((stored.attempts, stored.nextAttemptAt), (0, null));
+      expect(await repository.pendingJobs(), [stored]);
+    });
+
+    test('saveJob does not save a run that read a job before a restart of it', () async {
+      final read = await repository.enqueue(job('job-1'));
+      final restarted = await repository.enqueue(job('job-2', minute: 5));
+
+      expect(await repository.saveJob(read.succeed()), isFalse);
+      expect(await repository.saveJob(restarted.succeed()), isTrue);
+      expect(await repository.jobsOfPage('page-1'), [restarted.succeed()]);
     });
 
     test('enqueue adds a job for another visit, and for a visit whose earlier job is no longer pending', () async {
@@ -277,6 +288,19 @@ void main() {
   });
 
   group('uploaded photos', () {
+    test('an upload that started is an object to delete, and not one that arrived', () async {
+      await repository.recordUploadIntent(pageId: 'page-1', objectPath: 'a.jpg', photoPath: 'photos/v/1.jpg');
+
+      expect(await repository.uploadedPhoto(pageId: 'page-1', objectPath: 'a.jpg'), isNull);
+      expect(await repository.uploadedObjects('page-1'), ['a.jpg']);
+
+      await repository.saveUploadedPhoto(pageId: 'page-1', objectPath: 'a.jpg', photoPath: 'photos/v/1.jpg');
+      await repository.recordUploadIntent(pageId: 'page-1', objectPath: 'a.jpg', photoPath: 'photos/v/1.jpg');
+
+      expect(await repository.uploadedPhoto(pageId: 'page-1', objectPath: 'a.jpg'), 'photos/v/1.jpg');
+      expect(await repository.uploadedObjects('page-1'), ['a.jpg']);
+    });
+
     setUp(() async {
       await repository.openPageOf('client-1', create: () => page('page-1'));
       await repository.openPageOf('client-2', create: () => page('page-2', clientId: 'client-2'));

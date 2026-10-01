@@ -315,9 +315,13 @@ class FakePublisher implements Publisher {
   /// A call waits for this completer while it is set, so that a test can act while a call is on its way.
   Completer<void>? gate;
 
+  /// A call of a method waits for the completer of its name while it is set.
+  final gates = <String, Completer<void>>{};
+
   Future<void> _call(String method, String argument) async {
     calls.add('$method $argument');
     await gate?.future;
+    await gates[method]?.future;
     final queued = failures[method];
     if (queued == null || queued.isEmpty) return;
     if (queued.removeAt(0) case final failure?) Error.throwWithStackTrace(failure, StackTrace.current);

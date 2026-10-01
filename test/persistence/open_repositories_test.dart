@@ -67,6 +67,13 @@ void main() {
       expect(await repositories.clients.clientById('client-1'), client);
       expect(await repositories.publishing.openPageOf('client-1', create: () => page), page);
       expect(await repositories.publishing.pendingJobs(), isEmpty);
+      // The new tables carry the generation of a job and whether an upload arrived.
+      final job = PublishJob(id: 'job-1', kind: PublishJobKind.revoke, pageId: 'page-1', createdAt: DateTime.utc(2026));
+      await repositories.publishing.enqueue(job);
+      expect(await repositories.publishing.saveJob(job.succeed()), isTrue);
+      await repositories.publishing.recordUploadIntent(pageId: 'page-1', objectPath: 'a.jpg', photoPath: 'p/1.jpg');
+      expect(await repositories.publishing.uploadedObjects('page-1'), ['a.jpg']);
+      expect(await repositories.publishing.uploadedPhoto(pageId: 'page-1', objectPath: 'a.jpg'), isNull);
     });
 
     test('enforces foreign keys', () async {

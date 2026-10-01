@@ -69,7 +69,8 @@ CREATE TABLE publish_jobs (
   status TEXT NOT NULL,
   attempts INTEGER NOT NULL,
   next_attempt_at INTEGER,
-  failure TEXT
+  failure TEXT,
+  generation INTEGER NOT NULL
 )''',
   'CREATE INDEX publish_jobs_page_id ON publish_jobs (page_id)',
   '''
@@ -77,6 +78,7 @@ CREATE TABLE published_photos (
   page_id TEXT NOT NULL REFERENCES client_pages (id),
   object_path TEXT NOT NULL,
   photo_path TEXT NOT NULL,
+  arrived INTEGER NOT NULL,
   PRIMARY KEY (page_id, object_path)
 )''',
 ];

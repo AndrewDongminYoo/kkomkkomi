@@ -82,8 +82,20 @@ class _GatedRepository implements PublishRepository {
     PublishJob Function(String visitId)? republish,
   }) => _inner.revoke(page, at: at, revokeJob: revokeJob, replacement: replacement, republish: republish);
 
+  /// The next save of a job waits for this completer, and clears it.
+  Completer<void>? saveGate;
+
   @override
-  Future<bool> saveJob(PublishJob job) => _inner.saveJob(job);
+  Future<bool> saveJob(PublishJob job) async {
+    final waiting = saveGate;
+    saveGate = null;
+    await waiting?.future;
+    return await _inner.saveJob(job);
+  }
+
+  @override
+  Future<void> recordUploadIntent({required String pageId, required String objectPath, required String photoPath}) =>
+      _inner.recordUploadIntent(pageId: pageId, objectPath: objectPath, photoPath: photoPath);
 
   @override
   Future<List<PublishJob>> jobsOfPage(String pageId) => _inner.jobsOfPage(pageId);
@@ -336,7 +348,7 @@ void main() {
       await settle();
 
       expect(second.id, first.id);
-      expect(await repositories.publishing.jobsOfPage(first.pageId), [first.succeed()]);
+      expect(await repositories.publishing.jobsOfPage(first.pageId), [second.succeed()]);
     });
 
     test('runs a job that is added while the run on its way reads the jobs for the last time', () async {
@@ -374,6 +386,26 @@ void main() {
 
       expect(second.id, first.id);
       expect(publisher.calls.where((call) => call.startsWith('writeReport')), hasLength(2));
+      expect(publisher.reports['${first.pageId}/visit-2']?.zones.single.note, '유리 닦음');
+      expect((await jobOf(first)).status, PublishJobStatus.done);
+    });
+
+    test('runs a job again when its visit is published again after its steps and before its result is saved', () async {
+      final repository = _GatedRepository(repositories.publishing);
+      final queue = newQueue(repository: repository);
+      final saving = repository.saveGate = Completer<void>();
+      final first = await queue.publishVisit('visit-2');
+      await settle();
+      expect(publisher.calls.last, 'writeReport ${first.pageId}/visit-2');
+
+      final changed = visit2.withRecord(visit2.zoneRecords.single.withNote('유리 닦음'));
+      await repositories.visits.save(changed);
+      final second = await queue.publishVisit('visit-2');
+      saving.complete();
+      await settle();
+
+      expect(second.id, first.id);
+      expect(second.generation, first.generation + 1);
       expect(publisher.reports['${first.pageId}/visit-2']?.zones.single.note, '유리 닦음');
       expect((await jobOf(first)).status, PublishJobStatus.done);
     });
@@ -811,6 +843,25 @@ void main() {
       // The revoke written again by the retry keeps the time of the revoke, not the time of the retry.
       expect(publisher.revokedAt[pageId], revokedAt);
       expect(await repositories.publishing.uploadedObjects(pageId), isEmpty);
+    });
+
+    test('deletes the object of an upload that did not answer in time, which may arrive later', () async {
+      final queue = newQueue(stepTimeout: const Duration(milliseconds: 10));
+      final upload = publisher.gates['uploadPhoto'] = Completer<void>();
+      final job = await queue.publishVisit('visit-2');
+      await Future<void>.delayed(const Duration(milliseconds: 50));
+      await settle();
+      expect((await jobOf(job)).attempts, 1);
+      final lateObject = 'clientPages/${job.pageId}/visit-2/zone-1-before-before.jpg';
+      expect(await repositories.publishing.uploadedObjects(job.pageId), [lateObject]);
+      expect(await repositories.publishing.uploadedPhoto(pageId: job.pageId, objectPath: lateObject), isNull);
+
+      await queue.revokeClientPage('client-1');
+      await settle();
+
+      expect(publisher.calls, contains('deletePhoto $lateObject'));
+      expect(await repositories.publishing.uploadedObjects(job.pageId), isEmpty);
+      upload.complete();
     });
 
     test('stops the pending publish jobs of the page', () async {

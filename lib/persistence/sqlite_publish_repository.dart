@@ -92,8 +92,8 @@ final class SqlitePublishRepository implements PublishRepository {
     final saved = await _database.update(
       'publish_jobs',
       _jobToRow(job),
-      where: 'id = ? AND status = ?',
-      whereArgs: [job.id, PublishJobStatus.pending.name],
+      where: 'id = ? AND status = ? AND generation = ?',
+      whereArgs: [job.id, PublishJobStatus.pending.name, job.generation],
     );
     return saved == 1;
   }
@@ -133,11 +133,21 @@ final class SqlitePublishRepository implements PublishRepository {
     final rows = await _database.query(
       'published_photos',
       columns: ['photo_path'],
-      where: 'page_id = ? AND object_path = ?',
+      where: 'page_id = ? AND object_path = ? AND arrived = 1',
       whereArgs: [pageId, objectPath],
     );
     return rows.isEmpty ? null : rows.single['photo_path']! as String;
   }
+
+  @override
+  Future<void> recordUploadIntent({required String pageId, required String objectPath, required String photoPath}) =>
+      _database.insert('published_photos', {
+        'page_id': pageId,
+        'object_path': objectPath,
+        'photo_path': photoPath,
+        'arrived': 0,
+        // A record that exists, of an upload that started or arrived before, stays as it is.
+      }, conflictAlgorithm: ConflictAlgorithm.ignore);
 
   @override
   Future<void> saveUploadedPhoto({required String pageId, required String objectPath, required String photoPath}) =>
@@ -147,7 +157,7 @@ final class SqlitePublishRepository implements PublishRepository {
           transaction,
           'published_photos',
           key: {'page_id': pageId, 'object_path': objectPath},
-          values: {'photo_path': photoPath},
+          values: {'photo_path': photoPath, 'arrived': 1},
           where: 'page_id = ? AND object_path = ?',
           whereArgs: [pageId, objectPath],
         ),
@@ -199,6 +209,7 @@ final class SqlitePublishRepository implements PublishRepository {
     'attempts': job.attempts,
     'next_attempt_at': job.nextAttemptAt?.microsecondsSinceEpoch,
     'failure': job.failure?.name,
+    'generation': job.generation,
   };
 
   static PublishJob _jobFromRow(Map<String, Object?> row) => PublishJob(
@@ -214,6 +225,7 @@ final class SqlitePublishRepository implements PublishRepository {
       final String name => PublishFailure.values.byName(name),
       _ => null,
     },
+    generation: row['generation']! as int,
   );
 
   static DateTime? _time(Object? microseconds) =>

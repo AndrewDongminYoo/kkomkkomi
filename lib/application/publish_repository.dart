@@ -32,10 +32,11 @@ abstract interface class PublishRepository {
     PublishJob Function(String visitId)? republish,
   });
 
-  /// Saves [job] in place of the stored job with its ID while the stored job is pending, and returns whether it did.
+  /// Saves [job] in place of the stored job with its ID while the stored job is pending and of the same
+  /// [PublishJob.generation], and returns whether it did.
   ///
-  /// A job that ended or stopped keeps its state, so a run that read a job before a revoke stopped it cannot make it
-  /// done or pending again.
+  /// A job that ended or stopped keeps its state, and a job that a request restarted keeps its new generation, so a
+  /// run that read a job before a revoke or a restart cannot undo either.
   Future<bool> saveJob(PublishJob job);
 
   /// The pending jobs, oldest first.
@@ -47,14 +48,21 @@ abstract interface class PublishRepository {
   /// Clears the retry delay of every pending job, so that each can run now.
   Future<void> clearRetryDelays();
 
-  /// The path of the photo file that the app uploaded to [objectPath] under the page with [pageId], or null when it
-  /// uploaded none.
+  /// The path of the photo file whose upload to [objectPath] under the page with [pageId] arrived, or null when none
+  /// arrived.
   Future<String?> uploadedPhoto({required String pageId, required String objectPath});
 
-  /// Records that the photo file at [photoPath] reached [objectPath] under the page with [pageId].
+  /// Records that an upload of the photo file at [photoPath] to [objectPath] under the page with [pageId] starts.
+  ///
+  /// An upload that does not answer in time can still arrive later, so the object counts as one that may exist from
+  /// this call on, until [removeUploadedPhoto]. A record of an upload that arrived stays as it is.
+  Future<void> recordUploadIntent({required String pageId, required String objectPath, required String photoPath});
+
+  /// Records that the upload of the photo file at [photoPath] to [objectPath] under the page with [pageId] arrived.
   Future<void> saveUploadedPhoto({required String pageId, required String objectPath, required String photoPath});
 
-  /// The objects that the app uploaded under the page with [pageId] and did not delete, in the order of their paths.
+  /// The objects that may exist under the page with [pageId] because the app started to upload them and did not
+  /// delete them, in the order of their paths.
   Future<List<String>> uploadedObjects(String pageId);
 
   /// Records that the object at [objectPath] under the page with [pageId] is deleted.
