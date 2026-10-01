@@ -141,6 +141,15 @@ The operator must review them before they are deployed.
 
 Access removal sets `revokedAt`.
 Reissue creates a new page ID and publishes again.
+
+Brief 6 settled these details:
+
+- Anyone can list the reports of a page that is not revoked, because the history view needs the list. No one can query the reports of every page at once.
+- A page can be created revoked, and the owner can revoke a revoked page again, so that a revoke is safe to repeat and does not depend on an earlier write. No one can open a revoked page again.
+- `storage.rules` reads the page through `firestore.get` to check the owner and `revokedAt`. Without it, anyone with the link could create objects under the page. This cross-service read needs an IAM role that the Firebase CLI or console asks to grant when the rules are first deployed (https://firebase.google.com/docs/rules/manage-deploy, "Manage permissions for cross-service Cloud Storage Security Rules").
+- A revoke also deletes the photos that the app uploaded under the page, because a download URL that a reader got before the revoke works without the rules.
+- The size limit is 5 MiB.
+
 Link expiry is not in this build, which leaves one item of the product rule in `CLAUDE.md` open.
 The app tells the company, at the first share, that anyone with the link can open the report.
 
