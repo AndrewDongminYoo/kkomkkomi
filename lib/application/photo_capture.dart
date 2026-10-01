@@ -11,7 +11,7 @@ abstract interface class PhotoCapture {
 final class PhotoCaptureException implements Exception {
   const new({this.isAccessDenied = false, this.cause});
 
-  /// Whether the person did not allow the app to use the camera.
+  /// Whether the app is not allowed to use the camera, so that another try cannot work until the setting changes.
   final bool isAccessDenied;
 
   /// What the camera reported, for the log.

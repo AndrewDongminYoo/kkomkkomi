@@ -65,6 +65,16 @@ void main() {
       expect(exception.cause, same(denied));
     });
 
+    test('reports a camera that the phone does not let the person use as denied access', () async {
+      // iOS reports this code when a restriction, such as Screen Time, blocks the camera. Another try cannot work.
+      final restricted = PlatformException(code: 'camera_access_restricted');
+
+      final exception = await failureOf(restricted);
+
+      expect(exception.isAccessDenied, isTrue);
+      expect(exception.cause, same(restricted));
+    });
+
     test('reports another failure of the platform as a failed capture without denied access', () async {
       final noCamera = PlatformException(code: 'no_available_camera');
 

@@ -16,8 +16,9 @@ final class ImagePickerPhotoCapture implements PhotoCapture {
   /// The JPEG quality of a photo, from 0 to 100.
   static const int quality = 80;
 
-  /// The code with which the picker reports that the person did not allow the camera.
-  static const _accessDeniedCode = 'camera_access_denied';
+  /// The codes with which the picker reports that the app is not allowed to use the camera: the person did not
+  /// allow it, or a restriction of the phone blocks it. Another try cannot work until the setting changes.
+  static const _accessDeniedCodes = {'camera_access_denied', 'camera_access_restricted'};
 
   final ImagePicker? _picker;
 
@@ -36,7 +37,7 @@ final class ImagePickerPhotoCapture implements PhotoCapture {
       // implementation. Both must reach the screen as a failed capture, so the clause catches every object.
       Error.throwWithStackTrace(
         PhotoCaptureException(
-          isAccessDenied: error is PlatformException && error.code == _accessDeniedCode,
+          isAccessDenied: error is PlatformException && _accessDeniedCodes.contains(error.code),
           cause: error,
         ),
         stackTrace,
