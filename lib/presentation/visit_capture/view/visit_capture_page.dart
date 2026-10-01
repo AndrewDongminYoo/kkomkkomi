@@ -6,9 +6,10 @@ import 'package:kkomkkomi/domain/domain.dart';
 import 'package:kkomkkomi/l10n/l10n.dart';
 import 'package:kkomkkomi/presentation/shared/confirm_dialog.dart';
 import 'package:kkomkkomi/presentation/shared/load_failure.dart';
+import 'package:kkomkkomi/presentation/shared/photo_thumbnail.dart';
 import 'package:kkomkkomi/presentation/shared/save_guard.dart';
 import 'package:kkomkkomi/presentation/visit_capture/cubit/visit_capture_cubit.dart';
-import 'package:kkomkkomi/presentation/visit_capture/view/photo_thumbnail.dart';
+import 'package:kkomkkomi/presentation/visit_report/visit_report.dart';
 import 'package:material_ui/material_ui.dart';
 
 /// The width of a photo over its height, in a photo control and in a previous photo.
@@ -99,7 +100,7 @@ class VisitCaptureView extends StatelessWidget {
                   ),
                   null => const Center(child: CircularProgressIndicator()),
                   Visit(:final zoneRecords) when zoneRecords.isEmpty => _EmptyVisit(l10n.visitCaptureEmptyMessage),
-                  Visit(:final zoneRecords) => _ZoneList(state: state, records: zoneRecords),
+                  Visit(:final id, :final zoneRecords) => _ZoneList(state: state, visitId: id, records: zoneRecords),
                 },
               ),
             ),
@@ -123,11 +124,13 @@ class VisitCaptureView extends StatelessWidget {
   }
 }
 
-/// The zones of the visit in one list, under a notice while storage does not hold a note.
+/// The zones of the visit in one list, under a notice while storage does not hold a note. The control that opens
+/// the report ends the list.
 class _ZoneList extends StatelessWidget {
-  const new({required this.state, required this.records});
+  const new({required this.state, required this.visitId, required this.records});
 
   final VisitCaptureState state;
+  final String visitId;
   final List<ZoneRecord> records;
 
   @override
@@ -147,8 +150,9 @@ class _ZoneList extends StatelessWidget {
           Expanded(
             child: ListView.builder(
               padding: const EdgeInsets.only(bottom: 24),
-              itemCount: records.length,
+              itemCount: records.length + 1,
               itemBuilder: (context, index) {
+                if (index == records.length) return _ReportButton(visitId: visitId, isEnabled: state.canLeave);
                 final record = records[index];
                 return _ZoneCapture(
                   key: ValueKey(record.zoneId),
@@ -161,6 +165,34 @@ class _ZoneList extends StatelessWidget {
             ),
           ),
         ],
+      ),
+    );
+  }
+}
+
+/// Opens the report of the visit.
+class _ReportButton extends StatelessWidget {
+  const new({required this.visitId, required this.isEnabled});
+
+  final String visitId;
+
+  /// False while storage does not hold a note or a note is on its way to it, because the report reads the visit
+  /// from storage and would lack a note that storage then does not take. The notice of unsaved notes says why.
+  final bool isEnabled;
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(16, 16, 16, 0),
+      child: FilledButton(
+        onPressed: isEnabled
+            ? () {
+                // The note would take the focus again, and open the keyboard, when the person comes back.
+                FocusManager.instance.primaryFocus?.unfocus();
+                Navigator.of(context).push(VisitReportPage.route(visitId: visitId));
+              }
+            : null,
+        child: Text(context.l10n.visitReportOpenButton),
       ),
     );
   }

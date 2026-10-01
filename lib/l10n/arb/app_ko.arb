@@ -239,5 +239,89 @@
     "companyProfileLoadFailedMessage": "회사 정보를 불러오지 못했어요. 다시 시도해 주세요.",
     "@companyProfileLoadFailedMessage": {
         "description": "회사 정보를 불러오지 못했을 때 입력 화면 대신 표시되는 문구"
+    },
+    "visitReportOpenButton": "보고서 보기",
+    "@visitReportOpenButton": {
+        "description": "방문 화면의 구역 아래에서 보고서 화면을 여는 버튼의 라벨"
+    },
+    "visitReportTitle": "보고서",
+    "@visitReportTitle": {
+        "description": "보고서 화면의 제목"
+    },
+    "visitReportLoadFailedMessage": "보고서를 불러오지 못했어요. 다시 시도해 주세요.",
+    "@visitReportLoadFailedMessage": {
+        "description": "보고서를 불러오지 못했을 때 보고서 화면 대신 표시되는 문구"
+    },
+    "reportCompanyNameMissingMessage": "회사 이름이 아직 없어요. 입력하면 보고서 맨 위에 들어가요.",
+    "@reportCompanyNameMissingMessage": {
+        "description": "회사 이름을 저장하지 않은 동안 보고서 화면에 표시되는 안내 문구. 회사 이름이 없어도 보고서를 공유할 수 있다."
+    },
+    "reportCompanyNameAddButton": "회사 이름 입력하기",
+    "@reportCompanyNameAddButton": {
+        "description": "회사 이름 안내에서 회사 정보 화면을 여는 버튼의 라벨"
+    },
+    "reportMissingPhotosTitle": "사진이 없는 구역이 있어요",
+    "@reportMissingPhotosTitle": {
+        "description": "보고서 화면에서 사진이 없는 구역 목록 위에 표시되는 제목"
+    },
+    "reportMissingPhotosMessage": "사진이 없는 자리는 보고서에 빈칸으로 나와요.",
+    "@reportMissingPhotosMessage": {
+        "description": "사진이 없는 구역 목록의 제목 아래에서, 사진이 없으면 보고서에 무엇이 나오는지 알려주는 문구"
+    },
+    "reportMissingBeforePhoto": "{zone}: 청소 전 사진",
+    "@reportMissingBeforePhoto": {
+        "description": "사진이 없는 구역 목록에서 청소 전 사진이 없는 구역을 나타내는 항목"
+    },
+    "reportMissingAfterPhoto": "{zone}: 청소 후 사진",
+    "@reportMissingAfterPhoto": {
+        "description": "사진이 없는 구역 목록에서 청소 후 사진이 없는 구역을 나타내는 항목"
+    },
+    "reportMissingBothPhotos": "{zone}: 청소 전 사진, 청소 후 사진",
+    "@reportMissingBothPhotos": {
+        "description": "사진이 없는 구역 목록에서 메모만 있고 사진이 둘 다 없는 구역을 나타내는 항목"
+    },
+    "reportZoneLeftOut": "{zone}: 사진과 메모가 없어서 보고서에서 빠져요.",
+    "@reportZoneLeftOut": {
+        "description": "사진이 없는 구역 목록에서 사진도 메모도 없어 보고서에서 빠지는 구역을 나타내는 항목"
+    },
+    "reportPreviewTitle": "미리보기",
+    "@reportPreviewTitle": {
+        "description": "보고서 화면에서 보고서 미리보기 위에 표시되는 제목"
+    },
+    "reportDocumentTitle": "청소 완료 보고서",
+    "@reportDocumentTitle": {
+        "description": "미리보기와 PDF에 나오는 보고서의 제목이자, PDF 파일 이름의 첫 부분"
+    },
+    "reportBeforePhotoLabel": "청소 전",
+    "@reportBeforePhotoLabel": {
+        "description": "미리보기와 PDF에서 구역의 청소 전 사진 위에 나오는 라벨"
+    },
+    "reportAfterPhotoLabel": "청소 후",
+    "@reportAfterPhotoLabel": {
+        "description": "미리보기와 PDF에서 구역의 청소 후 사진 위에 나오는 라벨"
+    },
+    "reportNoPhotoLabel": "사진 없음",
+    "@reportNoPhotoLabel": {
+        "description": "PDF의 빈 사진 칸에 나오는 문구이자, 미리보기의 빈 사진 칸을 화면 낭독기가 읽는 문구"
+    },
+    "reportNoteLabel": "메모",
+    "@reportNoteLabel": {
+        "description": "미리보기와 PDF에서 구역의 메모 위에 나오는 라벨"
+    },
+    "reportFooter": "꼼꼬미로 만든 보고서",
+    "@reportFooter": {
+        "description": "미리보기 맨 아래와 PDF의 모든 쪽 아래에 나오는 문구"
+    },
+    "reportEmptyMessage": "아직 보고서에 넣을 사진이나 메모가 없어요. 방문 화면에서 사진을 찍거나 메모를 쓰면 여기에 나와요.",
+    "@reportEmptyMessage": {
+        "description": "방문에 사진이나 메모가 있는 구역이 하나도 없을 때 미리보기의 구역 대신 표시되는 문구"
+    },
+    "reportShareButton": "PDF로 공유하기",
+    "@reportShareButton": {
+        "description": "보고서 화면에서 보고서 PDF로 공유 창을 여는 버튼의 라벨"
+    },
+    "reportShareFailedMessage": "보고서를 공유하지 못했어요. 다시 시도해 주세요.",
+    "@reportShareFailedMessage": {
+        "description": "PDF를 만들지 못했거나 공유 창을 열지 못했을 때 표시되는 문구"
     }
 }

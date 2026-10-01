@@ -104,6 +104,22 @@ void main() {
       });
     });
 
+    group('read', () {
+      test('gives the bytes of the file of the photo', () async {
+        final photo = await store().save(
+          sourcePath: pickedFile('scaled_camera.jpg').path,
+          visitId: 'visit-1',
+          photoId: 'photo-1',
+        );
+
+        expect(await store().read(photo), [1, 2, 3]);
+      });
+
+      test('fails with an exception for a file that is not there', () async {
+        await expectLater(store().read(PhotoRef('photos/visit-1/gone.jpg')), throwsA(isA<FileSystemException>()));
+      });
+    });
+
     test('directoryPath gives the documents directory', () async {
       expect(await store().directoryPath(), documents.path);
     });

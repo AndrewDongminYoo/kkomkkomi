@@ -57,6 +57,30 @@ void main() {
       expect(context.read<PhotoStore>(), isA<DocumentsPhotoStore>());
     });
 
+    testWidgets(
+      'provides the font of the assets and the share sheet of the printing plugin unless it is given others',
+      (
+        tester,
+      ) async {
+        await tester.pumpWidget(App(repositories: mockRepositories()));
+
+        final context = tester.element(find.byType(ClientListPage));
+        expect(context.read<ReportFont>(), isA<AssetReportFont>());
+        expect(context.read<ReportShare>(), isA<PrintingReportShare>());
+      },
+    );
+
+    testWidgets('provides the report font and the share sheet that it is given', (tester) async {
+      const reportFont = FileReportFont();
+      final reportShare = FakeReportShare();
+
+      await tester.pumpWidget(App(repositories: mockRepositories(), reportFont: reportFont, reportShare: reportShare));
+
+      final context = tester.element(find.byType(ClientListPage));
+      expect(context.read<ReportFont>(), same(reportFont));
+      expect(context.read<ReportShare>(), same(reportShare));
+    });
+
     testWidgets('provides the camera and the photo store that it is given', (tester) async {
       final photoCapture = FakePhotoCapture();
       final photoStore = FakePhotoStore();

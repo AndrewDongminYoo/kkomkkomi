@@ -1,4 +1,6 @@
 import 'dart:async';
+import 'dart:io';
+import 'dart:typed_data';
 
 import 'package:kkomkkomi/application/application.dart';
 import 'package:kkomkkomi/domain/domain.dart';
@@ -154,6 +156,15 @@ class FakePhotoStore implements PhotoStore {
   /// The exception that a delete throws while it is set.
   Exception? deleteFailure;
 
+  /// What a read throws while it is set: an exception, or an error such as the image decoder throws.
+  Object? readFailure;
+
+  /// The bytes that a read gives for each photo. A photo without an entry reads as the JPEG of `test/fixtures/`.
+  final contents = <PhotoRef, Uint8List>{};
+
+  /// The photos that the store was asked to read, in order.
+  final readPhotos = <PhotoRef>[];
+
   @override
   Future<PhotoRef> save({required String sourcePath, required String visitId, required String photoId}) async {
     if (saveFailure case final failure?) throw failure;
@@ -170,7 +181,56 @@ class FakePhotoStore implements PhotoStore {
   }
 
   @override
+  Future<Uint8List> read(PhotoRef photo) async {
+    if (readFailure case final failure?) Error.throwWithStackTrace(failure, StackTrace.current);
+    readPhotos.add(photo);
+    return contents[photo] ?? fixturePhotoBytes();
+  }
+
+  @override
   Future<String> directoryPath() async => directory;
+}
+
+/// The bytes of `test/fixtures/photo.jpg`, a JPEG of 8 by 6 pixels.
+Uint8List fixturePhotoBytes() => File('test/fixtures/photo.jpg').readAsBytesSync();
+
+/// Gives the font file of the app from the source tree, without the asset bundle.
+///
+/// The read is synchronous, so that it also completes inside the fake time of a widget test.
+class FileReportFont implements ReportFont {
+  const new();
+
+  static const path = 'assets/fonts/NotoSansKR-Regular.ttf';
+
+  @override
+  Future<ByteData> load() async => ByteData.sublistView(File(path).readAsBytesSync());
+}
+
+/// A font source that fails, for a test of a share without a font.
+class FailingReportFont implements ReportFont {
+  const new();
+
+  @override
+  Future<ByteData> load() async => throw const FileSystemException('The font did not load');
+}
+
+/// A share sheet that opens nothing. It remembers the files that it was given.
+class FakeReportShare implements ReportShare {
+  /// The files that were shared, in order.
+  final shared = <({Uint8List bytes, String fileName})>[];
+
+  /// The exception that a share throws while it is set.
+  Exception? failure;
+
+  /// A share waits for this completer while it is set, so that a test can act while a share is on its way.
+  Completer<void>? gate;
+
+  @override
+  Future<void> sharePdf({required Uint8List bytes, required String fileName}) async {
+    await gate?.future;
+    if (failure case final failure?) throw failure;
+    shared.add((bytes: bytes, fileName: fileName));
+  }
 }
 
 /// Keeps the company profile in memory.

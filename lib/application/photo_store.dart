@@ -1,3 +1,5 @@
+import 'dart:typed_data';
+
 import 'package:kkomkkomi/domain/domain.dart';
 
 /// Keeps the photo files of the visits under the application documents directory.
@@ -10,6 +12,9 @@ abstract interface class PhotoStore {
 
   /// Deletes the file of [photo]. A file that does not exist is no failure.
   Future<void> delete(PhotoRef photo);
+
+  /// The bytes of the file of [photo]. Throws an exception when the file does not exist.
+  Future<Uint8List> read(PhotoRef photo);
 
   /// The absolute path of the directory that the path of every [PhotoRef] is relative to.
   ///

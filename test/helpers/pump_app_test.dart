@@ -67,6 +67,32 @@ void main() {
       expect(context.read<PhotoCapture>(), same(photoCapture));
       expect(context.read<PhotoStore>(), same(photoStore));
     });
+
+    testWidgets('provides the font file of the source tree and a fake share sheet unless it is given others', (
+      tester,
+    ) async {
+      await tester.pumpApp(const SizedBox(), repositories: mockRepositories());
+
+      final context = tester.element(find.byType(SizedBox));
+      expect(context.read<ReportFont>(), isA<FileReportFont>());
+      expect(context.read<ReportShare>(), isA<FakeReportShare>());
+    });
+
+    testWidgets('provides the report font and the share sheet that it is given', (tester) async {
+      const reportFont = FailingReportFont();
+      final reportShare = FakeReportShare();
+
+      await tester.pumpApp(
+        const SizedBox(),
+        repositories: mockRepositories(),
+        reportFont: reportFont,
+        reportShare: reportShare,
+      );
+
+      final context = tester.element(find.byType(SizedBox));
+      expect(context.read<ReportFont>(), same(reportFont));
+      expect(context.read<ReportShare>(), same(reportShare));
+    });
   });
 
   group('useNarrowScreenWithLargestText', () {

@@ -2,11 +2,11 @@ import 'dart:io';
 
 import 'package:material_ui/material_ui.dart';
 
-/// Shows the photo file at [path], cut to fill the box that the parent gives.
+/// Shows the photo file at [path] in the box that the parent gives, cut to fill it unless [fit] says another way.
 ///
 /// A file that does not load shows an icon in its place, so that a lost file breaks one picture and not the screen.
 class PhotoThumbnail extends StatelessWidget {
-  const new({required this.path, this.semanticLabel, super.key});
+  const new({required this.path, this.fit = BoxFit.cover, this.semanticLabel, super.key});
 
   /// The width in pixels at which the photo is decoded.
   ///
@@ -16,6 +16,10 @@ class PhotoThumbnail extends StatelessWidget {
   /// The absolute path of the photo file.
   final String path;
 
+  /// How the photo takes its box. [BoxFit.cover] cuts the edges of a photo with another ratio than the box, and
+  /// [BoxFit.contain] shows the whole photo.
+  final BoxFit fit;
+
   /// What a screen reader says for the photo. Without it, the photo is not in the semantics tree, which suits a
   /// photo inside a control that has its own label.
   final String? semanticLabel;
@@ -24,7 +28,7 @@ class PhotoThumbnail extends StatelessWidget {
   Widget build(BuildContext context) {
     return Image.file(
       File(path),
-      fit: BoxFit.cover,
+      fit: fit,
       cacheWidth: decodeWidth,
       semanticLabel: semanticLabel,
       excludeFromSemantics: semanticLabel == null,

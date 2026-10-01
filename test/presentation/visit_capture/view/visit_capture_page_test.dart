@@ -619,6 +619,99 @@ void main() {
       });
     });
 
+    group('report', () {
+      Finder reportButton([String label = 'View Report']) => find.widgetWithText(FilledButton, label);
+
+      testWidgets('opens the report of the visit from the control under the zones', (tester) async {
+        await pumpPage(tester);
+
+        expect(tester.getTopLeft(reportButton()).dy, greaterThan(tester.getBottomLeft(zone('zone-3')).dy));
+        await tester.tap(reportButton());
+        await tester.pumpAndSettle();
+
+        expect(tester.widget<VisitReportPage>(find.byType(VisitReportPage)).visitId, visitId);
+        await tester.pageBack();
+        await tester.pumpAndSettle();
+        expect(find.byType(VisitReportPage), findsNothing);
+        expect(find.byType(VisitCapturePage), findsOneWidget);
+      });
+
+      testWidgets('opens the report with the note that the person wrote just before', (tester) async {
+        await pumpPage(tester);
+        await tester.enterText(noteField('zone-1'), '유리 닦음');
+        await tester.pump();
+
+        await tester.tap(reportButton());
+        await tester.pumpAndSettle();
+
+        expect((await savedRecord('zone-1')).note, '유리 닦음');
+        expect(find.byType(VisitReportPage), findsOneWidget);
+      });
+
+      testWidgets('opens no report while storage does not hold a note, and opens it after storage took the note', (
+        tester,
+      ) async {
+        await pumpPage(tester);
+        visits.failure = failure;
+        await tester.enterText(noteField('zone-1'), '유리');
+        await tester.pumpAndSettle();
+
+        expect(tester.widget<FilledButton>(reportButton()).onPressed, isNull);
+        await tester.tap(reportButton(), warnIfMissed: false);
+        await tester.pumpAndSettle();
+        expect(find.byType(VisitReportPage), findsNothing);
+
+        visits.failure = null;
+        await tester.tap(find.widgetWithText(TextButton, 'Save Again'));
+        await tester.pumpAndSettle();
+        await tester.tap(reportButton());
+        await tester.pumpAndSettle();
+
+        expect(find.byType(VisitReportPage), findsOneWidget);
+      });
+
+      testWidgets('opens no report while a note is on its way to storage, so that no report lacks a note that '
+          'storage then does not take', (tester) async {
+        await pumpPage(tester);
+        visits.gate = Completer<void>();
+        await tester.enterText(noteField('zone-1'), '유리');
+        await tester.pump();
+
+        expect(tester.widget<FilledButton>(reportButton()).onPressed, isNull);
+        await tester.tap(reportButton(), warnIfMissed: false);
+        await tester.pumpAndSettle();
+        expect(find.byType(VisitReportPage), findsNothing);
+
+        visits.gate!.completeError(failure);
+        await tester.pumpAndSettle();
+        expect(find.text("Can't save your notes right now."), findsOneWidget);
+        expect(tester.widget<FilledButton>(reportButton()).onPressed, isNull);
+      });
+
+      testWidgets('closes the keyboard of a note before the report opens, and keeps it closed on the way back', (
+        tester,
+      ) async {
+        await pumpPage(tester);
+        await tester.tap(noteField('zone-1'));
+        await tester.pump();
+        expect(tester.testTextInput.isVisible, isTrue);
+
+        await tester.tap(reportButton());
+        await tester.pumpAndSettle();
+        expect(tester.testTextInput.isVisible, isFalse);
+
+        await tester.pageBack();
+        await tester.pumpAndSettle();
+        expect(tester.testTextInput.isVisible, isFalse);
+      });
+
+      testWidgets('names the control in Korean', (tester) async {
+        await pumpPage(tester, locale: const Locale('ko'));
+
+        expect(reportButton('보고서 보기'), findsOneWidget);
+      });
+    });
+
     testWidgets('shows the screen in Korean', (tester) async {
       await pumpPage(tester, locale: const Locale('ko'));
 
@@ -638,6 +731,7 @@ void main() {
         findsOneWidget,
       );
       expect(find.byType(OutlinedButton), findsNothing);
+      expect(find.byType(FilledButton), findsNothing);
     });
 
     testWidgets('shows a message and a retry control when the visit does not load, and loads it on retry', (
@@ -713,6 +807,17 @@ void main() {
           for (final text in secondZoneTexts) {
             await expectWholeTextAfterScroll(tester, 'zone-2', text);
           }
+        });
+      }
+
+      for (final (locale, label) in [(const Locale('en'), 'View Report'), (const Locale('ko'), '보고서 보기')]) {
+        testWidgets('fits the control that opens the report in ${locale.languageCode}', (tester) async {
+          tester.useNarrowScreenWithLargestText();
+
+          await pumpPage(tester, visit: longVisit, history: history, locale: locale, keepScreen: true);
+
+          await scrollTo(tester, find.text(label));
+          tester.expectWholeText(label);
         });
       }
 
@@ -929,6 +1034,24 @@ void main() {
 
       expect(find.text("Can't save your notes right now."), findsNothing);
       expect(find.widgetWithText(TextButton, 'Save Again'), findsNothing);
+    });
+
+    testWidgets('offers the report while storage holds the notes', (tester) async {
+      await pumpView(tester, shown(VisitCaptureStatus.saveFailed));
+
+      expect(tester.widget<FilledButton>(find.widgetWithText(FilledButton, 'View Report')).onPressed, isNotNull);
+    });
+
+    testWidgets('offers no report while the state tells that storage does not hold a note', (tester) async {
+      await pumpView(tester, shown(VisitCaptureStatus.ready).copyWith(isStored: false));
+
+      expect(tester.widget<FilledButton>(find.widgetWithText(FilledButton, 'View Report')).onPressed, isNull);
+    });
+
+    testWidgets('offers no report while the state tells that a note is on its way to storage', (tester) async {
+      await pumpView(tester, shown(VisitCaptureStatus.ready).copyWith(isSavingNote: true));
+
+      expect(tester.widget<FilledButton>(find.widgetWithText(FilledButton, 'View Report')).onPressed, isNull);
     });
 
     testWidgets('passes a capture and each edit of a note to the cubit', (tester) async {

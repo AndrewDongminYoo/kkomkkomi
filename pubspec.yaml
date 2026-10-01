@@ -19,6 +19,8 @@ dependencies:
   material_ui: ^1.1.1
   path: ^1.9.1
   path_provider: ^2.1.6
+  pdf: ^3.13.1
+  printing: ^5.15.1
   sqflite: ^2.4.4
 
 dev_dependencies:
@@ -32,6 +34,9 @@ dev_dependencies:
   very_good_analysis: ^11.0.0
 
 flutter:
+  assets:
+    - assets/fonts/NotoSansKR-Regular.ttf
+    - assets/fonts/OFL.txt
   generate: true
   uses-material-design: true
 
