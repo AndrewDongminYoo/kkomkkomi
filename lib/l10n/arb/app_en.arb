@@ -184,6 +184,14 @@
     "@visitCaptureEmptyMessage": {
         "description": "Text shown in place of the zones on the visit screen when the visit holds no zone"
     },
+    "visitCaptureRecoveredPhotoMessage": "The app restarted while the camera was open. The photo you took is in this visit.",
+    "@visitCaptureRecoveredPhotoMessage": {
+        "description": "Message shown when the visit screen opens at the start of the app with the photo that the camera took before the system ended the app"
+    },
+    "visitCaptureRecoveryFailedMessage": "The app restarted while the camera was open, and the photo you took couldn't be added. Take it again.",
+    "@visitCaptureRecoveryFailedMessage": {
+        "description": "Message shown when the visit screen opens at the start of the app and the photo that the camera took before the system ended the app could not be kept"
+    },
     "photoTakeBeforeButton": "Take Before Photo",
     "@photoTakeBeforeButton": {
         "description": "Label of the control of a zone that opens the camera for the photo before cleaning, when the zone has none"

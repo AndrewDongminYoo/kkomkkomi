@@ -5,6 +5,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:kkomkkomi/app/app.dart';
 import 'package:kkomkkomi/application/application.dart';
 import 'package:kkomkkomi/bootstrap.dart';
+import 'package:kkomkkomi/domain/domain.dart';
 import 'package:kkomkkomi/presentation/presentation.dart';
 import 'package:material_ui/material_ui.dart';
 import 'package:mocktail/mocktail.dart';
@@ -60,8 +61,8 @@ class _BrokenNetworkMonitor implements NetworkMonitor {
 }
 
 /// The builder of the entry points.
-App _app(Repositories repositories, Identity identity, PublishQueue publishQueue) =>
-    App(repositories: repositories, identity: identity, publishQueue: publishQueue);
+App _app(Repositories repositories, Identity identity, PublishQueue publishQueue, LostCaptureRecovery? recovery) =>
+    App(repositories: repositories, identity: identity, publishQueue: publishQueue, recovery: recovery);
 
 void main() {
   group('AppBlocObserver', () {
@@ -212,9 +213,9 @@ void main() {
 
         for (final publisher in publishers) {
           await bootstrap(
-            (repositories, identity, publishQueue) {
+            (repositories, identity, publishQueue, recovery) {
               queues.add(publishQueue);
-              return _app(repositories, identity, publishQueue);
+              return _app(repositories, identity, publishQueue, recovery);
             },
             identity: FakeIdentity(),
             publisher: publisher,
@@ -281,7 +282,7 @@ void main() {
 
         unawaited(
           bootstrap(
-            (opened, identity, publishQueue) {
+            (opened, identity, publishQueue, _) {
               builds++;
               return App(repositories: opened, identity: identity, publishQueue: publishQueue);
             },
@@ -313,6 +314,123 @@ void main() {
         expect((attempts, builds), (3, 1));
         // A retry opens the database again and does not ask the identity again.
         expect(identity.calls, 1);
+      });
+    });
+
+    group('a capture whose answer the app lost', () {
+      const lost = OpenCapture(visitId: 'visit-1', zoneId: 'zone-1', slot: PhotoSlot.after);
+      final visit = Visit(
+        id: 'visit-1',
+        clientId: 'client-1',
+        visitDate: VisitDate(2026, 10, 2),
+        createdAt: DateTime.utc(2026, 10, 2, 1),
+        zoneRecords: [ZoneRecord(zoneId: 'zone-1', zoneName: '로비')],
+      );
+
+      late FakeVisitRepository visits;
+      late FakeOpenCaptureRepository openCaptures;
+      late FakePhotoCapture photoCapture;
+      late FakePhotoStore photoStore;
+
+      setUp(() {
+        visits = FakeVisitRepository(visits: [visit]);
+        openCaptures = FakeOpenCaptureRepository(capture: lost);
+        photoCapture = FakePhotoCapture()..lostPhoto = '/cache/lost.jpg';
+        photoStore = FakePhotoStore();
+      });
+
+      Future<void> start() {
+        final mocks = mockRepositories();
+        return bootstrap(
+          _app,
+          identity: FakeIdentity(),
+          publisher: const UnavailablePublisher(),
+          networkMonitor: FakeNetworkMonitor(),
+          photoCapture: photoCapture,
+          photoStore: photoStore,
+          openRepositories: () async => Repositories(
+            clients: mocks.clients,
+            visits: visits,
+            companyProfile: mocks.companyProfile,
+            publishing: mocks.publishing,
+            openCaptures: openCaptures,
+          ),
+        );
+      }
+
+      testWidgets('puts the photo into its slot and gives the builder the recovery, which opens its visit', (
+        tester,
+      ) async {
+        await _keepingGlobals(() async {
+          await start();
+          await _settle(tester);
+
+          final recovery = tester.widget<App>(find.byType(App)).recovery;
+          expect(recovery?.visitId, 'visit-1');
+          expect(recovery?.isRecovered, isTrue);
+          expect(tester.widget<VisitCapturePage>(find.byType(VisitCapturePage)).recovery, same(recovery));
+          // The start of the app names the file with a random identifier.
+          final recoveredPhoto = photoStore.sources.keys.single;
+          expect(photoStore.sources.values, ['/cache/lost.jpg']);
+          expect(
+            await visits.visitById('visit-1'),
+            visit.withRecord(visit.zoneRecords.single.withPhoto(PhotoSlot.after, recoveredPhoto)),
+          );
+          expect(openCaptures.capture, isNull);
+          expect(tester.takeException(), isNull);
+        });
+      });
+
+      testWidgets('gives the builder the failure, which opens its visit, when the photo did not reach the visit', (
+        tester,
+      ) async {
+        await _keepingGlobals(() async {
+          final diskFull = Exception('disk full');
+          photoStore.saveFailure = diskFull;
+
+          await start();
+          await _settle(tester);
+
+          final recovery = tester.widget<App>(find.byType(App)).recovery;
+          expect(recovery?.visitId, 'visit-1');
+          expect(recovery?.failure, same(diskFull));
+          expect(find.byType(VisitCapturePage), findsOneWidget);
+          expect(await visits.visitById('visit-1'), visit);
+          expect(openCaptures.capture, isNull);
+        });
+      });
+
+      testWidgets('opens the client list, and keeps the stored capture, when the camera cannot be asked', (
+        tester,
+      ) async {
+        await _keepingGlobals(() async {
+          photoCapture.lostPhoto = const PhotoCaptureException(cause: 'no_activity');
+
+          await start();
+          await _settle(tester);
+
+          expect(find.byType(ClientListPage), findsOneWidget);
+          expect(find.byType(VisitCapturePage), findsNothing);
+          expect(tester.widget<App>(find.byType(App)).recovery, isNull);
+          expect(openCaptures.capture, lost);
+          expect(tester.takeException(), isNull);
+        });
+      });
+
+      testWidgets('opens the client list, and removes the stored capture, where the camera keeps no lost photo', (
+        tester,
+      ) async {
+        await _keepingGlobals(() async {
+          photoCapture.keepsLostPhotos = false;
+
+          await start();
+          await _settle(tester);
+
+          expect(find.byType(ClientListPage), findsOneWidget);
+          expect(find.byType(VisitCapturePage), findsNothing);
+          expect(photoCapture.lostPhotoCalls, 0);
+          expect(openCaptures.capture, isNull);
+        });
       });
     });
 

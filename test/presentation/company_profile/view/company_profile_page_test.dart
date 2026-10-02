@@ -28,6 +28,7 @@ void main() {
         visits: FakeVisitRepository(),
         companyProfile: companyProfile,
         publishing: MockPublishRepository(),
+        openCaptures: FakeOpenCaptureRepository(),
       ),
     );
     await tester.pumpAndSettle();
@@ -126,6 +127,7 @@ void main() {
           visits: FakeVisitRepository(),
           companyProfile: companyProfile,
           publishing: MockPublishRepository(),
+          openCaptures: FakeOpenCaptureRepository(),
         ),
       );
       await tester.tap(find.text('host'));

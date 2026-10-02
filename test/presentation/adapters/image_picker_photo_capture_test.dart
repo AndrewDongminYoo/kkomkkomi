@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:image_picker/image_picker.dart';
@@ -91,6 +92,74 @@ void main() {
 
       expect(exception.isAccessDenied, isFalse);
       expect(exception.cause, same(unsupported));
+    });
+
+    group('retrieveLostPhoto', () {
+      tearDown(() => debugDefaultTargetPlatformOverride = null);
+
+      test('keeps lost photos on Android', () {
+        debugDefaultTargetPlatformOverride = TargetPlatform.android;
+
+        expect(ImagePickerPhotoCapture(picker: picker).keepsLostPhotos, isTrue);
+      });
+
+      test('gives the file of the lost photo on Android', () async {
+        debugDefaultTargetPlatformOverride = TargetPlatform.android;
+        when(picker.retrieveLostData).thenAnswer(
+          (_) async => LostDataResponse(file: XFile('/cache/scaled_lost.jpg'), type: RetrieveType.image),
+        );
+
+        expect(await ImagePickerPhotoCapture(picker: picker).retrieveLostPhoto(), '/cache/scaled_lost.jpg');
+        verify(picker.retrieveLostData).called(1);
+      });
+
+      test('gives null on Android when the camera keeps no lost answer, as after a cancel', () async {
+        debugDefaultTargetPlatformOverride = TargetPlatform.android;
+        when(picker.retrieveLostData).thenAnswer((_) async => LostDataResponse.empty());
+
+        expect(await ImagePickerPhotoCapture(picker: picker).retrieveLostPhoto(), isNull);
+      });
+
+      // `image_picker_android` 0.8.13+23 gives an empty response for a lost failure, so this response does not come
+      // from the plugin version in the lock file. The test keeps the adapter safe for one that sends it.
+      test('gives null on Android for a response that holds a failure of the camera and no file', () async {
+        debugDefaultTargetPlatformOverride = TargetPlatform.android;
+        when(picker.retrieveLostData).thenAnswer(
+          (_) async => LostDataResponse(
+            exception: PlatformException(code: 'no_available_camera'),
+            type: RetrieveType.image,
+          ),
+        );
+
+        expect(await ImagePickerPhotoCapture(picker: picker).retrieveLostPhoto(), isNull);
+      });
+
+      test('reports a picker that cannot be asked as a failed capture', () async {
+        debugDefaultTargetPlatformOverride = TargetPlatform.android;
+        final noActivity = PlatformException(code: 'no_activity');
+        when(picker.retrieveLostData).thenThrow(noActivity);
+
+        await expectLater(
+          ImagePickerPhotoCapture(picker: picker).retrieveLostPhoto(),
+          throwsA(isA<PhotoCaptureException>().having((exception) => exception.cause, 'cause', same(noActivity))),
+        );
+      });
+
+      for (final platform in [
+        TargetPlatform.iOS,
+        TargetPlatform.macOS,
+        TargetPlatform.windows,
+        TargetPlatform.linux,
+        TargetPlatform.fuchsia,
+      ]) {
+        test('keeps no lost photo on ${platform.name}, and gives null without asking the picker', () async {
+          debugDefaultTargetPlatformOverride = platform;
+
+          expect(ImagePickerPhotoCapture(picker: picker).keepsLostPhotos, isFalse);
+          expect(await ImagePickerPhotoCapture(picker: picker).retrieveLostPhoto(), isNull);
+          verifyNever(picker.retrieveLostData);
+        });
+      }
     });
   });
 }

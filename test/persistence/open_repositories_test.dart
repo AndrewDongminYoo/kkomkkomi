@@ -21,7 +21,8 @@ void main() {
   });
 
   group('openAppDatabase', () {
-    test('creates the version 2 schema with one table for each entity and the tables of publishing', () async {
+    test('creates the version 3 schema with one table for each entity, the tables of publishing, and the open '
+        'capture', () async {
       final database = await openMemoryDatabase();
       addTearDown(database.close);
 
@@ -31,6 +32,7 @@ void main() {
         'client_pages',
         'clients',
         'company_profile',
+        'open_capture',
         'publish_jobs',
         'published_photos',
         'visits',
@@ -38,10 +40,10 @@ void main() {
         'zones',
       ]);
       expect(await database.getVersion(), schemaVersion);
-      expect(schemaVersion, 2);
+      expect(schemaVersion, 3);
     });
 
-    test('takes a version 1 file to version 2 and keeps its data', () async {
+    test('takes a version 1 file to the current version and keeps its data', () async {
       final path = p.join(directory.path, databaseFileName);
       final client = Client(id: 'client-1', name: '한빛 사무실', createdAt: DateTime.utc(2026, 9));
       final old = await testDatabaseFactory.openDatabase(
@@ -63,7 +65,7 @@ void main() {
       final repositories = sqliteRepositories(upgraded);
       final page = ClientPage(id: 'page-1', clientId: 'client-1', createdAt: DateTime.utc(2026, 10));
 
-      expect(await upgraded.getVersion(), 2);
+      expect(await upgraded.getVersion(), schemaVersion);
       expect(await repositories.clients.clientById('client-1'), client);
       expect(await repositories.publishing.openPageOf('client-1', create: () => page), page);
       expect(await repositories.publishing.pendingJobs(), isEmpty);
@@ -74,6 +76,54 @@ void main() {
       await repositories.publishing.recordUploadIntent(pageId: 'page-1', objectPath: 'a.jpg', photoPath: 'p/1.jpg');
       expect(await repositories.publishing.uploadedObjects('page-1'), ['a.jpg']);
       expect(await repositories.publishing.uploadedPhoto(pageId: 'page-1', objectPath: 'a.jpg'), isNull);
+    });
+
+    test('takes a version 2 file to version 3, keeps its data, and stores an open capture', () async {
+      final path = p.join(directory.path, databaseFileName);
+      final client = Client(id: 'client-1', name: '한빛 사무실', createdAt: DateTime.utc(2026, 9));
+      final zones = ClientZones(
+        clientId: 'client-1',
+        zones: [Zone(id: 'zone-1', clientId: 'client-1', name: '로비', position: 0)],
+      );
+      final visit = Visit(
+        id: 'visit-1',
+        clientId: 'client-1',
+        visitDate: VisitDate(2026, 10, 2),
+        createdAt: DateTime.utc(2026, 10, 2, 9),
+        zoneRecords: [ZoneRecord(zoneId: 'zone-1', zoneName: '로비', beforePhoto: PhotoRef('photos/visit-1/b.jpg'))],
+      );
+      final page = ClientPage(id: 'page-1', clientId: 'client-1', createdAt: DateTime.utc(2026, 10));
+      final old = await testDatabaseFactory.openDatabase(
+        path,
+        options: OpenDatabaseOptions(
+          version: 2,
+          onConfigure: (database) => database.execute('PRAGMA foreign_keys = ON'),
+          onCreate: (database, _) => upgradeSchema(database, from: 0, to: 2),
+        ),
+      );
+      final written = sqliteRepositories(old);
+      await written.clients.save(client, zones: zones);
+      await written.visits.save(visit);
+      await written.publishing.openPageOf('client-1', create: () => page);
+      expect(
+        await old.query('sqlite_master', where: "type = 'table' AND name = ?", whereArgs: ['open_capture']),
+        isEmpty,
+      );
+      await old.close();
+
+      final upgraded = await openAppDatabase(testDatabaseFactory, path);
+      addTearDown(upgraded.close);
+      final repositories = sqliteRepositories(upgraded);
+      const capture = OpenCapture(visitId: 'visit-1', zoneId: 'zone-1', slot: PhotoSlot.after);
+
+      expect(await upgraded.getVersion(), 3);
+      expect(await repositories.clients.clientById('client-1'), client);
+      expect(await repositories.clients.zonesOf('client-1'), zones);
+      expect(await repositories.visits.visitById('visit-1'), visit);
+      expect(await repositories.publishing.openPageOf('client-1', create: () => throw StateError('new page')), page);
+      expect(await repositories.openCaptures.load(), isNull);
+      await repositories.openCaptures.save(capture);
+      expect(await repositories.openCaptures.load(), capture);
     });
 
     test('enforces foreign keys', () async {

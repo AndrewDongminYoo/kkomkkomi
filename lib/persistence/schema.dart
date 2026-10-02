@@ -1,7 +1,7 @@
 import 'package:sqflite/sqflite.dart';
 
 /// The version of the schema that [createSchema] creates.
-const schemaVersion = 2;
+const schemaVersion = 3;
 
 // No row of `clients`, `zones`, or `visits` is ever deleted, so the foreign keys declare no delete action.
 const _version1 = [
@@ -83,11 +83,23 @@ CREATE TABLE published_photos (
 )''',
 ];
 
+// Version 3 adds the one capture that has the camera open. Its columns declare no foreign key: the start of the app
+// checks that the visit and the zone record exist, and removes a row that names one that does not.
+const _version3 = [
+  '''
+CREATE TABLE open_capture (
+  id INTEGER PRIMARY KEY CHECK (id = 1),
+  visit_id TEXT NOT NULL,
+  zone_id TEXT NOT NULL,
+  slot TEXT NOT NULL
+)''',
+];
+
 /// The statements that take the schema from each version to the next, in order: the first item makes version 1.
-const List<List<String>> _migrations = [_version1, _version2];
+const List<List<String>> _migrations = [_version1, _version2, _version3];
 
 /// Creates the schema of [schemaVersion]: one table for each of the company profile, clients, zones, visits, and
-/// zone records, and the tables of publishing.
+/// zone records, the tables of publishing, and the table of the capture that has the camera open.
 ///
 /// `created_at`, `revoked_at`, and `next_attempt_at` hold microseconds since the epoch in UTC, and `visit_date` holds
 /// the calendar date as the number `YYYYMMDD`.

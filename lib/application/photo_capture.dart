@@ -5,6 +5,21 @@ abstract interface class PhotoCapture {
   /// The file is temporary, so the caller copies it before the app closes.
   /// Throws a [PhotoCaptureException] when the camera gave no photo for another reason.
   Future<String?> takePhoto();
+
+  /// Whether the camera of this platform can keep the photo of a capture whose answer the app lost.
+  ///
+  /// The answer is lost when the system ends the app while the camera app is open, which only a platform that opens
+  /// the camera as another app does. On another platform [retrieveLostPhoto] never has a photo.
+  bool get keepsLostPhotos;
+
+  /// The path of the file that holds the photo of a capture whose answer the app lost, or null when the camera has
+  /// no such photo now.
+  ///
+  /// The camera keeps the lost answer until it is read or the next capture starts. A capture that ended without a
+  /// photo, because the person closed the camera or the camera failed, gives null, and so does a platform where
+  /// [keepsLostPhotos] is false. The file is temporary, as the file of [takePhoto] is.
+  /// Throws a [PhotoCaptureException] when the camera could not be asked for the lost answer.
+  Future<String?> retrieveLostPhoto();
 }
 
 /// The camera gave no photo, and the person did not close it.

@@ -35,14 +35,28 @@ class AppBlocObserver extends BlocObserver {
 ///
 /// When the database is open, a [PublishQueue] with [publisher] starts and runs the publish jobs that an earlier
 /// launch left. It is the one queue of the app, and [builder] gets it for the screens: a second queue on the same
-/// database would run the same job at the same time. [networkMonitor] and [photoStore] replace the adapters of the
-/// device in a test.
+/// database would run the same job at the same time.
+///
+/// Before the app runs, [RecoverLostCapture] puts the photo of a capture whose answer the app lost, because the
+/// system ended the app while the camera app was open, into its visit, and [builder] gets what it did, so that the
+/// app opens that visit. While a stored capture waits for its photo, that step can hold the first screen for up to
+/// the 2 seconds of [RecoverLostCapture.defaultRetryDelays]. A failure of that step is logged, and the app opens on
+/// the client list.
+///
+/// [networkMonitor], [photoCapture], and [photoStore] replace the adapters of the device in a test.
 Future<void> bootstrap(
-  FutureOr<Widget> Function(Repositories repositories, Identity identity, PublishQueue publishQueue) builder, {
+  FutureOr<Widget> Function(
+    Repositories repositories,
+    Identity identity,
+    PublishQueue publishQueue,
+    LostCaptureRecovery? recovery,
+  )
+  builder, {
   required Identity identity,
   required Publisher publisher,
   Future<Repositories> Function() openRepositories = openDeviceRepositories,
   NetworkMonitor networkMonitor = const ConnectivityNetworkMonitor(),
+  PhotoCapture photoCapture = const ImagePickerPhotoCapture(),
   PhotoStore photoStore = const DocumentsPhotoStore(),
 }) async {
   // The database plugin uses a platform channel before `runApp` creates the binding.
@@ -60,6 +74,16 @@ Future<void> bootstrap(
   unawaited(_startIdentity(identity));
 
   final repositories = await _openUntilSuccess(openRepositories);
+  // The recovery comes before the queue starts, so that a pending job of the visit reads the recovered photo.
+  final recovery = await _recoverLostCapture(
+    RecoverLostCapture(
+      openCaptures: repositories.openCaptures,
+      visits: repositories.visits,
+      photoCapture: photoCapture,
+      photoStore: photoStore,
+      idGenerator: const RandomIdGenerator(),
+    ),
+  );
   final publishQueue = PublishQueue(
     repository: repositories.publishing,
     clients: repositories.clients,
@@ -74,7 +98,20 @@ Future<void> bootstrap(
   );
   unawaited(_startPublishing(publishQueue));
 
-  runApp(await builder(repositories, identity, publishQueue));
+  runApp(await builder(repositories, identity, publishQueue, recovery));
+}
+
+Future<LostCaptureRecovery?> _recoverLostCapture(RecoverLostCapture recover) async {
+  try {
+    final recovery = await recover();
+    if (recovery?.failure case final failure?) log('The lost photo did not reach its visit: $failure');
+    return recovery;
+  } on Object catch (error, stackTrace) {
+    // The step keeps the stored capture when it fails, so the next start asks again. A failure here must not close
+    // the app, and a plugin can fail with an Error, so the clause catches every object.
+    log('The lost photo was not recovered: $error', stackTrace: stackTrace);
+    return null;
+  }
 }
 
 Future<void> _startPublishing(PublishQueue queue) async {

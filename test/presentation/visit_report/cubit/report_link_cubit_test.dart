@@ -72,6 +72,7 @@ void main() {
       visits: FakeVisitRepository(visits: [visit]),
       companyProfile: FakeCompanyProfileRepository(profile: CompanyProfile(name: '깔끔클린')),
       publishing: publishing,
+      openCaptures: FakeOpenCaptureRepository(),
     );
     publisher = FakePublisher();
     photoStore = FakePhotoStore();

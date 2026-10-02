@@ -160,6 +160,14 @@
     "@visitCaptureEmptyMessage": {
         "description": "방문에 구역이 하나도 없을 때 방문 화면에서 구역 대신 표시되는 문구"
     },
+    "visitCaptureRecoveredPhotoMessage": "카메라를 쓰는 동안 앱이 다시 시작됐어요. 찍은 사진은 이 방문에 넣었어요.",
+    "@visitCaptureRecoveredPhotoMessage": {
+        "description": "시스템이 카메라를 쓰는 동안 앱을 닫은 뒤, 앱이 시작되며 찍은 사진을 방문에 넣었을 때 표시되는 문구"
+    },
+    "visitCaptureRecoveryFailedMessage": "카메라를 쓰는 동안 앱이 다시 시작됐는데, 찍은 사진을 넣지 못했어요. 다시 찍어 주세요.",
+    "@visitCaptureRecoveryFailedMessage": {
+        "description": "시스템이 카메라를 쓰는 동안 앱을 닫은 뒤, 앱이 시작되며 찍은 사진을 방문에 넣지 못했을 때 표시되는 문구"
+    },
     "photoTakeBeforeButton": "청소 전 사진 찍기",
     "@photoTakeBeforeButton": {
         "description": "구역에 청소 전 사진이 없을 때, 그 사진을 찍으려고 카메라를 여는 버튼의 라벨"

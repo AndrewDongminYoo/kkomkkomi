@@ -37,6 +37,7 @@ void main() {
         visits: FakeVisitRepository(),
         companyProfile: companyProfile,
         publishing: MockPublishRepository(),
+        openCaptures: FakeOpenCaptureRepository(),
       ),
       clock: FixedClock(now),
     );

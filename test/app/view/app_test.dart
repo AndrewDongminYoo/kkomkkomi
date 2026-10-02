@@ -2,6 +2,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:kkomkkomi/app/app.dart';
 import 'package:kkomkkomi/application/application.dart';
+import 'package:kkomkkomi/domain/domain.dart';
 import 'package:kkomkkomi/presentation/presentation.dart';
 import 'package:material_ui/material_ui.dart';
 
@@ -182,6 +183,87 @@ void main() {
 
       expect(find.widgetWithText(AppBar, '거래처'), findsOneWidget);
       expect(MaterialLocalizations.of(tester.element(find.byType(ClientListPage))).backButtonTooltip, '뒤로');
+    });
+
+    testWidgets('provides the store of the open capture', (tester) async {
+      final repositories = mockRepositories();
+
+      await tester.pumpWidget(
+        App(repositories: repositories, identity: FakeIdentity(), publishQueue: publishQueueOf(repositories)),
+      );
+
+      expect(
+        tester.element(find.byType(ClientListPage)).read<OpenCaptureRepository>(),
+        same(repositories.openCaptures),
+      );
+    });
+
+    group('with a recovery of a lost capture', () {
+      final visit = Visit(
+        id: 'visit-1',
+        clientId: 'client-1',
+        visitDate: VisitDate(2026, 10, 2),
+        createdAt: DateTime.utc(2026, 10, 2, 1),
+        zoneRecords: [ZoneRecord(zoneId: 'zone-1', zoneName: '로비')],
+      );
+
+      Future<void> pumpWithRecovery(WidgetTester tester, LostCaptureRecovery recovery) async {
+        final mocks = mockRepositories();
+        final repositories = Repositories(
+          clients: mocks.clients,
+          visits: FakeVisitRepository(visits: [visit]),
+          companyProfile: mocks.companyProfile,
+          publishing: mocks.publishing,
+          openCaptures: FakeOpenCaptureRepository(),
+        );
+        await tester.pumpWidget(
+          App(
+            repositories: repositories,
+            identity: FakeIdentity(),
+            publishQueue: publishQueueOf(repositories),
+            recovery: recovery,
+            photoCapture: FakePhotoCapture(),
+            photoStore: FakePhotoStore(),
+          ),
+        );
+        await tester.pumpAndSettle();
+      }
+
+      testWidgets('opens the visit of the capture over the client list and says that it holds the photo', (
+        tester,
+      ) async {
+        const recovery = LostCaptureRecovery(visitId: 'visit-1');
+
+        await pumpWithRecovery(tester, recovery);
+
+        expect(tester.widget<VisitCapturePage>(find.byType(VisitCapturePage)).visitId, 'visit-1');
+        expect(tester.widget<VisitCapturePage>(find.byType(VisitCapturePage)).recovery, same(recovery));
+        expect(
+          find.text('The app restarted while the camera was open. The photo you took is in this visit.'),
+          findsOneWidget,
+        );
+
+        await tester.pageBack();
+        await tester.pumpAndSettle();
+
+        expect(find.byType(VisitCapturePage), findsNothing);
+        expect(find.byType(ClientListPage), findsOneWidget);
+        expect(Navigator.of(tester.element(find.byType(ClientListPage))).canPop(), isFalse);
+      });
+
+      testWidgets('opens the visit of the capture and asks for the photo again when it did not reach the visit', (
+        tester,
+      ) async {
+        await pumpWithRecovery(tester, LostCaptureRecovery(visitId: 'visit-1', failure: Exception('disk full')));
+
+        expect(find.byType(VisitCapturePage), findsOneWidget);
+        expect(
+          find.text(
+            "The app restarted while the camera was open, and the photo you took couldn't be added. Take it again.",
+          ),
+          findsOneWidget,
+        );
+      });
     });
   });
 }

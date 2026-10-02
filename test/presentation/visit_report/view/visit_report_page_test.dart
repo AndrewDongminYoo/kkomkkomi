@@ -88,6 +88,7 @@ void main() {
       visits: visits,
       companyProfile: companyProfile,
       publishing: publishing,
+      openCaptures: FakeOpenCaptureRepository(),
     );
     await tester.pumpApp(
       Builder(
