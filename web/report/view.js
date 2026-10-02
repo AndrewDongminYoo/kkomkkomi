@@ -14,6 +14,7 @@ export const texts = {
   photoFailed: "사진을 불러오지 못했어요",
   note: "메모",
   footer: "꼼꼬미로 만든 보고서",
+  privacyLink: "개인정보 처리방침",
   emptyReport: "이 보고서에는 사진이나 메모가 없어요.",
   emptyHistory: "아직 올라온 보고서가 없어요.",
   historyLink: "이 거래처의 보고서 모두 보기",
@@ -61,8 +62,17 @@ function element(
   return node;
 }
 
+/** The path of the privacy policy, which Hosting serves from `web/privacy/`. */
+export const privacyPath = "/privacy/";
+
 function footer(doc) {
-  return element(doc, "footer", { className: "footer", text: texts.footer });
+  return element(doc, "footer", { className: "footer" }, [
+    element(doc, "p", { text: texts.footer }),
+    element(doc, "a", {
+      text: texts.privacyLink,
+      attributes: { href: privacyPath },
+    }),
+  ]);
 }
 
 /** The head of a sheet: the company name, the title, and the client name. */

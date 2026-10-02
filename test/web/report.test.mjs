@@ -18,6 +18,7 @@ import {
 } from "../../web/report/data.js";
 import {
   formatVisitDate,
+  privacyPath,
   renderFailure,
   renderHistory,
   renderReport,
@@ -381,6 +382,7 @@ describe("renderReport", () => {
       "공사 중이라 사진을 못 찍었어요",
       "이 거래처의 보고서 모두 보기",
       "꼼꼬미로 만든 보고서",
+      "개인정보 처리방침",
     ]);
   });
 
@@ -414,12 +416,19 @@ describe("renderReport", () => {
     assert.equal(frame.all("img").length, 0);
   });
 
-  test("links to the list of the reports of the client page", () => {
+  test("links to the list of the reports of the client page, and to the privacy policy in the footer", () => {
+    const view = render();
+
     assert.deepEqual(
-      render()
+      view.all("a").map((link) => link.getAttribute("href")),
+      [`/r/${pageId}`, privacyPath],
+    );
+    assert.deepEqual(
+      view
+        .all("footer")[0]
         .all("a")
         .map((link) => link.getAttribute("href")),
-      [`/r/${pageId}`],
+      [privacyPath],
     );
   });
 
@@ -465,10 +474,11 @@ describe("renderHistory", () => {
       "2026년 10월 1일",
       "2026년 9월 24일",
       "꼼꼬미로 만든 보고서",
+      "개인정보 처리방침",
     ]);
     assert.deepEqual(
       view.all("a").map((link) => link.getAttribute("href")),
-      [`/r/${pageId}/${visitId}`, `/r/${pageId}/${olderVisitId}`],
+      [`/r/${pageId}/${visitId}`, `/r/${pageId}/${olderVisitId}`, privacyPath],
     );
   });
 
@@ -495,6 +505,7 @@ describe("renderFailure", () => {
       texts.unavailableTitle,
       texts.unavailableMessage,
       texts.footer,
+      texts.privacyLink,
     ]);
     assert.equal(view.all("button").length, 0);
     assert.equal(view.getAttribute("role"), "alert");
@@ -508,6 +519,7 @@ describe("renderFailure", () => {
       texts.missingMessage,
       texts.historyLink,
       texts.footer,
+      texts.privacyLink,
     ]);
     assert.equal(view.all("a")[0].getAttribute("href"), `/r/${pageId}`);
   });
@@ -526,6 +538,7 @@ describe("renderFailure", () => {
       texts.failedMessage,
       texts.retry,
       texts.footer,
+      texts.privacyLink,
     ]);
     assert.equal(retries, 1);
   });
@@ -550,7 +563,10 @@ describe("start", () => {
       "2026년 10월 1일",
       "로비",
     ]);
-    assert.equal(texts.at(-1), "꼼꼬미로 만든 보고서");
+    assert.deepEqual(texts.slice(-2), [
+      "꼼꼬미로 만든 보고서",
+      "개인정보 처리방침",
+    ]);
     assert.equal(
       root.all("img")[0].getAttribute("src"),
       `https://firebasestorage.googleapis.com/v0/b/demo-kkomkkomi.appspot.com/o/${encodeURIComponent(lobbyBefore)}?alt=media`,
