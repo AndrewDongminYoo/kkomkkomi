@@ -1,0 +1,166 @@
+/* The privacy policy: one column of text on the colors of the report page. Phone first, from 320 px. */
+:root {
+  color-scheme: light;
+  --bg: #faf7f1;
+  --paper: #ffffff;
+  --paper-edge: #e6e0d4;
+  --ink: #16243b;
+  --ink-2: #4b5870;
+  --teal: #0f7f7a;
+  --teal-ink: #0a5e5a;
+  --mark-bg: #fff4d6;
+  --mark-ink: #6b4a00;
+  --font-body:
+    -apple-system, "Apple SD Gothic Neo", "Noto Sans KR", "Malgun Gothic",
+    system-ui, sans-serif;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    color-scheme: dark;
+    --bg: #121a28;
+    --paper: #1a2435;
+    --paper-edge: #2c3850;
+    --ink: #eef1f6;
+    --ink-2: #b6bfd0;
+    --teal: #3fb8b1;
+    --teal-ink: #6fd3cc;
+    --mark-bg: #3a3218;
+    --mark-ink: #f5d98a;
+  }
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html {
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
+}
+
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--ink);
+  font-family: var(--font-body);
+  font-size: 1rem;
+  line-height: 1.7;
+  overflow-wrap: anywhere;
+}
+
+/* Korean breaks between words, as the report page does. English keeps the browser's breaks. */
+html[lang="ko"] body {
+  word-break: keep-all;
+}
+
+main {
+  max-width: 44rem;
+  margin: 0 auto;
+  padding: max(1rem, env(safe-area-inset-top))
+    max(0.75rem, env(safe-area-inset-right))
+    max(1.5rem, env(safe-area-inset-bottom))
+    max(0.75rem, env(safe-area-inset-left));
+}
+
+.sheet {
+  background: var(--paper);
+  border: 1px solid var(--paper-edge);
+  border-radius: 10px;
+  padding: 1.25rem 1rem;
+}
+
+.sheet-head {
+  border-bottom: 1px solid var(--paper-edge);
+  padding-bottom: 1rem;
+  margin-bottom: 0.5rem;
+}
+
+.sheet-head p {
+  margin: 0.25rem 0 0;
+  color: var(--ink-2);
+  font-size: 0.875rem;
+}
+
+h1 {
+  font-size: 1.375rem;
+  line-height: 1.35;
+  margin: 0.25rem 0;
+}
+
+h2 {
+  font-size: 1.125rem;
+  line-height: 1.4;
+  margin: 1.75rem 0 0.5rem;
+}
+
+h3 {
+  font-size: 1rem;
+  line-height: 1.4;
+  margin: 1.25rem 0 0.25rem;
+}
+
+p,
+ul,
+dl {
+  margin: 0.5rem 0;
+}
+
+ul {
+  padding-left: 1.25rem;
+}
+
+li + li {
+  margin-top: 0.25rem;
+}
+
+dt {
+  font-weight: 600;
+  margin-top: 0.75rem;
+}
+
+dd {
+  margin: 0;
+}
+
+a {
+  color: var(--teal-ink);
+  text-decoration: underline;
+  text-underline-offset: 0.2em;
+}
+
+a:focus-visible {
+  outline: 3px solid var(--teal);
+  outline-offset: 2px;
+}
+
+code {
+  font-size: 0.9em;
+}
+
+/* What the operator must confirm before the page goes live. */
+.todo {
+  background: var(--mark-bg);
+  color: var(--mark-ink);
+  border-radius: 4px;
+  padding: 0 0.25rem;
+  font-weight: 600;
+}
+
+.lang {
+  margin: 0 0 0.75rem;
+  font-size: 0.875rem;
+  text-align: right;
+}
+
+@media (min-width: 40rem) {
+  main {
+    padding-top: 2rem;
+  }
+
+  .sheet {
+    padding: 2rem;
+  }
+}
