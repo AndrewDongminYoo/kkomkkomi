@@ -51,8 +51,9 @@ class ClientLinkCubit extends Cubit<ClientLinkState> {
   Future<void> _request(Future<Object?> Function() request, {required bool keepsOpenLink}) async {
     if (!state.takesAction || !state.hasOpenLink) return;
     _show(state.copyWith(status: ClientLinkStatus.requesting));
+    final Object? result;
     try {
-      await request();
+      result = await request();
     } on Exception catch (error, stackTrace) {
       _report(error, stackTrace);
       _show(state.copyWith(status: ClientLinkStatus.requestFailed));
@@ -62,8 +63,14 @@ class ClientLinkCubit extends Cubit<ClientLinkState> {
       await _read(status: ClientLinkStatus.ready);
     } on Exception catch (error, stackTrace) {
       _report(error, stackTrace);
-      // Storage took the revoke and its job, which has not run yet, so the link is closing.
-      _show(state.copyWith(status: ClientLinkStatus.ready, hasOpenLink: keepsOpenLink, isClosing: true));
+      if (result == null) {
+        // The request found no open link to close, so storage took no revoke job from it, and no job update will
+        // correct a closing state.
+        _show(state.copyWith(status: ClientLinkStatus.ready, hasOpenLink: false));
+      } else {
+        // Storage took the revoke and its job, which has not run yet, so the link is closing.
+        _show(state.copyWith(status: ClientLinkStatus.ready, hasOpenLink: keepsOpenLink, isClosing: true));
+      }
     }
   }
 

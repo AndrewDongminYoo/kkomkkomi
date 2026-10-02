@@ -286,6 +286,26 @@ void main() {
         await cubit.close();
       });
 
+      test('says that no link is open, and not that one is closing, when a revoke came first and the read after the '
+          'close fails', () async {
+        final cubit = await loadedWithOpenLink();
+        final gate = publishing.revokeGate = Completer<void>();
+        final closing = cubit.closeLink();
+        await pumpEventQueue();
+        // Another revoke closes the page while this one is on its way to storage, so this close takes no revoke job.
+        final page = publishing.pagesById.values.single;
+        publishing.pagesById[page.id] = page.revoke(DateTime.utc(2026, 10, 2));
+        publishing.failure = Exception('storage failed');
+        gate.complete();
+
+        await closing;
+
+        expect(cubit.state, const ClientLinkState(status: ClientLinkStatus.ready));
+        expect(publishing.jobs.values.where((job) => job.kind == PublishJobKind.revoke), isEmpty);
+        expect(observer.errors, [publishing.failure]);
+        await cubit.close();
+      });
+
       test('does nothing while the client has no open link, and while a request is on its way', () async {
         final cubit = build();
         await cubit.load();
