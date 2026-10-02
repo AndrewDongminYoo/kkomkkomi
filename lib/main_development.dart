@@ -4,8 +4,8 @@ import 'package:kkomkkomi/presentation/presentation.dart';
 
 Future<void> main() async {
   await bootstrap(
-    (repositories, identity, publishQueue) =>
-        App(repositories: repositories, identity: identity, publishQueue: publishQueue),
+    (repositories, identity, publishQueue, recovery) =>
+        App(repositories: repositories, identity: identity, publishQueue: publishQueue, recovery: recovery),
     identity: const UnavailableIdentity(),
     publisher: const UnavailablePublisher(),
   );

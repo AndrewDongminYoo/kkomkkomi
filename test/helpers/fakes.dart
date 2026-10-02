@@ -162,6 +162,75 @@ class FakePhotoCapture implements PhotoCapture {
     if (result is Exception) throw result;
     return result as String?;
   }
+
+  /// Whether the camera keeps the photo of a capture whose answer the app lost, as the camera of Android does.
+  @override
+  bool keepsLostPhotos = true;
+
+  /// What the next calls for the lost photo give, in order, before [lostPhoto]: the path of a photo file, null when
+  /// the camera has no lost photo yet, or an exception that the call throws.
+  final lostAnswers = <Object?>[];
+
+  /// What a call for the lost photo gives when [lostAnswers] is empty.
+  Object? lostPhoto;
+
+  /// How many times the camera was asked for the lost photo.
+  int lostPhotoCalls = 0;
+
+  @override
+  Future<String?> retrieveLostPhoto() async {
+    lostPhotoCalls++;
+    final answer = lostAnswers.isEmpty ? lostPhoto : lostAnswers.removeAt(0);
+    if (answer case final Exception failure) throw failure;
+    return answer as String?;
+  }
+}
+
+/// Keeps the capture that has the camera open in memory.
+class FakeOpenCaptureRepository implements OpenCaptureRepository {
+  new({this.capture});
+
+  /// The stored capture, or null when none is stored.
+  OpenCapture? capture;
+
+  /// Every capture that was stored, in order.
+  final saved = <OpenCapture>[];
+
+  /// How many times the stored capture was removed.
+  int clears = 0;
+
+  /// The exception that a read throws while it is set.
+  Exception? loadFailure;
+
+  /// The exception that a save throws while it is set.
+  Exception? saveFailure;
+
+  /// The exception that a removal throws while it is set.
+  Exception? clearFailure;
+
+  /// Runs at each save, before the capture is stored, so that a test can see what happened before the save.
+  void Function()? onSave;
+
+  @override
+  Future<OpenCapture?> load() async {
+    if (loadFailure case final failure?) throw failure;
+    return capture;
+  }
+
+  @override
+  Future<void> save(OpenCapture capture) async {
+    onSave?.call();
+    if (saveFailure case final failure?) throw failure;
+    saved.add(capture);
+    this.capture = capture;
+  }
+
+  @override
+  Future<void> clear() async {
+    if (clearFailure case final failure?) throw failure;
+    clears++;
+    capture = null;
+  }
 }
 
 /// Keeps no file. It remembers which photo it gave for which source file and which photos it deleted.

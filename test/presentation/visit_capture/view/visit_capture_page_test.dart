@@ -76,6 +76,7 @@ void main() {
     Locale? locale,
     Exception? loadFailure,
     bool keepScreen = false,
+    LostCaptureRecovery? recovery,
   }) async {
     if (!keepScreen) useTallPhoneScreen(tester);
     visits = FakeVisitRepository(visits: [visit ?? current, ...history])..failure = loadFailure;
@@ -85,7 +86,7 @@ void main() {
       Builder(
         builder: (context) => Scaffold(
           body: TextButton(
-            onPressed: () => Navigator.of(context).push(VisitCapturePage.route(visitId: visitId)),
+            onPressed: () => Navigator.of(context).push(VisitCapturePage.route(visitId: visitId, recovery: recovery)),
             child: const Text('host'),
           ),
         ),
@@ -96,6 +97,7 @@ void main() {
         visits: visits,
         companyProfile: FakeCompanyProfileRepository(),
         publishing: MockPublishRepository(),
+        openCaptures: FakeOpenCaptureRepository(),
       ),
       photoCapture: photoCapture,
       photoStore: photoStore,
@@ -751,6 +753,60 @@ void main() {
       expect(control('zone-1', 'Take Before Photo'), findsOneWidget);
     });
 
+    group('after the start of the app recovered a capture of the visit', () {
+      const recovered = LostCaptureRecovery(visitId: visitId);
+      final lost = LostCaptureRecovery(visitId: visitId, failure: Exception('disk full'));
+
+      for (final (locale, recovery, message) in [
+        (
+          const Locale('en'),
+          recovered,
+          'The app restarted while the camera was open. The photo you took is in this visit.',
+        ),
+        (const Locale('ko'), recovered, '카메라를 쓰는 동안 앱이 다시 시작됐어요. 찍은 사진은 이 방문에 넣었어요.'),
+        (
+          const Locale('en'),
+          lost,
+          "The app restarted while the camera was open, and the photo you took couldn't be added. Take it again.",
+        ),
+        (const Locale('ko'), lost, '카메라를 쓰는 동안 앱이 다시 시작됐는데, 찍은 사진을 넣지 못했어요. 다시 찍어 주세요.'),
+      ]) {
+        testWidgets(
+          'says what became of the photo once the visit shows, in ${locale.languageCode}, when '
+          '${recovery.isRecovered ? 'the visit holds it' : 'it did not reach the visit'}',
+          (tester) async {
+            await pumpPage(tester, locale: locale, recovery: recovery);
+
+            expect(find.byType(VisitCaptureView), findsOneWidget);
+            expect(find.text(message), findsOneWidget);
+
+            await tester.pump(const Duration(seconds: 5));
+            await tester.pumpAndSettle();
+            expect(find.text(message), findsNothing);
+
+            // A capture changes the state again, and the notice does not come back.
+            photoCapture.results.add(null);
+            final takeBefore = locale.languageCode == 'ko' ? '청소 전 사진 찍기' : 'Take Before Photo';
+            await tester.tap(control('zone-1', takeBefore));
+            await tester.pumpAndSettle();
+            expect(find.text(message), findsNothing);
+          },
+        );
+      }
+
+      testWidgets('says nothing when the visit does not load', (tester) async {
+        await pumpPage(tester, recovery: recovered, loadFailure: Exception('storage failed'));
+
+        expect(find.byType(SnackBar), findsNothing);
+      });
+    });
+
+    testWidgets('says nothing about a recovery when it opens for another reason', (tester) async {
+      await pumpPage(tester);
+
+      expect(find.byType(SnackBar), findsNothing);
+    });
+
     group('on a screen 320 pixels wide at the largest text size', () {
       const longZoneName = '1층 로비와 엘리베이터 앞 복도';
       final longVisit = visitWith([
@@ -820,6 +876,40 @@ void main() {
           await scrollTo(tester, find.text(label));
           tester.expectWholeText(label);
         });
+      }
+
+      for (final (locale, recovery, message) in [
+        (
+          const Locale('en'),
+          const LostCaptureRecovery(visitId: visitId),
+          'The app restarted while the camera was open. The photo you took is in this visit.',
+        ),
+        (
+          const Locale('ko'),
+          const LostCaptureRecovery(visitId: visitId),
+          '카메라를 쓰는 동안 앱이 다시 시작됐어요. 찍은 사진은 이 방문에 넣었어요.',
+        ),
+        (
+          const Locale('en'),
+          LostCaptureRecovery(visitId: visitId, failure: failure),
+          "The app restarted while the camera was open, and the photo you took couldn't be added. Take it again.",
+        ),
+        (
+          const Locale('ko'),
+          LostCaptureRecovery(visitId: visitId, failure: failure),
+          '카메라를 쓰는 동안 앱이 다시 시작됐는데, 찍은 사진을 넣지 못했어요. 다시 찍어 주세요.',
+        ),
+      ]) {
+        testWidgets(
+          'fits the notice of a ${recovery.isRecovered ? 'recovered' : 'lost'} photo in ${locale.languageCode}',
+          (tester) async {
+            tester.useNarrowScreenWithLargestText();
+            await pumpPage(tester, visit: longVisit, locale: locale, keepScreen: true, recovery: recovery);
+
+            expect(find.byType(SnackBar), findsOneWidget);
+            tester.expectWholeText(message);
+          },
+        );
       }
 
       for (final (locale, button, messages) in [

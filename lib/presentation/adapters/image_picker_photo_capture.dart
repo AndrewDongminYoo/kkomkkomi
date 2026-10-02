@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:kkomkkomi/application/application.dart';
@@ -43,5 +44,32 @@ final class ImagePickerPhotoCapture implements PhotoCapture {
         stackTrace,
       );
     }
+  }
+
+  /// True on Android only.
+  ///
+  /// Only Android opens the camera as another app, so only Android can end the app while the camera is open, and
+  /// the picker answers `retrieveLostData` only there: on another platform it throws an `UnimplementedError`.
+  @override
+  bool get keepsLostPhotos => !kIsWeb && defaultTargetPlatform == TargetPlatform.android;
+
+  /// Reads the lost answer through `retrieveLostData` of the picker, which a new capture clears.
+  ///
+  /// The method gives null without asking the picker where [keepsLostPhotos] is false. The picker makes the lost
+  /// photo smaller with the size limit and the quality of the capture that lost it, as it does for [takePhoto].
+  @override
+  Future<String?> retrieveLostPhoto() async {
+    if (!keepsLostPhotos) return null;
+    final LostDataResponse response;
+    try {
+      response = await (_picker ?? ImagePicker()).retrieveLostData();
+    } on Object catch (error, stackTrace) {
+      // The picker fails with a `PlatformException` when the app has no activity, and the clause catches every object
+      // for the same reason as the one of `takePhoto`.
+      Error.throwWithStackTrace(PhotoCaptureException(cause: error), stackTrace);
+    }
+    // A lost failure would have an exception and no file, and the capture ended without a photo then, as after a
+    // cancel. `image_picker_android` 0.8.13+23 gives an empty response for a lost failure as well.
+    return response.file?.path;
   }
 }

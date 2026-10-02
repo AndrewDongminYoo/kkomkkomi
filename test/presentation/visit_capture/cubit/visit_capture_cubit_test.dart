@@ -52,6 +52,7 @@ void main() {
   late MockVisitRepository visits;
   late FakePhotoCapture photoCapture;
   late FakePhotoStore photoStore;
+  late FakeOpenCaptureRepository openCaptures;
 
   VisitCaptureCubit build() => VisitCaptureCubit(
     visitId: visitId,
@@ -59,6 +60,7 @@ void main() {
     photoCapture: photoCapture,
     photoStore: photoStore,
     idGenerator: SequenceIdGenerator(),
+    openCaptures: openCaptures,
   );
 
   VisitCaptureState loaded({
@@ -100,6 +102,7 @@ void main() {
     visits = MockVisitRepository();
     photoCapture = FakePhotoCapture();
     photoStore = FakePhotoStore();
+    openCaptures = FakeOpenCaptureRepository();
     when(() => visits.visitById(visitId)).thenAnswer((_) async => visit);
     when(() => visits.visitsOf(clientId)).thenAnswer((_) async => [visit, earlier]);
     when(() => visits.save(any())).thenAnswer((_) async {});
@@ -509,6 +512,94 @@ void main() {
 
         expect(cubit.state, loaded(status: VisitCaptureStatus.capturing));
         expect(photoStore.deleted, [newPhoto]);
+      });
+
+      group('the stored open capture', () {
+        const lobbyBefore = OpenCapture(visitId: visitId, zoneId: 'zone-1', slot: PhotoSlot.before);
+
+        for (final (description, result) in <(String, Object?)>[
+          ('gives a photo', picked),
+          ('is closed without a photo', null),
+          ('fails', const PhotoCaptureException()),
+        ]) {
+          test(
+            'names the visit, the zone, and the slot while the camera is open, and goes when the camera $description',
+            () async {
+              photoCapture
+                ..results.add(result)
+                ..gate = Completer<void>();
+              final cubit = build();
+              addTearDown(cubit.close);
+              await cubit.load();
+
+              final capture = cubit.capturePhoto('zone-1', PhotoSlot.before);
+              await pumpEventQueue();
+              expect(photoCapture.calls, 1);
+              expect(openCaptures.capture, lobbyBefore);
+              photoCapture.gate!.complete();
+              await capture;
+
+              expect(openCaptures.saved, [lobbyBefore]);
+              expect(openCaptures.capture, isNull);
+              expect(openCaptures.clears, 1);
+            },
+          );
+        }
+
+        test('is stored before the camera opens', () async {
+          photoCapture.results.add(null);
+          final cameraCallsAtSave = <int>[];
+          openCaptures.onSave = () => cameraCallsAtSave.add(photoCapture.calls);
+          final cubit = build();
+          addTearDown(cubit.close);
+          await cubit.load();
+
+          await cubit.capturePhoto('zone-1', PhotoSlot.before);
+
+          expect(cameraCallsAtSave, [0]);
+          expect(photoCapture.calls, 1);
+        });
+
+        blocTest<VisitCaptureCubit, VisitCaptureState>(
+          'does not open the camera, and says that storage did not save, when storage does not take the capture',
+          setUp: () {
+            photoCapture.results.add(picked);
+            openCaptures
+              ..capture = const OpenCapture(visitId: 'visit-1', zoneId: 'zone-1', slot: PhotoSlot.after)
+              ..saveFailure = failure;
+          },
+          build: build,
+          seed: loaded,
+          act: (cubit) => cubit.capturePhoto('zone-1', PhotoSlot.before),
+          expect: () => [
+            loaded(status: VisitCaptureStatus.capturing),
+            loaded(status: VisitCaptureStatus.saveFailed),
+          ],
+          errors: () => [failure],
+          verify: (_) {
+            // A photo that the camera lost would go to the capture that storage still names.
+            expect(photoCapture.calls, 0);
+            expect(openCaptures.clears, 0);
+            verifyNever(() => visits.save(any()));
+          },
+        );
+
+        blocTest<VisitCaptureCubit, VisitCaptureState>(
+          'does not stop a capture when storage does not remove it, and reports the failure',
+          setUp: () {
+            photoCapture.results.add(picked);
+            openCaptures.clearFailure = failure;
+          },
+          build: build,
+          seed: loaded,
+          act: (cubit) => cubit.capturePhoto('zone-1', PhotoSlot.before),
+          expect: () => [
+            loaded(status: VisitCaptureStatus.capturing),
+            loaded(shown: withPhoto('zone-1', PhotoSlot.before, newPhoto)),
+          ],
+          errors: () => [failure],
+          verify: (_) => verify(() => visits.save(withPhoto('zone-1', PhotoSlot.before, newPhoto))).called(1),
+        );
       });
 
       test('reports no unsaved change when the person closes the camera after a photo that storage refused', () async {

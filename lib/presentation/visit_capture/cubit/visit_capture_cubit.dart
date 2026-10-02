@@ -17,6 +17,7 @@ class VisitCaptureCubit extends Cubit<VisitCaptureState> {
     required this._photoCapture,
     required this._photoStore,
     required this._idGenerator,
+    required this._openCaptures,
   }) : super(const VisitCaptureState());
 
   final String _visitId;
@@ -24,6 +25,7 @@ class VisitCaptureCubit extends Cubit<VisitCaptureState> {
   final PhotoCapture _photoCapture;
   final PhotoStore _photoStore;
   final IdGenerator _idGenerator;
+  final OpenCaptureRepository _openCaptures;
 
   /// The answer to the newest save: true when storage took its visit.
   Future<bool> _newestSave = Future.value(true);
@@ -61,7 +63,8 @@ class VisitCaptureCubit extends Cubit<VisitCaptureState> {
   ///
   /// A photo that the slot already holds is replaced, and its file is deleted after storage took the new photo.
   /// The photos of the visit stay as they were when the person closes the camera without a photo, and when the
-  /// camera, the photo store, or storage fails. A call does nothing while the visit takes no change.
+  /// camera, the photo store, or storage fails. The camera does not open when storage does not take the capture that
+  /// it opens for. A call does nothing while the visit takes no change.
   Future<void> capturePhoto(String zoneId, PhotoSlot slot) async {
     final visit = state.visit;
     final record = visit?.recordFor(zoneId);
@@ -73,9 +76,14 @@ class VisitCaptureCubit extends Cubit<VisitCaptureState> {
     VisitCaptureState after(VisitCaptureStatus status) =>
         state.copyWith(status: status, isStored: areNotesStored, isSavingNote: false);
 
+    if (!await _storeOpenCapture(OpenCapture(visitId: visit.id, zoneId: zoneId, slot: slot))) {
+      _show(after(VisitCaptureStatus.saveFailed));
+      return;
+    }
+
     final PhotoRef photo;
     try {
-      final picked = await _photoCapture.takePhoto();
+      final picked = await _takePhoto();
       if (picked == null) {
         _show(after(VisitCaptureStatus.ready));
         return;
@@ -98,6 +106,37 @@ class VisitCaptureCubit extends Cubit<VisitCaptureState> {
       _newestSave = Future.value(areNotesStored);
       _show(after(VisitCaptureStatus.saveFailed));
       await _deleteFile(photo);
+    }
+  }
+
+  /// Stores [capture] before the camera opens, and completes with true when storage took it.
+  ///
+  /// The system can end the app while the camera app is open, and the next start of the app then reads the stored
+  /// capture to put the photo into its slot. Storage can still hold the capture of an earlier camera whose photo did
+  /// not come, so the camera must not open while storage names another capture: a lost photo would go to that one.
+  Future<bool> _storeOpenCapture(OpenCapture capture) async {
+    try {
+      await _openCaptures.save(capture);
+      return true;
+    } on Exception catch (error, stackTrace) {
+      _report(error, stackTrace);
+      return false;
+    }
+  }
+
+  /// Opens the camera, and removes the stored capture when the camera answers in any way.
+  ///
+  /// A failed removal is reported and does not change the answer: the camera gave its answer to this call, so the
+  /// next start finds no photo for the capture, and the next capture replaces it.
+  Future<String?> _takePhoto() async {
+    try {
+      return await _photoCapture.takePhoto();
+    } finally {
+      try {
+        await _openCaptures.clear();
+      } on Exception catch (error, stackTrace) {
+        _report(error, stackTrace);
+      }
     }
   }
 

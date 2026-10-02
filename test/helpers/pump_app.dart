@@ -16,7 +16,7 @@ extension PumpApp on WidgetTester {
   /// Pumps [widget] as the home of a `MaterialApp` that has the localization delegates of the app.
   ///
   /// The app shows the strings of [locale] when one is given, and the English strings otherwise.
-  /// When [repositories] is given, the widgets read its members, [identity], [publishQueue], [idGenerator], [clock],
+  /// When [repositories] is given, the widgets read its members (the store of the open capture included), [identity], [publishQueue], [idGenerator], [clock],
   /// [photoCapture], [photoStore], [reportFont], [reportShare], and [linkShare] through `RepositoryProvider`, as they
   /// do under the app. A port that is not given is a fake, and the publish queue that is not given has no backend.
   Future<void> pumpApp(
@@ -46,6 +46,7 @@ extension PumpApp on WidgetTester {
           RepositoryProvider<ClientRepository>.value(value: repositories.clients),
           RepositoryProvider<VisitRepository>.value(value: repositories.visits),
           RepositoryProvider<CompanyProfileRepository>.value(value: repositories.companyProfile),
+          RepositoryProvider<OpenCaptureRepository>.value(value: repositories.openCaptures),
           RepositoryProvider<Identity>.value(value: identity ?? FakeIdentity()),
           RepositoryProvider<PublishQueue>.value(value: publishQueue ?? publishQueueOf(repositories)),
           RepositoryProvider<IdGenerator>.value(value: idGenerator ?? SequenceIdGenerator()),

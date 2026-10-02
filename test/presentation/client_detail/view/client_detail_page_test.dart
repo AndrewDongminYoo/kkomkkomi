@@ -69,6 +69,7 @@ void main() {
         visits: visitRepository,
         companyProfile: FakeCompanyProfileRepository(),
         publishing: MockPublishRepository(),
+        openCaptures: FakeOpenCaptureRepository(),
       ),
       clock: FixedClock(DateTime(day.year, day.month, day.day, 12)),
     );
@@ -904,6 +905,7 @@ void main() {
         visits: FakeVisitRepository(visits: [october]),
         companyProfile: FakeCompanyProfileRepository(),
         publishing: MockPublishRepository(),
+        openCaptures: FakeOpenCaptureRepository(),
       ),
       clock: FixedClock(DateTime(2026, 10, 20, 12)),
     );

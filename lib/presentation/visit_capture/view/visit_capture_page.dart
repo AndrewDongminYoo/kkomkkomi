@@ -20,12 +20,17 @@ const _columnGap = 12.0;
 
 /// The screen of one visit: for each zone record a before photo, an after photo, the previous photos, and a note.
 class VisitCapturePage extends StatelessWidget {
-  const new({required this.visitId, super.key});
+  const new({required this.visitId, this.recovery, super.key});
 
   final String visitId;
 
-  static Route<void> route({required String visitId}) =>
-      MaterialPageRoute<void>(builder: (_) => VisitCapturePage(visitId: visitId));
+  /// What the start of the app did with the photo of a capture of this visit whose answer the app lost, or null when
+  /// the screen opens for another reason. The screen says it once, when the visit shows.
+  final LostCaptureRecovery? recovery;
+
+  static Route<void> route({required String visitId, LostCaptureRecovery? recovery}) => MaterialPageRoute<void>(
+    builder: (_) => VisitCapturePage(visitId: visitId, recovery: recovery),
+  );
 
   @override
   Widget build(BuildContext context) {
@@ -37,21 +42,38 @@ class VisitCapturePage extends StatelessWidget {
           photoCapture: context.read<PhotoCapture>(),
           photoStore: context.read<PhotoStore>(),
           idGenerator: context.read<IdGenerator>(),
+          openCaptures: context.read<OpenCaptureRepository>(),
         );
         unawaited(cubit.load());
         return cubit;
       },
-      child: const VisitCaptureView(),
+      child: VisitCaptureView(recovery: recovery),
     );
   }
 }
 
 class VisitCaptureView extends StatelessWidget {
-  const new({super.key});
+  const new({this.recovery, super.key});
+
+  /// What the start of the app did with a lost photo of this visit, which the view says when the visit shows.
+  final LostCaptureRecovery? recovery;
 
   @override
   Widget build(BuildContext context) {
     final l10n = context.l10n;
+    return BlocListener<VisitCaptureCubit, VisitCaptureState>(
+      listenWhen: (previous, current) => recovery != null && previous.visit == null && current.visit != null,
+      listener: (context, _) {
+        final message = recovery!.isRecovered
+            ? l10n.visitCaptureRecoveredPhotoMessage
+            : l10n.visitCaptureRecoveryFailedMessage;
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(message)));
+      },
+      child: _buildScreen(context, l10n),
+    );
+  }
+
+  Widget _buildScreen(BuildContext context, AppLocalizations l10n) {
     return BlocConsumer<VisitCaptureCubit, VisitCaptureState>(
       listenWhen: (previous, current) => previous.status != current.status,
       listener: (context, state) {
