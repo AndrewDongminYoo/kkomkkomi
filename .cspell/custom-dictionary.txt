@@ -12,6 +12,7 @@ Buildables
 COINIT
 Deliverfile
 dists
+Dongmin
 DPICHANGED
 DUNICODE
 dwmapi
