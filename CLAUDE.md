@@ -37,11 +37,13 @@ iOS and macOS do not list `GoogleService-Info.plist` as a resource of the Runner
 A fresh clone needs `flutterfire configure` before a production build for Android, iOS, or macOS, and before no other build.
 After `flutterfire configure`, run `dart format lib/firebase_options.dart`, because the local format check reads that file and CI never sees it.
 
-The deployed security rules are not the tracked ones.
-Since pull request 12 merged on 2026-10-01, `firestore.rules` and `storage.rules` let anyone read a client page, its reports, and their photos by page ID while the page is open.
-The rules deployed to the project still deny every read and write.
-Do not deploy rules to make the project match the repository: a deploy is the operator's decision, and the first deploy of `storage.rules` asks to grant the IAM role that its `firestore.get` needs.
-Until that deploy, a publish from the production flavor fails at the first write.
+`firestore.rules` and `storage.rules` let anyone read a client page, its reports, and their photos by page ID while the page is open.
+The operator approved their deploy, and they were deployed from `ab6d8d7` on 2026-10-02, together with Hosting.
+A deploy is the operator's decision each time: do not deploy rules or Hosting without that approval.
+
+`storage.rules` reads the client page through `firestore.get`, which needs the Firebase Storage service agent (`service-146496738802@gcp-sa-firebasestorage.iam.gserviceaccount.com`) to hold `roles/firebaserules.firestoreServiceAgent`.
+On 2026-10-02 the agent did not hold it: the non-interactive deploy did not offer to grant it, and the grant is the operator's action.
+Until it is granted, every Storage rule that reads the page denies, so photo uploads fail and the web report page shows no photos.
 
 ### Milestones
 

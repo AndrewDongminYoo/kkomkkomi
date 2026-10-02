@@ -22,6 +22,8 @@ FILEFLAGSMASK
 FILEOS
 FILESUBTYPE
 FILEVERSION
+firebaserules
+firebasestorage
 flutterfire
 FMWK
 FONTCHANGE
