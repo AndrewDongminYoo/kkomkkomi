@@ -26,8 +26,7 @@ The same page allows up to 100 internal testers per app, who are App Store Conne
 | Privacy policy                 | `https://kkomkkomi.web.app/privacy/` (Korean), `https://kkomkkomi.web.app/privacy/en/` (English) |
 | App Store categories           | Business, then Productivity (`fastlane/metadata/ios/*_category.txt`)                             |
 
-`DEVELOPMENT_TEAM` is not set in `ios/Runner.xcodeproj`.
-Set it in Xcode (Runner target, Signing & Capabilities) only after you confirm the team ID.
+`DEVELOPMENT_TEAM` is `393JTTV68D` in each of the nine build configurations of the Runner target in `ios/Runner.xcodeproj` (operator, 2026-10-02), so a signed build needs no manual team choice.
 
 ## Apple
 
