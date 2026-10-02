@@ -41,6 +41,8 @@ imageset
 INFOPLIST
 instancer
 iphoneos
+IPTC
+JFIF
 jvmargs
 keytool
 leveldb
