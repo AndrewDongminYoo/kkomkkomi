@@ -143,7 +143,7 @@ The target SDK meets the Google Play minimum for a new app.
 
 ### R8 rules
 
-`android/app/build.gradle.kts` names `proguard-rules.pro` for the release build, and `android/app/proguard-rules.pro` does not exist.
-The Gradle plugin skips the missing file: the R8 configuration of the release build (`build/app/outputs/mapping/productionRelease/configuration.txt`) lists the rules of the Flutter tool, of the Android default file, and of each library, and no `proguard-rules.pro`.
+`android/app/build.gradle.kts` names `proguard-rules.pro` for the release build. The release build of pull request 22 ran before the file existed, and the Gradle plugin skipped it: the R8 configuration of that build (`build/app/outputs/mapping/productionRelease/configuration.txt`) listed the rules of the Flutter tool, of the Android default file, and of each library.
+`android/app/proguard-rules.pro` now exists with a comment and no rule, and it names the consumer rules that R8 already applies.
 R8 ran with the consumer rules of the plugins and the Firebase SDKs, and the bundle built.
 Whether the minified app runs was not checked: no device and no emulator ran it. Open the first internal testing build on a phone before you invite testers.
