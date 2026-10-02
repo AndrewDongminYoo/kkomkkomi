@@ -43,11 +43,15 @@ void main() {
       ),
       visits: FakeVisitRepository(
         visits: [
+          // The photo of the uploaded object below, so that a share of the visit again names that object.
           Visit(
             id: 'visit-1',
             clientId: 'client-1',
             visitDate: VisitDate(2026, 10, 1),
             createdAt: DateTime.utc(2026, 10),
+            zoneRecords: [
+              ZoneRecord(zoneId: 'zone-1', zoneName: '입구', beforePhoto: PhotoRef('photos/visit-1/photo-1.jpg')),
+            ],
           ),
         ],
       ),
@@ -233,6 +237,79 @@ void main() {
       expect(publisher.pages, isEmpty);
       expect(publisher.reports, isEmpty);
       expect(localData.erasures, 1);
+    });
+
+    group('a backend delete that does not answer in time', () {
+      const timeout = Duration(milliseconds: 10);
+
+      test('keeps the queue held, and a reshare after a late Storage delete uploads the photo again', () async {
+        final gate = publisher.gates['deletePhoto'] = Completer<void>();
+        final deletion = deleteAllData(stepTimeout: timeout);
+
+        await expectLater(deletion(), failsAt(DeletionStep.publishedData));
+        expect(queue.isHeld, isTrue);
+
+        // The person shares the visit again while the delete of its photo is still on its way.
+        publisher.calls.clear();
+        final job = await queue.publishVisit('visit-1');
+        await pumpEventQueue();
+        expect(publisher.calls, isEmpty);
+
+        gate.complete();
+        await pumpEventQueue();
+
+        // The late delete removed the object and its record, so the share uploads the photo again.
+        expect(queue.isHeld, isFalse);
+        expect(publishing.jobs[job.id]!.status, PublishJobStatus.done);
+        expect(publisher.calls, containsAllInOrder(['writePage page-1', 'uploadPhoto $object']));
+        expect(publisher.objects.keys, [object]);
+        expect(await publishing.uploadedPhoto(pageId: 'page-1', objectPath: object), 'photos/visit-1/photo-1.jpg');
+      });
+
+      test('a late Storage delete that fails keeps the object and its record, and lets the queue run', () async {
+        final gate = publisher.gates['deletePhoto'] = Completer<void>();
+        publisher.failures['deletePhoto'] = [transient];
+        final deletion = deleteAllData(stepTimeout: timeout);
+        await expectLater(deletion(), failsAt(DeletionStep.publishedData));
+
+        gate.complete();
+        await pumpEventQueue();
+
+        expect(queue.isHeld, isFalse);
+        expect(publisher.objects.keys, [object]);
+        expect(await publishing.uploadedObjects('page-1'), [object]);
+      });
+
+      test('a next try while a Storage delete is on its way starts no second delete of it', () async {
+        final gate = publisher.gates['deletePhoto'] = Completer<void>();
+        final deletion = deleteAllData(stepTimeout: timeout);
+        await expectLater(deletion(), failsAt(DeletionStep.publishedData));
+
+        await expectLater(deletion(), failsAt(DeletionStep.publishedData));
+        expect(publisher.calls.where((call) => call.startsWith('deletePhoto')), hasLength(1));
+        expect(queue.isHeld, isTrue);
+
+        publisher.gates.remove('deletePhoto');
+        final third = deletion();
+        gate.complete();
+        await third;
+        expect(publisher.calls.where((call) => call.startsWith('deletePhoto')), hasLength(1));
+        expect(publisher.objects, isEmpty);
+        expect(localData.erasures, 1);
+        expect(queue.isHeld, isFalse);
+      });
+
+      test('keeps the queue held until a late report delete ends too', () async {
+        final gate = publisher.gates['deleteReport'] = Completer<void>();
+        final deletion = deleteAllData(stepTimeout: timeout);
+
+        await expectLater(deletion(), failsAt(DeletionStep.publishedData));
+        expect(queue.isHeld, isTrue);
+
+        gate.complete();
+        await pumpEventQueue();
+        expect(queue.isHeld, isFalse);
+      });
     });
 
     group('an account deletion that does not answer in time', () {

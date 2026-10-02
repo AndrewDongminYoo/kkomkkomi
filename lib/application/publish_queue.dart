@@ -21,6 +21,12 @@ import 'package:kkomkkomi/domain/domain.dart';
 /// Starts a timer that calls [callback] once after [delay], as `Timer.new` does.
 typedef StartTimer = Timer Function(Duration delay, void Function() callback);
 
+/// Waits for [delete], a delete of the backend, within a time limit, and fails when it does not answer in time.
+///
+/// A timeout does not cancel the delete, so the runner keeps one that does not answer in time until it ends, and
+/// calls [onLateSuccess] when it then ends with success.
+typedef TimedDelete = Future<void> Function(Future<void> delete, {Future<void> Function()? onLateSuccess});
+
 /// The path of the object that holds [photo], the photo in [slot] of the zone with [zoneId], in the report of the
 /// visit with [visitId] under the page with [pageId].
 ///
@@ -234,10 +240,16 @@ final class PublishQueue {
   /// delete is safe to repeat, so a call after a failed one deletes what is left. The local pages and jobs stay: the
   /// caller erases the local data after this call.
   ///
+  /// Each delete runs through [timed], which the deletion of all data gives so that it keeps a delete that does not
+  /// answer in time until the delete ends. The removal of the record of a photo is the [TimedDelete] `onLateSuccess`
+  /// of its delete, so that a delete that ends late leaves no record of an object that is gone. Without [timed], a
+  /// delete fails after the step timeout of the queue.
+  ///
   /// Throws a [StateError] while the queue is not held, because a job that runs at the same time could write again
   /// what this call deleted. Throws a [PublishException] that a retry can fix while an upload that a cancel did not
   /// end is on its way, before any delete, because that upload could create its object after the delete.
-  Future<void> deletePublished() async {
+  Future<void> deletePublished({TimedDelete? timed}) async {
+    final run = timed ?? (delete, {onLateSuccess}) => _step(delete);
     if (!_held) throw StateError('The queue must be held while the published data is deleted');
     if (_unsettled.isNotEmpty) {
       throw PublishException(PublishErrorKind.transient, 'An upload to ${_unsettled.first} has not ended');
@@ -252,17 +264,20 @@ final class PublishQueue {
     await _repository.stopPendingJobs(PublishFailure.deletion);
     for (final page in pages) {
       for (final objectPath in await _repository.uploadedObjects(page.id)) {
-        await _deletePhoto(page.id, objectPath);
+        _expectSettled(objectPath);
+        Future<void> forget() => _repository.removeUploadedPhoto(pageId: page.id, objectPath: objectPath);
+        await run(_publisher.deletePhoto(objectPath), onLateSuccess: forget);
+        await forget();
       }
     }
     for (final page in pages) {
       final visitIds = {for (final job in await _repository.jobsOfPage(page.id)) ?job.visitId};
       for (final visitId in visitIds) {
-        await _step(_publisher.deleteReport(pageId: page.id, visitId: visitId));
+        await run(_publisher.deleteReport(pageId: page.id, visitId: visitId));
       }
     }
     for (final page in pages) {
-      await _step(_publisher.deletePage(page.id));
+      await run(_publisher.deletePage(page.id));
     }
   }
 
