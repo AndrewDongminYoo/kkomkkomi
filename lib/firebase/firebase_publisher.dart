@@ -27,9 +27,13 @@ final class FirebasePublisher implements Publisher {
       _guard(() => _database.doc('clientPages/$pageId').set(_pageData(page)));
 
   @override
-  Future<void> uploadPhoto(String objectPath, Uint8List bytes) => _guard(() async {
+  Future<void> uploadPhoto(String objectPath, Uint8List bytes, {required Future<void> cancel}) => _guard(() async {
     // The rules refuse an object without this content type.
-    await _files.ref(objectPath).putData(bytes, SettableMetadata(contentType: 'image/jpeg'));
+    final task = _files.ref(objectPath).putData(bytes, SettableMetadata(contentType: 'image/jpeg'));
+    // A cancelled task ends with the code `canceled`. The end of the task, not the answer of `cancel`, says whether
+    // the object arrived, so a failure of `cancel` is ignored.
+    cancel.then((_) => task.cancel()).ignore();
+    await task;
   });
 
   @override

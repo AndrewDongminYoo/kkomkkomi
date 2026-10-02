@@ -75,6 +75,8 @@ final class PublishQueue {
   /// How long a step may take before the queue treats it as a failure that a retry can fix.
   ///
   /// A write of the backend can wait for the network without an end, so without a limit one job would stop the queue.
+  /// An upload that does not answer in time is cancelled, and the queue waits up to this time again for its end, so
+  /// an upload step takes at most twice this time.
   static const defaultStepTimeout = Duration(minutes: 3);
 
   /// The delay before the next run of a job that failed [failures] times, which doubles with each failure from
@@ -105,6 +107,9 @@ final class PublishQueue {
   Future<void>? _running;
   var _runAgain = false;
   var _disposed = false;
+
+  /// The objects whose upload a cancel did not end, while the upload is on its way.
+  final _unsettled = <String>{};
 
   /// Each job after a run of it changed its state, for a screen that shows where a job is and why it stopped.
   Stream<PublishJob> get updates => _updates.stream;
@@ -340,8 +345,7 @@ final class PublishQueue {
     final ofVisit = 'clientPages/${page.id}/${visit.id}/';
     for (final objectPath in await _repository.uploadedObjects(page.id)) {
       if (!objectPath.startsWith(ofVisit) || named.contains(objectPath)) continue;
-      await _step(_publisher.deletePhoto(objectPath));
-      await _repository.removeUploadedPhoto(pageId: page.id, objectPath: objectPath);
+      await _deletePhoto(page.id, objectPath);
     }
   }
 
@@ -357,6 +361,7 @@ final class PublishQueue {
       photo: photo,
     );
     if (await _repository.uploadedPhoto(pageId: pageId, objectPath: objectPath) == photo.path) return objectPath;
+    _expectSettled(objectPath);
     final Uint8List bytes;
     try {
       bytes = await _photoStore.read(photo);
@@ -373,9 +378,41 @@ final class PublishQueue {
     // The object is recorded before the upload, because an upload that does not answer in time can still arrive
     // later, and a cleanup or a revoke must know every object that may exist.
     await _repository.recordUploadIntent(pageId: pageId, objectPath: objectPath, photoPath: photo.path);
-    await _step(_publisher.uploadPhoto(objectPath, bytes));
+    final cancel = Completer<void>();
+    final upload = _publisher.uploadPhoto(objectPath, bytes, cancel: cancel.future);
+    try {
+      await _step(upload);
+    } on TimeoutException {
+      // A timeout does not stop the upload, which could then create its object after a revoke or a cleanup deleted
+      // the path (issue 13). So the queue cancels it and waits for its end before the step counts as failed. An
+      // upload that arrived anyway counts as arrived.
+      cancel.complete();
+      try {
+        await _step(upload);
+      } on TimeoutException {
+        // The upload did not end after the cancel either. Until it ends, no cleanup, revoke, or upload acts on its
+        // object, so its record stays and a later run deletes the object if it arrived.
+        _unsettled.add(objectPath);
+        upload.whenComplete(() => _unsettled.remove(objectPath)).ignore();
+        rethrow;
+      }
+    }
     await _repository.saveUploadedPhoto(pageId: pageId, objectPath: objectPath, photoPath: photo.path);
     return objectPath;
+  }
+
+  /// Fails with a failure that a retry can fix while an upload to [objectPath] that a cancel did not end is on its way.
+  void _expectSettled(String objectPath) {
+    if (_unsettled.contains(objectPath)) {
+      throw PublishException(PublishErrorKind.transient, 'An upload to $objectPath has not ended');
+    }
+  }
+
+  /// Deletes the object at [objectPath] and then its record, after every upload to it ended.
+  Future<void> _deletePhoto(String pageId, String objectPath) async {
+    _expectSettled(objectPath);
+    await _step(_publisher.deletePhoto(objectPath));
+    await _repository.removeUploadedPhoto(pageId: pageId, objectPath: objectPath);
   }
 
   /// Whether [bytes] start with the start-of-image marker of a JPEG file.
@@ -386,8 +423,7 @@ final class PublishQueue {
     // The time of the revoke, which the page keeps, so that a job that runs again writes the same page.
     await _step(_publisher.revokePage(page.id, await _pageContent(page, ownerUid), revokedAt: page.revokedAt!));
     for (final objectPath in await _repository.uploadedObjects(page.id)) {
-      await _step(_publisher.deletePhoto(objectPath));
-      await _repository.removeUploadedPhoto(pageId: page.id, objectPath: objectPath);
+      await _deletePhoto(page.id, objectPath);
     }
   }
 }

@@ -28,9 +28,18 @@ class _FakeUploadTask extends Fake implements UploadTask {
 
   final Future<TaskSnapshot> _result;
 
+  /// Whether `cancel` was called.
+  bool cancelled = false;
+
   @override
   Future<S> then<S>(FutureOr<S> Function(TaskSnapshot) onValue, {Function? onError}) =>
       _result.then(onValue, onError: onError);
+
+  @override
+  Future<bool> cancel() async {
+    cancelled = true;
+    return true;
+  }
 }
 
 void main() {
@@ -117,12 +126,35 @@ void main() {
       when(() => storage.ref(any())).thenReturn(reference);
       when(() => reference.putData(any(), any())).thenAnswer((_) => _FakeUploadTask(Future.value(_MockSnapshot())));
 
-      await publisher.uploadPhoto('clientPages/p/v/z-before.jpg', bytes);
+      await publisher.uploadPhoto('clientPages/p/v/z-before.jpg', bytes, cancel: Completer<void>().future);
 
       verify(() => storage.ref('clientPages/p/v/z-before.jpg')).called(1);
       final captured = verify(() => reference.putData(captureAny(), captureAny())).captured;
       expect(captured.first, bytes);
       expect((captured.last as SettableMetadata).contentType, 'image/jpeg');
+    });
+
+    test('cancels the upload task when the queue asks, and ends as the task ends', () async {
+      final reference = _MockReference();
+      final result = Completer<TaskSnapshot>();
+      final task = _FakeUploadTask(result.future);
+      when(() => storage.ref(any())).thenReturn(reference);
+      when(() => reference.putData(any(), any())).thenAnswer((_) => task);
+      final cancel = Completer<void>();
+
+      final upload = publisher.uploadPhoto('clientPages/p/v/z-before.jpg', Uint8List(3), cancel: cancel.future);
+      await pumpEventQueue();
+      expect(task.cancelled, isFalse);
+
+      cancel.complete();
+      await pumpEventQueue();
+      expect(task.cancelled, isTrue);
+
+      result.completeError(FirebaseException(plugin: 'firebase_storage', code: 'canceled'));
+      await expectLater(
+        upload,
+        throwsA(isA<PublishException>().having((error) => error.kind, 'kind', PublishErrorKind.transient)),
+      );
     });
 
     test('deletes a photo, and an object that does not exist is no failure', () async {

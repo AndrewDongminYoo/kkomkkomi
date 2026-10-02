@@ -515,9 +515,24 @@ class FakePublisher implements Publisher {
     pages[pageId] = page;
   }
 
+  /// Whether a cancel ends an upload that is on its way, as the Storage client does. When it is false, a cancelled
+  /// upload goes on and ends as it would have ended without the cancel.
+  bool cancelEndsUploads = true;
+
+  /// What a cancelled upload throws, as the code `canceled` of the Storage client becomes in the adapter.
+  static const canceled = PublishException(PublishErrorKind.transient, 'canceled');
+
   @override
-  Future<void> uploadPhoto(String objectPath, Uint8List bytes) async {
-    await _call('uploadPhoto', objectPath);
+  Future<void> uploadPhoto(String objectPath, Uint8List bytes, {required Future<void> cancel}) async {
+    final upload = _call('uploadPhoto', objectPath);
+    final cancelled = cancel.then((_) => calls.add('cancelUpload $objectPath'));
+    if (cancelEndsUploads) {
+      // The first to end wins, as the upload of the Storage client ends at a cancel unless it ended before.
+      final stopped = await Future.any([upload.then((_) => false), cancelled.then((_) => true)]);
+      if (stopped) throw canceled;
+    } else {
+      await upload;
+    }
     objects[objectPath] = bytes;
   }
 
