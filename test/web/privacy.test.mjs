@@ -92,11 +92,26 @@ describe("the privacy policy pages", () => {
   });
 
   test("both pages mark the same number of points for the operator", () => {
-    const count = (html, mark) => html.split(`class="todo">${mark}`).length - 1;
+    // The texts of the marked spans, with the line breaks of the formatter folded into spaces.
+    const marks = (html) =>
+      [...html.matchAll(/<span\s+class="todo"\s*>([^<]*)<\/span/g)].map(
+        (match) => match[1].replace(/\s+/g, " ").trim(),
+      );
 
-    const ko = count(read(pages.ko.file), "[운영자 확인 필요:");
-    assert.ok(ko > 0);
-    assert.equal(count(read(pages.en.file), "[Operator to confirm:"), ko);
+    const ko = marks(read(pages.ko.file));
+    const en = marks(read(pages.en.file));
+    assert.ok(ko.length > 0);
+    assert.equal(en.length, ko.length);
+    for (const mark of ko)
+      assert.ok(
+        mark.startsWith("[운영자 확인 필요: ") && mark.endsWith("]"),
+        mark,
+      );
+    for (const mark of en)
+      assert.ok(
+        mark.startsWith("[Operator to confirm: ") && mark.endsWith("]"),
+        mark,
+      );
   });
 
   test("the style sheet sets no width that a 320 px screen cannot hold, and wraps long words", () => {
