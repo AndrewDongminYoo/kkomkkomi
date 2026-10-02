@@ -8,11 +8,11 @@ Set up clients and zones once
 Take before and after photos on each visit
 • Pick the visit date, then take a before photo and an after photo of each zone.
 • Add a note to any zone.
-• See the photos from the last visit while you take new ones.
+• See the photos from the last visit before you take new ones.
 
 Send the report as a link or a PDF
 • Preview the cleaning report with your company name at the top, and share it as a PDF.
-• Share it as a link, and your client can open the report without installing an app or signing in. The client's earlier reports are on the same page.
+• Share it as a link, and your client can open the report without installing an app or signing in. A link below the report opens the client's earlier shared reports.
 • If the connection drops while a report is uploading, the upload starts again when the connection is back.
 
 Good to know
