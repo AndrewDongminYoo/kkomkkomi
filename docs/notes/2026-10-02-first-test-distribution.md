@@ -2,7 +2,8 @@
 
 This note lists what the operator does outside the repository before the first TestFlight build and the first Google Play internal testing release of version `1.0.0` build `1`.
 The brief is `docs/plans/2026-10-02-release-prep.md`.
-Nothing in this list was done by an agent: no store record, no upload, no signing with a real key, no Firebase change.
+Nothing in this list was done by an agent: no store record, no upload, no signing with a real key.
+The deploys of the rules and Hosting are the one exception, made with the operator's approval, and `CLAUDE.md` owns their state.
 
 ## Open items before an external TestFlight review
 
@@ -10,10 +11,10 @@ The TestFlight overview says: "When you add the first build of your app to a gro
 The same page allows up to 100 internal testers per app, who are App Store Connect users with access to it.
 
 1. **Account deletion (App Store Review Guideline 5.1.1(v)).** Closed by the brief `docs/plans/2026-10-02-account-deletion.md`: the company profile screen has a "delete all data" control, which deletes the published photos, reports, and client pages, the anonymous account, and the data on the phone. Pull request 19 quotes Apple's text under "Account deletion".
-2. **Photo location (issue 20).** On Android, a published photo can keep the GPS tags that the camera app wrote. iOS is not checked.
+2. **Photo location (issue 20).** Closed by pull request 23: `withoutLocation` removes the location when a photo is stored, before an upload, and before the PDF, on every platform. No device ran it. An object that a build before pull request 23 uploaded keeps its location in Storage.
 3. **Anonymous account clean-up (issue 21).** Closed: the operator turned the automatic clean-up off on 2026-10-02, and the privacy pages no longer say that an account is deleted after 30 days. Firebase documents that an account that was already scheduled for deletion when the clean-up was turned off stays scheduled (https://firebase.google.com/docs/auth/android/anonymous-auth, "Automatic clean-up").
 4. **Support contact.** `support_url.txt` names the landing page `https://kkomkkomi.web.app/`, which has no working contact: its inquiry form is a preview that sends nothing. Guideline 1.5 says: "Make sure your app and its Support URL include an easy way to contact you". Add a contact to that page, or give another support URL.
-5. **Privacy policy.** The pages at `/privacy/` and `/privacy/en/` exist only after the next Hosting deploy, which needs the operator's approval. They still hold the operator placeholders that pull request 19 lists, such as the privacy officer and the contact.
+5. **Privacy policy.** The pages at `/privacy/` and `/privacy/en/` are live since the Hosting deploy from `34d5d23`, and no placeholder of pull request 19 is left in them. Four clauses are agent defaults that a qualified person should review: the legal basis of the transfer abroad (Article 28-8(1)3 of the Personal Information Protection Act), the cleaning company as the party responsible for the people in the photos, the Firebase support URL as the contact of Google, and the effective date 2026-10-02.
 
 ## Values
 
@@ -73,7 +74,7 @@ en-US:
 ## Firebase
 
 - The Firebase macOS app is registered as `com.example.myApp` (the `BUNDLE_ID` of `macos/Runner/GoogleService-Info.plist` in the operator's checkout), and the macOS production bundle ID is now `kr.donminzzi.kkomkkomi`. macOS is not a target, so this needs no action now. Before a macOS production build, register the macOS app again and run `flutterfire configure`.
-- Hosting must be deployed before a store listing names the privacy policy URL. A deploy needs your approval.
+- Hosting serves the privacy policy URLs since the deploy from `34d5d23`, so a store listing can name them. A later deploy needs your approval again.
 
 ## Draft answers for App Privacy (App Store Connect)
 
@@ -81,13 +82,13 @@ Sources: `lib/firebase/firebase_publisher.dart` (what a link share uploads), `li
 The app sends nothing before the person taps the link share, except the anonymous sign-in at start.
 No data is used for tracking, and no data goes to an ad network or a data broker.
 
-| Data type                          | Collected                   | Linked to the user | Purpose           | Why                                                                                                                                                     |
-| ---------------------------------- | --------------------------- | ------------------ | ----------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Identifiers: User ID               | Yes                         | Yes                | App Functionality | The anonymous Firebase user ID owns each client page (`ownerUid`).                                                                                      |
-| User Content: Photos or Videos     | Yes                         | Yes                | App Functionality | A link share uploads the before and after photos of the visit.                                                                                          |
-| User Content: Other User Content   | Yes                         | Yes                | App Functionality | A link share uploads the company name, the client name, the zone names, the notes, and the visit date.                                                  |
-| Location: Precise Location         | Yes until issue 20 is fixed | Yes                | App Functionality | A photo can keep the GPS tags of the camera app (Android, checked in code). iOS is not checked.                                                         |
-| Diagnostics: Other Diagnostic Data | Yes                         | No                 | Analytics         | The Firebase Auth, Firestore, and Installations privacy manifests declare it as not linked, not tracking, for Analytics (see "Privacy manifest" below). |
+| Data type                          | Collected | Linked to the user | Purpose           | Why                                                                                                                                                     |
+| ---------------------------------- | --------- | ------------------ | ----------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Identifiers: User ID               | Yes       | Yes                | App Functionality | The anonymous Firebase user ID owns each client page (`ownerUid`).                                                                                      |
+| User Content: Photos or Videos     | Yes       | Yes                | App Functionality | A link share uploads the before and after photos of the visit.                                                                                          |
+| User Content: Other User Content   | Yes       | Yes                | App Functionality | A link share uploads the company name, the client name, the zone names, the notes, and the visit date.                                                  |
+| Location: Precise Location         | No        | -                  | -                 | The app removes the location of a photo before it stores or uploads the photo (issue 20, pull request 23), and it asks for no location permission.      |
+| Diagnostics: Other Diagnostic Data | Yes       | No                 | Analytics         | The Firebase Auth, Firestore, and Installations privacy manifests declare it as not linked, not tracking, for Analytics (see "Privacy manifest" below). |
 
 Firebase Authentication also processes the IP address and the user agent of each sign-in for security and abuse prevention.
 Apple's page says: "You need to identify all of the data you or your third-party partners collect …", and a third-party SDK is a third-party partner.
@@ -102,20 +103,20 @@ Section 10 of the privacy policy names that data as the manifests declare it (Ot
 The same sources apply.
 Data is encrypted in transit (HTTPS to Firebase).
 Deletion: the company profile screen deletes the account and all its data in the app, and the tracked privacy policy names the email of the privacy officer as the way to ask outside the app.
-The store answer is pending on two steps: the deploy of the privacy policy, which needs the operator's approval, and the operator's confirmation of the deletion path outside the app in Play Console.
-Until both are done, Google's account deletion requirement stays open; pull request 19 leaves it unresolved for an account that the app makes without an action of the person.
+The privacy policy is deployed, so the store answer is pending on one step: the operator's confirmation of the deletion path outside the app in Play Console.
+Until it is done, Google's account deletion requirement stays open; pull request 19 leaves it unresolved for an account that the app makes without an action of the person.
 
-| Data type                                  | Collected                   | Shared    | Optional                      | Purpose           |
-| ------------------------------------------ | --------------------------- | --------- | ----------------------------- | ----------------- |
-| Personal info: User IDs                    | Yes                         | See below | No: the app signs in at start | App functionality |
-| Photos and videos: Photos                  | Yes                         | See below | Yes: only on a link share     | App functionality |
-| App activity: Other user-generated content | Yes                         | See below | Yes: only on a link share     | App functionality |
-| Location: Precise location                 | Yes until issue 20 is fixed | See below | Yes: only on a link share     | App functionality |
+| Data type                                  | Collected              | Shared    | Optional                      | Purpose           |
+| ------------------------------------------ | ---------------------- | --------- | ----------------------------- | ----------------- |
+| Personal info: User IDs                    | Yes                    | See below | No: the app signs in at start | App functionality |
+| Photos and videos: Photos                  | Yes                    | See below | Yes: only on a link share     | App functionality |
+| App activity: Other user-generated content | Yes                    | See below | Yes: only on a link share     | App functionality |
+| Location: Precise location                 | No (issue 20 is fixed) | -         | -                             | -                 |
 
 Google's guidance (https://support.google.com/googleplay/android-developer/answer/10787469, read on 2026-10-02) exempts from "sharing" a transfer "to a 'service provider' that processes it on behalf of the developer", which covers Firebase, and a transfer "based on a specific user-initiated action, where the user reasonably expects the data to be shared".
 A report link is sent by the person, and the app tells the person at the first link of a client that anyone with the link can open the reports.
 Anyone with the link can also read the user ID, because the page document holds it as `ownerUid` (`firestore.rules`).
-So "Shared: No" is defensible for the four rows, and the decision is yours.
+So "Shared: No" is defensible for the three rows that are collected, and the decision is yours.
 The same page says to declare IP addresses by their use, "where developers use IP addresses as a means to determine location", which the app does not do.
 
 ## What the release builds checked
