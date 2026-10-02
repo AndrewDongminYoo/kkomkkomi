@@ -30,7 +30,6 @@
 		B55CDB8C2EECA409009268AC /* AppIcon-stg.icon in Resources */ = {isa = PBXBuildFile; fileRef = B55CDB8A2EECA409009268AC /* AppIcon-stg.icon */; };
 		B55CDB8D2EECA409009268AC /* AppIcon-dev.icon in Resources */ = {isa = PBXBuildFile; fileRef = B55CDB892EECA409009268AC /* AppIcon-dev.icon */; };
 		B55CDB8E2EECA409009268AC /* AppIcon.icon in Resources */ = {isa = PBXBuildFile; fileRef = B55CDB882EECA409009268AC /* AppIcon.icon */; };
-		D5734074A2CE84D291972E74 /* GoogleService-Info.plist in Resources */ = {isa = PBXBuildFile; fileRef = 80CD120BC8838861B246E6FD /* GoogleService-Info.plist */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -227,6 +226,7 @@
 				33CC10E92044A3C60003C045 /* Sources */,
 				33CC10EA2044A3C60003C045 /* Frameworks */,
 				33CC10EB2044A3C60003C045 /* Resources */,
+				64048305CD36BC812F996C5F /* Copy Firebase Config */,
 				33CC110E2044A8840003C045 /* Bundle Framework */,
 				3399D490228B24CF009A79C7 /* ShellScript */,
 			);
@@ -307,7 +307,6 @@
 				B55CDB8D2EECA409009268AC /* AppIcon-dev.icon in Resources */,
 				B55CDB8E2EECA409009268AC /* AppIcon.icon in Resources */,
 				33CC10F62044A3C60003C045 /* MainMenu.xib in Resources */,
-				D5734074A2CE84D291972E74 /* GoogleService-Info.plist in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -351,6 +350,21 @@
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/sh;
 			shellScript = "\"$FLUTTER_ROOT\"/packages/flutter_tools/bin/macos_assemble.sh && touch Flutter/ephemeral/tripwire";
+		};
+		64048305CD36BC812F996C5F /* Copy Firebase Config */ = {
+			isa = PBXShellScriptBuildPhase;
+			alwaysOutOfDate = 1;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			inputPaths = (
+			);
+			name = "Copy Firebase Config";
+			outputPaths = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/sh;
+			shellScript = "# GoogleService-Info.plist is not in the repository, and only the production\n# flavor starts Firebase. A production build copies the file into the bundle and\n# stops without it. A development or staging build leaves it out.\nplist=\"${PROJECT_DIR}/Runner/GoogleService-Info.plist\"\ncase \"${CONFIGURATION}\" in\n*-production)\n  if [ ! -f \"${plist}\" ]; then\n    echo \"error: ${plist} is missing. Run flutterfire configure before a production build.\"\n    exit 1\n  fi\n  cp \"${plist}\" \"${TARGET_BUILD_DIR}/${UNLOCALIZED_RESOURCES_FOLDER_PATH}/GoogleService-Info.plist\"\n  ;;\nesac\n";
 		};
 /* End PBXShellScriptBuildPhase section */
 

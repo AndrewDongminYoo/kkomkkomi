@@ -29,11 +29,12 @@ The "Phase B" section of `docs/specs/2026-10-01-m1-local-first-design.md` owns t
 
 Firebase is for the production flavor only.
 Android skips the google-services task for the development and staging variants, and only the production entry point may start Firebase.
+iOS and macOS do not list `GoogleService-Info.plist` as a resource of the Runner target. Its "Copy Firebase Config" build phase copies the file into the bundle for a production configuration, stops that build when the file is missing, and leaves the file out for the development and staging configurations.
 `lib/main_production.dart` gives `bootstrap()` the `FirebaseIdentity` and `FirebasePublisher` adapters, and the development and staging entry points give it `UnavailableIdentity` and `UnavailablePublisher`.
 `lib/firebase/` is the one directory under `lib/` that may import a FlutterFire package, which is a `firebase_*` or a `cloud_*` package, and `lib/main_production.dart` is the one file outside that directory that may import it.
 `test/firebase/boundary_test.dart` fails for an import that breaks one of the two rules, and for a tracked file under `lib/` that names the generated options file.
 `.gitignore` keeps the generated FlutterFire files out of the repository, so tracked code must not import `lib/firebase_options.dart`.
-A fresh clone needs `flutterfire configure` before a production build for Android, iOS, or macOS.
+A fresh clone needs `flutterfire configure` before a production build for Android, iOS, or macOS, and before no other build.
 After `flutterfire configure`, run `dart format lib/firebase_options.dart`, because the local format check reads that file and CI never sees it.
 
 The deployed security rules are not the tracked ones.
@@ -108,12 +109,13 @@ When that directory is missing, `flutter analyze` reports `AppLocalizations` as 
 
 ## CI
 
-`.github/workflows/main.yaml` calls the Very Good reusable workflows for the title check, the Flutter gate, and the spell check, and it adds an Android build job and a Windows build job.
+`.github/workflows/main.yaml` calls the Very Good reusable workflows for the title check, the Flutter gate, and the spell check, and it adds an Android build job, an iOS build job, and a Windows build job.
 
 - Coverage must be 100% for `lib`, and CI counts only the files that a test imports. `merry run check` does not measure coverage, so run `merry run coverage` before a push.
 - The pull request title must be a conventional commit.
 - cspell checks every Markdown file and the pull request title against `cspell.json`. Project words go in `words` there, and general vocabulary goes in `.cspell/custom-dictionary.txt`.
 - The `android` job builds the development debug APK. It cannot build a production variant, because those read `google-services.json`, which the repository does not hold, so no CI job checks the Firebase wiring or the release signing.
+- The `ios` job builds the development debug app without signing on `macos-latest`, from a checkout without `GoogleService-Info.plist`. No CI job builds the production flavor of iOS, and no CI job builds macOS.
 - The `windows` job is the only verification of the Windows build. Do not add a local Windows build script.
 - The `web` job runs `test/web/` in Node, as `merry run web` does.
 - The `rules` job runs `test/rules/` against the Firestore and Storage emulators with the project ID `demo-kkomkkomi`, as `merry run rules` does. `merry run check` leaves it out, because the emulators need Java 21. Firebase documents that a project ID with the `demo-` prefix reaches emulators only (https://firebase.google.com/docs/emulator-suite/connect_firestore, "Choose a Firebase project"), so never run the rules tests under another project ID.
