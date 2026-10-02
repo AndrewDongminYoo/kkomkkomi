@@ -15,6 +15,7 @@ import 'package:kkomkkomi/application/publish_job.dart';
 import 'package:kkomkkomi/application/publish_repository.dart';
 import 'package:kkomkkomi/application/publisher.dart';
 import 'package:kkomkkomi/application/visit_repository.dart';
+import 'package:kkomkkomi/application/without_location.dart';
 import 'package:kkomkkomi/domain/domain.dart';
 
 /// Starts a timer that calls [callback] once after [delay], as `Timer.new` does.
@@ -373,13 +374,22 @@ final class PublishQueue {
       if (current != photo) throw const PublishException(PublishErrorKind.transient, 'The photo was replaced');
       throw const _Stop(PublishFailure.photoMissing);
     }
-    if (!_isJpeg(bytes)) throw const _Stop(PublishFailure.photoNotJpeg);
+    // The result of `withoutLocation` is never longer than the file, so a file within the limit stays within it.
     if (bytes.length > maxPhotoBytes) throw const _Stop(PublishFailure.photoTooLarge);
+    final Uint8List clean;
+    try {
+      // The photo store removes the location of a new photo. A photo that it stored before that change still holds
+      // it, so the queue removes it again before the upload (issue 20).
+      clean = withoutLocation(bytes);
+    } on FormatException catch (error) {
+      log('A photo of a publish job is no well-formed JPEG: $error');
+      throw const _Stop(PublishFailure.photoNotJpeg);
+    }
     // The object is recorded before the upload, because an upload that does not answer in time can still arrive
     // later, and a cleanup or a revoke must know every object that may exist.
     await _repository.recordUploadIntent(pageId: pageId, objectPath: objectPath, photoPath: photo.path);
     final cancel = Completer<void>();
-    final upload = _publisher.uploadPhoto(objectPath, bytes, cancel: cancel.future);
+    final upload = _publisher.uploadPhoto(objectPath, clean, cancel: cancel.future);
     try {
       await _step(upload);
     } on TimeoutException {
@@ -414,9 +424,6 @@ final class PublishQueue {
     await _step(_publisher.deletePhoto(objectPath));
     await _repository.removeUploadedPhoto(pageId: pageId, objectPath: objectPath);
   }
-
-  /// Whether [bytes] start with the start-of-image marker of a JPEG file.
-  static bool _isJpeg(Uint8List bytes) => bytes.length >= 3 && bytes[0] == 0xff && bytes[1] == 0xd8 && bytes[2] == 0xff;
 
   Future<void> _revoke(PublishJob job, String ownerUid) async {
     final page = (await _repository.pageById(job.pageId))!;

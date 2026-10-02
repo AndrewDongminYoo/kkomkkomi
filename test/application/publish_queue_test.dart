@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:io';
 import 'dart:math';
 import 'dart:typed_data';
 
@@ -332,7 +333,8 @@ void main() {
         publisher.pages[page.id],
         PublishedPage(ownerUid: 'owner-1', companyName: '꼼꼬미 청소', clientName: '한빛 상가', createdAt: start),
       );
-      expect(publisher.objects[before], fixturePhotoBytes());
+      // The fixture holds an Exif and an IPTC segment, which the queue removes before the upload.
+      expect(publisher.objects[before], withoutLocation(fixturePhotoBytes()));
       expect(photoStore.readPhotos, [beforePhoto, afterPhoto]);
       // The zone without a photo and without a note is left out, and a note is published without the space around it.
       expect(
@@ -627,6 +629,13 @@ void main() {
         () => photoStore.contents[PhotoRef('photos/visit-2/before.jpg')] = Uint8List.fromList([0x89, 0x50, 0x4e]),
       ),
       (
+        'a photo file that is a truncated JPEG',
+        PublishFailure.photoNotJpeg,
+        () => photoStore.contents[PhotoRef('photos/visit-2/before.jpg')] = File(
+          'test/fixtures/photo_truncated.jpg',
+        ).readAsBytesSync(),
+      ),
+      (
         'a photo file that is too large',
         PublishFailure.photoTooLarge,
         () =>
@@ -656,7 +665,8 @@ void main() {
         expect(publisher.objects.keys, [oldObject]);
 
         final retaken = PhotoRef('photos/visit-2/retaken.jpg');
-        final retakenBytes = Uint8List.fromList([0xff, 0xd8, 0xff, 0x01]);
+        // A JPEG without metadata, which the queue uploads as it is.
+        final retakenBytes = File('test/fixtures/photo_no_exif.jpg').readAsBytesSync();
         photoStore.contents[retaken] = retakenBytes;
         await repositories.visits.save(
           visit2.withRecord(visit2.zoneRecords.single.withPhoto(PhotoSlot.before, retaken)),
@@ -780,8 +790,24 @@ void main() {
       expect((await jobOf(job)).status, PublishJobStatus.done);
     });
 
+    test('a photo that holds a location: the upload holds the photo without it', () async {
+      final withGps = gpsPhotoBytes();
+      expect(holdsMetadataText(withGps), isTrue);
+      photoStore.contents[PhotoRef('photos/visit-2/before.jpg')] = withGps;
+      final queue = newQueue();
+
+      final job = await queue.publishVisit('visit-2');
+      await settle();
+
+      expect((await jobOf(job)).status, PublishJobStatus.done);
+      final uploaded = publisher.objects.values.single;
+      expect(holdsMetadataText(uploaded), isFalse);
+      expect(uploaded, withoutLocation(withGps));
+    });
+
     test('a photo of exactly the size limit is uploaded', () async {
-      final photo = Uint8List(maxPhotoBytes)..setAll(0, [0xff, 0xd8, 0xff]);
+      final photo = jpegOfLength(maxPhotoBytes);
+      expect(photo.length, maxPhotoBytes);
       photoStore.contents[PhotoRef('photos/visit-2/before.jpg')] = photo;
       final queue = newQueue();
 
@@ -1163,4 +1189,19 @@ void main() {
       expect(await repositories.publishing.pendingJobs(), isEmpty);
     });
   });
+}
+
+/// A well-formed JPEG of [length] bytes: the fixture without metadata, filled up with comments.
+Uint8List jpegOfLength(int length) {
+  final clean = File('test/fixtures/photo_no_exif.jpg').readAsBytesSync();
+  final filler = <int>[];
+  var missing = length - clean.length;
+  while (missing > 0) {
+    // A segment is at least 4 and at most 65537 bytes long, so no rest below 4 bytes may stay.
+    var size = min(missing, 0xffff + 2);
+    if (missing - size case final rest when rest > 0 && rest < 4) size -= 4;
+    filler.addAll([0xff, 0xfe, (size - 2) >> 8, (size - 2) & 0xff, ...List.filled(size - 4, 0x20)]);
+    missing -= size;
+  }
+  return Uint8List.fromList([...clean.sublist(0, 2), ...filler, ...clean.sublist(2)]);
 }

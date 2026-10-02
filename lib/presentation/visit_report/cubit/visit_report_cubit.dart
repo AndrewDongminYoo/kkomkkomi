@@ -72,7 +72,9 @@ class VisitReportCubit extends Cubit<VisitReportState> {
     try {
       final photos = <PhotoRef, Uint8List>{};
       for (final photo in document.photos) {
-        photos[photo] = await _photoStore.read(photo);
+        // The PDF holds the JPEG file as it is, so a photo that the store kept before it removed the location gets
+        // it removed here (issue 20).
+        photos[photo] = withoutLocation(await _photoStore.read(photo));
       }
       final bytes = await renderReportPdf(document, labels: labels, font: await _reportFont.load(), photos: photos);
       await _reportShare.sharePdf(
@@ -85,9 +87,10 @@ class VisitReportCubit extends Cubit<VisitReportState> {
       );
       _show(state.copyWith(status: VisitReportStatus.ready));
     } on Object catch (error, stackTrace) {
-      // The image decoder fails with an `Error` for a file that is no image, and a missing file fails with an
-      // `Exception`. Both must end the share, because the screen takes no touch while a share is on its way, so
-      // the clause catches every object.
+      // A missing file, a file that is no well-formed JPEG, and a JPEG that the renderer cannot read fail with an
+      // `Exception`. The renderer also holds code that throws objects that are none, such as the `String` of
+      // `PdfJpegInfo` in `pdf` 3.13.1. Each must end the share, because the screen takes no touch while a share is on
+      // its way, so the clause catches every object.
       _report(error, stackTrace);
       _show(state.copyWith(status: VisitReportStatus.shareFailed));
     }

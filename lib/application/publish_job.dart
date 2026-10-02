@@ -37,7 +37,7 @@ enum PublishFailure {
   /// The file of a photo of the visit cannot be read.
   photoMissing,
 
-  /// A photo of the visit is not a JPEG file.
+  /// A photo of the visit is not a well-formed JPEG file.
   photoNotJpeg,
 
   /// A photo of the visit is larger than [maxPhotoBytes].
