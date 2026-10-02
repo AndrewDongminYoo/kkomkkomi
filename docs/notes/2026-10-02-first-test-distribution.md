@@ -9,9 +9,9 @@ Nothing in this list was done by an agent: no store record, no upload, no signin
 The TestFlight overview says: "When you add the first build of your app to a group, the build gets sent to App Review …" (https://developer.apple.com/help/app-store-connect/test-a-beta-version/testflight-overview, read on 2026-10-02), and these items can block that review.
 The same page allows up to 100 internal testers per app, who are App Store Connect users with access to it.
 
-1. **Account deletion (App Store Review Guideline 5.1.1(v)).** The app signs in anonymously at start, and Apple asks for an in-app way to delete automatically created ("guest") accounts and their data. The app has none. Pull request 19 quotes Apple's text under "Account deletion".
+1. **Account deletion (App Store Review Guideline 5.1.1(v)).** Closed by the brief `docs/plans/2026-10-02-account-deletion.md`: the company profile screen has a "delete all data" control, which deletes the published photos, reports, and client pages, the anonymous account, and the data on the phone. Pull request 19 quotes Apple's text under "Account deletion".
 2. **Photo location (issue 20).** On Android, a published photo can keep the GPS tags that the camera app wrote. iOS is not checked.
-3. **Anonymous account clean-up (issue 21).** Firebase can delete an anonymous account after 30 days. A new sign-in then gets a new user ID, and the rules refuse every publish to the existing pages of that phone. When the SDK on the phone drops the deleted account is not verified.
+3. **Anonymous account clean-up (issue 21).** Closed: the operator turned the automatic clean-up off on 2026-10-02, and the privacy pages no longer say that an account is deleted after 30 days. Firebase documents that an account that was already scheduled for deletion when the clean-up was turned off stays scheduled (https://firebase.google.com/docs/auth/android/anonymous-auth, "Automatic clean-up").
 4. **Support contact.** `support_url.txt` names the landing page `https://kkomkkomi.web.app/`, which has no working contact: its inquiry form is a preview that sends nothing. Guideline 1.5 says: "Make sure your app and its Support URL include an easy way to contact you". Add a contact to that page, or give another support URL.
 5. **Privacy policy.** The pages at `/privacy/` and `/privacy/en/` exist only after the next Hosting deploy, which needs the operator's approval. They still hold the operator placeholders that pull request 19 lists, such as the privacy officer and the contact.
 
@@ -26,8 +26,7 @@ The same page allows up to 100 internal testers per app, who are App Store Conne
 | Privacy policy                 | `https://kkomkkomi.web.app/privacy/` (Korean), `https://kkomkkomi.web.app/privacy/en/` (English) |
 | App Store categories           | Business, then Productivity (`fastlane/metadata/ios/*_category.txt`)                             |
 
-`DEVELOPMENT_TEAM` is not set in `ios/Runner.xcodeproj`.
-Set it in Xcode (Runner target, Signing & Capabilities) only after you confirm the team ID.
+`DEVELOPMENT_TEAM` is `393JTTV68D` in each of the nine build configurations of the Runner target in `ios/Runner.xcodeproj` (operator, 2026-10-02), so a signed build needs no manual team choice.
 
 ## Apple
 
@@ -95,14 +94,16 @@ Apple's page says: "You need to identify all of the data you or your third-party
 For the IP address it says: "Declare the relevant data types based on how you use IP address, such as precise location, coarse location, device ID, or diagnostics."
 The definitions are on https://developer.apple.com/app-store/app-privacy-details/ (read on 2026-10-02).
 
-The Diagnostics row and the privacy policy disagree: the policy says that the app uses no analytics tool and lists no diagnostic data, and the Firebase manifests declare Other Diagnostic Data for Analytics.
-Decide whether the App Privacy answer declares it, and whether the policy names the diagnostic data that the Firebase SDKs send, such as the Firebase user agent.
+The Diagnostics row is declared, as the Firebase manifests declare it (operator decision, 2026-10-02).
+Section 10 of the privacy policy names that data as the manifests declare it (Other Diagnostic Data, not linked to the user, not for tracking, for Analytics, in the Auth, Firestore, and Installations manifests of firebase-ios-sdk 12.19.0), and gives the example that Google's list names for Auth and Firestore: the Firebase user agent (device, OS version, SDK versions).
 
 ## Draft answers for Data safety (Play Console)
 
 The same sources apply.
 Data is encrypted in transit (HTTPS to Firebase).
-The app gives no in-app way to request deletion, and section 11 of the privacy policy still holds the operator placeholder for the contact. Fill it before you answer the deletion question with that request method. Pull request 19 leaves Google's account deletion requirement unresolved for an account that the app makes without an action of the person.
+Deletion: the company profile screen deletes the account and all its data in the app, and the tracked privacy policy names the email of the privacy officer as the way to ask outside the app.
+The store answer is pending on two steps: the deploy of the privacy policy, which needs the operator's approval, and the operator's confirmation of the deletion path outside the app in Play Console.
+Until both are done, Google's account deletion requirement stays open; pull request 19 leaves it unresolved for an account that the app makes without an action of the person.
 
 | Data type                                  | Collected                   | Shared    | Optional                      | Purpose           |
 | ------------------------------------------ | --------------------------- | --------- | ----------------------------- | ----------------- |
@@ -144,7 +145,7 @@ The target SDK meets the Google Play minimum for a new app.
 
 ### R8 rules
 
-`android/app/build.gradle.kts` names `proguard-rules.pro` for the release build, and `android/app/proguard-rules.pro` does not exist.
-The Gradle plugin skips the missing file: the R8 configuration of the release build (`build/app/outputs/mapping/productionRelease/configuration.txt`) lists the rules of the Flutter tool, of the Android default file, and of each library, and no `proguard-rules.pro`.
+`android/app/build.gradle.kts` names `proguard-rules.pro` for the release build. The release build of pull request 22 ran before the file existed, and the Gradle plugin skipped it: the R8 configuration of that build (`build/app/outputs/mapping/productionRelease/configuration.txt`) listed the rules of the Flutter tool, of the Android default file, and of each library.
+`android/app/proguard-rules.pro` now exists with a comment and no rule, and it names the consumer rules that R8 already applies.
 R8 ran with the consumer rules of the plugins and the Firebase SDKs, and the bundle built.
 Whether the minified app runs was not checked: no device and no emulator ran it. Open the first internal testing build on a phone before you invite testers.

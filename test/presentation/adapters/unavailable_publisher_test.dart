@@ -31,6 +31,8 @@ void main() {
       );
       await expectLater(publisher.revokePage('p', page, revokedAt: DateTime.utc(2026)), refused);
       await expectLater(publisher.deletePhoto('o'), refused);
+      await expectLater(publisher.deleteReport(pageId: 'p', visitId: 'v'), refused);
+      await expectLater(publisher.deletePage('p'), refused);
     });
   });
 }

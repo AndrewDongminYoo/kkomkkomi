@@ -175,6 +175,31 @@ void main() {
       );
     });
 
+    test('deletes a report and a page by their paths', () async {
+      final report = documents['clientPages/page-1/reports/visit-1'] = _MockDocument();
+      final pageDocument = documents['clientPages/page-1'] = _MockDocument();
+      when(() => firestore.doc(any())).thenAnswer((invocation) => documents[invocation.positionalArguments.single]!);
+      when(report.delete).thenAnswer((_) async {});
+      when(pageDocument.delete).thenAnswer((_) async {});
+
+      await publisher.deleteReport(pageId: 'page-1', visitId: 'visit-1');
+      verify(report.delete).called(1);
+      verifyNever(pageDocument.delete);
+
+      await publisher.deletePage('page-1');
+      verify(pageDocument.delete).called(1);
+    });
+
+    test('turns a refused delete of a report or a page into a failure that a retry cannot fix', () async {
+      final document = _MockDocument();
+      when(() => firestore.doc(any())).thenReturn(document);
+      when(document.delete).thenThrow(FirebaseException(plugin: 'cloud_firestore', code: 'permission-denied'));
+      final refused = throwsA(isA<PublishException>().having((error) => error.kind, 'kind', PublishErrorKind.refused));
+
+      await expectLater(publisher.deleteReport(pageId: 'page-1', visitId: 'visit-1'), refused);
+      await expectLater(publisher.deletePage('page-1'), refused);
+    });
+
     test('turns a failure of Firebase into a publish exception that says whether a retry can fix it', () async {
       final document = _MockDocument();
       when(() => firestore.doc(any())).thenReturn(document);

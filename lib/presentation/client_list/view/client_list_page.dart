@@ -45,7 +45,12 @@ class ClientListView extends StatelessWidget {
           IconButton(
             tooltip: l10n.companyProfileTitle,
             icon: const Icon(Icons.business_outlined),
-            onPressed: () => Navigator.of(context).push(CompanyProfilePage.route()),
+            onPressed: () async {
+              final cubit = context.read<ClientListCubit>();
+              await Navigator.of(context).push(CompanyProfilePage.route());
+              // The profile screen can delete all data, which empties this list.
+              await cubit.load();
+            },
           ),
         ],
       ),

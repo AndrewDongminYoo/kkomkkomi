@@ -1,5 +1,6 @@
 import 'package:kkomkkomi/application/client_repository.dart';
 import 'package:kkomkkomi/application/company_profile_repository.dart';
+import 'package:kkomkkomi/application/local_data_repository.dart';
 import 'package:kkomkkomi/application/open_capture.dart';
 import 'package:kkomkkomi/application/publish_repository.dart';
 import 'package:kkomkkomi/application/visit_repository.dart';
@@ -12,6 +13,7 @@ final class Repositories {
     required this.companyProfile,
     required this.publishing,
     required this.openCaptures,
+    required this.localData,
   });
 
   final ClientRepository clients;
@@ -23,4 +25,7 @@ final class Repositories {
 
   /// The capture that has the camera open, which the visit screen writes and the start of the app reads.
   final OpenCaptureRepository openCaptures;
+
+  /// The whole database, which the deletion of all data erases.
+  final LocalDataRepository localData;
 }

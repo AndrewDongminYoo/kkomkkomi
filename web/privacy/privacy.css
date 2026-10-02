@@ -8,8 +8,6 @@
   --ink-2: #4b5870;
   --teal: #0f7f7a;
   --teal-ink: #0a5e5a;
-  --mark-bg: #fff4d6;
-  --mark-ink: #6b4a00;
   --font-body:
     -apple-system, "Apple SD Gothic Neo", "Noto Sans KR", "Malgun Gothic",
     system-ui, sans-serif;
@@ -25,8 +23,6 @@
     --ink-2: #b6bfd0;
     --teal: #3fb8b1;
     --teal-ink: #6fd3cc;
-    --mark-bg: #3a3218;
-    --mark-ink: #f5d98a;
   }
 }
 
@@ -104,11 +100,13 @@ h3 {
 
 p,
 ul,
+ol,
 dl {
   margin: 0.5rem 0;
 }
 
-ul {
+ul,
+ol {
   padding-left: 1.25rem;
 }
 
@@ -138,15 +136,6 @@ a:focus-visible {
 
 code {
   font-size: 0.9em;
-}
-
-/* What the operator must confirm before the page goes live. */
-.todo {
-  background: var(--mark-bg);
-  color: var(--mark-ink);
-  border-radius: 4px;
-  padding: 0 0.25rem;
-  font-weight: 600;
 }
 
 .lang {

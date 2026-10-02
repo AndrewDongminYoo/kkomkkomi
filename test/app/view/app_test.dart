@@ -148,6 +148,29 @@ void main() {
       expect(tester.element(find.byType(ClientListPage)).read<PublishQueue>(), same(publishQueue));
     });
 
+    testWidgets('provides one deletion of all data over its stores, for the life of the app', (tester) async {
+      final repositories = mockRepositories();
+      final publishQueue = publishQueueOf(repositories);
+      final photoStore = FakePhotoStore();
+      final localData = repositories.localData as FakeLocalDataRepository;
+      final app = App(
+        repositories: repositories,
+        identity: FakeIdentity(),
+        publishQueue: publishQueue,
+        photoStore: photoStore,
+      );
+
+      await tester.pumpWidget(app);
+      final deletion = tester.element(find.byType(ClientListPage)).read<DeleteAllData>();
+      await tester.pumpWidget(app);
+      expect(tester.element(find.byType(ClientListPage)).read<DeleteAllData>(), same(deletion));
+
+      // The queue of the app has no backend, so the deletion reaches the stores of the device only.
+      await tester.runAsync(deletion.call);
+      expect(localData.erasures, 1);
+      expect(photoStore.deletionsOfAll, 1);
+    });
+
     testWidgets('provides the camera and the photo store that it is given', (tester) async {
       final repositories = mockRepositories();
       final photoCapture = FakePhotoCapture();
@@ -215,6 +238,7 @@ void main() {
           companyProfile: mocks.companyProfile,
           publishing: mocks.publishing,
           openCaptures: FakeOpenCaptureRepository(),
+          localData: FakeLocalDataRepository(),
         );
         await tester.pumpWidget(
           App(

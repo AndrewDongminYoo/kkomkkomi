@@ -46,6 +46,49 @@ class FakeIdentity implements Identity {
     if (failure case final failure?) Error.throwWithStackTrace(failure, StackTrace.current);
     return userId;
   }
+
+  /// What the next deletions of the account throw, in order. A null lets that deletion succeed.
+  final deleteFailures = <Object?>[];
+
+  /// How many times the deletion of the account was asked for.
+  int deletions = 0;
+
+  /// A deletion of the account waits for this completer while it is set.
+  Completer<void>? deleteGate;
+
+  /// Deletes the account: a later call of [currentUserId] gives null, as the device then holds no account.
+  @override
+  Future<void> deleteAccount() async {
+    deletions++;
+    await deleteGate?.future;
+    if (deleteFailures.isNotEmpty) {
+      if (deleteFailures.removeAt(0) case final failure?) Error.throwWithStackTrace(failure, StackTrace.current);
+    }
+    userId = null;
+  }
+}
+
+/// Keeps a flag of whether the database was erased, and can fail.
+class FakeLocalDataRepository implements LocalDataRepository {
+  /// How many times the database was erased.
+  int erasures = 0;
+
+  /// The exception that an erase throws while it is set.
+  Exception? failure;
+
+  /// Runs at each erase, before it succeeds or fails, so that a test can see what happened before the erase.
+  void Function()? onErase;
+
+  /// An erase waits for this completer while it is set, so that a test can act while an erase is on its way.
+  Completer<void>? gate;
+
+  @override
+  Future<void> eraseAll() async {
+    await gate?.future;
+    onErase?.call();
+    if (failure case final failure?) throw failure;
+    erasures++;
+  }
 }
 
 /// Keeps the clients and their zones in memory, for a widget test that follows a change through the screens.
@@ -274,6 +317,19 @@ class FakePhotoStore implements PhotoStore {
     sources.remove(photo);
   }
 
+  /// How many times every photo was deleted.
+  int deletionsOfAll = 0;
+
+  /// The exception that a deletion of every photo throws while it is set.
+  Exception? deleteAllFailure;
+
+  @override
+  Future<void> deleteAll() async {
+    if (deleteAllFailure case final failure?) throw failure;
+    deletionsOfAll++;
+    sources.clear();
+  }
+
   @override
   Future<Uint8List> read(PhotoRef photo) async {
     if (readFailure case final failure?) Error.throwWithStackTrace(failure, StackTrace.current);
@@ -377,7 +433,7 @@ class FakeLinkShare implements LinkShare {
 /// A widget test runs in fake time, where a database does not answer, so a screen test that runs the publish queue
 /// uses this store. A revoke is not implemented, because no screen revokes a page.
 class FakePublishRepository implements PublishRepository {
-  final pages = <String, ClientPage>{};
+  final pagesById = <String, ClientPage>{};
   final jobs = <String, PublishJob>{};
   final _uploads = <String, ({String photoPath, bool arrived})>{};
 
@@ -391,17 +447,23 @@ class FakePublishRepository implements PublishRepository {
   @override
   Future<ClientPage?> openPageOf(String clientId, {ClientPage Function()? create}) async {
     _throwFailure();
-    for (final page in pages.values) {
+    for (final page in pagesById.values) {
       if (page.clientId == clientId && !page.isRevoked) return page;
     }
     if (create == null) return null;
     final page = create();
-    pages[page.id] = page;
+    pagesById[page.id] = page;
     return page;
   }
 
   @override
-  Future<ClientPage?> pageById(String id) async => pages[id];
+  Future<ClientPage?> pageById(String id) async => pagesById[id];
+
+  @override
+  Future<List<ClientPage>> pages() async {
+    _throwFailure();
+    return pagesById.values.toList()..sort((a, b) => a.createdAt.compareTo(b.createdAt));
+  }
 
   /// An enqueue stores its job and then waits for this completer while it is set, so that a test can run the job
   /// before the request returns.
@@ -456,6 +518,14 @@ class FakePublishRepository implements PublishRepository {
   ]..sort((a, b) => a.createdAt.compareTo(b.createdAt));
 
   @override
+  Future<void> stopPendingJobs(PublishFailure reason) async {
+    _throwFailure();
+    for (final job in [...jobs.values]) {
+      if (job.status == PublishJobStatus.pending) jobs[job.id] = job.fail(reason);
+    }
+  }
+
+  @override
   Future<List<PublishJob>> jobsOfPage(String pageId) async => [
     for (final job in jobs.values)
       if (job.pageId == pageId) job,
@@ -508,9 +578,21 @@ class FakePublishRepository implements PublishRepository {
       if (path.startsWith('clientPages/$pageId/')) path,
   ]..sort();
 
+  /// The exception that a removal of a record throws while it is set.
+  Exception? removeFailure;
+
   @override
   Future<void> removeUploadedPhoto({required String pageId, required String objectPath}) async {
+    if (removeFailure case final failure?) throw failure;
     _uploads.remove(objectPath);
+  }
+
+  @override
+  Future<void> forgetArrivedUploads() async {
+    _throwFailure();
+    for (final path in [..._uploads.keys]) {
+      _uploads[path] = (photoPath: _uploads[path]!.photoPath, arrived: false);
+    }
   }
 }
 
@@ -652,6 +734,19 @@ class FakePublisher implements Publisher {
   Future<void> deletePhoto(String objectPath) async {
     await _call('deletePhoto', objectPath);
     objects.remove(objectPath);
+  }
+
+  @override
+  Future<void> deleteReport({required String pageId, required String visitId}) async {
+    await _call('deleteReport', '$pageId/$visitId');
+    reports.remove('$pageId/$visitId');
+  }
+
+  @override
+  Future<void> deletePage(String pageId) async {
+    await _call('deletePage', pageId);
+    pages.remove(pageId);
+    revokedPages.remove(pageId);
   }
 }
 

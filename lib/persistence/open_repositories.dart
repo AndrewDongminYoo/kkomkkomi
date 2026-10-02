@@ -2,6 +2,7 @@ import 'package:kkomkkomi/application/application.dart';
 import 'package:kkomkkomi/persistence/schema.dart';
 import 'package:kkomkkomi/persistence/sqlite_client_repository.dart';
 import 'package:kkomkkomi/persistence/sqlite_company_profile_repository.dart';
+import 'package:kkomkkomi/persistence/sqlite_local_data_repository.dart';
 import 'package:kkomkkomi/persistence/sqlite_open_capture_repository.dart';
 import 'package:kkomkkomi/persistence/sqlite_publish_repository.dart';
 import 'package:kkomkkomi/persistence/sqlite_visit_repository.dart';
@@ -32,6 +33,7 @@ Repositories sqliteRepositories(Database database) => Repositories(
   companyProfile: SqliteCompanyProfileRepository(database),
   publishing: SqlitePublishRepository(database),
   openCaptures: SqliteOpenCaptureRepository(database),
+  localData: SqliteLocalDataRepository(database),
 );
 
 /// Opens the database of this device with the default `sqflite` factory and returns its repositories.

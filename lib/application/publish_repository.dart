@@ -12,6 +12,9 @@ abstract interface class PublishRepository {
   /// The page with [id], or null when none exists.
   Future<ClientPage?> pageById(String id);
 
+  /// Every page that the app made, open and revoked, oldest first.
+  Future<List<ClientPage>> pages();
+
   /// Adds [job] and returns it.
   ///
   /// When a pending publish job for the same page and visit exists, adds nothing and returns that job after
@@ -42,6 +45,10 @@ abstract interface class PublishRepository {
   /// The pending jobs, oldest first.
   Future<List<PublishJob>> pendingJobs();
 
+  /// Stops every pending job, publish and revoke, with [reason], in one transaction. The jobs keep their rows, so
+  /// [jobsOfPage] still lists them.
+  Future<void> stopPendingJobs(PublishFailure reason);
+
   /// Every job of the page with [pageId], oldest first.
   Future<List<PublishJob>> jobsOfPage(String pageId);
 
@@ -67,4 +74,10 @@ abstract interface class PublishRepository {
 
   /// Records that the object at [objectPath] under the page with [pageId] is deleted.
   Future<void> removeUploadedPhoto({required String pageId, required String objectPath});
+
+  /// Marks every upload that arrived as one that may not have arrived, in one transaction, and keeps every record.
+  ///
+  /// [uploadedPhoto] then gives null for each object, so the next publish uploads each photo again, and
+  /// [uploadedObjects] still lists every object that may exist.
+  Future<void> forgetArrivedUploads();
 }

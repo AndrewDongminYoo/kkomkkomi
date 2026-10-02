@@ -31,6 +31,12 @@ final class SqlitePublishRepository implements PublishRepository {
   }
 
   @override
+  Future<List<ClientPage>> pages() async {
+    final rows = await _database.query('client_pages', orderBy: 'created_at, rowid');
+    return rows.map(_pageFromRow).toList();
+  }
+
+  @override
   Future<PublishJob> enqueue(PublishJob job) => _database.transaction((transaction) async {
     final rows = await transaction.query(
       'publish_jobs',
@@ -110,6 +116,18 @@ final class SqlitePublishRepository implements PublishRepository {
   }
 
   @override
+  Future<void> stopPendingJobs(PublishFailure reason) => _database.transaction((transaction) async {
+    final rows = await transaction.query(
+      'publish_jobs',
+      where: 'status = ?',
+      whereArgs: [PublishJobStatus.pending.name],
+    );
+    for (final row in rows) {
+      await _updateJob(transaction, _jobFromRow(row).fail(reason));
+    }
+  });
+
+  @override
   Future<List<PublishJob>> jobsOfPage(String pageId) async {
     final rows = await _database.query(
       'publish_jobs',
@@ -180,6 +198,11 @@ final class SqlitePublishRepository implements PublishRepository {
     'published_photos',
     where: 'page_id = ? AND object_path = ?',
     whereArgs: [pageId, objectPath],
+  );
+
+  @override
+  Future<void> forgetArrivedUploads() => _database.transaction(
+    (transaction) => transaction.update('published_photos', {'arrived': 0}, where: 'arrived = 1'),
   );
 
   static Future<void> _updateJob(DatabaseExecutor database, PublishJob job) =>

@@ -14,7 +14,8 @@ class MockPublishRepository extends Mock implements PublishRepository;
 /// Repositories that are mocks, for a widget test that never reaches the database.
 ///
 /// The client repository answers with no active client, which is all that the home screen reads, and the publish
-/// repository answers with no pending job, which is all that the publish queue reads when `bootstrap` starts it.
+/// repository answers with no pending job, which is all that the publish queue reads when `bootstrap` starts it, and
+/// takes the reset of the uploads that a deletion of all data starts with.
 /// The store of the open capture is an empty fake, so the start of the app finds no lost photo.
 Repositories mockRepositories() {
   final clients = MockClientRepository();
@@ -22,11 +23,13 @@ Repositories mockRepositories() {
   final publishing = MockPublishRepository();
   when(publishing.clearRetryDelays).thenAnswer((_) async {});
   when(publishing.pendingJobs).thenAnswer((_) async => []);
+  when(publishing.forgetArrivedUploads).thenAnswer((_) async {});
   return Repositories(
     clients: clients,
     visits: MockVisitRepository(),
     companyProfile: MockCompanyProfileRepository(),
     publishing: publishing,
     openCaptures: FakeOpenCaptureRepository(),
+    localData: FakeLocalDataRepository(),
   );
 }

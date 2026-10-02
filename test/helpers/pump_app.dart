@@ -17,8 +17,10 @@ extension PumpApp on WidgetTester {
   ///
   /// The app shows the strings of [locale] when one is given, and the English strings otherwise.
   /// When [repositories] is given, the widgets read its members (the store of the open capture included), [identity], [publishQueue], [idGenerator], [clock],
-  /// [photoCapture], [photoStore], [reportFont], [reportShare], and [linkShare] through `RepositoryProvider`, as they
-  /// do under the app. A port that is not given is a fake, and the publish queue that is not given has no backend.
+  /// [photoCapture], [photoStore], [reportFont], [reportShare], [linkShare], and [deleteAllData] through
+  /// `RepositoryProvider`, as they do under the app. A port that is not given is a fake, the publish queue that is not
+  /// given has no backend, and the deletion that is not given acts on the queue, the identity, the stores, and the
+  /// photo store of the test.
   Future<void> pumpApp(
     Widget widget, {
     Locale? locale,
@@ -32,6 +34,7 @@ extension PumpApp on WidgetTester {
     ReportFont? reportFont,
     ReportShare? reportShare,
     LinkShare? linkShare,
+    DeleteAllData? deleteAllData,
   }) {
     final app = MaterialApp(
       locale: locale,
@@ -40,6 +43,9 @@ extension PumpApp on WidgetTester {
       home: widget,
     );
     if (repositories == null) return pumpWidget(app);
+    final theIdentity = identity ?? FakeIdentity();
+    final theQueue = publishQueue ?? publishQueueOf(repositories);
+    final thePhotoStore = photoStore ?? FakePhotoStore();
     return pumpWidget(
       MultiRepositoryProvider(
         providers: [
@@ -47,15 +53,25 @@ extension PumpApp on WidgetTester {
           RepositoryProvider<VisitRepository>.value(value: repositories.visits),
           RepositoryProvider<CompanyProfileRepository>.value(value: repositories.companyProfile),
           RepositoryProvider<OpenCaptureRepository>.value(value: repositories.openCaptures),
-          RepositoryProvider<Identity>.value(value: identity ?? FakeIdentity()),
-          RepositoryProvider<PublishQueue>.value(value: publishQueue ?? publishQueueOf(repositories)),
+          RepositoryProvider<Identity>.value(value: theIdentity),
+          RepositoryProvider<PublishQueue>.value(value: theQueue),
           RepositoryProvider<IdGenerator>.value(value: idGenerator ?? SequenceIdGenerator()),
           RepositoryProvider<Clock>.value(value: clock ?? FixedClock(DateTime.utc(2026, 10))),
           RepositoryProvider<PhotoCapture>.value(value: photoCapture ?? FakePhotoCapture()),
-          RepositoryProvider<PhotoStore>.value(value: photoStore ?? FakePhotoStore()),
+          RepositoryProvider<PhotoStore>.value(value: thePhotoStore),
           RepositoryProvider<ReportFont>.value(value: reportFont ?? const FileReportFont()),
           RepositoryProvider<ReportShare>.value(value: reportShare ?? FakeReportShare()),
           RepositoryProvider<LinkShare>.value(value: linkShare ?? FakeLinkShare()),
+          RepositoryProvider<DeleteAllData>.value(
+            value:
+                deleteAllData ??
+                DeleteAllData(
+                  publishQueue: theQueue,
+                  identity: theIdentity,
+                  localData: repositories.localData,
+                  photoStore: thePhotoStore,
+                ),
+          ),
         ],
         child: app,
       ),

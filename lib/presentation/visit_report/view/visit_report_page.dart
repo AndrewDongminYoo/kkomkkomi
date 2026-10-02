@@ -492,6 +492,7 @@ class _ShareBar extends StatelessWidget {
     ReportLinkStatus.waitingForRetry => l10n.reportLinkWaitingMessage,
     ReportLinkStatus.failed => switch (state.failure) {
       PublishFailure.revoked => l10n.reportLinkRevokedMessage,
+      PublishFailure.deletion => l10n.reportLinkStoppedByDeletionMessage,
       PublishFailure.photoMissing => l10n.reportLinkPhotoMissingMessage,
       PublishFailure.photoNotJpeg || PublishFailure.photoTooLarge => l10n.reportLinkPhotoUnusableMessage,
       PublishFailure.unavailable || PublishFailure.refused || null => l10n.reportLinkFailedMessage,

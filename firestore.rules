@@ -59,11 +59,19 @@ service cloud.firestore {
         && request.resource.data.ownerUid == resource.data.ownerUid
         && request.resource.data.createdAt == resource.data.createdAt
         && (isOpen(resource.data) || !isOpen(request.resource.data));
+      // The owner deletes its page, open or revoked, when the person deletes all data in the app. A delete of a page
+      // that does not exist changes nothing, so a signed-in user may repeat it, as the app does when the answer of an
+      // earlier delete did not arrive.
+      allow delete: if signedIn() && (resource == null || owns(resource.data));
 
       match /reports/{visitId} {
         // The history view of a page lists its reports.
         allow get, list: if isOpen(pageOf(pageId));
         allow create, update: if ownsOpen(pageOf(pageId)) && isReport(request.resource.data);
+        // The owner deletes the reports of its page, open or revoked, before the page, because this rule reads the
+        // page to find its owner. A delete of a report that does not exist changes nothing, so a signed-in user may
+        // repeat it, also after the page is gone.
+        allow delete: if signedIn() && (resource == null || owns(pageOf(pageId)));
       }
     }
   }

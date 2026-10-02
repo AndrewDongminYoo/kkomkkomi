@@ -278,6 +278,50 @@
     "@companyProfileLoadFailedMessage": {
         "description": "Message shown in place of the company profile form when the profile did not load"
     },
+    "dataDeletionTitle": "Delete all data",
+    "@dataDeletionTitle": {
+        "description": "Title of the part of the company profile screen that deletes all data"
+    },
+    "dataDeletionDescription": "Deletes the clients, visits, photos, and company profile on this phone, the reports and photos you shared as links, and your anonymous account.",
+    "@dataDeletionDescription": {
+        "description": "Text above the button that deletes all data, which says what it deletes"
+    },
+    "dataDeletionButton": "Delete All Data",
+    "@dataDeletionButton": {
+        "description": "Label of the button that opens the confirmation before all data is deleted"
+    },
+    "dataDeletionDialogTitle": "Delete all data?",
+    "@dataDeletionDialogTitle": {
+        "description": "Title of the confirmation before all data is deleted"
+    },
+    "dataDeletionDialogMessage": "This deletes the clients, zones, visits, photos, and company profile on this phone, the reports and photos you uploaded, and your anonymous account. You can't get them back, and the links you shared stop opening.",
+    "@dataDeletionDialogMessage": {
+        "description": "Message of the confirmation before all data is deleted. It names what is deleted and that the shared links stop opening"
+    },
+    "dataDeletionConfirmButton": "Delete",
+    "@dataDeletionConfirmButton": {
+        "description": "Label of the button in the confirmation that deletes all data"
+    },
+    "dataDeletingMessage": "Deleting your data. Keep this screen open until it's done.",
+    "@dataDeletingMessage": {
+        "description": "Text under the progress bar while all data is deleted"
+    },
+    "dataDeletionPublishedFailedMessage": "Can't delete the reports and photos you uploaded. Check your connection and try again. The data on this phone is still here.",
+    "@dataDeletionPublishedFailedMessage": {
+        "description": "Message shown when the deletion of all data stopped because the uploaded reports and photos were not deleted"
+    },
+    "dataDeletionAccountFailedMessage": "Can't delete your anonymous account. Check your connection and try again. Your uploaded reports and photos are deleted, and the data on this phone is still here.",
+    "@dataDeletionAccountFailedMessage": {
+        "description": "Message shown when the deletion of all data stopped because the anonymous account was not deleted"
+    },
+    "dataDeletionDeviceFailedMessage": "Can't delete the data on this phone. Try again. The data on the server and your anonymous account are deleted.",
+    "@dataDeletionDeviceFailedMessage": {
+        "description": "Message shown when the deletion of all data stopped because the database or the photo files on the phone were not deleted"
+    },
+    "dataDeletedMessage": "All data deleted.",
+    "@dataDeletedMessage": {
+        "description": "Message shown on the client list after all data was deleted"
+    },
     "visitReportOpenButton": "View Report",
     "@visitReportOpenButton": {
         "description": "Label of the button under the zones of the visit screen that opens the report screen"
@@ -417,6 +461,10 @@
     "reportLinkRevokedMessage": "The link of this client changed during the upload. Try again.",
     "@reportLinkRevokedMessage": {
         "description": "Shown when the page of the client was revoked while the report uploaded"
+    },
+    "reportLinkStoppedByDeletionMessage": "The upload stopped because you started to delete all data. Press Share link again to upload it.",
+    "@reportLinkStoppedByDeletionMessage": {
+        "description": "Shown when the deletion of all data stopped a report upload that was waiting"
     },
     "reportLinkPhotoMissingMessage": "A photo of this visit is missing. Retake it on the visit screen, then try again.",
     "@reportLinkPhotoMissingMessage": {

@@ -79,6 +79,15 @@ class App extends StatelessWidget {
         RepositoryProvider<ReportFont>.value(value: reportFont),
         RepositoryProvider<ReportShare>.value(value: reportShare),
         RepositoryProvider<LinkShare>.value(value: linkShare),
+        // One for the life of the app, because a deletion that failed goes on from its failed step at the next try.
+        RepositoryProvider<DeleteAllData>(
+          create: (_) => DeleteAllData(
+            publishQueue: publishQueue,
+            identity: identity,
+            localData: repositories.localData,
+            photoStore: photoStore,
+          ),
+        ),
       ],
       child: MaterialApp(
         theme: ThemeData(

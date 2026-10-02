@@ -26,10 +26,22 @@ const pages = {
   },
 };
 
-/** The marked texts that the operator must replace before the page goes live, which the brief names. */
-const placeholders = {
-  ko: "[운영자 확인 필요: 개인정보 보호책임자와 연락처]",
-  en: "[Operator to confirm: privacy officer and contact]",
+/** The privacy officer and the contact, which the operator gave on 2026-10-02. */
+const officer = {
+  ko: "유동민, ydm2790@gmail.com",
+  en: "Dongmin Yu (유동민), ydm2790@gmail.com",
+};
+
+/** The section that describes the deletion of all data in the app. */
+const deletionSection = (html) => {
+  const startHeading = '<h2 id="delete">';
+  const endHeading = '<h2 id="uninstall">';
+  const start = html.indexOf(startHeading);
+  const end = html.indexOf(endHeading);
+  assert.ok(start >= 0, `the page has no ${startHeading} heading`);
+  assert.ok(end >= 0, `the page has no ${endHeading} heading`);
+  assert.ok(end > start, `${endHeading} does not follow ${startHeading}`);
+  return html.slice(start, end);
 };
 
 /** The IDs of the sections of a page, in order. */
@@ -74,8 +86,28 @@ describe("the privacy policy pages", () => {
       );
     });
 
-    test(`the ${lang} page keeps the placeholder for the privacy officer`, () => {
-      assert.ok(read(page.file).includes(placeholders[lang]));
+    test(`the ${lang} page names the privacy officer and the contact, at the top and in the last section`, () => {
+      const html = read(page.file);
+      const header = html.slice(0, html.indexOf("</header>"));
+      const rights = html.slice(html.indexOf('<h2 id="rights">'));
+
+      assert.ok(header.includes(officer[lang]));
+      assert.ok(rights.includes(officer[lang]));
+    });
+
+    test(`the ${lang} page lists the four steps of the deletion in the app, in their order`, () => {
+      const steps = [
+        ...deletionSection(read(page.file)).matchAll(/<li>([\s\S]*?)<\/li>/g),
+      ]
+        .slice(0, 4)
+        // The line breaks of the formatter folded into spaces.
+        .map((match) => match[1].replace(/\s+/g, " "));
+
+      assert.equal(steps.length, 4);
+      assert.match(steps[0], /Cloud Storage/);
+      assert.match(steps[1], /Cloud Firestore/);
+      assert.match(steps[2], /Firebase Authentication/);
+      assert.doesNotMatch(steps[3], /Firebase|Cloud/);
     });
 
     test(`the ${lang} page holds nothing that is wider than a 320 px screen`, () => {
@@ -96,27 +128,20 @@ describe("the privacy policy pages", () => {
     assert.deepEqual(sectionIds(read(pages.en.file)), ko);
   });
 
-  test("both pages mark the same number of points for the operator", () => {
-    // The texts of the marked spans, with the line breaks of the formatter folded into spaces.
-    const marks = (html) =>
-      [...html.matchAll(/<span\s+class="todo"\s*>([^<]*)<\/span/g)].map(
-        (match) => match[1].replace(/\s+/g, " ").trim(),
+  test("neither page keeps a point for the operator to fill", () => {
+    for (const page of Object.values(pages)) {
+      const html = read(page.file);
+      assert.doesNotMatch(
+        html,
+        /class="todo"|운영자 확인 필요|Operator to confirm/,
       );
+    }
+  });
 
-    const ko = marks(read(pages.ko.file));
-    const en = marks(read(pages.en.file));
-    assert.ok(ko.length > 0);
-    assert.equal(en.length, ko.length);
-    for (const mark of ko)
-      assert.ok(
-        mark.startsWith("[운영자 확인 필요: ") && mark.endsWith("]"),
-        mark,
-      );
-    for (const mark of en)
-      assert.ok(
-        mark.startsWith("[Operator to confirm: ") && mark.endsWith("]"),
-        mark,
-      );
+  test("neither page says that an anonymous account is deleted after 30 days, which the operator turned off", () => {
+    for (const page of Object.values(pages)) {
+      assert.doesNotMatch(read(page.file), /30\s*일|30\s+days/);
+    }
   });
 
   test("the style sheet sets no width that a 320 px screen cannot hold, and wraps long words", () => {

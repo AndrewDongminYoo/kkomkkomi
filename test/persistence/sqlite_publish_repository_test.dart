@@ -88,6 +88,41 @@ void main() {
     expect(await repository.pageById('page-9'), isNull);
   });
 
+  test('pages gives every page, open and revoked, oldest first', () async {
+    expect(await repository.pages(), isEmpty);
+    await repository.openPageOf('client-1', create: () => page('page-b'));
+    await repository.openPageOf('client-2', create: () => page('page-a', clientId: 'client-2'));
+    final revokedAt = DateTime.utc(2026, 10, 2);
+    await repository.revoke(
+      page('page-b'),
+      at: revokedAt,
+      revokeJob: job('revoke-1', pageId: 'page-b', visitId: null),
+    );
+
+    // Both pages have the same creation time, so the order of their rows decides.
+    expect(await repository.pages(), [
+      page('page-b', revokedAt: revokedAt),
+      page('page-a', clientId: 'client-2'),
+    ]);
+  });
+
+  test('stopPendingJobs stops every pending publish and revoke job with the reason, and keeps the others', () async {
+    await repository.openPageOf('client-1', create: () => page('page-1'));
+    await repository.enqueue(job('done', minute: 1));
+    await repository.saveJob(job('done', minute: 1).succeed());
+    await repository.enqueue(job('waiting', visitId: 'visit-2', minute: 2));
+    await repository.enqueue(job('revoke', visitId: null, kind: PublishJobKind.revoke, minute: 3));
+
+    await repository.stopPendingJobs(PublishFailure.deletion);
+
+    expect(await repository.pendingJobs(), isEmpty);
+    expect(await repository.jobsOfPage('page-1'), [
+      job('done', minute: 1).succeed(),
+      job('waiting', visitId: 'visit-2', minute: 2).fail(PublishFailure.deletion),
+      job('revoke', visitId: null, kind: PublishJobKind.revoke, minute: 3).fail(PublishFailure.deletion),
+    ]);
+  });
+
   group('jobs', () {
     setUp(() async {
       await repository.openPageOf('client-1', create: () => page('page-1'));
@@ -315,6 +350,22 @@ void main() {
       expect(await repository.uploadedPhoto(pageId: 'page-2', objectPath: 'a.jpg'), 'photos/v/3.jpg');
       expect(await repository.uploadedPhoto(pageId: 'page-1', objectPath: 'c.jpg'), isNull);
       expect(await repository.uploadedObjects('page-1'), ['a.jpg', 'b.jpg']);
+    });
+
+    test('forgetArrivedUploads keeps every record as an intent, and a later arrival marks it again', () async {
+      await repository.saveUploadedPhoto(pageId: 'page-1', objectPath: 'a.jpg', photoPath: 'photos/v/1.jpg');
+      await repository.saveUploadedPhoto(pageId: 'page-2', objectPath: 'b.jpg', photoPath: 'photos/v/2.jpg');
+      await repository.recordUploadIntent(pageId: 'page-1', objectPath: 'c.jpg', photoPath: 'photos/v/3.jpg');
+
+      await repository.forgetArrivedUploads();
+
+      expect(await repository.uploadedPhoto(pageId: 'page-1', objectPath: 'a.jpg'), isNull);
+      expect(await repository.uploadedPhoto(pageId: 'page-2', objectPath: 'b.jpg'), isNull);
+      expect(await repository.uploadedObjects('page-1'), ['a.jpg', 'c.jpg']);
+      expect(await repository.uploadedObjects('page-2'), ['b.jpg']);
+
+      await repository.saveUploadedPhoto(pageId: 'page-1', objectPath: 'a.jpg', photoPath: 'photos/v/1.jpg');
+      expect(await repository.uploadedPhoto(pageId: 'page-1', objectPath: 'a.jpg'), 'photos/v/1.jpg');
     });
 
     test('keeps the newest photo file of an object', () async {

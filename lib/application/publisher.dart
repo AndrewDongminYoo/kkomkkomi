@@ -36,6 +36,14 @@ abstract interface class Publisher {
 
   /// Deletes the object at [objectPath]. An object that does not exist is no failure.
   Future<void> deletePhoto(String objectPath);
+
+  /// Deletes the report of the visit with [visitId] under the client page with [pageId]. A report that does not exist
+  /// is no failure.
+  Future<void> deleteReport({required String pageId, required String visitId});
+
+  /// Deletes the client page with [pageId]. A page that does not exist is no failure. The reports of the page are
+  /// separate documents, which [deleteReport] deletes.
+  Future<void> deletePage(String pageId);
 }
 
 /// Whether a retry can fix a failed call of a [Publisher].

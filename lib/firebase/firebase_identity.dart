@@ -22,6 +22,28 @@ final class FirebaseIdentity implements Identity {
   @override
   Future<String?> currentUserId() => _attempt ??= _startAndSignIn().whenComplete(() => _attempt = null);
 
+  @override
+  Future<void> deleteAccount() async {
+    // A sign-in that is on its way, such as the one that the start of the app asks for, could make an account after
+    // this call found none, so the call waits for it. The attempt never throws.
+    await _attempt;
+    await _initializeApp();
+    final auth = _auth ?? FirebaseAuth.instance;
+    final user = auth.currentUser;
+    // No account on the device: none was made, or an earlier call deleted it.
+    if (user == null) return;
+    try {
+      // The FlutterFire documentation of `User.delete` says that `requires-recent-login` "does not apply if the user
+      // is anonymous" (firebase_auth 6.7.0, lib/src/user.dart). The account cannot sign in again to fix it either,
+      // so the code is not caught here and the caller reports a failure of this step.
+      await user.delete();
+    } on FirebaseAuthException catch (error) {
+      // An earlier delete reached the backend and its answer did not reach the app.
+      if (error.code != 'user-not-found') rethrow;
+      await auth.signOut();
+    }
+  }
+
   Future<String?> _startAndSignIn() async {
     try {
       // The call gives no options, so Firebase reads the native config file of the platform, and no tracked file

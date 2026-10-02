@@ -3,9 +3,9 @@
 // Run through `firebase emulators:exec` with a project ID that starts with `demo-`, which keeps the emulators away
 // from every live project (merry.yaml owns the command). Each rule that allows something has a test that expects
 // success next to the tests of its denials, so a rule that denies everything fails the suite. A list of the pages,
-// a query across pages, a list of photos, and a delete of a page or a report have no rule that allows them, so
-// their tests expect a denial only.
+// a query across pages, and a list of photos have no rule that allows them, so their tests expect a denial only.
 
+import assert from "node:assert/strict";
 import { after, before, beforeEach, describe, test } from "node:test";
 import { readFileSync } from "node:fs";
 import {
@@ -308,13 +308,103 @@ describe("firestore: writers", () => {
         .set({ ...report(), extra: true }),
     );
   });
+});
 
-  test("no one deletes a page or a report", async () => {
+describe("firestore: deletes", () => {
+  /** Whether the document at [path] exists, read without the rules. */
+  async function exists(path) {
+    let found;
+    await env.withSecurityRulesDisabled(async (context) => {
+      found = (await context.firestore().doc(path).get()).exists;
+    });
+    return found;
+  }
+
+  test("the owner deletes the reports and then the page, open and revoked", async () => {
     const db = signedIn(owner).firestore();
-    await assertFails(
+    for (const pageId of [openPage, revokedPage]) {
+      await assertSucceeds(
+        db.doc(`clientPages/${pageId}/reports/${visit}`).delete(),
+      );
+      await assertSucceeds(db.doc(`clientPages/${pageId}`).delete());
+
+      assert.equal(
+        await exists(`clientPages/${pageId}/reports/${visit}`),
+        false,
+      );
+      assert.equal(await exists(`clientPages/${pageId}`), false);
+    }
+  });
+
+  test("a signed-in non-owner cannot delete a page or a report", async () => {
+    const db = signedIn(stranger).firestore();
+    for (const pageId of [openPage, revokedPage]) {
+      await assertFails(
+        db.doc(`clientPages/${pageId}/reports/${visit}`).delete(),
+      );
+      await assertFails(db.doc(`clientPages/${pageId}`).delete());
+    }
+    assert.equal(
+      await exists(`clientPages/${openPage}/reports/${visit}`),
+      true,
+    );
+    assert.equal(await exists(`clientPages/${openPage}`), true);
+  });
+
+  test("a reader without sign-in cannot delete a page or a report", async () => {
+    const db = reader().firestore();
+    for (const pageId of [openPage, revokedPage]) {
+      await assertFails(
+        db.doc(`clientPages/${pageId}/reports/${visit}`).delete(),
+      );
+      await assertFails(db.doc(`clientPages/${pageId}`).delete());
+    }
+    assert.equal(await exists(`clientPages/${openPage}`), true);
+  });
+
+  test("the owner repeats a delete of a report and a page that are gone, as a retry does", async () => {
+    const db = signedIn(owner).firestore();
+    await assertSucceeds(
       db.doc(`clientPages/${openPage}/reports/${visit}`).delete(),
     );
+    await assertSucceeds(db.doc(`clientPages/${openPage}`).delete());
+
+    // The page is gone too, so the rule of the report cannot read its owner.
+    await assertSucceeds(
+      db.doc(`clientPages/${openPage}/reports/${visit}`).delete(),
+    );
+    await assertSucceeds(db.doc(`clientPages/${openPage}`).delete());
+    // A report that never existed under an existing page.
+    await assertSucceeds(
+      db.doc(`clientPages/${revokedPage}/reports/visit-9`).delete(),
+    );
+  });
+
+  test("a reader without sign-in cannot delete a page or a report that is gone either", async () => {
+    await env.withSecurityRulesDisabled(async (context) => {
+      await context.firestore().doc(`clientPages/${openPage}`).delete();
+    });
+    const db = reader().firestore();
+
     await assertFails(db.doc(`clientPages/${openPage}`).delete());
+    await assertFails(
+      db.doc(`clientPages/${openPage}/reports/visit-9`).delete(),
+    );
+  });
+
+  test("the owner can delete a report while its page exists, and not when its page is gone", async () => {
+    await env.withSecurityRulesDisabled(async (context) => {
+      await context.firestore().doc(`clientPages/${openPage}`).delete();
+    });
+
+    // A report under a missing page has no owner that the rule can read, which is why the app deletes the reports
+    // before their page.
+    await assertFails(
+      signedIn(owner)
+        .firestore()
+        .doc(`clientPages/${openPage}/reports/${visit}`)
+        .delete(),
+    );
   });
 });
 
@@ -400,6 +490,20 @@ describe("storage", () => {
     );
     await assertSucceeds(
       signedIn(owner).storage().ref(photoPath(revokedPage)).delete(),
+    );
+  });
+
+  test("a reader without sign-in cannot delete a photo", async () => {
+    await assertFails(reader().storage().ref(photoPath(openPage)).delete());
+  });
+
+  test("the owner cannot delete a photo after its page is gone, so the app deletes the photos first", async () => {
+    await env.withSecurityRulesDisabled(async (context) => {
+      await context.firestore().doc(`clientPages/${openPage}`).delete();
+    });
+
+    await assertFails(
+      signedIn(owner).storage().ref(photoPath(openPage)).delete(),
     );
   });
 });

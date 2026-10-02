@@ -14,8 +14,26 @@ enum CompanyProfileStatus {
   ready,
 }
 
+/// Where the deletion of all data is.
+enum DataDeletion {
+  /// No deletion runs.
+  idle,
+
+  /// A deletion is on its way.
+  deleting,
+
+  /// Everything is deleted, and the app is as at its first launch.
+  deleted,
+}
+
 final class CompanyProfileState {
-  const new({this.status = CompanyProfileStatus.loading, this.name = '', this.entry = NameEntry.editing});
+  const new({
+    this.status = CompanyProfileStatus.loading,
+    this.name = '',
+    this.entry = NameEntry.editing,
+    this.deletion = DataDeletion.idle,
+    this.deletionFailure,
+  });
 
   final CompanyProfileStatus status;
 
@@ -25,13 +43,37 @@ final class CompanyProfileState {
   /// What became of the company name that the form last submitted.
   final NameEntry entry;
 
-  CompanyProfileState copyWith({CompanyProfileStatus? status, String? name, NameEntry? entry}) =>
-      CompanyProfileState(status: status ?? this.status, name: name ?? this.name, entry: entry ?? this.entry);
+  final DataDeletion deletion;
+
+  /// The step at which the last deletion stopped, or null when none stopped.
+  final DeletionStep? deletionFailure;
+
+  CompanyProfileState copyWith({CompanyProfileStatus? status, String? name, NameEntry? entry}) => CompanyProfileState(
+    status: status ?? this.status,
+    name: name ?? this.name,
+    entry: entry ?? this.entry,
+    deletion: deletion,
+    deletionFailure: deletionFailure,
+  );
+
+  /// This state with [deletion], and [failure] as the step at which the deletion stopped.
+  CompanyProfileState withDeletion(DataDeletion deletion, {DeletionStep? failure}) => CompanyProfileState(
+    status: status,
+    name: name,
+    entry: entry,
+    deletion: deletion,
+    deletionFailure: failure,
+  );
 
   @override
   bool operator ==(Object other) =>
-      other is CompanyProfileState && other.status == status && other.name == name && other.entry == entry;
+      other is CompanyProfileState &&
+      other.status == status &&
+      other.name == name &&
+      other.entry == entry &&
+      other.deletion == deletion &&
+      other.deletionFailure == deletionFailure;
 
   @override
-  int get hashCode => Object.hash(status, name, entry);
+  int get hashCode => Object.hash(status, name, entry, deletion, deletionFailure);
 }

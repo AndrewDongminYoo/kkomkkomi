@@ -29,4 +29,10 @@ final class UnavailablePublisher implements Publisher {
 
   @override
   Future<void> deletePhoto(String objectPath) async => throw _unavailable;
+
+  @override
+  Future<void> deleteReport({required String pageId, required String visitId}) async => throw _unavailable;
+
+  @override
+  Future<void> deletePage(String pageId) async => throw _unavailable;
 }

@@ -70,6 +70,7 @@ void main() {
         companyProfile: FakeCompanyProfileRepository(),
         publishing: MockPublishRepository(),
         openCaptures: FakeOpenCaptureRepository(),
+        localData: FakeLocalDataRepository(),
       ),
       clock: FixedClock(DateTime(day.year, day.month, day.day, 12)),
     );
@@ -906,6 +907,7 @@ void main() {
         companyProfile: FakeCompanyProfileRepository(),
         publishing: MockPublishRepository(),
         openCaptures: FakeOpenCaptureRepository(),
+        localData: FakeLocalDataRepository(),
       ),
       clock: FixedClock(DateTime(2026, 10, 20, 12)),
     );

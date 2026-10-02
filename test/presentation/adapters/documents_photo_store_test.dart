@@ -137,6 +137,32 @@ void main() {
       });
     });
 
+    group('deleteAll', () {
+      test('deletes every photo with the photos directory, and keeps the other files of the documents', () async {
+        final picked = pickedFile('scaled_camera.jpg');
+        final first = await store().save(sourcePath: picked.path, visitId: 'visit-1', photoId: 'photo-1');
+        final second = await store().save(sourcePath: picked.path, visitId: 'visit-2', photoId: 'photo-2');
+        final other = File('${documents.path}/other.txt')..writeAsStringSync('kept');
+
+        await store().deleteAll();
+
+        expect(stored(first.path).existsSync(), isFalse);
+        expect(stored(second.path).existsSync(), isFalse);
+        expect(Directory('${documents.path}/photos').existsSync(), isFalse);
+        expect(other.existsSync(), isTrue);
+      });
+
+      test('does not fail when no photo was ever kept', () async {
+        await expectLater(store().deleteAll(), completes);
+      });
+
+      test('fails when the documents directory cannot be found', () async {
+        final store = DocumentsPhotoStore(documentsDirectory: () async => throw const FileSystemException('no path'));
+
+        await expectLater(store.deleteAll(), throwsA(isA<FileSystemException>()));
+      });
+    });
+
     group('read', () {
       test('gives the bytes of the file of the photo', () async {
         final photo = await store().save(

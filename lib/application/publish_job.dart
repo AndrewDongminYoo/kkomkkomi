@@ -42,6 +42,9 @@ enum PublishFailure {
 
   /// A photo of the visit is larger than [maxPhotoBytes].
   photoTooLarge,
+
+  /// The person started to delete all data before the job reached the backend.
+  deletion,
 }
 
 /// The largest photo that the queue uploads, which is the limit of `storage.rules`.

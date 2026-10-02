@@ -98,6 +98,7 @@ void main() {
         companyProfile: FakeCompanyProfileRepository(),
         publishing: MockPublishRepository(),
         openCaptures: FakeOpenCaptureRepository(),
+        localData: FakeLocalDataRepository(),
       ),
       photoCapture: photoCapture,
       photoStore: photoStore,

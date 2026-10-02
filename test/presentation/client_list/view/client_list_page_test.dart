@@ -38,6 +38,7 @@ void main() {
         companyProfile: companyProfile,
         publishing: MockPublishRepository(),
         openCaptures: FakeOpenCaptureRepository(),
+        localData: FakeLocalDataRepository(),
       ),
       clock: FixedClock(now),
     );
@@ -188,6 +189,20 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(find.byType(CompanyProfilePage), findsOneWidget);
+    });
+
+    testWidgets('reads the list again when the company profile closes, which can delete all data', (tester) async {
+      await pumpPage(tester, saved: [office]);
+      await tester.tap(find.byTooltip('Company profile'));
+      await tester.pumpAndSettle();
+
+      // The deletion erases the stores, which the fake client store shows as a list without the client.
+      await clients.save(office.archive());
+      await tester.pageBack();
+      await tester.pumpAndSettle();
+
+      expect(find.widgetWithText(ListTile, '한빛 사무실'), findsNothing);
+      expect(find.text('No clients yet'), findsOneWidget);
     });
 
     testWidgets('opens a client, and reads the list again when the client screen closes', (tester) async {

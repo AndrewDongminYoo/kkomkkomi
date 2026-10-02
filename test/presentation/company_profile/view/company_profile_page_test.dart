@@ -29,6 +29,7 @@ void main() {
         companyProfile: companyProfile,
         publishing: MockPublishRepository(),
         openCaptures: FakeOpenCaptureRepository(),
+        localData: FakeLocalDataRepository(),
       ),
     );
     await tester.pumpAndSettle();
@@ -128,6 +129,7 @@ void main() {
           companyProfile: companyProfile,
           publishing: MockPublishRepository(),
           openCaptures: FakeOpenCaptureRepository(),
+          localData: FakeLocalDataRepository(),
         ),
       );
       await tester.tap(find.text('host'));
@@ -265,6 +267,178 @@ void main() {
     });
   });
 
+  group('the deletion of all data', () {
+    late FakeLocalDataRepository localData;
+    late FakePhotoStore photoStore;
+    late FakePublishRepository publishing;
+    late FakePublisher publisher;
+    late FakeIdentity identity;
+
+    /// Opens the screen over a host screen, as the client list opens it, with a backend when [backend] is true.
+    Future<void> pumpOverHost(WidgetTester tester, {bool backend = false, Locale? locale}) async {
+      localData = FakeLocalDataRepository();
+      photoStore = FakePhotoStore();
+      publishing = FakePublishRepository();
+      publisher = FakePublisher()..isAvailable = backend;
+      identity = FakeIdentity(userId: 'owner-1');
+      final repositories = Repositories(
+        clients: FakeClientRepository(),
+        visits: FakeVisitRepository(),
+        companyProfile: FakeCompanyProfileRepository(profile: CompanyProfile(name: '반짝 클린')),
+        publishing: publishing,
+        openCaptures: FakeOpenCaptureRepository(),
+        localData: localData,
+      );
+      await tester.pumpApp(
+        Builder(
+          builder: (context) => Scaffold(
+            body: TextButton(
+              onPressed: () => Navigator.of(context).push(CompanyProfilePage.route()),
+              child: const Text('host'),
+            ),
+          ),
+        ),
+        locale: locale,
+        repositories: repositories,
+        identity: identity,
+        photoStore: photoStore,
+        publishQueue: publishQueueOf(repositories, publisher: publisher, identity: identity, photoStore: photoStore),
+      );
+      await tester.tap(find.text('host'));
+      await tester.pumpAndSettle();
+    }
+
+    Future<void> tapDelete(WidgetTester tester, String label) async {
+      await tester.ensureVisible(find.widgetWithText(OutlinedButton, label));
+      await tester.pumpAndSettle();
+      await tester.tap(find.widgetWithText(OutlinedButton, label));
+      await tester.pumpAndSettle();
+    }
+
+    testWidgets('says what it deletes, asks first, then deletes and goes back to the screen below', (tester) async {
+      await pumpOverHost(tester);
+      expect(find.text('Delete all data'), findsOneWidget);
+      expect(
+        find.text(
+          'Deletes the clients, visits, photos, and company profile on this phone, the reports and photos you shared '
+          'as links, and your anonymous account.',
+        ),
+        findsOneWidget,
+      );
+
+      await tapDelete(tester, 'Delete All Data');
+      expect(find.text('Delete all data?'), findsOneWidget);
+      expect(
+        find.text(
+          'This deletes the clients, zones, visits, photos, and company profile on this phone, the reports and photos '
+          "you uploaded, and your anonymous account. You can't get them back, and the links you shared stop opening.",
+        ),
+        findsOneWidget,
+      );
+      expect(localData.erasures, 0);
+
+      await tester.tap(find.widgetWithText(FilledButton, 'Delete'));
+      await tester.pumpAndSettle();
+
+      expect(localData.erasures, 1);
+      expect(photoStore.deletionsOfAll, 1);
+      expect(find.byType(CompanyProfilePage), findsNothing);
+      expect(find.text('host'), findsOneWidget);
+      expect(find.widgetWithText(SnackBar, 'All data deleted.'), findsOneWidget);
+    });
+
+    testWidgets('deletes nothing when the person closes the question', (tester) async {
+      await pumpOverHost(tester);
+
+      await tapDelete(tester, 'Delete All Data');
+      await tester.tap(find.widgetWithText(TextButton, 'Cancel'));
+      await tester.pumpAndSettle();
+
+      expect(localData.erasures, 0);
+      expect(find.byType(CompanyProfilePage), findsOneWidget);
+    });
+
+    testWidgets('deletes the published data and the account before the data on the phone', (tester) async {
+      await pumpOverHost(tester, backend: true);
+      publishing.pagesById['page-1'] = ClientPage(
+        id: 'page-1',
+        clientId: 'client-1',
+        createdAt: DateTime.utc(2026, 10),
+      );
+      localData.onErase = () {
+        expect(publisher.calls, ['deletePage page-1']);
+        expect(identity.deletions, 1);
+      };
+
+      await tapDelete(tester, 'Delete All Data');
+      await tester.tap(find.widgetWithText(FilledButton, 'Delete'));
+      await tester.pumpAndSettle();
+
+      expect(localData.erasures, 1);
+      expect(find.byType(CompanyProfilePage), findsNothing);
+    });
+
+    testWidgets('stays open and says which step failed, and the next try goes on', (tester) async {
+      await pumpOverHost(tester, backend: true);
+      identity.deleteFailures.add(Exception('network-request-failed'));
+
+      await tapDelete(tester, 'Delete All Data');
+      await tester.tap(find.widgetWithText(FilledButton, 'Delete'));
+      await tester.pumpAndSettle();
+
+      expect(find.byType(CompanyProfilePage), findsOneWidget);
+      expect(
+        find.text(
+          "Can't delete your anonymous account. Check your connection and try again. Your uploaded reports and photos "
+          'are deleted, and the data on this phone is still here.',
+        ),
+        findsOneWidget,
+      );
+      expect(localData.erasures, 0);
+
+      await tapDelete(tester, 'Delete All Data');
+      await tester.tap(find.widgetWithText(FilledButton, 'Delete'));
+      await tester.pumpAndSettle();
+
+      expect(localData.erasures, 1);
+      expect(find.byType(CompanyProfilePage), findsNothing);
+    });
+
+    testWidgets('shows its progress, takes no second press, and stays open while it runs', (tester) async {
+      await pumpOverHost(tester);
+      localData.gate = Completer<void>();
+
+      await tapDelete(tester, 'Delete All Data');
+      await tester.tap(find.widgetWithText(FilledButton, 'Delete'));
+      await tester.pump();
+
+      expect(find.byType(LinearProgressIndicator), findsOneWidget);
+      expect(find.text("Deleting your data. Keep this screen open until it's done."), findsOneWidget);
+      expect(tester.widget<OutlinedButton>(find.byType(OutlinedButton)).onPressed, isNull);
+      await tester.binding.handlePopRoute();
+      await tester.pump();
+      expect(find.byType(CompanyProfilePage), findsOneWidget);
+
+      localData.gate!.complete();
+      await tester.pumpAndSettle();
+      expect(find.byType(CompanyProfilePage), findsNothing);
+    });
+
+    testWidgets('speaks Korean', (tester) async {
+      await pumpOverHost(tester, locale: const Locale('ko'));
+      expect(find.text('모든 데이터 지우기'), findsNWidgets(2));
+      expect(find.text('이 휴대폰의 거래처, 방문 기록, 사진, 회사 정보와, 링크로 올린 보고서와 사진, 익명 계정을 모두 지워요.'), findsOneWidget);
+
+      await tapDelete(tester, '모든 데이터 지우기');
+      expect(find.text('모든 데이터를 지울까요?'), findsOneWidget);
+      expect(find.widgetWithText(TextButton, '닫기'), findsOneWidget);
+      await tester.tap(find.widgetWithText(FilledButton, '지우기'));
+      await tester.pumpAndSettle();
+
+      expect(find.widgetWithText(SnackBar, '모든 데이터를 지웠어요.'), findsOneWidget);
+    });
+  });
+
   group('CompanyProfileView', () {
     late CompanyProfileCubit cubit;
 
@@ -295,6 +469,24 @@ void main() {
       expect(field(tester).controller!.text, '반짝 클린');
     });
 
+    testWidgets('takes no name from the keyboard while a deletion of all data is on its way', (tester) async {
+      when(() => cubit.state).thenReturn(
+        const CompanyProfileState(
+          status: CompanyProfileStatus.ready,
+          name: '반짝 클린',
+        ).withDeletion(DataDeletion.deleting),
+      );
+      await tester.pumpApp(BlocProvider.value(value: cubit, child: const CompanyProfileView()));
+
+      // The screen takes no touch, and the keyboard that was open before the deletion can still submit.
+      tester.testTextInput.register();
+      await tester.showKeyboard(find.byType(TextField));
+      await tester.testTextInput.receiveAction(TextInputAction.done);
+
+      expect(tester.widget<FilledButton>(find.byType(FilledButton)).onPressed, isNull);
+      verifyNever(() => cubit.save(any()));
+    });
+
     testWidgets('keeps what the person typed when the saved name changes', (tester) async {
       final states = StreamController<CompanyProfileState>();
       addTearDown(states.close);
@@ -307,6 +499,97 @@ void main() {
       await tester.pump();
 
       expect(field(tester).controller!.text, '반짝 클린 2호');
+    });
+
+    const ready = CompanyProfileState(status: CompanyProfileStatus.ready, name: '반짝 클린');
+    final failures = {
+      DeletionStep.publishedData: (
+        "Can't delete the reports and photos you uploaded. Check your connection and try again. The data on this "
+            'phone is still here.',
+        '올린 보고서와 사진을 지우지 못했어요. 인터넷 연결을 확인하고 다시 시도해 주세요. 휴대폰의 데이터는 그대로 있어요.',
+      ),
+      DeletionStep.account: (
+        "Can't delete your anonymous account. Check your connection and try again. Your uploaded reports and photos "
+            'are deleted, and the data on this phone is still here.',
+        '익명 계정을 지우지 못했어요. 인터넷 연결을 확인하고 다시 시도해 주세요. 올린 보고서와 사진은 지웠고, 휴대폰의 데이터는 그대로 있어요.',
+      ),
+      DeletionStep.deviceData: (
+        "Can't delete the data on this phone. Try again. The data on the server and your anonymous account are "
+            'deleted.',
+        '휴대폰의 데이터를 지우지 못했어요. 다시 시도해 주세요. 서버의 데이터와 익명 계정은 지웠어요.',
+      ),
+    };
+
+    for (final MapEntry(key: step, value: (english, _)) in failures.entries) {
+      testWidgets('names the step ${step.name} when the deletion stopped there', (tester) async {
+        when(() => cubit.state).thenReturn(ready.withDeletion(DataDeletion.idle, failure: step));
+        await tester.pumpApp(BlocProvider.value(value: cubit, child: const CompanyProfileView()));
+
+        expect(find.text(english), findsOneWidget);
+        for (final other in failures.values.where((texts) => texts.$1 != english)) {
+          expect(find.text(other.$1), findsNothing);
+        }
+        expect(tester.widget<OutlinedButton>(find.byType(OutlinedButton)).onPressed, isNotNull);
+      });
+    }
+
+    group('on a screen 320 pixels wide at the largest text size', () {
+      for (final locale in [const Locale('en'), const Locale('ko')]) {
+        testWidgets('cuts none of the texts of the deletion in ${locale.languageCode}', (tester) async {
+          tester.useNarrowScreenWithLargestText();
+          final english = locale.languageCode == 'en';
+          final states = StreamController<CompanyProfileState>();
+          addTearDown(states.close);
+          whenListen(cubit, states.stream, initialState: ready);
+          await tester.pumpApp(
+            BlocProvider.value(value: cubit, child: const CompanyProfileView()),
+            locale: locale,
+          );
+
+          final button = english ? 'Delete All Data' : '모든 데이터 지우기';
+          await tester.ensureVisible(find.widgetWithText(OutlinedButton, button));
+          await tester.pumpAndSettle();
+          tester
+            ..expectWholeText(english ? 'Delete all data' : '모든 데이터 지우기')
+            ..expectWholeText(
+              english
+                  ? 'Deletes the clients, visits, photos, and company profile on this phone, the reports and photos '
+                        'you shared as links, and your anonymous account.'
+                  : '이 휴대폰의 거래처, 방문 기록, 사진, 회사 정보와, 링크로 올린 보고서와 사진, 익명 계정을 모두 지워요.',
+            );
+
+          await tester.tap(find.widgetWithText(OutlinedButton, button));
+          await tester.pumpAndSettle();
+          tester
+            ..expectWholeText(english ? 'Delete all data?' : '모든 데이터를 지울까요?')
+            ..expectWholeText(english ? 'Delete' : '지우기');
+          await tester.tap(find.widgetWithText(TextButton, english ? 'Cancel' : '닫기'));
+          await tester.pumpAndSettle();
+
+          // The state arrives through a stream, which takes one frame to deliver and one to build.
+          states.add(ready.withDeletion(DataDeletion.deleting));
+          await tester.pump();
+          await tester.pump();
+          // The progress bar never settles, so the scroll gets a fixed time.
+          await tester.ensureVisible(find.byType(LinearProgressIndicator));
+          await tester.pump(const Duration(seconds: 1));
+          tester.expectWholeText(
+            english
+                ? "Deleting your data. Keep this screen open until it's done."
+                : '데이터를 지우고 있어요. 다 지울 때까지 이 화면을 열어 두세요.',
+          );
+
+          for (final MapEntry(key: step, value: texts) in failures.entries) {
+            states.add(ready.withDeletion(DataDeletion.idle, failure: step));
+            await tester.pump();
+            await tester.pump();
+            final text = english ? texts.$1 : texts.$2;
+            await tester.ensureVisible(find.text(text));
+            await tester.pumpAndSettle();
+            tester.expectWholeText(text);
+          }
+        });
+      }
     });
   });
 }

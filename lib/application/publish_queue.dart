@@ -21,6 +21,11 @@ import 'package:kkomkkomi/domain/domain.dart';
 /// Starts a timer that calls [callback] once after [delay], as `Timer.new` does.
 typedef StartTimer = Timer Function(Duration delay, void Function() callback);
 
+/// Waits for [delete], a delete of the backend, within a time limit, and fails when it does not answer in time.
+///
+/// A timeout does not cancel the delete, so the runner keeps one that does not answer in time until it ends.
+typedef TimedDelete = Future<void> Function(Future<void> delete);
+
 /// The path of the object that holds [photo], the photo in [slot] of the zone with [zoneId], in the report of the
 /// visit with [visitId] under the page with [pageId].
 ///
@@ -108,6 +113,7 @@ final class PublishQueue {
   Future<void>? _running;
   var _runAgain = false;
   var _disposed = false;
+  var _held = false;
 
   /// The objects whose upload a cancel did not end, while the upload is on its way.
   final _unsettled = <String>{};
@@ -201,6 +207,86 @@ final class PublishQueue {
     return replacement;
   }
 
+  /// Whether [hold] stopped the queue, until [release].
+  bool get isHeld => _held;
+
+  /// Stops the queue, and completes when the job that runs now ended.
+  ///
+  /// Until [release], no job runs: not at a request, not at its retry delay, and not when the network returns. A
+  /// request still adds its job, which runs after the release. A call while the queue is held completes at once.
+  Future<void> hold() async {
+    _held = true;
+    _timer?.cancel();
+    _timer = null;
+    await _running;
+  }
+
+  /// Lets the queue run its jobs again after [hold], and runs the pending jobs whose retry delay has passed.
+  void release() {
+    if (!_held) return;
+    _held = false;
+    unawaited(_run());
+  }
+
+  /// Marks every recorded upload as one that may not have arrived, and keeps the records, so that the next publish
+  /// uploads each photo again in place of trusting a record that a deletion may make false.
+  ///
+  /// The deletion of all data calls it before its first delete: from then on neither a delete that answers late nor a
+  /// record that a failure keeps can make a publish name an object without uploading it. An upload of the same path
+  /// is safe to repeat, and the records still give every object that a cleanup or a revoke must delete.
+  Future<void> forgetArrivedUploads() => _repository.forgetArrivedUploads();
+
+  /// Deletes from the backend everything that the app published under each of its pages, open and revoked: first
+  /// the objects of the photos that it uploaded or started to upload, then the reports, then the pages.
+  ///
+  /// Before the first delete, every pending job stops with [PublishFailure.deletion], so that no job publishes again
+  /// what this call deleted, also after a failure or a restart of the app. A later publish request, which the person
+  /// makes, starts a new job. The objects come first, because the rules of the photos read the page to find its owner.
+  /// The reports are those of every visit that a job ever published under the page, since a job that stopped may have
+  /// written its report before it stopped, and the rules do not let the app list the reports of a revoked page. Each
+  /// delete is safe to repeat, so a call after a failed one deletes what is left. The local pages and jobs stay: the
+  /// caller erases the local data after this call.
+  ///
+  /// Each delete runs through [timed], which the deletion of all data gives so that it keeps a delete that does not
+  /// answer in time until the delete ends. Without [timed], a delete fails after the step timeout of the queue. The
+  /// record of a photo goes after its delete answers; a record that stays names an object that may exist, which a
+  /// next call deletes again, and [forgetArrivedUploads] keeps a publish from trusting it.
+  ///
+  /// Throws a [StateError] while the queue is not held, because a job that runs at the same time could write again
+  /// what this call deleted. Throws a [PublishException] that a retry can fix while an upload that a cancel did not
+  /// end is on its way, before any delete, because that upload could create its object after the delete.
+  Future<void> deletePublished({TimedDelete? timed}) async {
+    final run = timed ?? _step;
+    if (!_held) throw StateError('The queue must be held while the published data is deleted');
+    if (_unsettled.isNotEmpty) {
+      throw PublishException(PublishErrorKind.transient, 'An upload to ${_unsettled.first} has not ended');
+    }
+    final pages = await _repository.pages();
+    if (pages.isEmpty) return;
+    // The rules let only the signed-in owner delete, and the answer also means that the backend started.
+    if (await _step(_identity.currentUserId()) == null) {
+      throw const PublishException(PublishErrorKind.transient, 'No user is signed in');
+    }
+    // A delete may reach the backend even when its answer does not reach the app, so the jobs stop before the first.
+    await _repository.stopPendingJobs(PublishFailure.deletion);
+    for (final page in pages) {
+      for (final objectPath in await _repository.uploadedObjects(page.id)) {
+        _expectSettled(objectPath);
+        await run(_publisher.deletePhoto(objectPath));
+        await _repository.removeUploadedPhoto(pageId: page.id, objectPath: objectPath);
+      }
+    }
+    for (final page in pages) {
+      final visitIds = {for (final job in await _repository.jobsOfPage(page.id)) ?job.visitId};
+      for (final visitId in visitIds) {
+        await run(_publisher.deleteReport(pageId: page.id, visitId: visitId));
+      }
+    }
+    for (final page in pages) {
+      await run(_publisher.deletePage(page.id));
+    }
+  }
+
   ClientPage _newPage(String clientId) =>
       ClientPage(id: newPageId(_random), clientId: clientId, createdAt: _clock.now());
 
@@ -208,6 +294,7 @@ final class PublishQueue {
       PublishJob(id: _idGenerator.newId(), kind: PublishJobKind.revoke, pageId: page.id, createdAt: now);
 
   Future<void> _resume() async {
+    if (_held) return;
     try {
       await _repository.clearRetryDelays();
     } on Object catch (error, stackTrace) {
@@ -218,7 +305,7 @@ final class PublishQueue {
 
   /// Runs the jobs that are due, or makes the run that is on its way look at the jobs again when it ends.
   Future<void> _run() {
-    if (_disposed) return Future.value();
+    if (_disposed || _held) return Future.value();
     if (_running case final running?) {
       _runAgain = true;
       return running;
@@ -234,10 +321,11 @@ final class PublishQueue {
 
   Future<void> _runDueJobs() async {
     try {
-      while (!_disposed) {
+      while (!_disposed && !_held) {
         _runAgain = false;
         for (final job in await _repository.pendingJobs()) {
-          if (_disposed) return;
+          // A hold waits for the job that runs now, and no other job starts.
+          if (_disposed || _held) return;
           if (job.nextAttemptAt case final at? when at.isAfter(_clock.now())) continue;
           await _runJob(job);
         }
@@ -257,7 +345,7 @@ final class PublishQueue {
   }
 
   void _scheduleNextRun(List<PublishJob> pending) {
-    if (_disposed || pending.isEmpty) return;
+    if (_disposed || _held || pending.isEmpty) return;
     final now = _clock.now();
     final next = pending.map((job) => job.nextAttemptAt ?? now).reduce((a, b) => a.isBefore(b) ? a : b);
     final delay = next.difference(now);
@@ -300,7 +388,7 @@ final class PublishQueue {
   Future<T> _step<T>(Future<T> step) => step.timeout(_stepTimeout);
 
   Future<PublishedPage> _pageContent(ClientPage page, String ownerUid) async {
-    // A page belongs to a client, and a client is never deleted.
+    // A page belongs to a client, and a client is deleted only with every page and job, while the queue is held.
     final client = (await _clients.clientById(page.clientId))!;
     final profile = await _companyProfile.load();
     return PublishedPage(
@@ -312,7 +400,8 @@ final class PublishQueue {
   }
 
   Future<void> _publish(PublishJob job, String ownerUid) async {
-    // A job belongs to a page, and a publish job to a visit, and neither a page nor a visit is ever deleted.
+    // A job belongs to a page, and a publish job to a visit. A page or a visit is deleted only with every job, while
+    // the queue is held.
     final page = (await _repository.pageById(job.pageId))!;
     if (page.isRevoked) throw const _Stop(PublishFailure.revoked);
     final visit = (await _visits.visitById(job.visitId!))!;

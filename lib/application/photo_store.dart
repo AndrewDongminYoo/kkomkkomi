@@ -15,6 +15,10 @@ abstract interface class PhotoStore {
   /// Deletes the file of [photo]. A file that does not exist is no failure.
   Future<void> delete(PhotoRef photo);
 
+  /// Deletes the file of every photo, with the `photos/` directory that holds them. A directory that does not exist
+  /// is no failure.
+  Future<void> deleteAll();
+
   /// The bytes of the file of [photo]. Throws an exception when the file does not exist.
   Future<Uint8List> read(PhotoRef photo);
 
