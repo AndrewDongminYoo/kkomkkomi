@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:bloc_test/bloc_test.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:kkomkkomi/application/application.dart';
 import 'package:kkomkkomi/domain/domain.dart';
 import 'package:kkomkkomi/presentation/presentation.dart';
 import 'package:mocktail/mocktail.dart';
@@ -13,8 +14,20 @@ void main() {
   final failure = Exception('storage failed');
 
   late MockCompanyProfileRepository companyProfile;
+  late FakeLocalDataRepository localData;
+  late FakePhotoStore photoStore;
+  late PublishQueue publishQueue;
 
-  CompanyProfileCubit build() => CompanyProfileCubit(companyProfile: companyProfile);
+  CompanyProfileCubit build() => CompanyProfileCubit(
+    companyProfile: companyProfile,
+    // A queue without a backend, so the deletion deletes the data on the device only.
+    deleteAllData: DeleteAllData(
+      publishQueue: publishQueue,
+      identity: FakeIdentity(),
+      localData: localData,
+      photoStore: photoStore,
+    ),
+  );
 
   CompanyProfileState ready({String name = '', NameEntry entry = NameEntry.editing}) =>
       CompanyProfileState(status: CompanyProfileStatus.ready, name: name, entry: entry);
@@ -24,18 +37,37 @@ void main() {
   setUp(() {
     companyProfile = MockCompanyProfileRepository();
     when(() => companyProfile.save(any())).thenAnswer((_) async {});
+    localData = FakeLocalDataRepository();
+    photoStore = FakePhotoStore();
+    publishQueue = publishQueueOf(mockRepositories());
   });
+
+  tearDown(() => publishQueue.dispose());
 
   group('CompanyProfileState', () {
     test('is equal to a state with the same fields', () {
       expect(ready(name: '반짝 클린'), ready(name: '반짝 클린'));
       expect(ready(name: '반짝 클린').hashCode, ready(name: '반짝 클린').hashCode);
+      expect(
+        ready().withDeletion(DataDeletion.idle, failure: DeletionStep.account),
+        ready().withDeletion(DataDeletion.idle, failure: DeletionStep.account),
+      );
     });
 
     test('differs from a state with another field value', () {
       expect(ready(), isNot(const CompanyProfileState()));
       expect(ready(), isNot(ready(name: '반짝 클린')));
       expect(ready(), isNot(ready(entry: NameEntry.saved)));
+      expect(ready(), isNot(ready().withDeletion(DataDeletion.deleting)));
+      expect(ready(), isNot(ready().withDeletion(DataDeletion.idle, failure: DeletionStep.deviceData)));
+    });
+
+    test('keeps the deletion through a change of the name', () {
+      final deleting = ready().withDeletion(DataDeletion.idle, failure: DeletionStep.account);
+
+      expect(deleting.copyWith(entry: NameEntry.saving).deletionFailure, DeletionStep.account);
+      expect(deleting.copyWith(entry: NameEntry.saving).entry, NameEntry.saving);
+      expect(deleting.copyWith(), deleting);
     });
   });
 
@@ -176,6 +208,97 @@ void main() {
           await save;
 
           expect(cubit.state.entry, NameEntry.saving);
+        });
+      }
+    });
+
+    group('deleteAllData', () {
+      blocTest<CompanyProfileCubit, CompanyProfileState>(
+        'deletes all data and reports that it did',
+        build: build,
+        seed: () => ready(name: '반짝 클린'),
+        act: (cubit) => cubit.deleteAllData(),
+        expect: () => [
+          ready(name: '반짝 클린').withDeletion(DataDeletion.deleting),
+          ready(name: '반짝 클린').withDeletion(DataDeletion.deleted),
+        ],
+        verify: (_) {
+          expect(localData.erasures, 1);
+          expect(photoStore.deletionsOfAll, 1);
+        },
+      );
+
+      blocTest<CompanyProfileCubit, CompanyProfileState>(
+        'names the step at which the deletion stopped, and clears it at the next try',
+        setUp: () => localData.failure = Exception('disk I/O error'),
+        build: build,
+        seed: ready,
+        act: (cubit) async {
+          await cubit.deleteAllData();
+          localData.failure = null;
+          await cubit.deleteAllData();
+        },
+        expect: () => [
+          ready().withDeletion(DataDeletion.deleting),
+          ready().withDeletion(DataDeletion.idle, failure: DeletionStep.deviceData),
+          ready().withDeletion(DataDeletion.deleting),
+          ready().withDeletion(DataDeletion.deleted),
+        ],
+        errors: () => [isA<DeletionFailure>()],
+      );
+
+      blocTest<CompanyProfileCubit, CompanyProfileState>(
+        'takes no second deletion while the first is on its way',
+        setUp: () => localData.gate = Completer<void>(),
+        build: build,
+        seed: ready,
+        act: (cubit) async {
+          final first = cubit.deleteAllData();
+          await cubit.deleteAllData();
+          localData.gate!.complete();
+          await first;
+        },
+        expect: () => [ready().withDeletion(DataDeletion.deleting), ready().withDeletion(DataDeletion.deleted)],
+        verify: (_) => expect(localData.erasures, 1),
+      );
+
+      blocTest<CompanyProfileCubit, CompanyProfileState>(
+        'saves no name while a deletion is on its way or after it completed',
+        setUp: () => localData.gate = Completer<void>(),
+        build: build,
+        seed: ready,
+        act: (cubit) async {
+          final deletion = cubit.deleteAllData();
+          await cubit.save('반짝 클린');
+          localData.gate!.complete();
+          await deletion;
+          await cubit.save('반짝 클린');
+        },
+        expect: () => [ready().withDeletion(DataDeletion.deleting), ready().withDeletion(DataDeletion.deleted)],
+        verify: (_) => verifyNever(() => companyProfile.save(any())),
+      );
+
+      blocTest<CompanyProfileCubit, CompanyProfileState>(
+        'starts no deletion while a name is on its way to storage',
+        build: build,
+        seed: () => ready(entry: NameEntry.saving),
+        act: (cubit) => cubit.deleteAllData(),
+        expect: () => <CompanyProfileState>[],
+        verify: (_) => expect(localData.erasures, 0),
+      );
+
+      for (final (description, fails) in [('the deletion ends', false), ('the deletion fails', true)]) {
+        test('emits nothing more when the cubit closes before $description', () async {
+          localData.gate = Completer<void>();
+          if (fails) localData.failure = Exception('disk I/O error');
+          final cubit = build();
+
+          final deletion = cubit.deleteAllData();
+          await cubit.close();
+          localData.gate!.complete();
+          await deletion;
+
+          expect(cubit.state.deletion, DataDeletion.deleting);
         });
       }
     });

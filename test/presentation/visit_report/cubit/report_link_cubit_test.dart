@@ -73,6 +73,7 @@ void main() {
       companyProfile: FakeCompanyProfileRepository(profile: CompanyProfile(name: '깔끔클린')),
       publishing: publishing,
       openCaptures: FakeOpenCaptureRepository(),
+      localData: FakeLocalDataRepository(),
     );
     publisher = FakePublisher();
     photoStore = FakePhotoStore();
@@ -93,7 +94,7 @@ void main() {
       ReportLinkCubit(visitId: id, visits: repositories.visits, publishQueue: queue, linkShare: share ?? linkShare);
 
   /// The only page that the store holds.
-  ClientPage onlyPage() => publishing.pages.values.single;
+  ClientPage onlyPage() => publishing.pagesById.values.single;
 
   /// Waits until the cubit reaches a state that [matches].
   Future<void> until(ReportLinkCubit cubit, bool Function(ReportLinkState state) matches) async {

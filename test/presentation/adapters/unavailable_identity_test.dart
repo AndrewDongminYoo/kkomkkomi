@@ -10,5 +10,12 @@ void main() {
       expect(await identity.currentUserId(), isNull);
       expect(await identity.currentUserId(), isNull);
     });
+
+    test('deletes no account, because it holds none', () async {
+      const Identity identity = UnavailableIdentity();
+
+      await expectLater(identity.deleteAccount(), completes);
+      expect(await identity.currentUserId(), isNull);
+    });
   });
 }

@@ -3,7 +3,8 @@ import 'package:sqflite/sqflite.dart';
 /// The version of the schema that [createSchema] creates.
 const schemaVersion = 3;
 
-// No row of `clients`, `zones`, or `visits` is ever deleted, so the foreign keys declare no delete action.
+// No row of `clients`, `zones`, or `visits` is deleted alone, so the foreign keys declare no delete action. The erase of
+// all data deletes the rows of every table at once, children first.
 const _version1 = [
   '''
 CREATE TABLE company_profile (
@@ -48,7 +49,7 @@ CREATE TABLE zone_records (
 ];
 
 // Version 2 adds the client pages, the publish jobs, and the photos that reached the backend. A row of
-// `client_pages` and `publish_jobs` is never deleted either: a revoked page keeps its row, and a job keeps the state
+// `client_pages` and `publish_jobs` is not deleted alone either: a revoked page keeps its row, and a job keeps the state
 // that it ended in.
 const _version2 = [
   '''

@@ -50,15 +50,9 @@
       <article class="sheet">
         <header class="sheet-head">
           <h1>Kkomkkomi Privacy Policy</h1>
+          <p>Effective date: October 2, 2026</p>
           <p>
-            Effective date:
-            <span class="todo">[Operator to confirm: effective date]</span>
-          </p>
-          <p>
-            Privacy officer and contact:
-            <span class="todo"
-              >[Operator to confirm: privacy officer and contact]</span
-            >
+            Privacy officer and contact: Dongmin Yu (유동민), ydm2790@gmail.com
           </p>
         </header>
 
@@ -109,7 +103,8 @@
         </p>
         <p>
           Uninstalling the app deletes the data on the phone. A copy in a backup
-          stays in your account.
+          stays in your account. Section 6 says how to delete the data from
+          inside the app.
         </p>
 
         <h2 id="sign-in">2. Anonymous sign-in and the user ID</h2>
@@ -125,13 +120,12 @@
           addresses for a few weeks.
         </p>
         <p>
-          This project has automatic clean-up of anonymous accounts turned on.
-          An anonymous account can be deleted at any time after it is 30 days
-          old, even while it is still in use. After the account is deleted, you
-          and the app can no longer change or close the pages and reports it
-          published, and their links stay open until the operator closes them.
-          The operator can close or delete those pages on request; section 11
-          says how to ask.
+          The anonymous account is deleted when you delete all data in the app
+          (section 6). If the account is lost in another way, for example when
+          the app is uninstalled, you and the app can no longer change, close,
+          or delete the pages and reports it published, and their links stay
+          open until the operator closes them (section 7). The operator can
+          close or delete those pages on request; section 12 says how to ask.
         </p>
 
         <h2 id="publish">3. What a link share sends</h2>
@@ -212,13 +206,11 @@
 
         <h2 id="revoke">5. Closing a link</h2>
         <p>
-          The app has no control to close a link yet (planned). So a link stays
-          open once it is shared, until the operator closes it. To close a link
-          or delete data, ask the operator at the contact in section 11.
-          <span class="todo"
-            >[Operator to confirm: how and how fast close and delete requests
-            are handled]</span
-          >
+          The app has no control yet that closes the link of one client
+          (planned). To close every link you shared and delete the data on the
+          server, use "Delete All Data" in section 6, or ask the operator at the
+          contact in section 12. The operator tells you the result within 10
+          days of receiving the request.
         </p>
         <p>The app's close function is built as follows.</p>
         <ul>
@@ -233,57 +225,130 @@
           </li>
           <li>
             It does not delete the client page document or the report documents.
-            The security rules do not let the app delete a document, so the
-            company name, the client name, the visit dates, the zone names, the
-            notes, and the user ID stay on the server until the operator deletes
-            them. After the page is closed, the link cannot read them, and the
-            operator can still access them.
+            The company name, the client name, the visit dates, the zone names,
+            the notes, and the user ID stay on the server. After the page is
+            closed, the link cannot read them, and the operator can still access
+            them. "Delete All Data" in section 6, or the operator, deletes these
+            documents.
           </li>
         </ul>
 
-        <h2 id="uninstall">6. When the app is uninstalled</h2>
+        <h2 id="delete">6. Deleting all data in the app</h2>
         <p>
-          Uninstalling the app deletes the publish records on the phone, and the
-          anonymous account can be lost with them. Unless its data is restored
-          from a backup, a reinstalled app does not know the pages it published
-          before, and a new anonymous account cannot change or close the pages
-          of the old one. So a link that was never closed stays open until the
-          operator closes it, and it cannot be closed from the app. The same
-          holds when the anonymous account is deleted automatically after 30
-          days (section 2). To have such a link closed or deleted, ask the
-          operator at the contact in section 11.
+          When you tap "Delete All Data" on the company profile screen and
+          confirm, the app deletes the following, in this order.
         </p>
-
-        <h2 id="retention">7. How long data is kept</h2>
+        <ol>
+          <li>
+            The photo files that the app uploaded or started to upload (Cloud
+            Storage), those of closed links included
+          </li>
+          <li>
+            The visit report documents, then the client page documents (Cloud
+            Firestore), closed pages included
+          </li>
+          <li>The anonymous account (Firebase Authentication)</li>
+          <li>
+            The database on the phone (the company name, the clients, the zones,
+            the visits, the notes, and the publish records) and the photo files
+            in the app's folder
+          </li>
+        </ol>
+        <p>
+          If a step fails, the app runs none of the steps after it, and the
+          screen says which step failed. The data on the phone stays until the
+          data on the server and the account are deleted, so you can try again.
+          The development and test builds of the app have no server, so they
+          delete only the data on the phone.
+        </p>
+        <p>
+          Before it starts to delete the data on the server, the app stops the
+          report uploads and link closings that are still waiting. If the
+          deletion stops halfway or the app starts again, a stopped report is
+          not uploaded again, unless you tap Share link again.
+        </p>
+        <p>
+          After the deletion, the links you shared no longer open, and the app
+          is as it was when first installed. The app signs in with a new
+          anonymous account the next time it starts or shares a report as a link
+          (section 2).
+        </p>
+        <p>The following can remain after the deletion.</p>
         <ul>
           <li>
-            Data on the phone: until the app is uninstalled. The app has no
-            control to delete a client or a visit, and a client can only be
-            archived from the list. A photo that is retaken has its old file
-            deleted.
+            Deleted photo files: Cloud Storage keeps them recoverable for 7
+            days, and then they are gone.
+          </li>
+          <li>
+            The data of the deleted anonymous account: Firebase removes it from
+            its live and backup systems within 180 days. IP addresses logged at
+            sign-in are kept for a few weeks, and the IP addresses of web page
+            visitors that Firebase Hosting logs, for a few months.
+          </li>
+          <li>
+            Pages and photos published before the app was reinstalled, or from
+            another phone: the app on this phone does not know them, so it
+            cannot delete them. Ask at the contact in section 12.
+          </li>
+          <li>
+            Rarely, a photo upload that the app cancelled because it took too
+            long can still finish on the server, and that photo file can then
+            remain.
+          </li>
+          <li>
+            The files that the photo picker and the PDF share left in the cache
+            and temporary folders (section 1): they stay until the system clears
+            them or the app is uninstalled.
+          </li>
+          <li>A copy in a phone backup: it stays in your account.</li>
+          <li>
+            PDF files that recipients saved or forwarded, and photos and screens
+            that they saved from a link
+          </li>
+        </ul>
+
+        <h2 id="uninstall">7. When the app is uninstalled</h2>
+        <p>
+          Uninstalling the app deletes the publish records on the phone, and the
+          anonymous account can be lost with them, but the data on the server
+          and the account are not deleted. Unless its data is restored from a
+          backup, a reinstalled app does not know the pages it published before,
+          and a new anonymous account cannot change, close, or delete the pages
+          of the old one. So a link that was never closed stays open until the
+          operator closes it, and it cannot be closed from the app. To delete
+          the data on the server and the account too, use "Delete All Data" in
+          section 6 before you uninstall the app. If the app is already
+          uninstalled, ask the operator at the contact in section 12.
+        </p>
+
+        <h2 id="retention">8. How long data is kept</h2>
+        <ul>
+          <li>
+            Data on the phone: until you delete all data (section 6) or
+            uninstall the app. The app has no control that deletes one client or
+            one visit, and a client can only be archived from the list. A photo
+            that is retaken has its old file deleted.
           </li>
           <li>
             Client page documents and report documents: nothing deletes them
-            automatically. They stay until the operator deletes them.
-            <span class="todo"
-              >[Operator to confirm: retention period of the server
-              documents]</span
-            >
+            automatically. They stay until you delete all data (section 6), or
+            until the operator deletes them at your request.
           </li>
           <li>
             Photos: until the link is closed, a new upload of the report drops
-            them, or the operator deletes them, and then 7 days in a recoverable
-            state
+            them, you delete all data, or the operator deletes them, and then 7
+            days in a recoverable state
           </li>
           <li>
-            Anonymous accounts: can be deleted at any time after they are 30
-            days old. IP addresses logged at sign-in are kept for a few weeks.
+            Anonymous accounts: until you delete all data. The data of a deleted
+            account is removed from backups too within 180 days. IP addresses
+            logged at sign-in are kept for a few weeks.
           </li>
           <li>IP addresses logged by Firebase Hosting: a few months</li>
         </ul>
 
         <h2 id="location">
-          8. Where data is stored, processing by Google, and transfer abroad
+          9. Where data is stored, processing by Google, and transfer abroad
         </h2>
         <p>
           Firebase, which Google operates, processes the data on the server
@@ -295,12 +360,10 @@
           visitor can be processed outside Korea.
         </p>
         <p>
-          <span class="todo"
-            >[Operator to confirm: the legal basis for disclosing Google as a
-            processor and for the transfer abroad, and whether the items below
-            are complete, including where the Firestore and Cloud Storage
-            requests that read a report are processed]</span
-          >
+          The operator entrusts Google with the processing that the app and the
+          web reports need, and discloses the items below on the transfer abroad
+          in this policy, under Article 28-8(1)(3) of the Korean Personal
+          Information Protection Act.
         </p>
         <dl>
           <dt>Data transferred</dt>
@@ -320,11 +383,11 @@
           </dd>
           <dt>Recipient</dt>
           <dd>
-            Google LLC
-            <span class="todo">[Operator to confirm: Google's contact]</span>
+            Google LLC. Contact: Firebase Support
+            (firebase.google.com/support/troubleshooter/contact)
           </dd>
           <dt>Purpose and retention</dt>
-          <dd>Sign-in and serving the pages. Retention is as in section 7.</dd>
+          <dd>Sign-in and serving the pages. Retention is as in section 8.</dd>
           <dt>How to refuse, and the effect</dt>
           <dd>
             The app signs in when it starts, so there is currently no way to
@@ -333,11 +396,20 @@
           </dd>
         </dl>
 
-        <h2 id="not-collected">9. What is not collected</h2>
+        <h2 id="not-collected">
+          10. Analytics, diagnostic data, location, and cookies
+        </h2>
         <ul>
           <li>
-            The app contains no analytics, crash reporting, or advertising
-            tools.
+            The app contains no analytics, crash reporting, or advertising tools
+            that the operator uses. The Firebase SDKs inside the app
+            (Authentication, Cloud Firestore, and Installations) declare in
+            their own privacy manifests that they collect "other diagnostic
+            data" for analytics, not linked to the user and not used for
+            tracking. Google names the Firebase user agent (device, operating
+            system version, and SDK versions) as such data that Firebase
+            Authentication and Cloud Firestore send, and says that Google uses
+            it to provide and improve Firebase services.
           </li>
           <li>
             The app does not ask for location permission. It removes a location
@@ -347,32 +419,35 @@
           <li>This page and the web report page use no cookies.</li>
         </ul>
 
-        <h2 id="photos">10. What photos can show</h2>
+        <h2 id="photos">11. What photos can show</h2>
         <p>
           Before and after photos can show people's faces, monitor screens, and
           documents. The app has no capture guide and no tool to hide part of a
           photo yet. Check what a photo shows before you upload it.
         </p>
         <p>
-          <span class="todo"
-            >[Operator to confirm: whether the cleaning company or the app
-            operator is responsible, under the Korean Personal Information
-            Protection Act, for the personal information of people in the
-            photos]</span
-          >
+          The cleaning company that takes and uploads the photos is responsible
+          for the personal information of the people in them, as the party that
+          processes it. The app operator provides the app and the servers that
+          keep and show the photos.
         </p>
 
-        <h2 id="rights">11. Your rights and how to make a request</h2>
+        <h2 id="rights">12. Your rights and how to make a request</h2>
         <p>
           You can ask to see, correct, or delete your information, or to stop
-          its processing. Data on the phone is deleted when you uninstall the
-          app. For data on the server, contact the operator below.
+          its processing. In the app, "Delete All Data" in section 6 deletes the
+          data on the server and on the phone directly. For any other request,
+          email the contact below. The anonymous account has no name or contact,
+          so include something that finds the data, such as the link of a client
+          page.
         </p>
         <p>
-          <span class="todo"
-            >[Operator to confirm: privacy officer and contact]</span
-          >
+          The operator lets you see the data, or tells you the result, within 10
+          days of receiving the request (Enforcement Decree of the Personal
+          Information Protection Act, Article 41(4) and (5), Article 43(3), and
+          Article 44(2)).
         </p>
+        <p>Privacy officer: Dongmin Yu (유동민), ydm2790@gmail.com</p>
       </article>
     </main>
   </body>

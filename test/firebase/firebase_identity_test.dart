@@ -164,5 +164,82 @@ void main() {
       expect(await identity.currentUserId(), 'user-1');
       verify(() => auth.signInAnonymously()).called(2);
     });
+
+    group('deleteAccount', () {
+      test('starts Firebase and deletes the account that the device holds', () async {
+        final user = userWithId('user-1');
+        when(user.delete).thenAnswer((_) async {
+          // The delete comes after the start, because Firebase Auth needs the app.
+          expect(starts, 1);
+        });
+        when(() => auth.currentUser).thenReturn(user);
+
+        await identity().deleteAccount();
+
+        verify(user.delete).called(1);
+        verifyNever(() => auth.signInAnonymously());
+      });
+
+      test('waits for a sign-in that is on its way, and deletes the account that it makes', () async {
+        final signIn = Completer<UserCredential>();
+        final user = userWithId('user-1');
+        final credential = credentialOf(user);
+        when(user.delete).thenAnswer((_) async {});
+        when(() => auth.signInAnonymously()).thenAnswer((_) => signIn.future);
+        final identity = FirebaseIdentity(initializeApp: initializeApp, auth: auth);
+
+        final startedAtLaunch = identity.currentUserId();
+        await pumpEventQueue();
+        final deletion = identity.deleteAccount();
+        await pumpEventQueue();
+        verifyNever(user.delete);
+
+        when(() => auth.currentUser).thenReturn(user);
+        signIn.complete(credential);
+        await startedAtLaunch;
+        await deletion;
+
+        verify(user.delete).called(1);
+      });
+
+      test('does nothing when the device holds no account, and never signs in', () async {
+        await identity().deleteAccount();
+
+        expect(starts, 1);
+        verifyNever(() => auth.signInAnonymously());
+      });
+
+      test('treats an account that the backend no longer has as deleted, and signs out of it', () async {
+        final user = userWithId('user-1');
+        when(user.delete).thenThrow(FirebaseAuthException(code: 'user-not-found'));
+        when(() => auth.currentUser).thenReturn(user);
+        when(() => auth.signOut()).thenAnswer((_) async {});
+
+        await identity().deleteAccount();
+
+        verify(() => auth.signOut()).called(1);
+      });
+
+      for (final code in ['network-request-failed', 'requires-recent-login']) {
+        test('throws when the delete fails with $code', () async {
+          final user = userWithId('user-1');
+          when(user.delete).thenThrow(FirebaseAuthException(code: code));
+          when(() => auth.currentUser).thenReturn(user);
+
+          await expectLater(
+            identity().deleteAccount(),
+            throwsA(isA<FirebaseAuthException>().having((error) => error.code, 'code', code)),
+          );
+          verifyNever(() => auth.signOut());
+        });
+      }
+
+      test('throws when Firebase does not start', () async {
+        startFailures.add(Exception('no native config'));
+
+        await expectLater(identity().deleteAccount(), throwsException);
+        verifyZeroInteractions(auth);
+      });
+    });
   });
 }

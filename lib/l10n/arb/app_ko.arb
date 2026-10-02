@@ -248,6 +248,50 @@
     "@companyProfileLoadFailedMessage": {
         "description": "회사 정보를 불러오지 못했을 때 입력 화면 대신 표시되는 문구"
     },
+    "dataDeletionTitle": "모든 데이터 지우기",
+    "@dataDeletionTitle": {
+        "description": "회사 정보 화면 아래, 모든 데이터를 지우는 부분의 제목"
+    },
+    "dataDeletionDescription": "이 휴대폰의 거래처, 방문 기록, 사진, 회사 정보와, 링크로 올린 보고서와 사진, 익명 계정을 모두 지워요.",
+    "@dataDeletionDescription": {
+        "description": "모든 데이터를 지우는 버튼 위에서 무엇을 지우는지 알려주는 문구"
+    },
+    "dataDeletionButton": "모든 데이터 지우기",
+    "@dataDeletionButton": {
+        "description": "모든 데이터를 지우는 확인 창을 여는 버튼의 라벨"
+    },
+    "dataDeletionDialogTitle": "모든 데이터를 지울까요?",
+    "@dataDeletionDialogTitle": {
+        "description": "모든 데이터를 지우기 전에 묻는 확인 창의 제목"
+    },
+    "dataDeletionDialogMessage": "이 휴대폰의 거래처, 구역, 방문 기록, 사진, 회사 정보와, 서버에 올린 보고서와 사진, 익명 계정을 지워요. 지운 데이터는 되살릴 수 없고, 공유한 링크는 더 이상 열리지 않아요.",
+    "@dataDeletionDialogMessage": {
+        "description": "모든 데이터를 지우기 전에 묻는 확인 창의 본문. 무엇이 지워지고 공유한 링크가 열리지 않게 된다는 결과를 알려준다"
+    },
+    "dataDeletionConfirmButton": "지우기",
+    "@dataDeletionConfirmButton": {
+        "description": "확인 창에서 모든 데이터를 지우는 버튼의 라벨"
+    },
+    "dataDeletingMessage": "데이터를 지우고 있어요. 다 지울 때까지 이 화면을 열어 두세요.",
+    "@dataDeletingMessage": {
+        "description": "모든 데이터를 지우는 동안 진행 표시 아래에 보이는 문구"
+    },
+    "dataDeletionPublishedFailedMessage": "올린 보고서와 사진을 지우지 못했어요. 인터넷 연결을 확인하고 다시 시도해 주세요. 휴대폰의 데이터는 그대로 있어요.",
+    "@dataDeletionPublishedFailedMessage": {
+        "description": "서버에 올린 보고서와 사진을 지우지 못해 모든 데이터 지우기가 멈췄을 때 보이는 문구"
+    },
+    "dataDeletionAccountFailedMessage": "익명 계정을 지우지 못했어요. 인터넷 연결을 확인하고 다시 시도해 주세요. 올린 보고서와 사진은 지웠고, 휴대폰의 데이터는 그대로 있어요.",
+    "@dataDeletionAccountFailedMessage": {
+        "description": "익명 계정을 지우지 못해 모든 데이터 지우기가 멈췄을 때 보이는 문구"
+    },
+    "dataDeletionDeviceFailedMessage": "휴대폰의 데이터를 지우지 못했어요. 다시 시도해 주세요. 서버의 데이터와 익명 계정은 지웠어요.",
+    "@dataDeletionDeviceFailedMessage": {
+        "description": "휴대폰의 데이터베이스나 사진 파일을 지우지 못해 모든 데이터 지우기가 멈췄을 때 보이는 문구"
+    },
+    "dataDeletedMessage": "모든 데이터를 지웠어요.",
+    "@dataDeletedMessage": {
+        "description": "모든 데이터를 지운 뒤 거래처 목록으로 돌아가며 표시되는 문구"
+    },
     "visitReportOpenButton": "보고서 보기",
     "@visitReportOpenButton": {
         "description": "방문 화면의 구역 아래에서 보고서 화면을 여는 버튼의 라벨"
@@ -363,6 +407,10 @@
     "reportLinkRevokedMessage": "올리는 동안 이 거래처의 링크가 바뀌었어요. 다시 시도해 주세요.",
     "@reportLinkRevokedMessage": {
         "description": "보고서를 올리는 동안 거래처 페이지의 링크가 끊겼을 때 표시되는 문구"
+    },
+    "reportLinkStoppedByDeletionMessage": "모든 데이터 지우기를 시작해서 보고서 올리기를 멈췄어요. 링크로 공유하기를 다시 누르면 다시 올려요.",
+    "@reportLinkStoppedByDeletionMessage": {
+        "description": "모든 데이터 지우기가 기다리던 보고서 올리기를 멈췄을 때 표시되는 문구"
     },
     "reportLinkPhotoMissingMessage": "이 방문의 사진 파일을 찾지 못했어요. 방문 화면에서 사진을 다시 찍은 뒤 다시 시도해 주세요.",
     "@reportLinkPhotoMissingMessage": {

@@ -88,6 +88,41 @@ void main() {
     expect(await repository.pageById('page-9'), isNull);
   });
 
+  test('pages gives every page, open and revoked, oldest first', () async {
+    expect(await repository.pages(), isEmpty);
+    await repository.openPageOf('client-1', create: () => page('page-b'));
+    await repository.openPageOf('client-2', create: () => page('page-a', clientId: 'client-2'));
+    final revokedAt = DateTime.utc(2026, 10, 2);
+    await repository.revoke(
+      page('page-b'),
+      at: revokedAt,
+      revokeJob: job('revoke-1', pageId: 'page-b', visitId: null),
+    );
+
+    // Both pages have the same creation time, so the order of their rows decides.
+    expect(await repository.pages(), [
+      page('page-b', revokedAt: revokedAt),
+      page('page-a', clientId: 'client-2'),
+    ]);
+  });
+
+  test('stopPendingJobs stops every pending publish and revoke job with the reason, and keeps the others', () async {
+    await repository.openPageOf('client-1', create: () => page('page-1'));
+    await repository.enqueue(job('done', minute: 1));
+    await repository.saveJob(job('done', minute: 1).succeed());
+    await repository.enqueue(job('waiting', visitId: 'visit-2', minute: 2));
+    await repository.enqueue(job('revoke', visitId: null, kind: PublishJobKind.revoke, minute: 3));
+
+    await repository.stopPendingJobs(PublishFailure.deletion);
+
+    expect(await repository.pendingJobs(), isEmpty);
+    expect(await repository.jobsOfPage('page-1'), [
+      job('done', minute: 1).succeed(),
+      job('waiting', visitId: 'visit-2', minute: 2).fail(PublishFailure.deletion),
+      job('revoke', visitId: null, kind: PublishJobKind.revoke, minute: 3).fail(PublishFailure.deletion),
+    ]);
+  });
+
   group('jobs', () {
     setUp(() async {
       await repository.openPageOf('client-1', create: () => page('page-1'));

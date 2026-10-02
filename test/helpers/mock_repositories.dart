@@ -28,5 +28,6 @@ Repositories mockRepositories() {
     companyProfile: MockCompanyProfileRepository(),
     publishing: publishing,
     openCaptures: FakeOpenCaptureRepository(),
+    localData: FakeLocalDataRepository(),
   );
 }

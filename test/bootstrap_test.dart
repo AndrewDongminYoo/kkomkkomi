@@ -354,6 +354,7 @@ void main() {
             companyProfile: mocks.companyProfile,
             publishing: mocks.publishing,
             openCaptures: openCaptures,
+            localData: FakeLocalDataRepository(),
           ),
         );
       }

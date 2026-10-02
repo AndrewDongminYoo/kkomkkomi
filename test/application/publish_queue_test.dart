@@ -72,6 +72,9 @@ class _GatedRepository implements PublishRepository {
   Future<ClientPage?> pageById(String id) => _inner.pageById(id);
 
   @override
+  Future<List<ClientPage>> pages() => _inner.pages();
+
+  @override
   Future<PublishJob> enqueue(PublishJob job) => _inner.enqueue(job);
 
   @override
@@ -100,6 +103,9 @@ class _GatedRepository implements PublishRepository {
 
   @override
   Future<List<PublishJob>> jobsOfPage(String pageId) => _inner.jobsOfPage(pageId);
+
+  @override
+  Future<void> stopPendingJobs(PublishFailure reason) => _inner.stopPendingJobs(reason);
 
   @override
   Future<void> clearRetryDelays() => _inner.clearRetryDelays();
@@ -1187,6 +1193,232 @@ void main() {
 
       expect(await repositories.publishing.openPageOf('client-1'), page);
       expect(await repositories.publishing.pendingJobs(), isEmpty);
+    });
+  });
+
+  group('hold', () {
+    test('starts no job at a request or when the network returns, and release runs the jobs', () async {
+      final queue = newQueue();
+      await queue.start();
+
+      await queue.hold();
+      final job = await queue.publishVisit('visit-2');
+      network.restore();
+      await settle();
+
+      expect(queue.isHeld, isTrue);
+      expect(publisher.calls, isEmpty);
+      expect((await jobOf(job)).status, PublishJobStatus.pending);
+
+      queue.release();
+      await settle();
+
+      expect(queue.isHeld, isFalse);
+      expect((await jobOf(job)).status, PublishJobStatus.done);
+    });
+
+    test('waits for the job that runs now, and no other job of the same run starts after it', () async {
+      // Two jobs that an earlier queue left, so that the first run reads both before the hold.
+      publisher.failures['writePage'] = [_transient, _transient];
+      final earlier = newQueue();
+      final first = await earlier.publishVisit('visit-1');
+      final second = await earlier.publishVisit('visit-2');
+      await settle();
+      await earlier.dispose();
+      expect((await repositories.publishing.pendingJobs()).map((job) => job.id), [first.id, second.id]);
+      publisher.calls.clear();
+      final queue = newQueue();
+      publisher.gate = Completer<void>();
+      unawaited(queue.start());
+      await settle();
+      expect(publisher.calls, ['writePage ${first.pageId}']);
+
+      var held = false;
+      unawaited(queue.hold().then((_) => held = true));
+      await settle();
+      expect(held, isFalse);
+
+      publisher.gate!.complete();
+      await settle();
+
+      expect(held, isTrue);
+      expect((await jobOf(first)).status, PublishJobStatus.done);
+      expect((await jobOf(second)).status, PublishJobStatus.pending);
+      expect(publisher.calls.where((call) => call.startsWith('writeReport')), ['writeReport ${first.pageId}/visit-1']);
+    });
+
+    test('stops the retry timer, and a job inside its delay waits for the release', () async {
+      publisher.failures['writePage'] = [_transient];
+      final queue = newQueue();
+      final job = await queue.publishVisit('visit-2');
+      await settle();
+      expect(activeTimers(), hasLength(1));
+
+      await queue.hold();
+
+      expect(activeTimers(), isEmpty);
+      queue.release();
+      await settle();
+      expect((await jobOf(job)).status, PublishJobStatus.pending);
+      expect(activeTimers(), hasLength(1));
+    });
+
+    test('a release of a queue that is not held runs nothing', () async {
+      final queue = newQueue();
+
+      queue.release();
+      await settle();
+
+      expect(queue.isHeld, isFalse);
+      expect(publisher.calls, isEmpty);
+    });
+  });
+
+  group('deletePublished', () {
+    test('throws a StateError while the queue is not held', () async {
+      final queue = newQueue();
+
+      await expectLater(queue.deletePublished(), throwsStateError);
+      expect(publisher.calls, isEmpty);
+    });
+
+    test(
+      'deletes the objects of every page, then the reports of every visit that a job published, then the pages',
+      () async {
+        final queue = newQueue();
+        final revoked = await queue.publishVisit('visit-1');
+        await settle();
+        await queue.revokeClientPage('client-1');
+        await settle();
+        final open = await queue.publishVisit('visit-1');
+        await settle();
+        // A job that stopped is still a job of the page, and a report that it wrote before it stopped stays.
+        publisher.failures['writeReport'] = [_refused];
+        final stopped = await queue.publishVisit('visit-2');
+        await settle();
+        expect((await jobOf(stopped)).status, PublishJobStatus.failed);
+        final objects = await repositories.publishing.uploadedObjects(open.pageId);
+        expect(objects, hasLength(3));
+        publisher.calls.clear();
+
+        await queue.hold();
+        await queue.deletePublished();
+
+        expect(publisher.calls, [
+          for (final object in objects) 'deletePhoto $object',
+          'deleteReport ${revoked.pageId}/visit-1',
+          'deleteReport ${open.pageId}/visit-1',
+          'deleteReport ${open.pageId}/visit-2',
+          'deletePage ${revoked.pageId}',
+          'deletePage ${open.pageId}',
+        ]);
+        expect(publisher.objects, isEmpty);
+        expect(publisher.reports, isEmpty);
+        expect(publisher.pages, isEmpty);
+        expect(publisher.revokedPages, isEmpty);
+        expect(await repositories.publishing.uploadedObjects(open.pageId), isEmpty);
+        // The local pages and jobs stay until the caller erases the local data.
+        expect(await repositories.publishing.pages(), hasLength(2));
+        expect(await repositories.publishing.jobsOfPage(open.pageId), hasLength(2));
+      },
+    );
+
+    test('does nothing, and asks for no user, when the app made no page', () async {
+      final queue = newQueue();
+      await queue.hold();
+
+      await queue.deletePublished();
+
+      expect(publisher.calls, isEmpty);
+      expect(identity.calls, 0);
+    });
+
+    test('fails before any delete when no user is signed in', () async {
+      final queue = newQueue();
+      await queue.publishVisit('visit-2');
+      await settle();
+      publisher.calls.clear();
+      identity.userId = null;
+      await queue.hold();
+
+      await expectLater(
+        queue.deletePublished(),
+        throwsA(isA<PublishException>().having((error) => error.kind, 'kind', PublishErrorKind.transient)),
+      );
+      expect(publisher.calls, isEmpty);
+    });
+
+    test('stops at a failed delete, and a second call deletes what is left', () async {
+      final queue = newQueue();
+      final job = await queue.publishVisit('visit-2');
+      await settle();
+      final object = (await repositories.publishing.uploadedObjects(job.pageId)).single;
+      publisher.calls.clear();
+      publisher.failures['deleteReport'] = [_transient];
+      await queue.hold();
+
+      await expectLater(queue.deletePublished(), throwsA(_transient));
+      expect(publisher.calls, ['deletePhoto $object', 'deleteReport ${job.pageId}/visit-2']);
+      expect(publisher.pages.keys, [job.pageId]);
+
+      publisher.calls.clear();
+      await queue.deletePublished();
+
+      expect(publisher.calls, ['deleteReport ${job.pageId}/visit-2', 'deletePage ${job.pageId}']);
+      expect(publisher.pages, isEmpty);
+    });
+
+    test('stops every waiting job before its first delete, and a new queue on the store runs none of them', () async {
+      // A revoke of the first page and a publish under the new page, both waiting, as a deletion can find them.
+      final queue = newQueue();
+      await queue.publishVisit('visit-1');
+      await settle();
+      await queue.hold();
+      final revoked = (await queue.revokeClientPage('client-1'))!;
+      final revoke = (await repositories.publishing.jobsOfPage(revoked.id)).last;
+      final waiting = await queue.publishVisit('visit-2');
+      expect(waiting.pageId, isNot(revoked.id));
+      expect(await repositories.publishing.pendingJobs(), [revoke, waiting]);
+      publisher.calls.clear();
+      publisher.failures['deletePage'] = [_transient];
+
+      await expectLater(queue.deletePublished(), throwsA(_transient));
+
+      for (final job in [revoke, waiting]) {
+        expect((await jobOf(job)).status, PublishJobStatus.failed);
+        expect((await jobOf(job)).failure, PublishFailure.deletion);
+      }
+      publisher.calls.clear();
+      final restarted = newQueue();
+      await restarted.start();
+      await settle();
+      expect(publisher.calls, isEmpty);
+    });
+
+    test('fails before any delete while an upload that a cancel did not end is on its way', () async {
+      final queue = newQueue(stepTimeout: const Duration(milliseconds: 10));
+      publisher.cancelEndsUploads = false;
+      final upload = publisher.gates['uploadPhoto'] = Completer<void>();
+      final job = await queue.publishVisit('visit-2');
+      await waitUntil(() => failedOnce(job));
+      final lateObject = 'clientPages/${job.pageId}/visit-2/zone-1-before-before.jpg';
+      publisher.calls.clear();
+      await queue.hold();
+
+      await expectLater(
+        queue.deletePublished(),
+        throwsA(isA<PublishException>().having((error) => error.kind, 'kind', PublishErrorKind.transient)),
+      );
+      expect(publisher.calls, isEmpty);
+
+      upload.complete();
+      await settle();
+      expect(publisher.objects.keys, [lateObject]);
+      await queue.deletePublished();
+
+      expect(publisher.calls.first, 'deletePhoto $lateObject');
+      expect(publisher.objects, isEmpty);
+      expect(publisher.pages, isEmpty);
     });
   });
 }

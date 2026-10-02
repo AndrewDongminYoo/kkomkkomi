@@ -89,6 +89,7 @@ void main() {
       companyProfile: companyProfile,
       publishing: publishing,
       openCaptures: FakeOpenCaptureRepository(),
+      localData: FakeLocalDataRepository(),
     );
     await tester.pumpApp(
       Builder(
@@ -471,7 +472,7 @@ void main() {
         await tester.tap(find.widgetWithText(FilledButton, 'Share'));
         await tester.pumpAndSettle();
 
-        final page = publishing.pages.values.single;
+        final page = publishing.pagesById.values.single;
         expect(publisher.reports.keys, ['${page.id}/$visitId']);
         expect(linkShare.shared, [Uri.parse('https://kkomkkomi.web.app/r/${page.id}/$visitId')]);
         expect(find.byType(SnackBar), findsNothing);
@@ -479,7 +480,7 @@ void main() {
 
       testWidgets('shares without the notice when the client has a page', (tester) async {
         final page = ClientPage(id: 'page-1', clientId: client.id, createdAt: DateTime.utc(2026, 10));
-        publishing.pages[page.id] = page;
+        publishing.pagesById[page.id] = page;
         await pumpPage(tester, publisher: FakePublisher());
 
         await tester.tap(linkButton());
@@ -493,7 +494,11 @@ void main() {
         final publisher = FakePublisher();
         final gate = Completer<void>();
         publisher.gates['writeReport'] = gate;
-        publishing.pages['page-1'] = ClientPage(id: 'page-1', clientId: client.id, createdAt: DateTime.utc(2026, 10));
+        publishing.pagesById['page-1'] = ClientPage(
+          id: 'page-1',
+          clientId: client.id,
+          createdAt: DateTime.utc(2026, 10),
+        );
         await pumpPage(tester, publisher: publisher);
 
         await tester.tap(linkButton());
@@ -516,7 +521,11 @@ void main() {
         final publisher = FakePublisher();
         final gate = Completer<void>();
         publisher.gates['writeReport'] = gate;
-        publishing.pages['page-1'] = ClientPage(id: 'page-1', clientId: client.id, createdAt: DateTime.utc(2026, 10));
+        publishing.pagesById['page-1'] = ClientPage(
+          id: 'page-1',
+          clientId: client.id,
+          createdAt: DateTime.utc(2026, 10),
+        );
         await pumpPage(tester, companyName: null, publisher: publisher);
 
         await tester.tap(linkButton());
@@ -543,7 +552,11 @@ void main() {
         final publisher = FakePublisher();
         final uploadGate = Completer<void>();
         publisher.gates['writeReport'] = uploadGate;
-        publishing.pages['page-1'] = ClientPage(id: 'page-1', clientId: client.id, createdAt: DateTime.utc(2026, 10));
+        publishing.pagesById['page-1'] = ClientPage(
+          id: 'page-1',
+          clientId: client.id,
+          createdAt: DateTime.utc(2026, 10),
+        );
         await pumpPage(tester, publisher: publisher);
         final pdfGate = Completer<void>();
         reportShare.gate = pdfGate;
@@ -565,7 +578,11 @@ void main() {
       testWidgets('shows why the upload stopped, and shares nothing', (tester) async {
         final publisher = FakePublisher();
         publisher.failures['writePage'] = [const PublishException(PublishErrorKind.refused, 'permission-denied')];
-        publishing.pages['page-1'] = ClientPage(id: 'page-1', clientId: client.id, createdAt: DateTime.utc(2026, 10));
+        publishing.pagesById['page-1'] = ClientPage(
+          id: 'page-1',
+          clientId: client.id,
+          createdAt: DateTime.utc(2026, 10),
+        );
         await pumpPage(tester, publisher: publisher);
 
         await tester.tap(linkButton());
@@ -577,7 +594,11 @@ void main() {
       });
 
       testWidgets('shows a message when the share sheet does not open with the link', (tester) async {
-        publishing.pages['page-1'] = ClientPage(id: 'page-1', clientId: client.id, createdAt: DateTime.utc(2026, 10));
+        publishing.pagesById['page-1'] = ClientPage(
+          id: 'page-1',
+          clientId: client.id,
+          createdAt: DateTime.utc(2026, 10),
+        );
         await pumpPage(tester, publisher: FakePublisher());
         linkShare.failure = const ReportShareException();
 
@@ -972,6 +993,10 @@ void main() {
         const ReportLinkState(status: ReportLinkStatus.failed, failure: PublishFailure.revoked): (
           'The link of this client changed during the upload. Try again.',
           '올리는 동안 이 거래처의 링크가 바뀌었어요. 다시 시도해 주세요.',
+        ),
+        const ReportLinkState(status: ReportLinkStatus.failed, failure: PublishFailure.deletion): (
+          'The upload stopped because you started to delete all data. Press Share link again to upload it.',
+          '모든 데이터 지우기를 시작해서 보고서 올리기를 멈췄어요. 링크로 공유하기를 다시 누르면 다시 올려요.',
         ),
         const ReportLinkState(status: ReportLinkStatus.failed, failure: PublishFailure.photoMissing): (
           'A photo of this visit is missing. Retake it on the visit screen, then try again.',

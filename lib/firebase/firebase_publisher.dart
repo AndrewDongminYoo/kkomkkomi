@@ -68,6 +68,13 @@ final class FirebasePublisher implements Publisher {
     }
   });
 
+  @override
+  Future<void> deleteReport({required String pageId, required String visitId}) =>
+      _guard(() => _database.doc('clientPages/$pageId/reports/$visitId').delete());
+
+  @override
+  Future<void> deletePage(String pageId) => _guard(() => _database.doc('clientPages/$pageId').delete());
+
   static Map<String, Object?> _pageData(PublishedPage page) => {
     'ownerUid': page.ownerUid,
     'companyName': page.companyName,

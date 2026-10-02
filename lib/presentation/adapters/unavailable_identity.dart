@@ -6,4 +6,8 @@ final class UnavailableIdentity implements Identity {
 
   @override
   Future<String?> currentUserId() async => null;
+
+  /// The flavor never signs in, so the device holds no account.
+  @override
+  Future<void> deleteAccount() async {}
 }

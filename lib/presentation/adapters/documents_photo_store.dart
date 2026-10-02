@@ -37,6 +37,15 @@ final class DocumentsPhotoStore implements PhotoStore {
   }
 
   @override
+  Future<void> deleteAll() async {
+    try {
+      await Directory('${await directoryPath()}/photos').delete(recursive: true);
+    } on PathNotFoundException {
+      // No photo was ever kept, or an earlier call deleted them.
+    }
+  }
+
+  @override
   Future<Uint8List> read(PhotoRef photo) async => await (await _fileOf(photo)).readAsBytes();
 
   @override

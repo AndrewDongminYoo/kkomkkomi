@@ -152,6 +152,8 @@ Brief 6 settled these details:
 - A revoke also deletes the photos that the app uploaded under the page, because a download URL that a reader got before the revoke works without the rules.
 - The size limit is 5 MiB.
 
+The account deletion brief (`docs/plans/2026-10-02-account-deletion.md`) added one rule: the owner deletes its page, open or revoked, and the reports under it, and nobody else does. A delete of a page or a report that does not exist is allowed for a signed-in user, so that a retry is not refused. `CLAUDE.md` ("Deletion") owns the order of the deletion.
+
 Link expiry is not in this build, which leaves one item of the product rule in `CLAUDE.md` open.
 The app tells the company, at the first share, that anyone with the link can open the report.
 
