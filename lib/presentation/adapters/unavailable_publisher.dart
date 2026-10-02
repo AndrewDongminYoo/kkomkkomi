@@ -17,7 +17,8 @@ final class UnavailablePublisher implements Publisher {
   Future<void> writePage(String pageId, PublishedPage page) async => throw _unavailable;
 
   @override
-  Future<void> uploadPhoto(String objectPath, Uint8List bytes) async => throw _unavailable;
+  Future<void> uploadPhoto(String objectPath, Uint8List bytes, {required Future<void> cancel}) async =>
+      throw _unavailable;
 
   @override
   Future<void> writeReport({required String pageId, required String visitId, required PublishedReport report}) async =>

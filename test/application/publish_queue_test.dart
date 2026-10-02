@@ -184,11 +184,22 @@ void main() {
   /// Lets the queue finish what it runs now.
   Future<void> settle() => pumpEventQueue(times: 200);
 
+  /// Waits until [condition] holds, for a step that ends on a real timer, and then lets the queue finish.
+  Future<void> waitUntil(Future<bool> Function() condition) async {
+    for (var wait = 0; wait < 5000 && !await condition(); wait++) {
+      await Future<void>.delayed(const Duration(milliseconds: 1));
+    }
+    await settle();
+  }
+
   List<_Timer> activeTimers() => timers.where((timer) => timer.isActive).toList();
 
   /// The stored state of [job].
   Future<PublishJob> jobOf(PublishJob job) async =>
       (await repositories.publishing.jobsOfPage(job.pageId)).singleWhere((stored) => stored.id == job.id);
+
+  /// Whether [job] failed once, which a test waits for after a step did not answer in time.
+  Future<bool> failedOnce(PublishJob job) async => (await jobOf(job)).attempts == 1;
 
   setUp(() async {
     database = await openMemoryDatabase();
@@ -532,6 +543,58 @@ void main() {
       expect((await jobOf(job)).attempts, 1);
       publisher.gate!.complete();
     });
+
+    test('an upload that arrives after the queue cancelled it counts as arrived, and the job goes on', () async {
+      // The wait after the cancel is long, so that the upload ends inside it on a busy machine too.
+      final queue = newQueue(stepTimeout: const Duration(seconds: 1));
+      publisher.cancelEndsUploads = false;
+      final upload = publisher.gates['uploadPhoto'] = Completer<void>();
+
+      final job = await queue.publishVisit('visit-2');
+      final object = 'clientPages/${job.pageId}/visit-2/zone-1-before-before.jpg';
+      await waitUntil(() async => publisher.calls.contains('cancelUpload $object'));
+      upload.complete();
+      await settle();
+
+      expect(publisher.calls, [
+        'writePage ${job.pageId}',
+        'uploadPhoto $object',
+        'cancelUpload $object',
+        'writeReport ${job.pageId}/visit-2',
+      ]);
+      expect(await jobOf(job), job.succeed());
+      expect(
+        await repositories.publishing.uploadedPhoto(pageId: job.pageId, objectPath: object),
+        'photos/visit-2/before.jpg',
+      );
+    });
+
+    test('a retry does not start an upload of an object while an earlier upload of it is on its way', () async {
+      final queue = newQueue(stepTimeout: const Duration(milliseconds: 10));
+      publisher.cancelEndsUploads = false;
+      final upload = publisher.gates['uploadPhoto'] = Completer<void>();
+      final job = await queue.publishVisit('visit-2');
+      await waitUntil(() => failedOnce(job));
+      final object = 'clientPages/${job.pageId}/visit-2/zone-1-before-before.jpg';
+      publisher.calls.clear();
+
+      clock.time = start.add(const Duration(seconds: 5));
+      activeTimers().single.fire();
+      await settle();
+
+      expect(publisher.calls, ['writePage ${job.pageId}']);
+      expect((await jobOf(job)).attempts, 2);
+
+      upload.complete();
+      await settle();
+      publisher.calls.clear();
+      clock.time = start.add(const Duration(seconds: 15));
+      activeTimers().single.fire();
+      await settle();
+
+      expect(publisher.calls, ['writePage ${job.pageId}', 'uploadPhoto $object', 'writeReport ${job.pageId}/visit-2']);
+      expect((await jobOf(job)).status, PublishJobStatus.done);
+    });
   });
 
   group('a step that fails for a reason that a retry cannot fix', () {
@@ -615,6 +678,51 @@ void main() {
         expect(await repositories.publishing.uploadedObjects(first.pageId), [newObject]);
       },
     );
+
+    test('an old object whose upload is still on its way is deleted after that upload ends', () async {
+      final queue = newQueue(stepTimeout: const Duration(milliseconds: 10));
+      publisher.cancelEndsUploads = false;
+      final oldUpload = publisher.gates['uploadPhoto'] = Completer<void>();
+      final job = await queue.publishVisit('visit-2');
+      await waitUntil(() => failedOnce(job));
+      final oldObject = 'clientPages/${job.pageId}/visit-2/zone-1-before-before.jpg';
+      expect(publisher.calls.last, 'cancelUpload $oldObject');
+
+      // Only the upload of the old photo waits.
+      publisher.gates.remove('uploadPhoto');
+      final retaken = PhotoRef('photos/visit-2/retaken.jpg');
+      await repositories.visits.save(
+        visit2.withRecord(visit2.zoneRecords.single.withPhoto(PhotoSlot.before, retaken)),
+      );
+      publisher.calls.clear();
+      await queue.publishVisit('visit-2');
+      await settle();
+
+      final newObject = 'clientPages/${job.pageId}/visit-2/zone-1-before-retaken.jpg';
+      expect(publisher.calls, [
+        'writePage ${job.pageId}',
+        'uploadPhoto $newObject',
+        'writeReport ${job.pageId}/visit-2',
+      ]);
+      expect(await repositories.publishing.uploadedObjects(job.pageId), containsAll([oldObject, newObject]));
+      expect((await jobOf(job)).status, PublishJobStatus.pending);
+
+      oldUpload.complete();
+      await settle();
+      publisher.calls.clear();
+      clock.time = start.add(const Duration(minutes: 1));
+      activeTimers().single.fire();
+      await settle();
+
+      expect(publisher.calls, [
+        'writePage ${job.pageId}',
+        'writeReport ${job.pageId}/visit-2',
+        'deletePhoto $oldObject',
+      ]);
+      expect(publisher.objects.keys, [newObject]);
+      expect(await repositories.publishing.uploadedObjects(job.pageId), [newObject]);
+      expect((await jobOf(job)).status, PublishJobStatus.done);
+    });
 
     test('an old object that a delete did not remove is deleted at the next run, after the report', () async {
       final queue = newQueue();
@@ -869,23 +977,65 @@ void main() {
       expect(await repositories.publishing.uploadedObjects(pageId), isEmpty);
     });
 
-    test('deletes the object of an upload that did not answer in time, which may arrive later', () async {
+    test(
+      'fails a step only after its cancelled upload ended, so a revoke after it finds no upload on its way',
+      () async {
+        final queue = newQueue(stepTimeout: const Duration(milliseconds: 10));
+        final upload = publisher.gates['uploadPhoto'] = Completer<void>();
+        final job = await queue.publishVisit('visit-2');
+        await waitUntil(() => failedOnce(job));
+        expect((await jobOf(job)).attempts, 1);
+        final lateObject = 'clientPages/${job.pageId}/visit-2/zone-1-before-before.jpg';
+        // The step counts as failed only after the cancelled upload ended.
+        expect(publisher.calls, ['writePage ${job.pageId}', 'uploadPhoto $lateObject', 'cancelUpload $lateObject']);
+        expect(await repositories.publishing.uploadedObjects(job.pageId), [lateObject]);
+        expect(await repositories.publishing.uploadedPhoto(pageId: job.pageId, objectPath: lateObject), isNull);
+
+        await queue.revokeClientPage('client-1');
+        await settle();
+        expect(publisher.calls, contains('deletePhoto $lateObject'));
+        expect(await repositories.publishing.uploadedObjects(job.pageId), isEmpty);
+
+        // Without the cancel, the upload would finish now, after the revoke deleted its path (issue 13).
+        upload.complete();
+        await settle();
+
+        expect(publisher.objects, isEmpty);
+      },
+    );
+
+    test('keeps the record of an upload that a cancel did not end, and deletes its object after it ends', () async {
       final queue = newQueue(stepTimeout: const Duration(milliseconds: 10));
+      publisher.cancelEndsUploads = false;
       final upload = publisher.gates['uploadPhoto'] = Completer<void>();
       final job = await queue.publishVisit('visit-2');
-      await Future<void>.delayed(const Duration(milliseconds: 50));
-      await settle();
-      expect((await jobOf(job)).attempts, 1);
+      await waitUntil(() => failedOnce(job));
       final lateObject = 'clientPages/${job.pageId}/visit-2/zone-1-before-before.jpg';
-      expect(await repositories.publishing.uploadedObjects(job.pageId), [lateObject]);
-      expect(await repositories.publishing.uploadedPhoto(pageId: job.pageId, objectPath: lateObject), isNull);
+      expect(publisher.calls.last, 'cancelUpload $lateObject');
+      expect((await jobOf(job)).attempts, 1);
 
+      final revokedAt = clock.time;
       await queue.revokeClientPage('client-1');
       await settle();
 
-      expect(publisher.calls, contains('deletePhoto $lateObject'));
-      expect(await repositories.publishing.uploadedObjects(job.pageId), isEmpty);
+      // The upload is still on its way, so the revoke deletes nothing yet and runs again.
+      expect(publisher.calls.where((call) => call.startsWith('deletePhoto')), isEmpty);
+      expect(await repositories.publishing.uploadedObjects(job.pageId), [lateObject]);
+      final revoke = (await repositories.publishing.jobsOfPage(job.pageId)).last;
+      expect(revoke.kind, PublishJobKind.revoke);
+      expect(revoke.status, PublishJobStatus.pending);
+
       upload.complete();
+      await settle();
+      expect(publisher.objects.keys, [lateObject]);
+      clock.time = revokedAt.add(const Duration(seconds: 5));
+      activeTimers().single.fire();
+      await settle();
+
+      expect(publisher.calls.last, 'deletePhoto $lateObject');
+      expect(publisher.objects, isEmpty);
+      expect(await repositories.publishing.uploadedObjects(job.pageId), isEmpty);
+      expect((await repositories.publishing.jobsOfPage(job.pageId)).last.status, PublishJobStatus.done);
     });
 
     test('stops the pending publish jobs of the page', () async {

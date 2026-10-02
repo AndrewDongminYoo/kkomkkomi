@@ -19,7 +19,10 @@ abstract interface class Publisher {
   Future<void> writePage(String pageId, PublishedPage page);
 
   /// Uploads [bytes] as a JPEG to [objectPath].
-  Future<void> uploadPhoto(String objectPath, Uint8List bytes);
+  ///
+  /// When [cancel] completes, the adapter asks the backend to stop the upload. The call then ends as the upload
+  /// ends: with a [PublishException] when the upload stopped, and without one when the object arrived anyway.
+  Future<void> uploadPhoto(String objectPath, Uint8List bytes, {required Future<void> cancel});
 
   /// Writes the report of the visit with [visitId] under the client page with [pageId].
   Future<void> writeReport({required String pageId, required String visitId, required PublishedReport report});

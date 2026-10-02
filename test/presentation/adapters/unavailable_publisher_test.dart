@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:typed_data';
 
 import 'package:flutter_test/flutter_test.dart';
@@ -19,7 +20,7 @@ void main() {
 
     test('refuses each call', () async {
       await expectLater(publisher.writePage('p', page), refused);
-      await expectLater(publisher.uploadPhoto('o', Uint8List(0)), refused);
+      await expectLater(publisher.uploadPhoto('o', Uint8List(0), cancel: Completer<void>().future), refused);
       await expectLater(
         publisher.writeReport(
           pageId: 'p',
