@@ -10,6 +10,7 @@ autorecalculates
 autoresizing
 Buildables
 COINIT
+Deliverfile
 dists
 DPICHANGED
 DUNICODE

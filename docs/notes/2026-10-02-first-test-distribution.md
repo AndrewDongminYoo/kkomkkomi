@@ -6,12 +6,12 @@ Nothing in this list was done by an agent: no store record, no upload, no signin
 
 ## Open items before an external TestFlight review
 
-The TestFlight overview says: "When you add the first build of your app to a group, the build gets sent to App Review" (https://developer.apple.com/help/app-store-connect/test-a-beta-version/testflight-overview, read on 2026-10-02), and these items can block that review.
-An internal group holds up to 100 App Store Connect users of your team.
+The TestFlight overview says: "When you add the first build of your app to a group, the build gets sent to App Review …" (https://developer.apple.com/help/app-store-connect/test-a-beta-version/testflight-overview, read on 2026-10-02), and these items can block that review.
+The same page allows up to 100 internal testers per app, who are App Store Connect users with access to it.
 
 1. **Account deletion (App Store Review Guideline 5.1.1(v)).** The app signs in anonymously at start, and Apple asks for an in-app way to delete automatically created ("guest") accounts and their data. The app has none. Pull request 19 quotes Apple's text under "Account deletion".
 2. **Photo location (issue 20).** On Android, a published photo can keep the GPS tags that the camera app wrote. iOS is not checked.
-3. **Anonymous account clean-up (issue 21).** Firebase can delete an anonymous account after 30 days. The next sign-in gets a new user ID, and the rules then refuse every publish to the existing pages of that phone.
+3. **Anonymous account clean-up (issue 21).** Firebase can delete an anonymous account after 30 days. A new sign-in then gets a new user ID, and the rules refuse every publish to the existing pages of that phone. When the SDK on the phone drops the deleted account is not verified.
 4. **Support contact.** `support_url.txt` names the landing page `https://kkomkkomi.web.app/`, which has no working contact: its inquiry form is a preview that sends nothing. Guideline 1.5 says: "Make sure your app and its Support URL include an easy way to contact you". Add a contact to that page, or give another support URL.
 5. **Privacy policy.** The pages at `/privacy/` and `/privacy/en/` exist only after the next Hosting deploy, which needs the operator's approval. They still hold the operator placeholders that pull request 19 lists, such as the privacy officer and the contact.
 
@@ -32,10 +32,10 @@ Set it in Xcode (Runner target, Signing & Capabilities) only after you confirm t
 ## Apple
 
 1. **Bundle ID.** In Certificates, Identifiers & Profiles, register the explicit App ID `kr.donminzzi.kkomkkomi`. The app uses no capability that needs a switch there: no push notification, no sign in with Apple, no app group.
-2. **App Store Connect app record.** Create a new iOS app with the bundle ID above, the primary language Korean, the name `꼼꼬미`, and an SKU of your choice. App Store Connect rejects a name that another app uses.
+2. **App Store Connect app record.** Create a new iOS app with the bundle ID above, the primary language Korean, the name `꼼꼬미`, and an SKU of your choice.
 3. **App information.** Set the category, the privacy policy URL, and the content rights. Answer the age rating questions.
-4. **Export compliance.** The app sends data only over HTTPS through the Firebase SDKs and has no encryption of its own. App Store Connect asks about this for each build. Adding `ITSAppUsesNonExemptEncryption` to `Info.plist` answers it once, and is a separate change.
-5. **Build and upload.** Set the team, then run `merry run build ipa` and upload the IPA with Xcode Organizer or Transporter. The build needs `ios/Runner/GoogleService-Info.plist` from `flutterfire configure`, as `CLAUDE.md` says.
+4. **Export compliance.** App Store Connect asks about the encryption of the build. No code under `lib/` or `ios/Runner/` encrypts anything; the Firebase SDKs use TLS, and the build bundles the `openssl_grpc` framework of gRPC. Decide the answer, and whether to put `ITSAppUsesNonExemptEncryption` in `Info.plist` in a separate change.
+5. **Build and upload.** Set the team, then run `merry run build ipa` and upload the IPA with Xcode Organizer or Transporter. The build needs `ios/Runner/GoogleService-Info.plist` from `flutterfire configure`, as `CLAUDE.md` says. The repository has no `Deliverfile`, and `deliver` reads `fastlane/metadata` by default, so a later `deliver` run needs `metadata_path("./fastlane/metadata/ios")`; `supply` reads `fastlane/metadata/android` by default.
 6. **TestFlight.** Make an internal group, add the testers, and paste the "What to Test" text below. For an external group, settle the open items above first.
 7. **App Privacy.** Enter the answers in "Draft answers for App Privacy" below.
 
@@ -59,7 +59,7 @@ en-US:
 ## Google Play
 
 1. **Play Console app.** Create the app with the default language Korean (`ko-KR`), the name from `fastlane/metadata/android/ko-KR/title.txt`, the type App, and free or paid as you decide.
-2. **Store settings.** Choose the category Business. Enter a contact email, which Play requires.
+2. **Store settings.** Choose the category Business, and enter the contact details.
 3. **App content.** Enter the privacy policy URL. For app access, all functions work without a login. Ads: none. Answer the content rating questions and the target audience. Enter the Data safety answers below.
 4. **Internal testing track.** Create a release on the internal testing track, upload the App Bundle, add the testers' email list, and use `fastlane/metadata/android/<locale>/changelogs/1.txt` as the release notes.
 5. **App signing.** Play App Signing keeps the key that signs the app for users. The bundle that you upload is signed with your upload key.
@@ -73,7 +73,7 @@ en-US:
 
 ## Firebase
 
-- The Firebase macOS app is registered as `com.example.myApp`, and the macOS production bundle ID is now `kr.donminzzi.kkomkkomi`. macOS is not a target, so this needs no action now. Before a macOS production build, register the macOS app again and run `flutterfire configure`.
+- The Firebase macOS app is registered as `com.example.myApp` (the `BUNDLE_ID` of `macos/Runner/GoogleService-Info.plist` in the operator's checkout), and the macOS production bundle ID is now `kr.donminzzi.kkomkkomi`. macOS is not a target, so this needs no action now. Before a macOS production build, register the macOS app again and run `flutterfire configure`.
 - Hosting must be deployed before a store listing names the privacy policy URL. A deploy needs your approval.
 
 ## Draft answers for App Privacy (App Store Connect)
@@ -91,26 +91,30 @@ No data is used for tracking, and no data goes to an ad network or a data broker
 | Diagnostics: Other Diagnostic Data | Yes                         | No                 | Analytics         | The Firebase Auth, Firestore, and Installations privacy manifests declare it as not linked, not tracking, for Analytics (see "Privacy manifest" below). |
 
 Firebase Authentication also processes the IP address and the user agent of each sign-in for security and abuse prevention.
-Apple's page says: "You need to identify all of the data you or your third-party partners collect", and a third-party SDK is a third-party partner.
-App Privacy has no IP address type, so decide whether that processing needs an entry, for example under Diagnostics.
+Apple's page says: "You need to identify all of the data you or your third-party partners collect …", and a third-party SDK is a third-party partner.
+For the IP address it says: "Declare the relevant data types based on how you use IP address, such as precise location, coarse location, device ID, or diagnostics."
 The definitions are on https://developer.apple.com/app-store/app-privacy-details/ (read on 2026-10-02).
+
+The Diagnostics row and the privacy policy disagree: the policy says that the app uses no analytics tool and lists no diagnostic data, and the Firebase manifests declare Other Diagnostic Data for Analytics.
+Decide whether the App Privacy answer declares it, and whether the policy names the diagnostic data that the Firebase SDKs send, such as the Firebase user agent.
 
 ## Draft answers for Data safety (Play Console)
 
 The same sources apply.
 Data is encrypted in transit (HTTPS to Firebase).
-The app gives no in-app way to request deletion, so answer the deletion question with the request method of the privacy policy, section 11.
+The app gives no in-app way to request deletion, and section 11 of the privacy policy still holds the operator placeholder for the contact. Fill it before you answer the deletion question with that request method. Pull request 19 leaves Google's account deletion requirement unresolved for an account that the app makes without an action of the person.
 
 | Data type                                  | Collected                   | Shared    | Optional                      | Purpose           |
 | ------------------------------------------ | --------------------------- | --------- | ----------------------------- | ----------------- |
-| Personal info: User IDs                    | Yes                         | No        | No: the app signs in at start | App functionality |
+| Personal info: User IDs                    | Yes                         | See below | No: the app signs in at start | App functionality |
 | Photos and videos: Photos                  | Yes                         | See below | Yes: only on a link share     | App functionality |
 | App activity: Other user-generated content | Yes                         | See below | Yes: only on a link share     | App functionality |
 | Location: Precise location                 | Yes until issue 20 is fixed | See below | Yes: only on a link share     | App functionality |
 
 Google's guidance (https://support.google.com/googleplay/android-developer/answer/10787469, read on 2026-10-02) exempts from "sharing" a transfer "to a 'service provider' that processes it on behalf of the developer", which covers Firebase, and a transfer "based on a specific user-initiated action, where the user reasonably expects the data to be shared".
 A report link is sent by the person, and the app tells the person at the first link of a client that anyone with the link can open the reports.
-So "Shared: No" is defensible for the three rows, and the decision is yours.
+Anyone with the link can also read the user ID, because the page document holds it as `ownerUid` (`firestore.rules`).
+So "Shared: No" is defensible for the four rows, and the decision is yours.
 The same page says to declare IP addresses by their use, "where developers use IP addresses as a means to determine location", which the app does not do.
 
 ## What the release builds checked
@@ -125,10 +129,10 @@ The app target needs no `PrivacyInfo.xcprivacy` for a required-reason API, so th
 
 - Apple's rule: "If you use the API in your app's code, then you need to report the API in your app's privacy manifest file. If you use the API in your third-party SDK's code, then you need to report the API in your third-party SDK's privacy manifest file" (https://developer.apple.com/documentation/bundleresources/describing-use-of-required-reason-api, read on 2026-10-02).
 - The code of the app: `ios/Runner/AppDelegate.swift` and `ios/Runner/SceneDelegate.swift` only register the plugins, and no file under `lib/` reads a file timestamp, the disk space, the boot time, or user defaults (grep for `stat`, `lastModified`, and `SharedPreferences`).
-- The release build `build/ios/iphoneos/Runner.app` holds 31 `PrivacyInfo.xcprivacy` files: one for `Flutter.framework` and one for each SDK or plugin bundle that ships one. Together they declare FileTimestamp (`0A2A.1`, `C617.1`), SystemBootTime (`35F9.1`), and UserDefaults (`CA92.1`, `1C8F.1`, `C56D.1`): Flutter, gRPC, leveldb, and GoogleUtilities for the first two, and Firebase Auth, Firebase Core, GoogleUtilities, and GTMSessionFetcher for the third.
+- The release build `build/ios/iphoneos/Runner.app` holds 31 `PrivacyInfo.xcprivacy` files: one for `Flutter.framework` and one for each SDK or plugin bundle that ships one. Together they declare FileTimestamp (`0A2A.1`, `C617.1`) in Flutter, gRPC, leveldb, and GoogleUtilities, SystemBootTime (`35F9.1`) in Flutter and gRPC, and UserDefaults (`CA92.1`, `1C8F.1`, `C56D.1`) in Firebase Auth, Firebase Core, Firebase Core Internal, GoogleUtilities, and GTMSessionFetcher.
 - The plugins and SDKs without a manifest (`firebase_core` 4.15.0, `firebase_auth` 6.7.0, `cloud_firestore` 6.10.0, `firebase_storage` 13.6.0, `printing` 5.15.1, the Firebase Storage SDK, and the interop packages) call none of these APIs in their source (grep of the pub cache and of `build/ios/SourcePackages/checkouts`).
 - Limit: the static plugins and SDKs link into one `Runner` executable, which imports `stat` and `NSUserDefaults`. Without a link map, the call site of each symbol is inferred from the source greps above, not proven.
-- The Firebase Auth, Firestore, and Installations manifests also declare collected data: User ID and Other Diagnostic Data. The Xcode privacy report of an archive adds them up, and App Store Connect compares it with the App Privacy answers, so the draft above lists both.
+- The Firebase Auth, Firestore, and Installations manifests also declare collected data: User ID and Other Diagnostic Data. The draft above lists both, so that the answers match what the bundled SDKs declare.
 
 ### Target SDK
 
@@ -142,5 +146,5 @@ The target SDK meets the Google Play minimum for a new app.
 
 `android/app/build.gradle.kts` names `proguard-rules.pro` for the release build, and `android/app/proguard-rules.pro` does not exist.
 The Gradle plugin skips the missing file: the R8 configuration of the release build (`build/app/outputs/mapping/productionRelease/configuration.txt`) lists the rules of the Flutter tool, of the Android default file, and of each library, and no `proguard-rules.pro`.
-R8 ran and the bundle built, so the plugins and the Firebase SDKs keep what they need through their own consumer rules.
+R8 ran with the consumer rules of the plugins and the Firebase SDKs, and the bundle built.
 Whether the minified app runs was not checked: no device and no emulator ran it. Open the first internal testing build on a phone before you invite testers.
