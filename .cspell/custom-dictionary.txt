@@ -10,6 +10,7 @@ autorecalculates
 autoresizing
 Buildables
 COINIT
+Deliverfile
 dists
 DPICHANGED
 DUNICODE
@@ -28,6 +29,7 @@ flutterfire
 FMWK
 FONTCHANGE
 fonttools
+genkeypair
 GWLP
 HIDPI
 HMONITOR
@@ -40,6 +42,8 @@ INFOPLIST
 instancer
 iphoneos
 jvmargs
+keytool
+leveldb
 lldbinit
 localizable
 lpfn
@@ -62,6 +66,7 @@ parallelizable
 pbxproj
 PRODUCTVERSION
 proguard
+protoc
 refetches
 SRCROOT
 SUBLANG
