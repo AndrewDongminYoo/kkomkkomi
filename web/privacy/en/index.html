@@ -1,0 +1,364 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta
+      name="viewport"
+      content="width=device-width,initial-scale=1,viewport-fit=cover"
+    />
+    <!-- The page is text and one style sheet. It runs no script and loads nothing from another site. -->
+    <meta
+      http-equiv="Content-Security-Policy"
+      content="default-src 'none'; style-src 'self'; img-src 'self'; base-uri 'none'; form-action 'none'"
+    />
+    <title>Kkomkkomi Privacy Policy</title>
+    <meta
+      name="description"
+      content="What the Kkomkkomi app and its web reports keep, where, who can see it, and when it is deleted."
+    />
+    <link
+      rel="alternate"
+      hreflang="ko"
+      href="https://kkomkkomi.web.app/privacy/"
+    />
+    <link
+      rel="alternate"
+      hreflang="en"
+      href="https://kkomkkomi.web.app/privacy/en/"
+    />
+    <link
+      rel="alternate"
+      hreflang="x-default"
+      href="https://kkomkkomi.web.app/privacy/"
+    />
+    <link rel="icon" href="/favicon.png" />
+    <meta
+      name="theme-color"
+      content="#faf7f1"
+      media="(prefers-color-scheme: light)"
+    />
+    <meta
+      name="theme-color"
+      content="#121a28"
+      media="(prefers-color-scheme: dark)"
+    />
+    <link rel="stylesheet" href="/privacy/privacy.css" />
+  </head>
+  <body>
+    <main>
+      <p class="lang"><a href="/privacy/" hreflang="ko" lang="ko">한국어</a></p>
+      <article class="sheet">
+        <header class="sheet-head">
+          <h1>Kkomkkomi Privacy Policy</h1>
+          <p>
+            Effective date:
+            <span class="todo">[Operator to confirm: effective date]</span>
+          </p>
+          <p>
+            Privacy officer and contact:
+            <span class="todo"
+              >[Operator to confirm: privacy officer and contact]</span
+            >
+          </p>
+        </header>
+
+        <p>
+          This policy explains what the Kkomkkomi app and its web report pages
+          (kkomkkomi.web.app) keep, where they keep it, who can see it, and when
+          it is deleted. It describes what the app and the server settings
+          actually do.
+        </p>
+
+        <h2 id="device">1. What stays on the phone</h2>
+        <p>
+          The app keeps the following in its own database and folder on the
+          phone.
+        </p>
+        <ul>
+          <li>The company name</li>
+          <li>Client names, and the names and order of their zones</li>
+          <li>
+            Visit dates, and the before and after photos and the note of each
+            zone
+          </li>
+          <li>
+            The IDs of the pages it published, and the state of its publish jobs
+          </li>
+        </ul>
+        <p>
+          None of this reaches the operator's servers until you share a report
+          as a link. If the phone's backup is on (Android Auto Backup or iCloud
+          Backup), the phone's operating system can back this data up to your
+          own Google or Apple account. The operator cannot see that backup.
+        </p>
+        <p>
+          A PDF report is made on the phone and sent, through the system share
+          sheet, to the app you choose. It is not sent to the operator's
+          servers. A shared PDF file stays in the app's cache folder on Android
+          and in its temporary folder on iPhone, until the system clears it or
+          the app is uninstalled.
+        </p>
+        <p>
+          Uninstalling the app deletes the data on the phone. A copy in a backup
+          stays in your account.
+        </p>
+
+        <h2 id="sign-in">2. Anonymous sign-in and the user ID</h2>
+        <p>
+          When the app starts, it signs in to Firebase Authentication
+          anonymously. It does not ask for a name, an email address, or a phone
+          number. Firebase creates a random user ID, and that ID owns the pages
+          published from the phone.
+        </p>
+        <p>
+          Firebase Authentication processes the IP address and the user agent
+          (device and app information) of each sign-in, and keeps logged IP
+          addresses for a few weeks.
+        </p>
+        <p>
+          This project has automatic clean-up of anonymous accounts turned on.
+          An anonymous account can be deleted at any time after it is 30 days
+          old, even while it is still in use. After the account is deleted, you
+          and the app can no longer change or close the pages and reports it
+          published, and their links stay open until the operator closes them.
+          The operator can close or delete those pages on request; section 11
+          says how to ask.
+        </p>
+
+        <h2 id="publish">3. What a link share sends</h2>
+        <p>
+          When you tap "링크로 공유하기" (Share as link) on the visit report
+          screen, the app uploads the visit to Firebase and then shares the
+          link. Each client has one fixed page, and the page ID is 128 random
+          bits. The upload holds the following.
+        </p>
+        <ul>
+          <li>
+            Client page: the user ID, the company name (if saved), the client
+            name, the time the page was created, and the time its link was
+            closed (if closed)
+          </li>
+          <li>
+            Visit report: the visit date, the time the share was requested, and
+            for each zone its name, its note, and the storage paths of its
+            before and after photos
+          </li>
+          <li>
+            Photos: JPEG files, at most 1,600 pixels on each side, at quality 80
+          </li>
+        </ul>
+        <p>
+          The app does not remove what the camera wrote into a photo file (the
+          time, the device model, and the location if the camera app recorded
+          it), and uploads the file as it is. Anyone with the link can download
+          a photo and read that information.
+        </p>
+        <p>
+          The app finishes the upload before it opens the share sheet. So the
+          uploaded data stays on the server and opens through the link even if
+          you close the share sheet without sending the link. A request that
+          could not be uploaded without a network is tried again when the app
+          opens again and when the network returns.
+        </p>
+        <p>
+          When a visit is uploaded again, its report is replaced, and photos
+          that the report no longer names are deleted from the server.
+        </p>
+
+        <h2 id="readers">4. Who can see it</h2>
+        <p>
+          Anyone who has the link can see the following without signing in, as
+          long as the link is not closed.
+        </p>
+        <ul>
+          <li>
+            The whole client page document, which includes the user ID. The web
+            report page does not show the user ID, but anyone with the link can
+            read the document directly.
+          </li>
+          <li>
+            Every visit report and photo published for that client. A person who
+            got the link of one visit can open the list of the other reports of
+            the same client.
+          </li>
+        </ul>
+        <p>
+          A link is hard to guess, but it is not secret. Anyone it is forwarded
+          to can open it. A person who comes in through a link cannot find or
+          list the pages of other clients without their page IDs.
+        </p>
+        <p>
+          Opening a web report page sends a request to Firebase Hosting, and
+          reading a report and its photos sends requests to Cloud Firestore and
+          Cloud Storage, all of them Google's servers. Firebase Hosting keeps
+          the IP address of each visitor for a few months. As the administrator
+          of the Firebase project, the operator can access the data stored on
+          the server.
+        </p>
+
+        <h2 id="revoke">5. Closing a link</h2>
+        <p>
+          The app has no control to close a link yet (planned). So a link stays
+          open once it is shared, until the operator closes it. To close a link
+          or delete data, ask the operator at the contact in section 11.
+          <span class="todo"
+            >[Operator to confirm: how and how fast close and delete requests
+            are handled]</span
+          >
+        </p>
+        <p>The app's close function is built as follows.</p>
+        <ul>
+          <li>
+            It marks the page as closed. After that, nobody can open the page,
+            its reports, or its photos through the link.
+          </li>
+          <li>
+            It deletes the photos that the app uploaded under the page. Cloud
+            Storage keeps a deleted photo recoverable for 7 days, and then it is
+            gone.
+          </li>
+          <li>
+            It does not delete the client page document or the report documents.
+            The security rules do not let the app delete a document, so the
+            company name, the client name, the visit dates, the zone names, the
+            notes, and the user ID stay on the server until the operator deletes
+            them. After the page is closed, the link cannot read them, and the
+            operator can still access them.
+          </li>
+        </ul>
+
+        <h2 id="uninstall">6. When the app is uninstalled</h2>
+        <p>
+          Uninstalling the app deletes the publish records on the phone, and the
+          anonymous account can be lost with them. Unless its data is restored
+          from a backup, a reinstalled app does not know the pages it published
+          before, and a new anonymous account cannot change or close the pages
+          of the old one. So a link that was never closed stays open until the
+          operator closes it, and it cannot be closed from the app. The same
+          holds when the anonymous account is deleted automatically after 30
+          days (section 2). To have such a link closed or deleted, ask the
+          operator at the contact in section 11.
+        </p>
+
+        <h2 id="retention">7. How long data is kept</h2>
+        <ul>
+          <li>
+            Data on the phone: until the app is uninstalled. The app has no
+            control to delete a client or a visit, and a client can only be
+            archived from the list. A photo that is retaken has its old file
+            deleted.
+          </li>
+          <li>
+            Client page documents and report documents: nothing deletes them
+            automatically. They stay until the operator deletes them.
+            <span class="todo"
+              >[Operator to confirm: retention period of the server
+              documents]</span
+            >
+          </li>
+          <li>
+            Photos: until the link is closed, a new upload of the report drops
+            them, or the operator deletes them, and then 7 days in a recoverable
+            state
+          </li>
+          <li>
+            Anonymous accounts: can be deleted at any time after they are 30
+            days old. IP addresses logged at sign-in are kept for a few weeks.
+          </li>
+          <li>IP addresses logged by Firebase Hosting: a few months</li>
+        </ul>
+
+        <h2 id="location">
+          8. Where data is stored, processing by Google, and transfer abroad
+        </h2>
+        <p>
+          Firebase, which Google operates, processes the data on the server
+          side. Cloud Firestore (page and report documents) and Cloud Storage
+          (photos) are in the Seoul region (asia-northeast3). Firebase
+          Authentication runs only from data centers in the United States, so
+          anonymous account data is processed in the United States. Firebase
+          Hosting runs on Google's global infrastructure, so the IP address of a
+          visitor can be processed outside Korea.
+        </p>
+        <p>
+          <span class="todo"
+            >[Operator to confirm: the legal basis for disclosing Google as a
+            processor and for the transfer abroad, and whether the items below
+            are complete, including where the Firestore and Cloud Storage
+            requests that read a report are processed]</span
+          >
+        </p>
+        <dl>
+          <dt>Data transferred</dt>
+          <dd>
+            The user ID of the anonymous account, the IP address and user agent
+            of each sign-in, and the IP address of each visitor of a web page
+          </dd>
+          <dt>Countries</dt>
+          <dd>
+            The United States (Firebase Authentication), and the countries of
+            Google's data centers (Firebase Hosting)
+          </dd>
+          <dt>When and how</dt>
+          <dd>
+            Over the internet, when the app starts and signs in, and when a web
+            page is opened
+          </dd>
+          <dt>Recipient</dt>
+          <dd>
+            Google LLC
+            <span class="todo">[Operator to confirm: Google's contact]</span>
+          </dd>
+          <dt>Purpose and retention</dt>
+          <dd>Sign-in and serving the pages. Retention is as in section 7.</dd>
+          <dt>How to refuse, and the effect</dt>
+          <dd>
+            The app signs in when it starts, so there is currently no way to
+            refuse this transfer while using the app. Not using the app avoids
+            it.
+          </dd>
+        </dl>
+
+        <h2 id="not-collected">9. What is not collected</h2>
+        <ul>
+          <li>
+            The app contains no analytics, crash reporting, or advertising
+            tools.
+          </li>
+          <li>
+            The app does not ask for location permission. A location stored
+            inside a photo file can still remain, as section 3 says.
+          </li>
+          <li>This page and the web report page use no cookies.</li>
+        </ul>
+
+        <h2 id="photos">10. What photos can show</h2>
+        <p>
+          Before and after photos can show people's faces, monitor screens, and
+          documents. The app has no capture guide and no tool to hide part of a
+          photo yet. Check what a photo shows before you upload it.
+        </p>
+        <p>
+          <span class="todo"
+            >[Operator to confirm: whether the cleaning company or the app
+            operator is responsible, under the Korean Personal Information
+            Protection Act, for the personal information of people in the
+            photos]</span
+          >
+        </p>
+
+        <h2 id="rights">11. Your rights and how to make a request</h2>
+        <p>
+          You can ask to see, correct, or delete your information, or to stop
+          its processing. Data on the phone is deleted when you uninstall the
+          app. For data on the server, contact the operator below.
+        </p>
+        <p>
+          <span class="todo"
+            >[Operator to confirm: privacy officer and contact]</span
+          >
+        </p>
+      </article>
+    </main>
+  </body>
+</html>
