@@ -39,8 +39,8 @@ A fresh clone needs `flutterfire configure` before a production build for Androi
 After `flutterfire configure`, run `dart format lib/firebase_options.dart`, because the local format check reads that file and CI never sees it.
 
 `firestore.rules` and `storage.rules` let anyone read a client page, its reports, and their photos by page ID while the page is open, and let the owner delete them.
-The operator approved their deploy, and they were deployed from `ab6d8d7` on 2026-10-02, together with Hosting.
-The account deletion of `docs/plans/2026-10-02-account-deletion.md` changed `firestore.rules` after that deploy, so the tracked Firestore rules differ from the deployed ones: the deployed rules let no one delete a page or a report, and the deletion in the app fails at its first Firestore delete until the new rules are deployed. `storage.rules` did not change. The same change edited the privacy pages under `web/privacy/`, so the tracked Hosting files differ from the deployed ones too. The parent session deploys the rules and Hosting after the operator approves it.
+The operator approved each deploy. The rules and Hosting were first deployed from `ab6d8d7` on 2026-10-02, and again from `34d5d23` on 2026-10-02, after the account deletion merged, which added the owner delete to `firestore.rules` and published the privacy pages under `web/privacy/`.
+Since the second deploy, the deployed rules and Hosting files equal the tracked ones at `34d5d23`.
 A deploy is the operator's decision each time: do not deploy rules or Hosting without that approval.
 
 `storage.rules` reads the client page through `firestore.get`, which needs the Firebase Storage service agent (`service-146496738802@gcp-sa-firebasestorage.iam.gserviceaccount.com`) to hold `roles/firebaserules.firestoreServiceAgent`.
