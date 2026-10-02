@@ -74,4 +74,10 @@ abstract interface class PublishRepository {
 
   /// Records that the object at [objectPath] under the page with [pageId] is deleted.
   Future<void> removeUploadedPhoto({required String pageId, required String objectPath});
+
+  /// Marks every upload that arrived as one that may not have arrived, in one transaction, and keeps every record.
+  ///
+  /// [uploadedPhoto] then gives null for each object, so the next publish uploads each photo again, and
+  /// [uploadedObjects] still lists every object that may exist.
+  Future<void> forgetArrivedUploads();
 }

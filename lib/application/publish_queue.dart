@@ -23,9 +23,8 @@ typedef StartTimer = Timer Function(Duration delay, void Function() callback);
 
 /// Waits for [delete], a delete of the backend, within a time limit, and fails when it does not answer in time.
 ///
-/// A timeout does not cancel the delete, so the runner keeps one that does not answer in time until it ends, and
-/// calls [onLateSuccess] when it then ends with success.
-typedef TimedDelete = Future<void> Function(Future<void> delete, {Future<void> Function()? onLateSuccess});
+/// A timeout does not cancel the delete, so the runner keeps one that does not answer in time until it ends.
+typedef TimedDelete = Future<void> Function(Future<void> delete);
 
 /// The path of the object that holds [photo], the photo in [slot] of the zone with [zoneId], in the report of the
 /// visit with [visitId] under the page with [pageId].
@@ -229,6 +228,14 @@ final class PublishQueue {
     unawaited(_run());
   }
 
+  /// Marks every recorded upload as one that may not have arrived, and keeps the records, so that the next publish
+  /// uploads each photo again in place of trusting a record that a deletion may make false.
+  ///
+  /// The deletion of all data calls it before its first delete: from then on neither a delete that answers late nor a
+  /// record that a failure keeps can make a publish name an object without uploading it. An upload of the same path
+  /// is safe to repeat, and the records still give every object that a cleanup or a revoke must delete.
+  Future<void> forgetArrivedUploads() => _repository.forgetArrivedUploads();
+
   /// Deletes from the backend everything that the app published under each of its pages, open and revoked: first
   /// the objects of the photos that it uploaded or started to upload, then the reports, then the pages.
   ///
@@ -241,15 +248,15 @@ final class PublishQueue {
   /// caller erases the local data after this call.
   ///
   /// Each delete runs through [timed], which the deletion of all data gives so that it keeps a delete that does not
-  /// answer in time until the delete ends. The removal of the record of a photo is the [TimedDelete] `onLateSuccess`
-  /// of its delete, so that a delete that ends late leaves no record of an object that is gone. Without [timed], a
-  /// delete fails after the step timeout of the queue.
+  /// answer in time until the delete ends. Without [timed], a delete fails after the step timeout of the queue. The
+  /// record of a photo goes after its delete answers; a record that stays names an object that may exist, which a
+  /// next call deletes again, and [forgetArrivedUploads] keeps a publish from trusting it.
   ///
   /// Throws a [StateError] while the queue is not held, because a job that runs at the same time could write again
   /// what this call deleted. Throws a [PublishException] that a retry can fix while an upload that a cancel did not
   /// end is on its way, before any delete, because that upload could create its object after the delete.
   Future<void> deletePublished({TimedDelete? timed}) async {
-    final run = timed ?? (delete, {onLateSuccess}) => _step(delete);
+    final run = timed ?? _step;
     if (!_held) throw StateError('The queue must be held while the published data is deleted');
     if (_unsettled.isNotEmpty) {
       throw PublishException(PublishErrorKind.transient, 'An upload to ${_unsettled.first} has not ended');
@@ -265,9 +272,8 @@ final class PublishQueue {
     for (final page in pages) {
       for (final objectPath in await _repository.uploadedObjects(page.id)) {
         _expectSettled(objectPath);
-        Future<void> forget() => _repository.removeUploadedPhoto(pageId: page.id, objectPath: objectPath);
-        await run(_publisher.deletePhoto(objectPath), onLateSuccess: forget);
-        await forget();
+        await run(_publisher.deletePhoto(objectPath));
+        await _repository.removeUploadedPhoto(pageId: page.id, objectPath: objectPath);
       }
     }
     for (final page in pages) {

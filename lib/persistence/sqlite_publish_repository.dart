@@ -200,6 +200,11 @@ final class SqlitePublishRepository implements PublishRepository {
     whereArgs: [pageId, objectPath],
   );
 
+  @override
+  Future<void> forgetArrivedUploads() => _database.transaction(
+    (transaction) => transaction.update('published_photos', {'arrived': 0}, where: 'arrived = 1'),
+  );
+
   static Future<void> _updateJob(DatabaseExecutor database, PublishJob job) =>
       database.update('publish_jobs', _jobToRow(job), where: 'id = ?', whereArgs: [job.id]);
 

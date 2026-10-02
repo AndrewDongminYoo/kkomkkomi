@@ -43,14 +43,19 @@ final class DeletionFailure implements Exception {
 /// The queue runs again when the call ends, whether it completed or failed, so a share that the person starts later
 /// publishes again. In a flavor without a backend, only the data on the device is deleted.
 ///
+/// The first step, before any delete, marks every recorded upload as one that may not have arrived
+/// ([PublishQueue.forgetArrivedUploads]). A publish skips the upload of a photo whose record says that it arrived, and
+/// a deletion can make that record false in more than one way: a delete that answers late, a record whose removal
+/// fails after its object went. With the mark gone, the next share uploads every photo again, whatever the deletion
+/// did, and the records stay, so every object that may exist is still known.
+///
 /// Every delete of the backend runs within the step timeout: each photo object, each report, each page, and the
 /// account. A delete that does not answer in time fails its step, but it goes on, because a timeout does not cancel
 /// it. The deletion keeps every such delete in one place until it ends, as [PublishQueue] keeps the uploads that a
 /// cancel did not end (issue 13), and the queue stays held until all of them ended:
 ///
-/// - A photo delete that ends late could otherwise remove an object that a share of the visit, started in the
-///   meantime, names without uploading it again, because the record of the object stays until its delete answers.
-///   When the late delete ends with success, its record goes too, so a later share uploads the photo again.
+/// - A photo delete that ends late could otherwise land after a share in the meantime uploaded the photo again to
+///   the same path, and remove the object that the new report names.
 /// - A delete of the account that ends late could otherwise remove the user ID that such a share published under.
 ///   When it ends with success, the queue stays held, because the account is gone, and the next call goes on with
 ///   the data on the device.
@@ -94,19 +99,19 @@ final class DeleteAllData {
     final hasBackend = _publishQueue.isAvailable;
     var step = DeletionStep.publishedData;
     try {
+      await _publishQueue.forgetArrivedUploads();
       if (_lateDeletes.isNotEmpty) {
         step = _lateDeletes.values.reduce((a, b) => a.index <= b.index ? a : b);
         await Future.wait(_lateDeletes.keys.toList()).timeout(_stepTimeout);
       }
       if (!_accountGone) {
         step = DeletionStep.publishedData;
-        if (hasBackend) await _publishQueue.deletePublished(timed: _timed(DeletionStep.publishedData));
+        if (hasBackend) {
+          await _publishQueue.deletePublished(timed: (delete) => _timed(delete, DeletionStep.publishedData));
+        }
         step = DeletionStep.account;
         if (hasBackend) {
-          await _timed(DeletionStep.account)(
-            _identity.deleteAccount(),
-            onLateSuccess: () async => _accountGone = true,
-          );
+          await _timed(_identity.deleteAccount(), DeletionStep.account, onLateSuccess: () => _accountGone = true);
         }
       }
       step = DeletionStep.deviceData;
@@ -125,26 +130,25 @@ final class DeleteAllData {
     }
   }
 
-  /// Runs a delete of [step] within the step timeout, and keeps one that does not answer in time until it ends.
-  TimedDelete _timed(DeletionStep step) =>
-      (delete, {onLateSuccess}) => delete.timeout(
-        _stepTimeout,
-        onTimeout: () {
-          late final Future<void> settled;
-          settled = delete
-              .then(
-                (_) => onLateSuccess?.call(),
-                onError: (Object error) => log('A late delete of ${step.name} failed: $error'),
-              )
-              .catchError((Object error) => log('A late delete of ${step.name} ended badly: $error'))
-              .whenComplete(() {
-                _lateDeletes.remove(settled);
-                _releaseWhenSettled();
-              });
-          _lateDeletes[settled] = step;
-          throw TimeoutException('A delete of ${step.name} did not answer in time', _stepTimeout);
-        },
-      );
+  /// Runs [delete], a delete of [step], within the step timeout, and keeps one that does not answer in time until it
+  /// ends. [onLateSuccess] runs when such a delete then ends with success.
+  Future<void> _timed(Future<void> delete, DeletionStep step, {void Function()? onLateSuccess}) => delete.timeout(
+    _stepTimeout,
+    onTimeout: () {
+      late final Future<void> settled;
+      settled = delete
+          .then(
+            (_) => onLateSuccess?.call(),
+            onError: (Object error) => log('A late delete of ${step.name} failed: $error'),
+          )
+          .whenComplete(() {
+            _lateDeletes.remove(settled);
+            _releaseWhenSettled();
+          });
+      _lateDeletes[settled] = step;
+      throw TimeoutException('A delete of ${step.name} did not answer in time', _stepTimeout);
+    },
+  );
 
   /// Lets the queue run again when no call runs, no late delete is on its way, and the account still exists, so that
   /// no job publishes under a user ID that a late delete may remove, or under a new one before the device is erased.

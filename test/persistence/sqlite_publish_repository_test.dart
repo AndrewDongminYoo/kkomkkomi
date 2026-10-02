@@ -352,6 +352,22 @@ void main() {
       expect(await repository.uploadedObjects('page-1'), ['a.jpg', 'b.jpg']);
     });
 
+    test('forgetArrivedUploads keeps every record as an intent, and a later arrival marks it again', () async {
+      await repository.saveUploadedPhoto(pageId: 'page-1', objectPath: 'a.jpg', photoPath: 'photos/v/1.jpg');
+      await repository.saveUploadedPhoto(pageId: 'page-2', objectPath: 'b.jpg', photoPath: 'photos/v/2.jpg');
+      await repository.recordUploadIntent(pageId: 'page-1', objectPath: 'c.jpg', photoPath: 'photos/v/3.jpg');
+
+      await repository.forgetArrivedUploads();
+
+      expect(await repository.uploadedPhoto(pageId: 'page-1', objectPath: 'a.jpg'), isNull);
+      expect(await repository.uploadedPhoto(pageId: 'page-2', objectPath: 'b.jpg'), isNull);
+      expect(await repository.uploadedObjects('page-1'), ['a.jpg', 'c.jpg']);
+      expect(await repository.uploadedObjects('page-2'), ['b.jpg']);
+
+      await repository.saveUploadedPhoto(pageId: 'page-1', objectPath: 'a.jpg', photoPath: 'photos/v/1.jpg');
+      expect(await repository.uploadedPhoto(pageId: 'page-1', objectPath: 'a.jpg'), 'photos/v/1.jpg');
+    });
+
     test('keeps the newest photo file of an object', () async {
       await repository.saveUploadedPhoto(pageId: 'page-1', objectPath: 'a.jpg', photoPath: 'photos/v/1.jpg');
       await repository.saveUploadedPhoto(pageId: 'page-1', objectPath: 'a.jpg', photoPath: 'photos/v/2.jpg');

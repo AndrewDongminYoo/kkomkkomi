@@ -124,6 +124,9 @@ class _GatedRepository implements PublishRepository {
   @override
   Future<void> removeUploadedPhoto({required String pageId, required String objectPath}) =>
       _inner.removeUploadedPhoto(pageId: pageId, objectPath: objectPath);
+
+  @override
+  Future<void> forgetArrivedUploads() => _inner.forgetArrivedUploads();
 }
 
 const _transient = PublishException(PublishErrorKind.transient, 'unavailable');

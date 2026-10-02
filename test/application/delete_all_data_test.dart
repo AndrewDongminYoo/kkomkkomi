@@ -239,6 +239,56 @@ void main() {
       expect(localData.erasures, 1);
     });
 
+    group('the record that an upload arrived', () {
+      test('is forgotten before any delete, so a failed attempt leaves every object to upload again', () async {
+        identity.userId = null;
+
+        await expectLater(deleteAllData()(), failsAt(DeletionStep.publishedData));
+
+        expect(publisher.calls, isEmpty);
+        expect(await publishing.uploadedPhoto(pageId: 'page-1', objectPath: object), isNull);
+        // The record stays as an intent, so a cleanup or a revoke still knows the object.
+        expect(await publishing.uploadedObjects('page-1'), [object]);
+      });
+
+      test('a share after a Storage delete whose record did not go uploads the photo again', () async {
+        publishing.removeFailure = Exception('disk I/O error');
+
+        await expectLater(deleteAllData()(), failsAt(DeletionStep.publishedData));
+        expect(publisher.objects, isEmpty);
+        expect(queue.isHeld, isFalse);
+
+        publishing.removeFailure = null;
+        publisher.calls.clear();
+        await queue.publishVisit('visit-1');
+        await pumpEventQueue();
+
+        expect(publisher.calls, contains('uploadPhoto $object'));
+        expect(publisher.objects.keys, [object]);
+      });
+
+      test('a share after a late Storage delete whose record did not go uploads the photo again', () async {
+        final gate = publisher.gates['deletePhoto'] = Completer<void>();
+        publishing.removeFailure = Exception('disk I/O error');
+        await expectLater(
+          deleteAllData(stepTimeout: const Duration(milliseconds: 10))(),
+          failsAt(DeletionStep.publishedData),
+        );
+
+        gate.complete();
+        await pumpEventQueue();
+        expect(queue.isHeld, isFalse);
+
+        publishing.removeFailure = null;
+        publisher.calls.clear();
+        await queue.publishVisit('visit-1');
+        await pumpEventQueue();
+
+        expect(publisher.calls, contains('uploadPhoto $object'));
+        expect(publisher.objects.keys, [object]);
+      });
+    });
+
     group('a backend delete that does not answer in time', () {
       const timeout = Duration(milliseconds: 10);
 
@@ -293,7 +343,9 @@ void main() {
         final third = deletion();
         gate.complete();
         await third;
-        expect(publisher.calls.where((call) => call.startsWith('deletePhoto')), hasLength(1));
+        // The third try waited for the late delete, and then deleted the recorded object again, which is gone: a
+        // delete of what is gone changes nothing.
+        expect(publisher.calls.where((call) => call.startsWith('deletePhoto')), hasLength(2));
         expect(publisher.objects, isEmpty);
         expect(localData.erasures, 1);
         expect(queue.isHeld, isFalse);

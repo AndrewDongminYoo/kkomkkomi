@@ -578,9 +578,21 @@ class FakePublishRepository implements PublishRepository {
       if (path.startsWith('clientPages/$pageId/')) path,
   ]..sort();
 
+  /// The exception that a removal of a record throws while it is set.
+  Exception? removeFailure;
+
   @override
   Future<void> removeUploadedPhoto({required String pageId, required String objectPath}) async {
+    if (removeFailure case final failure?) throw failure;
     _uploads.remove(objectPath);
+  }
+
+  @override
+  Future<void> forgetArrivedUploads() async {
+    _throwFailure();
+    for (final path in [..._uploads.keys]) {
+      _uploads[path] = (photoPath: _uploads[path]!.photoPath, arrived: false);
+    }
   }
 }
 
