@@ -317,6 +317,31 @@ void main() {
     });
   });
 
+  group('revokeJobsOf', () {
+    test('gives the revoke job of each revoked page of the client, oldest page first, and no publish job', () async {
+      final queue = newQueue();
+      expect(await queue.revokeJobsOf('client-1'), isEmpty);
+
+      final published = await queue.publishVisit(visit1.id);
+      await settle();
+      clock.time = start.add(const Duration(minutes: 1));
+      final replacement = await queue.reissueClientPage('client-1');
+      await settle();
+      clock.time = start.add(const Duration(minutes: 2));
+      final gate = publisher.gate = Completer<void>();
+      await queue.revokeClientPage('client-1');
+
+      final jobs = await queue.revokeJobsOf('client-1');
+      expect(jobs.map((job) => (job.kind, job.pageId, job.status)), [
+        (PublishJobKind.revoke, published.pageId, PublishJobStatus.done),
+        (PublishJobKind.revoke, replacement.id, PublishJobStatus.pending),
+      ]);
+      expect(await queue.revokeJobsOf('client-2'), isEmpty);
+      gate.complete();
+      await settle();
+    });
+  });
+
   group('publishVisit', () {
     test('writes the page, uploads the photos, and then writes the report, and the job is done', () async {
       final queue = newQueue();

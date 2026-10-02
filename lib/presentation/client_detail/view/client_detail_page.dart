@@ -5,6 +5,7 @@ import 'package:kkomkkomi/application/application.dart';
 import 'package:kkomkkomi/domain/domain.dart';
 import 'package:kkomkkomi/l10n/l10n.dart';
 import 'package:kkomkkomi/presentation/client_detail/cubit/client_detail_cubit.dart';
+import 'package:kkomkkomi/presentation/client_detail/cubit/client_link_cubit.dart';
 import 'package:kkomkkomi/presentation/shared/confirm_dialog.dart';
 import 'package:kkomkkomi/presentation/shared/load_failure.dart';
 import 'package:kkomkkomi/presentation/shared/name_dialog.dart';
@@ -29,23 +30,34 @@ class ClientDetailPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return BlocProvider(
-      create: (context) {
-        final cubit = ClientDetailCubit(
-          clientId: clientId,
-          clients: context.read<ClientRepository>(),
-          visits: context.read<VisitRepository>(),
-          idGenerator: context.read<IdGenerator>(),
-          startVisit: StartVisit(
-            clients: context.read<ClientRepository>(),
-            visits: context.read<VisitRepository>(),
-            idGenerator: context.read<IdGenerator>(),
-            clock: context.read<Clock>(),
-          ),
-        );
-        unawaited(cubit.load());
-        return cubit;
-      },
+    return MultiBlocProvider(
+      providers: [
+        BlocProvider(
+          create: (context) {
+            final cubit = ClientDetailCubit(
+              clientId: clientId,
+              clients: context.read<ClientRepository>(),
+              visits: context.read<VisitRepository>(),
+              idGenerator: context.read<IdGenerator>(),
+              startVisit: StartVisit(
+                clients: context.read<ClientRepository>(),
+                visits: context.read<VisitRepository>(),
+                idGenerator: context.read<IdGenerator>(),
+                clock: context.read<Clock>(),
+              ),
+            );
+            unawaited(cubit.load());
+            return cubit;
+          },
+        ),
+        BlocProvider(
+          create: (context) {
+            final cubit = ClientLinkCubit(clientId: clientId, publishQueue: context.read<PublishQueue>());
+            unawaited(cubit.load());
+            return cubit;
+          },
+        ),
+      ],
       child: const ClientDetailView(),
     );
   }
@@ -57,47 +69,58 @@ class ClientDetailView extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final l10n = context.l10n;
-    return BlocConsumer<ClientDetailCubit, ClientDetailState>(
-      listenWhen: (previous, current) => previous.status != current.status,
-      listener: (context, state) {
-        if (state.status == ClientDetailStatus.archived) Navigator.of(context).pop();
-        if (state.startedVisitId case final visitId? when state.status == ClientDetailStatus.visitStarted) {
-          Navigator.of(context).push(VisitCapturePage.route(visitId: visitId));
-        }
-        if (state.status == ClientDetailStatus.saveFailed) {
-          ScaffoldMessenger.of(context)
-            ..hideCurrentSnackBar()
-            ..showSnackBar(SnackBar(content: Text(l10n.saveFailedMessage)));
-        }
-      },
-      builder: (context, state) {
-        final client = state.client;
-        // The archived status closes the top route and a started visit opens over it, so the screen must still be
-        // that route when storage answers.
-        return SaveGuard(
-          isSaving: state.status == ClientDetailStatus.saving,
-          child: Scaffold(
-            appBar: AppBar(
-              title: client == null ? null : Text(client.name),
-              actions: [if (client != null) _ClientMenu(client: client)],
+    return BlocListener<ClientLinkCubit, ClientLinkState>(
+      listenWhen: (previous, current) =>
+          previous.status != current.status && current.status == ClientLinkStatus.requestFailed,
+      listener: (context, _) => ScaffoldMessenger.of(context)
+        ..hideCurrentSnackBar()
+        ..showSnackBar(SnackBar(content: Text(l10n.clientLinkRequestFailedMessage))),
+      child: BlocConsumer<ClientDetailCubit, ClientDetailState>(
+        listenWhen: (previous, current) => previous.status != current.status,
+        listener: (context, state) {
+          if (state.status == ClientDetailStatus.archived) Navigator.of(context).pop();
+          if (state.startedVisitId case final visitId? when state.status == ClientDetailStatus.visitStarted) {
+            Navigator.of(context).push(VisitCapturePage.route(visitId: visitId));
+          }
+          if (state.status == ClientDetailStatus.saveFailed) {
+            ScaffoldMessenger.of(context)
+              ..hideCurrentSnackBar()
+              ..showSnackBar(SnackBar(content: Text(l10n.saveFailedMessage)));
+          }
+        },
+        builder: (context, state) {
+          final client = state.client;
+          final isRequestingLink = context.select<ClientLinkCubit, bool>(
+            (cubit) => cubit.state.status == ClientLinkStatus.requesting,
+          );
+          // The archived status closes the top route and a started visit opens over it, so the screen must still be
+          // that route when storage answers. A close or a new link waits for storage in the same way, so that its
+          // failure has the screen to show itself on.
+          return SaveGuard(
+            isSaving: state.status == ClientDetailStatus.saving || isRequestingLink,
+            child: Scaffold(
+              appBar: AppBar(
+                title: client == null ? null : Text(client.name),
+                actions: [if (client != null) _ClientMenu(client: client)],
+              ),
+              body: SafeArea(
+                child: switch (state.status) {
+                  ClientDetailStatus.loading => const Center(child: CircularProgressIndicator()),
+                  ClientDetailStatus.loadFailed => LoadFailure(
+                    message: l10n.clientDetailLoadFailedMessage,
+                    onRetry: () => unawaited(context.read<ClientDetailCubit>().load()),
+                  ),
+                  ClientDetailStatus.ready ||
+                  ClientDetailStatus.saving ||
+                  ClientDetailStatus.saveFailed ||
+                  ClientDetailStatus.archived ||
+                  ClientDetailStatus.visitStarted => _ClientContent(zones: state.activeZones, visits: state.visits),
+                },
+              ),
             ),
-            body: SafeArea(
-              child: switch (state.status) {
-                ClientDetailStatus.loading => const Center(child: CircularProgressIndicator()),
-                ClientDetailStatus.loadFailed => LoadFailure(
-                  message: l10n.clientDetailLoadFailedMessage,
-                  onRetry: () => unawaited(context.read<ClientDetailCubit>().load()),
-                ),
-                ClientDetailStatus.ready ||
-                ClientDetailStatus.saving ||
-                ClientDetailStatus.saveFailed ||
-                ClientDetailStatus.archived ||
-                ClientDetailStatus.visitStarted => _ClientContent(zones: state.activeZones, visits: state.visits),
-              },
-            ),
-          ),
-        );
-      },
+          );
+        },
+      ),
     );
   }
 }
@@ -209,6 +232,7 @@ class _ClientContent extends StatelessWidget {
               trailing: const Icon(Icons.chevron_right),
               onTap: () => Navigator.of(context).push(VisitCapturePage.route(visitId: visit.id)),
             ),
+          const _LinkSection(),
         ],
       ),
     );
@@ -249,6 +273,107 @@ class _ClientContent extends StatelessWidget {
         onSubmit: cubit.addZone,
       ),
     );
+  }
+}
+
+/// The report link of the client: whether it is open, whether a close is on its way to the backend, and the controls
+/// that close it and replace it. A flavor without a backend shows nothing here.
+class _LinkSection extends StatelessWidget {
+  const new();
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = context.l10n;
+    final state = context.watch<ClientLinkCubit>().state;
+    final cubit = context.read<ClientLinkCubit>();
+    switch (state.status) {
+      case ClientLinkStatus.loading || ClientLinkStatus.unavailable:
+        return const SizedBox.shrink();
+      case ClientLinkStatus.loadFailed:
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            _SectionTitle(l10n.clientLinkSectionTitle),
+            _SectionMessage(l10n.clientLinkLoadFailedMessage),
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16),
+              child: OutlinedButton(onPressed: () => unawaited(cubit.load()), child: Text(l10n.loadRetryButton)),
+            ),
+          ],
+        );
+      case ClientLinkStatus.ready || ClientLinkStatus.requesting || ClientLinkStatus.requestFailed:
+        final onAction = state.takesAction;
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            _SectionTitle(l10n.clientLinkSectionTitle),
+            // The messages change when a job of the queue ends, so a screen reader reads each new one.
+            Semantics(
+              liveRegion: true,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  if (_linkMessageOf(state, l10n) case final message?) _SectionMessage(message),
+                  if (state.isClosing) _SectionMessage(l10n.clientLinkClosingMessage),
+                  if (state.hasFailedClose) _SectionMessage(l10n.clientLinkCloseFailedMessage),
+                  if (state.hasUnfinishedDeletion) _SectionMessage(l10n.clientLinkDeletionUnfinishedMessage),
+                ],
+              ),
+            ),
+            if (state.hasOpenLink)
+              Padding(
+                padding: const EdgeInsets.fromLTRB(16, 8, 16, 0),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    OutlinedButton(
+                      onPressed: onAction ? () => unawaited(_confirmNewLink(context)) : null,
+                      child: Text(l10n.clientLinkReissueButton),
+                    ),
+                    const SizedBox(height: 8),
+                    OutlinedButton(
+                      onPressed: onAction ? () => unawaited(_confirmClose(context)) : null,
+                      child: Text(l10n.clientLinkCloseButton),
+                    ),
+                  ],
+                ),
+              ),
+          ],
+        );
+    }
+  }
+
+  /// What the screen says about the open link in [state], or null while it says only that a link is closing, did not
+  /// close, or waits for the deletion of all data to finish.
+  static String? _linkMessageOf(ClientLinkState state, AppLocalizations l10n) {
+    if (state.hasOpenLink) return l10n.clientLinkOpenMessage;
+    // A link is closed only when its revoke job is done on the backend.
+    if (state.isClosing || state.hasFailedClose || state.hasUnfinishedDeletion) return null;
+    return state.hasClosedLink ? l10n.clientLinkClosedMessage : l10n.clientLinkNoneMessage;
+  }
+
+  Future<void> _confirmClose(BuildContext context) async {
+    final l10n = context.l10n;
+    final cubit = context.read<ClientLinkCubit>();
+    final confirmed = await showConfirmDialog(
+      context: context,
+      title: l10n.clientLinkCloseDialogTitle,
+      message: l10n.clientLinkCloseDialogMessage,
+      confirmLabel: l10n.clientLinkCloseButton,
+    );
+    if (confirmed) await cubit.closeLink();
+  }
+
+  Future<void> _confirmNewLink(BuildContext context) async {
+    final l10n = context.l10n;
+    final cubit = context.read<ClientLinkCubit>();
+    final confirmed = await showConfirmDialog(
+      context: context,
+      title: l10n.clientLinkReissueDialogTitle,
+      message: l10n.clientLinkReissueDialogMessage,
+      confirmLabel: l10n.clientLinkReissueButton,
+    );
+    if (confirmed) await cubit.makeNewLink();
   }
 }
 
