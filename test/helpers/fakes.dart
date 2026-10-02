@@ -288,6 +288,36 @@ class FakePhotoStore implements PhotoStore {
 /// The bytes of `test/fixtures/photo.jpg`, a JPEG of 8 by 6 pixels.
 Uint8List fixturePhotoBytes() => File('test/fixtures/photo.jpg').readAsBytesSync();
 
+/// The bytes of `test/fixtures/photo_gps_orientation_6.jpg`, a JPEG with GPS tags and the orientation 6, whose each
+/// piece of metadata holds one of [metadataTexts].
+Uint8List gpsPhotoBytes() => File('test/fixtures/photo_gps_orientation_6.jpg').readAsBytesSync();
+
+/// The texts that `tool/photo_fixtures/make.py` put into the GPS directory, the camera model, the XMP, the IPTC, the
+/// comment, and the Exif after the end of the image of the GPS fixtures.
+const metadataTexts = [
+  'KKOMKKOMI-GPS-AREA',
+  'KKOMKKOMI-CAMERA-MODEL',
+  'KKOMKKOMI-XMP-LOCATION',
+  'KKOMKKOMI-IPTC-CITY',
+  'KKOMKKOMI-COMMENT',
+];
+
+/// Whether [bytes] hold the ASCII [text].
+bool holdsText(List<int> bytes, String text) {
+  final units = text.codeUnits;
+  for (var start = 0; start + units.length <= bytes.length; start++) {
+    var index = 0;
+    while (index < units.length && bytes[start + index] == units[index]) {
+      index++;
+    }
+    if (index == units.length) return true;
+  }
+  return false;
+}
+
+/// Whether [bytes] hold any of [metadataTexts].
+bool holdsMetadataText(List<int> bytes) => metadataTexts.any((text) => holdsText(bytes, text));
+
 /// Gives the font file of the app from the source tree, without the asset bundle.
 ///
 /// The read is synchronous, so that it also completes inside the fake time of a widget test.

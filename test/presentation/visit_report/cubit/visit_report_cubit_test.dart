@@ -9,6 +9,7 @@ import 'package:kkomkkomi/application/application.dart';
 import 'package:kkomkkomi/domain/domain.dart';
 import 'package:kkomkkomi/export/export.dart';
 import 'package:kkomkkomi/presentation/presentation.dart';
+import 'package:pdf/pdf.dart';
 
 import '../../../helpers/helpers.dart';
 
@@ -366,7 +367,22 @@ void main() {
       );
 
       blocTest<VisitReportCubit, VisitReportState>(
-        'fails when a photo file is no image, which the renderer reports with an error and not an exception',
+        'puts a photo that holds a location into the PDF without it',
+        setUp: () {
+          expect(holdsMetadataText(gpsPhotoBytes()), isTrue);
+          photoStore.contents[lobbyAfter] = gpsPhotoBytes();
+        },
+        build: build,
+        act: (cubit) async {
+          await cubit.load();
+          await cubit.share(labels);
+        },
+        expect: () => [loaded(), loaded(status: VisitReportStatus.sharing), loaded()],
+        verify: (_) => expect(holdsMetadataText(reportShare.shared.single.bytes), isFalse),
+      );
+
+      blocTest<VisitReportCubit, VisitReportState>(
+        'fails when a photo file is no well-formed JPEG, and opens no share sheet',
         setUp: () => photoStore.contents[lobbyAfter] = Uint8List.fromList([1, 2, 3]),
         build: build,
         act: (cubit) async {
@@ -378,7 +394,27 @@ void main() {
           loaded(status: VisitReportStatus.sharing),
           loaded(status: VisitReportStatus.shareFailed),
         ],
-        errors: () => [isA<Error>()],
+        errors: () => [isA<FormatException>()],
+        verify: (_) => expect(reportShare.shared, isEmpty),
+      );
+
+      blocTest<VisitReportCubit, VisitReportState>(
+        'fails when the renderer cannot read a photo that is a well-formed JPEG file, and opens no share sheet',
+        // A well-formed JPEG file without a frame header.
+        setUp: () => photoStore.contents[lobbyAfter] = Uint8List.fromList([
+          0xff, 0xd8, 0xff, 0xda, 0x00, 0x08, 0x01, 0x01, 0x00, 0x00, 0x3f, 0x00, 0x12, 0x34, 0xff, 0xd9, //
+        ]),
+        build: build,
+        act: (cubit) async {
+          await cubit.load();
+          await cubit.share(labels);
+        },
+        expect: () => [
+          loaded(),
+          loaded(status: VisitReportStatus.sharing),
+          loaded(status: VisitReportStatus.shareFailed),
+        ],
+        errors: () => [isA<PdfException>()],
         verify: (_) => expect(reportShare.shared, isEmpty),
       );
 

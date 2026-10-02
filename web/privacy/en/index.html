@@ -96,7 +96,16 @@
           sheet, to the app you choose. It is not sent to the operator's
           servers. A shared PDF file stays in the app's cache folder on Android
           and in its temporary folder on iPhone, until the system clears it or
-          the app is uninstalled.
+          the app is uninstalled. The app also removes the information that
+          section 3 describes from a photo before it puts the photo in a PDF.
+        </p>
+        <p>
+          A photo taken with the camera is first written as a file by the photo
+          picker, into the app's cache folder on Android and into its temporary
+          folder on iPhone, and the app keeps a copy of that file without the
+          information that section 3 describes. The file in the cache or
+          temporary folder can keep that information, and it stays until the
+          system clears it or the app is uninstalled.
         </p>
         <p>
           Uninstalling the app deletes the data on the phone. A copy in a backup
@@ -148,10 +157,15 @@
           </li>
         </ul>
         <p>
-          The app does not remove what the camera wrote into a photo file (the
-          time, the device model, and the location if the camera app recorded
-          it), and uploads the file as it is. Anyone with the link can download
-          a photo and read that information.
+          The camera app writes information such as the time and the device
+          model into a photo file, and, depending on its settings, the location.
+          The app removes that information when it keeps a photo, and keeps what
+          the photo needs to show correctly, such as its orientation and its
+          color information. A photo that an earlier version of the app kept
+          still holds that information in its file on the phone, but the app
+          removes it before it uploads such a photo too. A photo file that an
+          earlier version already uploaded keeps that information on the server,
+          and uploading the same visit again does not replace it.
         </p>
         <p>
           The app finishes the upload before it opens the share sheet. So the
@@ -326,8 +340,9 @@
             tools.
           </li>
           <li>
-            The app does not ask for location permission. A location stored
-            inside a photo file can still remain, as section 3 says.
+            The app does not ask for location permission. It removes a location
+            stored inside a photo file before an upload, as section 3 says.
+            Sections 1 and 3 name the files that can still hold one.
           </li>
           <li>This page and the web report page use no cookies.</li>
         </ul>

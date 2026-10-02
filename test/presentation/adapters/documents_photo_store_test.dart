@@ -1,17 +1,24 @@
 import 'dart:io';
 
 import 'package:flutter_test/flutter_test.dart';
+import 'package:kkomkkomi/application/application.dart';
 import 'package:kkomkkomi/domain/domain.dart';
 import 'package:kkomkkomi/presentation/presentation.dart';
+import 'package:pdf/pdf.dart';
+
+import '../../helpers/helpers.dart';
 
 void main() {
   late Directory root;
   late Directory documents;
 
-  /// Makes a file that stands for a photo of the picker, with [name] and three bytes.
-  File pickedFile(String name) => File('${root.path}/picked/$name')
+  /// A JPEG without metadata, which the store keeps as it is.
+  final clean = File('test/fixtures/photo_no_exif.jpg').readAsBytesSync();
+
+  /// Makes a file that stands for a photo of the picker, with [name] and the [bytes] of a JPEG.
+  File pickedFile(String name, [List<int>? bytes]) => File('${root.path}/picked/$name')
     ..createSync(recursive: true)
-    ..writeAsBytesSync([1, 2, 3]);
+    ..writeAsBytesSync(bytes ?? clean);
 
   File stored(String relativePath) => File('${documents.path}/$relativePath');
 
@@ -31,9 +38,35 @@ void main() {
 
         final photo = await store().save(sourcePath: picked.path, visitId: 'visit-1', photoId: 'photo-1');
 
-        expect(stored('photos/visit-1/photo-1.jpg').readAsBytesSync(), [1, 2, 3]);
+        expect(stored('photos/visit-1/photo-1.jpg').readAsBytesSync(), clean);
         expect(stored(photo.path).existsSync(), isTrue);
         expect(picked.existsSync(), isTrue);
+      });
+
+      test('keeps the picked photo without its location and its other metadata, and with its orientation', () async {
+        final withGps = gpsPhotoBytes();
+        expect(holdsMetadataText(withGps), isTrue);
+
+        final photo = await store().save(
+          sourcePath: pickedFile('scaled_camera.jpg', withGps).path,
+          visitId: 'visit-1',
+          photoId: 'photo-1',
+        );
+
+        final kept = stored(photo.path).readAsBytesSync();
+        expect(holdsMetadataText(kept), isFalse);
+        expect(kept, withoutLocation(withGps));
+        expect(PdfJpegInfo(kept).orientation, PdfImageOrientation.rightTop);
+      });
+
+      test('fails with a FormatException and keeps no file when the picked file is no well-formed JPEG', () async {
+        final picked = pickedFile('scaled_camera.jpg', File('test/fixtures/photo_truncated.jpg').readAsBytesSync());
+
+        await expectLater(
+          store().save(sourcePath: picked.path, visitId: 'visit-1', photoId: 'photo-1'),
+          throwsFormatException,
+        );
+        expect(Directory('${documents.path}/photos').existsSync(), isFalse);
       });
 
       test('returns a path that is relative to the documents directory', () async {
@@ -72,7 +105,7 @@ void main() {
       test('reads the extension from the file name and not from a directory name', () async {
         final picked = File('${root.path}/picked.cache/camera')
           ..createSync(recursive: true)
-          ..writeAsBytesSync([1]);
+          ..writeAsBytesSync(clean);
 
         final photo = await store().save(sourcePath: picked.path, visitId: 'visit-1', photoId: 'photo-1');
 
@@ -112,7 +145,7 @@ void main() {
           photoId: 'photo-1',
         );
 
-        expect(await store().read(photo), [1, 2, 3]);
+        expect(await store().read(photo), clean);
       });
 
       test('fails with an exception for a file that is not there', () async {

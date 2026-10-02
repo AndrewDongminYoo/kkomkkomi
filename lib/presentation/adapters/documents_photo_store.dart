@@ -18,9 +18,12 @@ final class DocumentsPhotoStore implements PhotoStore {
   Future<PhotoRef> save({required String sourcePath, required String visitId, required String photoId}) async {
     // The stored path has `/` on every platform, so that it names the same file wherever it is read.
     final photo = PhotoRef('photos/$visitId/$photoId${_extensionOf(sourcePath)}');
+    // The location goes before the photo reaches the directory, so the file, the PDF, and an upload never hold it
+    // (issue 20). A file that is no well-formed JPEG fails here, before anything is written.
+    final bytes = withoutLocation(await File(sourcePath).readAsBytes());
     final target = await _fileOf(photo);
     await target.parent.create(recursive: true);
-    await File(sourcePath).copy(target.path);
+    await target.writeAsBytes(bytes);
     return photo;
   }
 
