@@ -1,0 +1,20 @@
+Kkomkkomi is for small cleaning companies that clean offices and shops on a regular schedule.
+On each visit, take before and after photos of each zone and turn them into a report for your client.
+
+Set up clients and zones once
+• Add each office or shop you clean as a client.
+• Split a site into zones, such as a lobby or a restroom. The next visit starts with the same zones.
+
+Take before and after photos on each visit
+• Pick the visit date, then take a before photo and an after photo of each zone.
+• Add a note to any zone.
+• See the photos from the last visit while you take new ones.
+
+Send the report as a link or a PDF
+• Preview the cleaning report with your company name at the top, and share it as a PDF.
+• Share it as a link, and your client can open the report without installing an app or signing in. The client's earlier reports are on the same page.
+• If the connection drops while a report is uploading, the upload starts again when the connection is back.
+
+Good to know
+• Anyone who has the link can open the reports of that client. Send it only to the people who receive the reports.
+• Take care that photos don't show faces, monitors, or documents.
