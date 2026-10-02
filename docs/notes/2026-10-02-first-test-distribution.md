@@ -124,6 +124,7 @@ The same page says to declare IP addresses by their use, "where developers use I
 - `PrivacyInfo.xcprivacy`: see "Privacy manifest" below.
 - `targetSdk`: see "Target SDK" below.
 - `android/app/proguard-rules.pro`: see "R8 rules" below.
+- The flow on a phone: see "Device check" below.
 
 ### Privacy manifest
 
@@ -150,3 +151,18 @@ The target SDK meets the Google Play minimum for a new app.
 `android/app/proguard-rules.pro` now exists with a comment and no rule, and it names the consumer rules that R8 already applies.
 R8 ran with the consumer rules of the plugins and the Firebase SDKs, and the bundle built.
 Whether the minified app runs was not checked: no device and no emulator ran it. Open the first internal testing build on a phone before you invite testers.
+
+### Device check
+
+On 2026-10-03 the operator ran an iOS release build of the production flavor on an iPhone, from a commit that has the client link screen (`bc4d57c` or later), and every step passed:
+
+1. take the photos of a visit;
+2. share the report as a link;
+3. open the web report;
+4. close the link from the client screen ("링크 막기");
+5. the web report no longer opens;
+6. make a new link and share it again;
+7. delete all data from the company profile screen: the client list is empty, and the new link no longer opens.
+
+This is the first run of Firebase start, anonymous sign-in, the upload, the web report, the revoke, the reissue, and the deletion on a device; the automated tests replace Firebase with fakes.
+No Android build has run on a device, so the R8 item above stays open.
