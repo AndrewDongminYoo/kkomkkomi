@@ -118,9 +118,11 @@
         <p>
           This project has automatic clean-up of anonymous accounts turned on.
           An anonymous account can be deleted at any time after it is 30 days
-          old, even while it is still in use. After the account is deleted,
-          nobody can change or close the pages and reports it published, and
-          their links stay open.
+          old, even while it is still in use. After the account is deleted, you
+          and the app can no longer change or close the pages and reports it
+          published, and their links stay open until the operator closes them.
+          The operator can close or delete those pages on request; section 11
+          says how to ask.
         </p>
 
         <h2 id="publish">3. What a link share sends</h2>
@@ -182,8 +184,8 @@
         </ul>
         <p>
           A link is hard to guess, but it is not secret. Anyone it is forwarded
-          to can open it. Without a page ID, nobody can list the pages of other
-          clients.
+          to can open it. A person who comes in through a link cannot find or
+          list the pages of other clients without their page IDs.
         </p>
         <p>
           Opening a web report page sends a request to Firebase Hosting, and
@@ -197,8 +199,8 @@
         <h2 id="revoke">5. Closing a link</h2>
         <p>
           The app has no control to close a link yet (planned). So a link stays
-          open once it is shared. To close a link or delete data, you have to
-          ask the operator.
+          open once it is shared, until the operator closes it. To close a link
+          or delete data, ask the operator at the contact in section 11.
           <span class="todo"
             >[Operator to confirm: how and how fast close and delete requests
             are handled]</span
@@ -217,10 +219,11 @@
           </li>
           <li>
             It does not delete the client page document or the report documents.
-            The security rules allow no document to be deleted, so the company
-            name, the client name, the visit dates, the zone names, the notes,
-            and the user ID stay on the server. After the page is closed, the
-            link cannot read them, and only the operator can access them.
+            The security rules do not let the app delete a document, so the
+            company name, the client name, the visit dates, the zone names, the
+            notes, and the user ID stay on the server until the operator deletes
+            them. After the page is closed, the link cannot read them, and the
+            operator can still access them.
           </li>
         </ul>
 
@@ -230,9 +233,11 @@
           anonymous account can be lost with them. Unless its data is restored
           from a backup, a reinstalled app does not know the pages it published
           before, and a new anonymous account cannot change or close the pages
-          of the old one. So a link that was never closed stays open, and nobody
-          can close it from the app. The same holds when the anonymous account
-          is deleted automatically after 30 days (section 2).
+          of the old one. So a link that was never closed stays open until the
+          operator closes it, and it cannot be closed from the app. The same
+          holds when the anonymous account is deleted automatically after 30
+          days (section 2). To have such a link closed or deleted, ask the
+          operator at the contact in section 11.
         </p>
 
         <h2 id="retention">7. How long data is kept</h2>
