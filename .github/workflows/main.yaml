@@ -52,6 +52,27 @@ jobs:
       - name: Build the development debug APK
         run: flutter build apk --debug --flavor development --target lib/main_development.dart
 
+  ios:
+    # Builds the development flavor from a clean checkout, without
+    # GoogleService-Info.plist, which is not in the repository. Only a
+    # production build copies that file into the bundle. A build without
+    # signing needs no certificate.
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - uses: subosito/flutter-action@1a449444c387b1966244ae4d4f8c696479add0b2 # v2.23.0
+        with:
+          flutter-version: 3.47.x
+          channel: stable
+          cache: true
+
+      - name: Install Flutter dependencies
+        run: flutter pub get
+
+      - name: Build the development debug app
+        run: flutter build ios --no-codesign --debug --flavor development --target lib/main_development.dart
+
   windows:
     # The only place the Windows build is verified: no local script builds it.
     # The runner has no flavor configuration, so the target alone picks the
