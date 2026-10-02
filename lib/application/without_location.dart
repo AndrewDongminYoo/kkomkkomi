@@ -4,9 +4,10 @@ import 'dart:typed_data';
 ///
 /// The camera app can write the location into a photo, and `image_picker_android` copies it into the smaller file
 /// that the app keeps (issue 20). So the function keeps only the segments that show the picture: the image data, the
-/// JFIF header (APP0), an ICC color profile (APP2), and the Adobe color transform (APP14). It drops every other
-/// application segment, which includes Exif and XMP (APP1) and IPTC (APP13), every comment, and whatever follows the
-/// end of the image, such as the second picture of a multi-picture file.
+/// JFIF header (APP0 with `JFIF`), an ICC color profile (APP2 with `ICC_PROFILE`), and the Adobe color transform
+/// (APP14 with `Adobe`). It drops every other application segment, which includes Exif and XMP (APP1), IPTC (APP13),
+/// and a JFXX thumbnail (APP0), every comment, and whatever follows the end of the image, such as the second picture
+/// of a multi-picture file.
 ///
 /// The picker leaves the rotation of a photo in the Exif orientation tag and does not turn the pixels, on Android
 /// (`ImageResizer` and `ExifDataCopier` of `image_picker_android` 0.8.13+23) and on iOS (`FLTImagePickerImageUtil`
@@ -33,6 +34,12 @@ const _startOfScan = 0xda;
 
 /// The identifier at the start of an Exif segment, `Exif` and two zero bytes.
 const _exifIdentifier = [0x45, 0x78, 0x69, 0x66, 0x00, 0x00];
+
+/// The identifier at the start of a JFIF header, `JFIF` and a zero byte.
+const _jfifIdentifier = [0x4a, 0x46, 0x49, 0x46, 0x00];
+
+/// The identifier at the start of the Adobe segment, `Adobe`.
+const _adobeIdentifier = [0x41, 0x64, 0x6f, 0x62, 0x65];
 
 /// The identifier at the start of an ICC profile segment, `ICC_PROFILE` and a zero byte.
 const _iccIdentifier = [0x49, 0x43, 0x43, 0x5f, 0x50, 0x52, 0x4f, 0x46, 0x49, 0x4c, 0x45, 0x00];
@@ -156,8 +163,11 @@ final class _LocationStripper {
 
   /// Whether the result keeps the segment with [marker] from [start] to [end].
   bool _keeps(int marker, int start, int end) => switch (marker) {
-    _app0 || _app14 => true,
+    // Each kept application segment must name what it holds, because a vendor can put any payload under the same
+    // marker, such as the thumbnail of a JFXX segment.
+    _app0 => _starts(start + 4, end, _jfifIdentifier),
     _app2 => _starts(start + 4, end, _iccIdentifier),
+    _app14 => _starts(start + 4, end, _adobeIdentifier),
     _comment => false,
     _ => marker < _app0 || marker > 0xef,
   };

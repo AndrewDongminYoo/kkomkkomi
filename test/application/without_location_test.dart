@@ -138,13 +138,29 @@ void main() {
 
       test('drops every other application segment and every comment', () {
         final multiPicture = segment(0xe2, 'MPF\x00data'.codeUnits);
+        // A JFXX thumbnail and segments of other vendors under the markers of the JFIF header and the Adobe segment.
+        final thumbnail = segment(0xe0, 'JFXX\x00\x10thumbnail'.codeUnits);
+        final otherApp0 = segment(0xe0, 'AVI1\x00data'.codeUnits);
+        final otherApp14 = segment(0xee, 'Vendor\x00data'.codeUnits);
         final others = [
           for (final marker in [0xe3, 0xe4, 0xe5, 0xe6, 0xe7, 0xe8, 0xe9, 0xea, 0xeb, 0xec, 0xed, 0xef, 0xfe])
             segment(marker, 'data'.codeUnits),
         ];
 
         expect(
-          withoutLocation(jpegOf([jfif, multiPicture, ...others, quantization, scanHeader, scanData])),
+          withoutLocation(
+            jpegOf([
+              jfif,
+              thumbnail,
+              otherApp0,
+              multiPicture,
+              otherApp14,
+              ...others,
+              quantization,
+              scanHeader,
+              scanData,
+            ]),
+          ),
           jpegOf([jfif, quantization, scanHeader, scanData]),
         );
       });
