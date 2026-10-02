@@ -32,6 +32,13 @@ From the company profile screen, a person deletes everything the app holds for t
    - fill the remaining placeholders with defaults, each with its source: the effective date is the date the pull request merges; a request by email is answered within the period the Personal Information Protection Act sets, cited from the law or its decree. For the legal basis and for who is responsible for the people in a photo, write a plain default and list both in the pull request body as items the operator should have reviewed by someone qualified. Do not claim that a default is legal advice.
 5. `docs/notes/2026-10-02-first-test-distribution.md`: the App Privacy row for Other Diagnostic Data is declared, the Data safety answer about deletion is "yes, in the app", and the account deletion item is closed.
 
+## Also in this pull request (operator, 2026-10-02)
+
+These two are unrelated to the deletion. The operator asked to carry them in the next pull request. Commit each one separately.
+
+- Set `DEVELOPMENT_TEAM = 393JTTV68D` for every build configuration of the iOS Runner target, so that a signed build needs no manual team choice. The `ios` CI job builds with `--no-codesign`, which must keep passing.
+- `android/app/build.gradle.kts` names `proguard-rules.pro` in the release build type, and the file does not exist. Add the file with the keep rules the app needs, or with a comment that says no rule is needed yet, and state which plugin consumer rules R8 already applies. A release App Bundle build is not required again, unless the file adds a rule.
+
 ## Out of scope
 
 - Any deploy. The parent session deploys the rules and Hosting after the merge.
