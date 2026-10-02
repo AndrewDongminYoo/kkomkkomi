@@ -423,5 +423,65 @@
     "reportLinkPublishedMessage": "보고서를 올렸어요. 링크로 공유하기를 누르면 공유 창이 열려요.",
     "@reportLinkPublishedMessage": {
         "description": "다른 화면이나 PDF 공유 창이 열려 있는 동안 보고서를 다 올렸을 때 표시되는 문구"
+    },
+    "clientLinkSectionTitle": "보고서 링크",
+    "@clientLinkSectionTitle": {
+        "description": "거래처 화면에서 거래처의 보고서 링크를 보여주는 구역의 제목"
+    },
+    "clientLinkNoneMessage": "아직 공유한 링크가 없어요. 방문 보고서에서 링크로 공유하면 이 거래처의 링크가 만들어져요.",
+    "@clientLinkNoneMessage": {
+        "description": "거래처에 링크가 한 번도 없었을 때 표시되는 문구"
+    },
+    "clientLinkOpenMessage": "링크가 열려 있어요. 링크가 있으면 누구나 이 거래처의 보고서를 볼 수 있어요.",
+    "@clientLinkOpenMessage": {
+        "description": "거래처에 열린 링크가 있는 동안 표시되는 문구"
+    },
+    "clientLinkClosedMessage": "링크를 막았어요. 보낸 링크는 더 이상 열리지 않아요. 다음에 링크로 공유하면 새 링크가 만들어져요.",
+    "@clientLinkClosedMessage": {
+        "description": "서버에서 링크를 다 막았고 거래처에 열린 링크가 없을 때 표시되는 문구"
+    },
+    "clientLinkClosingMessage": "보낸 링크를 막고 있어요. 다 막을 때까지는 그 링크로 보고서가 열릴 수 있어요.",
+    "@clientLinkClosingMessage": {
+        "description": "막은 링크를 서버에서 아직 다 막지 못한 동안 표시되는 문구. 다시 시도하기를 기다리는 동안에도 표시된다"
+    },
+    "clientLinkCloseFailedMessage": "보낸 링크를 막지 못해서 그 링크로 보고서가 아직 열릴 수 있어요. 링크를 막으려면 보고서 페이지 아래의 개인정보 처리방침에 있는 연락처로 요청해 주세요.",
+    "@clientLinkCloseFailedMessage": {
+        "description": "다시 시도해도 고칠 수 없는 이유로 링크 막기가 멈췄을 때 표시되는 문구. 웹 보고서 페이지 아래에 개인정보 처리방침 링크가 있다"
+    },
+    "clientLinkDeletionUnfinishedMessage": "모든 데이터 지우기가 끝나지 않아서 보낸 링크로 보고서가 아직 열릴 수 있어요. 회사 정보에서 모든 데이터 지우기를 다시 해 주세요.",
+    "@clientLinkDeletionUnfinishedMessage": {
+        "description": "모든 데이터 지우기가 링크 막기를 멈춘 뒤 끝나지 않았을 때 표시되는 문구"
+    },
+    "clientLinkLoadFailedMessage": "링크를 불러오지 못했어요. 다시 시도해 주세요.",
+    "@clientLinkLoadFailedMessage": {
+        "description": "저장소에서 거래처의 링크를 읽지 못했을 때 링크 구역에 표시되는 문구"
+    },
+    "clientLinkCloseButton": "링크 막기",
+    "@clientLinkCloseButton": {
+        "description": "거래처 화면과 그 확인 창에서 거래처의 링크를 막는 버튼. 확인 창의 닫기 버튼과 헷갈리지 않도록 닫기를 쓰지 않는다"
+    },
+    "clientLinkReissueButton": "새 링크 만들기",
+    "@clientLinkReissueButton": {
+        "description": "거래처 화면과 그 확인 창에서 거래처의 링크를 새 링크로 바꾸는 버튼"
+    },
+    "clientLinkCloseDialogTitle": "링크를 막을까요?",
+    "@clientLinkCloseDialogTitle": {
+        "description": "거래처의 링크를 막기 전에 묻는 창의 제목"
+    },
+    "clientLinkCloseDialogMessage": "이 거래처에 보낸 링크가 모두 더 이상 열리지 않고, 서버에 올린 사진을 지워요. 다음에 링크로 공유하면 새 링크가 만들어져요.",
+    "@clientLinkCloseDialogMessage": {
+        "description": "거래처의 링크를 막기 전에 묻는 창의 본문"
+    },
+    "clientLinkReissueDialogTitle": "새 링크를 만들까요?",
+    "@clientLinkReissueDialogTitle": {
+        "description": "거래처의 링크를 새 링크로 바꾸기 전에 묻는 창의 제목"
+    },
+    "clientLinkReissueDialogMessage": "지금까지 보낸 링크는 더 이상 열리지 않고, 보고서를 새 링크로 다시 올려요. 새 링크는 방문 보고서에서 링크로 공유해서 보낼 수 있어요.",
+    "@clientLinkReissueDialogMessage": {
+        "description": "거래처의 링크를 새 링크로 바꾸기 전에 묻는 창의 본문"
+    },
+    "clientLinkRequestFailedMessage": "링크를 바꾸지 못했어요. 다시 시도해 주세요.",
+    "@clientLinkRequestFailedMessage": {
+        "description": "저장소가 링크 막기나 새 링크 만들기를 받지 못했을 때 표시되는 문구"
     }
 }

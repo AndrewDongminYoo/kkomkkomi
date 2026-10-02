@@ -477,5 +477,65 @@
     "reportLinkPublishedMessage": "The report is uploaded. Press Share link to open the share sheet.",
     "@reportLinkPublishedMessage": {
         "description": "Shown when the report was uploaded while another screen or the PDF share sheet was open"
+    },
+    "clientLinkSectionTitle": "Report link",
+    "@clientLinkSectionTitle": {
+        "description": "Title of the section of the client screen that shows the report link of the client"
+    },
+    "clientLinkNoneMessage": "No link shared yet. When you share a link from a visit report, this client gets one.",
+    "@clientLinkNoneMessage": {
+        "description": "Shown when the client has never had a link"
+    },
+    "clientLinkOpenMessage": "The link is open. Anyone who has it can open the reports of this client.",
+    "@clientLinkOpenMessage": {
+        "description": "Shown while the client has an open link"
+    },
+    "clientLinkClosedMessage": "The link is closed. The links you sent no longer open. The next time you share a link, a new one is made.",
+    "@clientLinkClosedMessage": {
+        "description": "Shown when the link of the client is closed on the server and the client has no open link"
+    },
+    "clientLinkClosingMessage": "Closing the links you sent. They can still open the reports until this is done.",
+    "@clientLinkClosingMessage": {
+        "description": "Shown while a closed link is not yet closed on the server, also while it waits to try again"
+    },
+    "clientLinkCloseFailedMessage": "Can't close a link you sent, so it can still open the reports. To have it closed, write to the contact in the privacy policy at the bottom of a report page.",
+    "@clientLinkCloseFailedMessage": {
+        "description": "Shown when the close of a link stopped for a reason that a retry does not fix. The web report page links to the privacy policy at its bottom"
+    },
+    "clientLinkDeletionUnfinishedMessage": "Delete All Data didn't finish, so a link you sent may still open the reports. To finish, use Delete All Data in Company profile again.",
+    "@clientLinkDeletionUnfinishedMessage": {
+        "description": "Shown when Delete All Data stopped the close of a link and then did not finish"
+    },
+    "clientLinkLoadFailedMessage": "Can't load the link. Try again.",
+    "@clientLinkLoadFailedMessage": {
+        "description": "Shown in the link section when storage does not give the link of the client"
+    },
+    "clientLinkCloseButton": "Close Link",
+    "@clientLinkCloseButton": {
+        "description": "Button of the client screen, and of its question, that closes the link of the client"
+    },
+    "clientLinkReissueButton": "Make New Link",
+    "@clientLinkReissueButton": {
+        "description": "Button of the client screen, and of its question, that replaces the link of the client with a new one"
+    },
+    "clientLinkCloseDialogTitle": "Close the link?",
+    "@clientLinkCloseDialogTitle": {
+        "description": "Title of the question before the link of a client is closed"
+    },
+    "clientLinkCloseDialogMessage": "Every link of this client that you sent stops opening, and its photos are deleted from the server. The next time you share a link, a new one is made.",
+    "@clientLinkCloseDialogMessage": {
+        "description": "Text of the question before the link of a client is closed"
+    },
+    "clientLinkReissueDialogTitle": "Make a new link?",
+    "@clientLinkReissueDialogTitle": {
+        "description": "Title of the question before the link of a client is replaced with a new one"
+    },
+    "clientLinkReissueDialogMessage": "The links you sent stop opening, and the reports are uploaded again under a new link. To send the new link, share it from a visit report.",
+    "@clientLinkReissueDialogMessage": {
+        "description": "Text of the question before the link of a client is replaced with a new one"
+    },
+    "clientLinkRequestFailedMessage": "Can't change the link. Try again.",
+    "@clientLinkRequestFailedMessage": {
+        "description": "Shown when storage does not take a close or a new link"
     }
 }

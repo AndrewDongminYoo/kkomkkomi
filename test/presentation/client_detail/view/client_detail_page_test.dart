@@ -16,6 +16,8 @@ import '../../../helpers/helpers.dart';
 
 class _MockClientDetailCubit extends MockCubit<ClientDetailState> implements ClientDetailCubit;
 
+class _MockClientLinkCubit extends MockCubit<ClientLinkState> implements ClientLinkCubit;
+
 void main() {
   const clientId = 'client-a';
   final office = Client(id: clientId, name: '한빛 사무실', createdAt: DateTime.utc(2026, 9));
@@ -891,16 +893,461 @@ void main() {
     });
   });
 
+  group('report link', () {
+    const en = (
+      title: 'Report link',
+      none: 'No link shared yet. When you share a link from a visit report, this client gets one.',
+      open: 'The link is open. Anyone who has it can open the reports of this client.',
+      closed:
+          'The link is closed. The links you sent no longer open. The next time you share a link, a new one is made.',
+      closing: 'Closing the links you sent. They can still open the reports until this is done.',
+      failed:
+          "Can't close a link you sent, so it can still open the reports. To have it closed, write to the contact in "
+          'the privacy policy at the bottom of a report page.',
+      deletionUnfinished:
+          "Delete All Data didn't finish, so a link you sent may still open the reports. To finish, use Delete All "
+          'Data in Company profile again.',
+      loadFailed: "Can't load the link. Try again.",
+      retry: 'Try Again',
+      close: 'Close Link',
+      reissue: 'Make New Link',
+      closeTitle: 'Close the link?',
+      closeMessage:
+          'Every link of this client that you sent stops opening, and its photos are deleted from the server. The '
+          'next time you share a link, a new one is made.',
+      reissueTitle: 'Make a new link?',
+      reissueMessage:
+          'The links you sent stop opening, and the reports are uploaded again under a new link. To send the new '
+          'link, share it from a visit report.',
+      requestFailed: "Can't change the link. Try again.",
+      dismiss: 'Cancel',
+    );
+    const ko = (
+      title: '보고서 링크',
+      none: '아직 공유한 링크가 없어요. 방문 보고서에서 링크로 공유하면 이 거래처의 링크가 만들어져요.',
+      open: '링크가 열려 있어요. 링크가 있으면 누구나 이 거래처의 보고서를 볼 수 있어요.',
+      closed: '링크를 막았어요. 보낸 링크는 더 이상 열리지 않아요. 다음에 링크로 공유하면 새 링크가 만들어져요.',
+      closing: '보낸 링크를 막고 있어요. 다 막을 때까지는 그 링크로 보고서가 열릴 수 있어요.',
+      failed: '보낸 링크를 막지 못해서 그 링크로 보고서가 아직 열릴 수 있어요. 링크를 막으려면 보고서 페이지 아래의 개인정보 처리방침에 있는 연락처로 요청해 주세요.',
+      deletionUnfinished: '모든 데이터 지우기가 끝나지 않아서 보낸 링크로 보고서가 아직 열릴 수 있어요. 회사 정보에서 모든 데이터 지우기를 다시 해 주세요.',
+      loadFailed: '링크를 불러오지 못했어요. 다시 시도해 주세요.',
+      retry: '다시 불러오기',
+      close: '링크 막기',
+      reissue: '새 링크 만들기',
+      closeTitle: '링크를 막을까요?',
+      closeMessage: '이 거래처에 보낸 링크가 모두 더 이상 열리지 않고, 서버에 올린 사진을 지워요. 다음에 링크로 공유하면 새 링크가 만들어져요.',
+      reissueTitle: '새 링크를 만들까요?',
+      reissueMessage: '지금까지 보낸 링크는 더 이상 열리지 않고, 보고서를 새 링크로 다시 올려요. 새 링크는 방문 보고서에서 링크로 공유해서 보낼 수 있어요.',
+      requestFailed: '링크를 바꾸지 못했어요. 다시 시도해 주세요.',
+      dismiss: '닫기',
+    );
+    final created = DateTime.utc(2026, 9, 20);
+    final openPage = ClientPage(id: 'page-1', clientId: clientId, createdAt: created);
+    const refused = PublishException(PublishErrorKind.refused, 'The rules refused the write');
+
+    late FakePublishRepository publishing;
+    late FakePublisher publisher;
+
+    setUp(() {
+      publishing = FakePublishRepository();
+      publisher = FakePublisher();
+    });
+
+    /// Stores [page], and a done publish job of the September visit under it, as a publish leaves them.
+    void storePage(ClientPage page) {
+      publishing.pagesById[page.id] = page;
+      final job = PublishJob(
+        id: 'publish-${page.id}',
+        kind: PublishJobKind.publish,
+        pageId: page.id,
+        visitId: september.id,
+        createdAt: page.createdAt,
+      ).succeed();
+      publishing.jobs[job.id] = job;
+    }
+
+    /// Stores a revoked page with a revoke job of [status], which stopped for [failure] when it failed.
+    void storeRevokedPage(String id, PublishJobStatus status, {PublishFailure failure = PublishFailure.refused}) {
+      storePage(ClientPage(id: id, clientId: clientId, createdAt: created, revokedAt: created));
+      final job = PublishJob(id: 'revoke-$id', kind: PublishJobKind.revoke, pageId: id, createdAt: created);
+      publishing.jobs[job.id] = switch (status) {
+        PublishJobStatus.pending => job,
+        PublishJobStatus.done => job.succeed(),
+        PublishJobStatus.failed => job.fail(failure),
+      };
+    }
+
+    /// Opens the client screen from a host screen in a flavor that publishes, over the store of the test.
+    Future<void> pumpLinkPage(WidgetTester tester, {Locale? locale}) async {
+      clients = FakeClientRepository(clients: [office], zones: [zones]);
+      visitRepository = FakeVisitRepository(visits: [september]);
+      final repositories = Repositories(
+        clients: clients,
+        visits: visitRepository,
+        companyProfile: FakeCompanyProfileRepository(),
+        publishing: publishing,
+        openCaptures: FakeOpenCaptureRepository(),
+        localData: FakeLocalDataRepository(),
+      );
+      final queue = publishQueueOf(repositories, publisher: publisher);
+      addTearDown(queue.dispose);
+      await tester.pumpApp(
+        Builder(
+          builder: (context) => Scaffold(
+            body: TextButton(
+              onPressed: () => Navigator.of(context).push(ClientDetailPage.route(clientId: clientId)),
+              child: const Text('host'),
+            ),
+          ),
+        ),
+        locale: locale,
+        repositories: repositories,
+        publishQueue: queue,
+        clock: FixedClock(DateTime(2026, 10, 20, 12)),
+      );
+      await tester.tap(find.text('host'));
+      await tester.pumpAndSettle();
+    }
+
+    /// Drags the list until [text] is inside it.
+    ///
+    /// `scrollUntilVisible` does not move the list for a widget in the footer of a reorderable list, which it finds
+    /// before the drag, so the test drags until the text is in view.
+    Future<void> scrollTo(WidgetTester tester, String text) async {
+      final finder = find.text(text);
+      final list = find.byType(Scrollable).first;
+      for (var drags = 0; drags < 50; drags++) {
+        final view = tester.getRect(list);
+        final found = finder.evaluate().isEmpty ? null : tester.getRect(finder);
+        // At the largest text size a message can be taller than the list, and its start at the top is enough then.
+        final move = switch (found) {
+          null => -100.0,
+          _ when found.top < view.top => view.top - found.top,
+          _ when found.height > view.height => view.top - found.top,
+          _ when found.bottom > view.bottom => view.bottom - found.bottom,
+          _ => 0.0,
+        };
+        if (move.abs() < 1) return;
+        await tester.drag(list, Offset(0, move));
+        await tester.pumpAndSettle();
+      }
+      fail('"$text" did not come into view');
+    }
+
+    /// Presses [button] of the link section, and then [confirm] in the question that it opens.
+    Future<void> pressAndConfirm(WidgetTester tester, String button, {String? confirm}) async {
+      await scrollTo(tester, button);
+      await tester.tap(find.widgetWithText(OutlinedButton, button));
+      await tester.pumpAndSettle();
+      await tester.tap(find.widgetWithText(FilledButton, confirm ?? button));
+      await tester.pumpAndSettle();
+    }
+
+    testWidgets('shows no link section in a flavor without a backend', (tester) async {
+      await pumpPage(tester, visits: [september]);
+
+      await tester.drag(find.byType(Scrollable).first, const Offset(0, -2000));
+      await tester.pumpAndSettle();
+
+      expect(find.text(en.title), findsNothing);
+      expect(find.text(en.close), findsNothing);
+    });
+
+    testWidgets('says that the client has no link yet, and offers no action', (tester) async {
+      await pumpLinkPage(tester);
+
+      await scrollTo(tester, en.none);
+
+      expect(find.text(en.title), findsOneWidget);
+      expect(find.text(en.close), findsNothing);
+      expect(find.text(en.reissue), findsNothing);
+    });
+
+    testWidgets('closes the link after the person confirms, and says it is closed only when the job is done', (
+      tester,
+    ) async {
+      storePage(openPage);
+      final gate = publisher.gates['revokePage'] = Completer<void>();
+      await pumpLinkPage(tester);
+      await scrollTo(tester, en.open);
+
+      await scrollTo(tester, en.close);
+      await tester.tap(find.widgetWithText(OutlinedButton, en.close));
+      await tester.pumpAndSettle();
+      expect(find.text(en.closeTitle), findsOneWidget);
+      expect(find.text(en.closeMessage), findsOneWidget);
+      await tester.tap(find.widgetWithText(FilledButton, en.close));
+      await tester.pumpAndSettle();
+
+      expect(publisher.calls, ['revokePage ${openPage.id}']);
+      await scrollTo(tester, en.closing);
+      expect(find.text(en.open), findsNothing);
+      expect(find.text(en.closed), findsNothing);
+      expect(find.text(en.close), findsNothing);
+      expect(find.text(en.reissue), findsNothing);
+
+      gate.complete();
+      await tester.pumpAndSettle();
+
+      await scrollTo(tester, en.closed);
+      expect(find.text(en.closing), findsNothing);
+      expect(publishing.pagesById[openPage.id]!.isRevoked, isTrue);
+    });
+
+    testWidgets('keeps the link when the person closes the question', (tester) async {
+      storePage(openPage);
+      await pumpLinkPage(tester);
+
+      await scrollTo(tester, en.close);
+      await tester.tap(find.widgetWithText(OutlinedButton, en.close));
+      await tester.pumpAndSettle();
+      await tester.tap(find.widgetWithText(TextButton, en.dismiss));
+      await tester.pumpAndSettle();
+      await scrollTo(tester, en.reissue);
+      await tester.tap(find.widgetWithText(OutlinedButton, en.reissue));
+      await tester.pumpAndSettle();
+      await tester.tap(find.widgetWithText(TextButton, en.dismiss));
+      await tester.pumpAndSettle();
+
+      expect(find.text(en.open), findsOneWidget);
+      expect(publishing.pagesById.values.single.isRevoked, isFalse);
+      expect(publisher.calls, isEmpty);
+    });
+
+    testWidgets('makes a new link after the person confirms, and says that the old links are closing', (
+      tester,
+    ) async {
+      storePage(openPage);
+      final gate = publisher.gates['revokePage'] = Completer<void>();
+      await pumpLinkPage(tester);
+
+      await scrollTo(tester, en.reissue);
+      await tester.tap(find.widgetWithText(OutlinedButton, en.reissue));
+      await tester.pumpAndSettle();
+      expect(find.text(en.reissueTitle), findsOneWidget);
+      expect(find.text(en.reissueMessage), findsOneWidget);
+      await tester.tap(find.widgetWithText(FilledButton, en.reissue));
+      await tester.pumpAndSettle();
+
+      await scrollTo(tester, en.closing);
+      expect(find.text(en.open), findsOneWidget);
+      expect(find.text(en.close), findsOneWidget);
+
+      gate.complete();
+      await tester.pumpAndSettle();
+
+      expect(find.text(en.closing), findsNothing);
+      expect(find.text(en.closed), findsNothing);
+      expect(find.text(en.open), findsOneWidget);
+      final replacement = publishing.pagesById.values.singleWhere((page) => !page.isRevoked);
+      expect(publisher.reports.keys, ['${replacement.id}/${september.id}']);
+    });
+
+    testWidgets('says that the link did not close when its revoke job stops', (tester) async {
+      storePage(openPage);
+      publisher.failures['revokePage'] = [refused];
+      await pumpLinkPage(tester);
+
+      await pressAndConfirm(tester, en.close);
+
+      await scrollTo(tester, en.failed);
+      expect(find.text(en.closing), findsNothing);
+      expect(find.text(en.closed), findsNothing);
+      expect(find.text(en.none), findsNothing);
+      expect(find.text(en.deletionUnfinished), findsNothing);
+    });
+
+    testWidgets('says that the deletion of all data did not finish when it stopped the revoke job', (tester) async {
+      storeRevokedPage('page-0', PublishJobStatus.failed, failure: PublishFailure.deletion);
+      await pumpLinkPage(tester);
+
+      await scrollTo(tester, en.deletionUnfinished);
+      expect(find.text(en.failed), findsNothing);
+      expect(find.text(en.closing), findsNothing);
+      expect(find.text(en.closed), findsNothing);
+      expect(find.text(en.none), findsNothing);
+    });
+
+    testWidgets('takes no touch and no back press while the close is on its way to storage', (tester) async {
+      storePage(openPage);
+      final gate = publishing.revokeGate = Completer<void>();
+      await pumpLinkPage(tester);
+
+      await pressAndConfirm(tester, en.close);
+      await tester.tap(find.widgetWithText(OutlinedButton, en.reissue), warnIfMissed: false);
+      await tester.pumpAndSettle();
+      expect(find.text(en.reissueTitle), findsNothing);
+      await tester.binding.handlePopRoute();
+      await tester.pumpAndSettle();
+      expect(find.byType(ClientDetailPage), findsOneWidget);
+
+      gate.complete();
+      await tester.pumpAndSettle();
+
+      await scrollTo(tester, en.closed);
+      await tester.binding.handlePopRoute();
+      await tester.pumpAndSettle();
+      expect(find.byType(ClientDetailPage), findsNothing);
+    });
+
+    testWidgets('keeps the link and shows a message when storage does not take the new link', (tester) async {
+      storePage(openPage);
+      publishing.revokeFailure = Exception('storage failed');
+      await pumpLinkPage(tester);
+
+      await pressAndConfirm(tester, en.reissue);
+
+      expect(find.widgetWithText(SnackBar, en.requestFailed), findsOneWidget);
+      expect(find.text(en.open), findsOneWidget);
+      expect(publishing.pagesById.values.single.isRevoked, isFalse);
+    });
+
+    testWidgets('shows a message and a retry control when the link does not load, and loads it on retry', (
+      tester,
+    ) async {
+      storePage(openPage);
+      publishing.failure = Exception('storage failed');
+      await pumpLinkPage(tester);
+
+      await scrollTo(tester, en.loadFailed);
+      publishing.failure = null;
+      await scrollTo(tester, en.retry);
+      await tester.tap(find.widgetWithText(OutlinedButton, en.retry));
+      await tester.pumpAndSettle();
+
+      await scrollTo(tester, en.open);
+      expect(find.text(en.loadFailed), findsNothing);
+    });
+
+    testWidgets('shows the link section and its questions in Korean', (tester) async {
+      storePage(openPage);
+      await pumpLinkPage(tester, locale: const Locale('ko'));
+
+      await scrollTo(tester, ko.open);
+      expect(find.text(ko.title), findsOneWidget);
+      await scrollTo(tester, ko.close);
+      await tester.tap(find.widgetWithText(OutlinedButton, ko.close));
+      await tester.pumpAndSettle();
+      expect(find.text(ko.closeTitle), findsOneWidget);
+      expect(find.text(ko.closeMessage), findsOneWidget);
+      expect(find.widgetWithText(TextButton, ko.dismiss), findsOneWidget);
+      expect(find.widgetWithText(FilledButton, ko.close), findsOneWidget);
+      // The dismiss button of every question says 닫기, so the button that closes the link must not use that word.
+      expect(ko.close, isNot(contains(ko.dismiss)));
+    });
+
+    group('on a screen 320 pixels wide at the largest text size', () {
+      for (final (locale, texts) in [(const Locale('en'), en), (const Locale('ko'), ko)]) {
+        testWidgets('fits an open link, a closing link, failed closes, and both questions in ${locale.languageCode}', (
+          tester,
+        ) async {
+          tester.useNarrowScreenWithLargestText();
+          storeRevokedPage('page-0', PublishJobStatus.failed);
+          storeRevokedPage('page-00', PublishJobStatus.pending);
+          storeRevokedPage('page-000', PublishJobStatus.failed, failure: PublishFailure.deletion);
+          storePage(openPage);
+          // The queue of the test runs no job until a request, so the revoke job stays pending.
+          await pumpLinkPage(tester, locale: locale);
+
+          for (final text in [
+            texts.title,
+            texts.open,
+            texts.closing,
+            texts.failed,
+            texts.deletionUnfinished,
+            texts.reissue,
+            texts.close,
+          ]) {
+            await scrollTo(tester, text);
+            tester.expectWholeText(text);
+          }
+          for (final (button, title, message) in [
+            (texts.close, texts.closeTitle, texts.closeMessage),
+            (texts.reissue, texts.reissueTitle, texts.reissueMessage),
+          ]) {
+            await scrollTo(tester, button);
+            await tester.tap(find.widgetWithText(OutlinedButton, button));
+            await tester.pumpAndSettle();
+            tester
+              ..expectWholeText(title)
+              ..expectWholeText(message)
+              ..expectWholeText(texts.dismiss)
+              // The page behind the question shows the same label, and the check covers both.
+              ..expectWholeText(button);
+            expect(find.widgetWithText(FilledButton, button), findsOneWidget);
+            await tester.tap(find.widgetWithText(TextButton, texts.dismiss));
+            await tester.pumpAndSettle();
+          }
+        });
+
+        testWidgets('fits the message of a close that storage does not take in ${locale.languageCode}', (
+          tester,
+        ) async {
+          tester.useNarrowScreenWithLargestText();
+          storePage(openPage);
+          publishing.revokeFailure = Exception('storage failed');
+          await pumpLinkPage(tester, locale: locale);
+
+          await pressAndConfirm(tester, texts.close);
+
+          expect(find.byType(SnackBar), findsOneWidget);
+          tester.expectWholeText(texts.requestFailed);
+        });
+
+        testWidgets('fits a closed link, a client without a link, and a failed load in ${locale.languageCode}', (
+          tester,
+        ) async {
+          tester.useNarrowScreenWithLargestText();
+          storeRevokedPage('page-0', PublishJobStatus.done);
+          await pumpLinkPage(tester, locale: locale);
+          await scrollTo(tester, texts.closed);
+          tester.expectWholeText(texts.closed);
+
+          publishing
+            ..pagesById.clear()
+            ..jobs.clear();
+          await tester.binding.handlePopRoute();
+          await tester.pumpAndSettle();
+          await tester.tap(find.text('host'));
+          await tester.pumpAndSettle();
+          await scrollTo(tester, texts.none);
+          tester.expectWholeText(texts.none);
+
+          publishing.failure = Exception('storage failed');
+          await tester.binding.handlePopRoute();
+          await tester.pumpAndSettle();
+          await tester.tap(find.text('host'));
+          await tester.pumpAndSettle();
+          for (final text in [texts.loadFailed, texts.retry]) {
+            await scrollTo(tester, text);
+            tester.expectWholeText(text);
+          }
+        });
+      }
+    });
+  });
+
   group('ClientDetailView', () {
     late ClientDetailCubit cubit;
+    late ClientLinkCubit linkCubit;
 
     setUpAll(() => registerFallbackValue(VisitDate(2026, 10, 1)));
 
-    setUp(() => cubit = _MockClientDetailCubit());
+    setUp(() {
+      cubit = _MockClientDetailCubit();
+      linkCubit = _MockClientLinkCubit();
+      when(() => linkCubit.state).thenReturn(const ClientLinkState(status: ClientLinkStatus.unavailable));
+    });
 
     /// Pumps the view under the repositories and the clock that its date picker and the visit screen read.
     Future<void> pumpClientView(WidgetTester tester) => tester.pumpApp(
-      BlocProvider.value(value: cubit, child: const ClientDetailView()),
+      MultiBlocProvider(
+        providers: [
+          BlocProvider.value(value: cubit),
+          BlocProvider.value(value: linkCubit),
+        ],
+        child: const ClientDetailView(),
+      ),
       repositories: Repositories(
         clients: FakeClientRepository(),
         visits: FakeVisitRepository(visits: [october]),

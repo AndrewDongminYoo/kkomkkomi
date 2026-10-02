@@ -127,6 +127,17 @@ final class PublishQueue {
   /// Whether the client with [clientId] has an open page, which it gets at its first publish.
   Future<bool> hasOpenPage(String clientId) async => await _repository.openPageOf(clientId) != null;
 
+  /// The revoke jobs of every page of the client with [clientId], in the order of its pages, oldest first.
+  ///
+  /// A page is revoked once, so each revoked page has one revoke job. A screen reads from these jobs whether the links
+  /// of the client that were sent still open: a pending job has not closed its page on the backend yet.
+  Future<List<PublishJob>> revokeJobsOf(String clientId) async => [
+    for (final page in await _repository.pages())
+      if (page.clientId == clientId)
+        for (final job in await _repository.jobsOfPage(page.id))
+          if (job.kind == PublishJobKind.revoke) job,
+  ];
+
   /// Runs every pending job now, the jobs that an earlier launch left too, and then each time the network returns.
   Future<void> start() async {
     _network ??= _networkMonitor.restored.listen(

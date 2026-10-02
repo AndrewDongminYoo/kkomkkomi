@@ -431,7 +431,7 @@ class FakeLinkShare implements LinkShare {
 /// Keeps the client pages, the publish jobs, and the uploaded photos in memory, as the SQLite repository keeps them.
 ///
 /// A widget test runs in fake time, where a database does not answer, so a screen test that runs the publish queue
-/// uses this store. A revoke is not implemented, because no screen revokes a page.
+/// uses this store.
 class FakePublishRepository implements PublishRepository {
   final pagesById = <String, ClientPage>{};
   final jobs = <String, PublishJob>{};
@@ -459,9 +459,16 @@ class FakePublishRepository implements PublishRepository {
   @override
   Future<ClientPage?> pageById(String id) async => pagesById[id];
 
+  /// The next read of the pages waits for this completer, and clears it, so that a test can act while a read of the
+  /// pages is on its way.
+  Completer<void>? pagesGate;
+
   @override
   Future<List<ClientPage>> pages() async {
     _throwFailure();
+    final gate = pagesGate;
+    pagesGate = null;
+    await gate?.future;
     return pagesById.values.toList()..sort((a, b) => a.createdAt.compareTo(b.createdAt));
   }
 
@@ -492,6 +499,13 @@ class FakePublishRepository implements PublishRepository {
     return stored;
   }
 
+  /// A revoke waits for this completer before it changes anything while it is set, so that a test can act while a
+  /// revoke or a reissue is on its way to storage.
+  Completer<void>? revokeGate;
+
+  /// The exception that a revoke throws while it is set.
+  Exception? revokeFailure;
+
   @override
   Future<bool> revoke(
     ClientPage page, {
@@ -499,7 +513,35 @@ class FakePublishRepository implements PublishRepository {
     required PublishJob revokeJob,
     ClientPage? replacement,
     PublishJob Function(String visitId)? republish,
-  }) => throw UnimplementedError('No screen revokes a page');
+  }) async {
+    _throwFailure();
+    await revokeGate?.future;
+    if (revokeFailure case final failure?) throw failure;
+    final stored = pagesById[page.id];
+    if (stored == null || stored.isRevoked) return false;
+    pagesById[page.id] = stored.revoke(at);
+    final ofPage = [
+      for (final job in jobs.values)
+        if (job.pageId == page.id && job.kind == PublishJobKind.publish) job,
+    ]..sort((a, b) => a.createdAt.compareTo(b.createdAt));
+    final published = {
+      for (final job in ofPage)
+        if (job.status != PublishJobStatus.failed) job.visitId!,
+    };
+    for (final job in ofPage) {
+      if (job.status == PublishJobStatus.pending) jobs[job.id] = job.fail(PublishFailure.revoked);
+    }
+    jobs[revokeJob.id] = revokeJob;
+    if (replacement == null) return true;
+    pagesById[replacement.id] = replacement;
+    if (republish != null) {
+      for (final visitId in published) {
+        final job = republish(visitId);
+        jobs[job.id] = job;
+      }
+    }
+    return true;
+  }
 
   @override
   Future<bool> saveJob(PublishJob job) async {
