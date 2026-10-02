@@ -57,6 +57,7 @@ Onone
 ORGANIZATIONNAME
 OVERLAPPEDWINDOW
 parallelizable
+pbxproj
 PRODUCTVERSION
 proguard
 refetches
