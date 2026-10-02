@@ -42,8 +42,7 @@ The operator approved their deploy, and they were deployed from `ab6d8d7` on 202
 A deploy is the operator's decision each time: do not deploy rules or Hosting without that approval.
 
 `storage.rules` reads the client page through `firestore.get`, which needs the Firebase Storage service agent (`service-146496738802@gcp-sa-firebasestorage.iam.gserviceaccount.com`) to hold `roles/firebaserules.firestoreServiceAgent`.
-On 2026-10-02 the agent did not hold it: the non-interactive deploy did not offer to grant it, and the grant is the operator's action.
-Until it is granted, every Storage rule that reads the page denies, so photo uploads fail and the web report page shows no photos.
+The operator granted it on 2026-10-02, after the deploy. A `firebase deploy --only storage` with `--non-interactive` does not offer that grant, so a new project needs the grant by hand, and without it every Storage rule that reads the page denies.
 
 ### Milestones
 

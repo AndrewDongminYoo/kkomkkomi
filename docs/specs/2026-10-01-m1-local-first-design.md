@@ -115,7 +115,7 @@ The Windows build must keep passing in CI, and Windows runtime behavior is not a
 - Hosting serves `web/` at `https://kkomkkomi.web.app`, and the landing page is live there.
 - Storage is set up, and its rules deny every read and write. The operator set it up in the Firebase console later on 2026-10-01, after the first version of this section said it was absent.
 - The two items above describe the deployed rules. Pull request 12 changed the tracked `firestore.rules` and `storage.rules` to the rules in "Security rules" below, and nothing deployed them. The operator deploys them after review.
-- 2026-10-02: the operator approved the deploy, and the rules and Hosting of `ab6d8d7` were deployed. The deployed rule texts equal the tracked files. The Storage service agent does not hold `roles/firebaserules.firestoreServiceAgent` yet, so the Storage rules deny until the operator grants it. `CLAUDE.md` owns the current state.
+- 2026-10-02: the operator approved the deploy, and the rules and Hosting of `ab6d8d7` were deployed. The deployed rule texts equal the tracked files. The operator then granted `roles/firebaserules.firestoreServiceAgent` to the Storage service agent, which the cross-service reads of `storage.rules` need. `CLAUDE.md` owns the current state.
 
 ### Decisions
 
