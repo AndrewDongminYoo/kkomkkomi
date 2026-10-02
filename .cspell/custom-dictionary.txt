@@ -79,6 +79,7 @@ Wnullable
 Woverlength
 worktree
 xcfilelist
+xcprivacy
 xhdpi
 xxhdpi
 xxxhdpi
