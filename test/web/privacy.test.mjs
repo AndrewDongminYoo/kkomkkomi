@@ -1,4 +1,4 @@
-// Tests of the privacy policy under web/privacy/, run by `node --test test/web/` without a browser.
+// Tests of the privacy policy under web/privacy/, run by `merry run web` without a browser.
 //
 // The pages are static HTML with one style sheet, so these tests read the files. Node has no layout engine, so the
 // 320 px check here is a check of the sources: what can make a page wider than its screen (a fixed width, a table,
@@ -43,12 +43,17 @@ describe("the privacy policy pages", () => {
 
       assert.match(html, new RegExp(`<html lang="${lang}">`));
       assert.match(html, new RegExp(`<a href="${page.other}"`));
-      assert.match(
-        html,
-        new RegExp(
-          `<link rel="alternate" hreflang="[a-z]+" href="${page.other}" />`,
+      // Each page lists every language version, itself included, by its full URL.
+      const alternates = [
+        ...html.matchAll(
+          /<link\s+rel="alternate"\s+hreflang="([a-z-]+)"\s+href="([^"]+)"\s*\/>/g,
         ),
-      );
+      ].map(([, hreflang, href]) => [hreflang, href]);
+      assert.deepEqual(alternates, [
+        ["ko", `https://kkomkkomi.web.app${pages.ko.path}`],
+        ["en", `https://kkomkkomi.web.app${pages.en.path}`],
+        ["x-default", `https://kkomkkomi.web.app${pages.ko.path}`],
+      ]);
     });
 
     test(`the ${lang} page runs no script, and loads only its own style sheet`, () => {
@@ -124,17 +129,24 @@ describe("the privacy policy pages", () => {
       .split(";")
       .filter((declaration) => !/max-width/.test(declaration));
     const lengths = declarations.flatMap((declaration) =>
-      [...declaration.matchAll(/(\d+(?:\.\d+)?)(px|rem|em|vw)\b/g)].map(
-        ([, value, unit]) => ({
-          declaration: declaration.trim(),
-          pixels:
-            unit === "px"
-              ? Number(value)
-              : unit === "vw"
-                ? Number(value) * 3.2
-                : Number(value) * 16,
-        }),
-      ),
+      [
+        ...declaration.matchAll(/(\d+(?:\.\d+)?)(px|rem|em|ch|ex|pt|vw|vh)\b/g),
+      ].map(([, value, unit]) => ({
+        declaration: declaration.trim(),
+        // Pixels on a 320 x 640 screen with a 16 px font, counting `ch` and `ex` as a whole em.
+        pixels:
+          Number(value) *
+          {
+            px: 1,
+            rem: 16,
+            em: 16,
+            ch: 16,
+            ex: 16,
+            pt: 4 / 3,
+            vw: 3.2,
+            vh: 6.4,
+          }[unit],
+      })),
     );
 
     for (const { declaration, pixels } of lengths)
