@@ -33,11 +33,16 @@ const officer = {
 };
 
 /** The section that describes the deletion of all data in the app. */
-const deletionSection = (html) =>
-  html.slice(
-    html.indexOf('<h2 id="delete">'),
-    html.indexOf('<h2 id="uninstall">'),
-  );
+const deletionSection = (html) => {
+  const startHeading = '<h2 id="delete">';
+  const endHeading = '<h2 id="uninstall">';
+  const start = html.indexOf(startHeading);
+  const end = html.indexOf(endHeading);
+  assert.ok(start >= 0, `the page has no ${startHeading} heading`);
+  assert.ok(end >= 0, `the page has no ${endHeading} heading`);
+  assert.ok(end > start, `${endHeading} does not follow ${startHeading}`);
+  return html.slice(start, end);
+};
 
 /** The IDs of the sections of a page, in order. */
 const sectionIds = (html) =>

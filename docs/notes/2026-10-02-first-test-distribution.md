@@ -101,7 +101,9 @@ Section 10 of the privacy policy names that data as the manifests declare it (Ot
 
 The same sources apply.
 Data is encrypted in transit (HTTPS to Firebase).
-Deletion: answer "yes, in the app". The company profile screen deletes the account and all its data, and the privacy policy names the email of the privacy officer as the other way to ask. Pull request 19 leaves Google's account deletion requirement unresolved for an account that the app makes without an action of the person; the in-app deletion meets it in either reading.
+Deletion: the company profile screen deletes the account and all its data in the app, and the tracked privacy policy names the email of the privacy officer as the way to ask outside the app.
+The store answer is pending on two steps: the deploy of the privacy policy, which needs the operator's approval, and the operator's confirmation of the deletion path outside the app in Play Console.
+Until both are done, Google's account deletion requirement stays open; pull request 19 leaves it unresolved for an account that the app makes without an action of the person.
 
 | Data type                                  | Collected                   | Shared    | Optional                      | Purpose           |
 | ------------------------------------------ | --------------------------- | --------- | ----------------------------- | ----------------- |
