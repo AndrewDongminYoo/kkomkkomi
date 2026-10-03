@@ -1,3 +1,4 @@
+import 'package:kkomkkomi/app/view/app_theme.dart';
 import 'package:kkomkkomi/l10n/l10n.dart';
 import 'package:material_ui/material_ui.dart';
 
@@ -10,6 +11,7 @@ class StartupFailureApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
+      theme: appTheme(),
       localizationsDelegates: appLocalizationsDelegates,
       supportedLocales: AppLocalizations.supportedLocales,
       home: Builder(

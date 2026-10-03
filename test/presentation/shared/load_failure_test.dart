@@ -1,5 +1,6 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:kkomkkomi/presentation/shared/load_failure.dart';
+import 'package:kkomkkomi/presentation/shared/notice.dart';
 import 'package:material_ui/material_ui.dart';
 
 import '../../helpers/helpers.dart';
@@ -19,6 +20,16 @@ void main() {
 
       expect(find.text("Can't load your clients. Try again."), findsOneWidget);
       expect(retries, 2);
+    });
+
+    testWidgets('shows the message in the error tone', (tester) async {
+      await tester.pumpApp(
+        Scaffold(
+          body: LoadFailure(message: "Can't load your clients. Try again.", onRetry: () {}),
+        ),
+      );
+
+      expect(tester.noticeToneOf("Can't load your clients. Try again."), NoticeTone.error);
     });
 
     testWidgets('fits a screen 320 pixels wide at the largest text size in Korean', (tester) async {

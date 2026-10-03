@@ -1,6 +1,7 @@
 import 'package:flutter/rendering.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:kkomkkomi/app/app.dart';
 import 'package:kkomkkomi/application/application.dart';
 import 'package:kkomkkomi/l10n/l10n.dart';
 import 'package:material_ui/material_ui.dart';
@@ -13,7 +14,7 @@ import 'fakes.dart';
 const double largestSystemTextScale = 53 / 17;
 
 extension PumpApp on WidgetTester {
-  /// Pumps [widget] as the home of a `MaterialApp` that has the localization delegates of the app.
+  /// Pumps [widget] as the home of a `MaterialApp` that has the theme and the localization delegates of the app.
   ///
   /// The app shows the strings of [locale] when one is given, and the English strings otherwise.
   /// When [repositories] is given, the widgets read its members (the store of the open capture included), [identity], [publishQueue], [idGenerator], [clock],
@@ -37,6 +38,7 @@ extension PumpApp on WidgetTester {
     DeleteAllData? deleteAllData,
   }) {
     final app = MaterialApp(
+      theme: appTheme(),
       locale: locale,
       localizationsDelegates: appLocalizationsDelegates,
       supportedLocales: AppLocalizations.supportedLocales,

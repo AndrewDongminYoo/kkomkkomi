@@ -25,6 +25,26 @@ void main() {
       expect(find.widgetWithText(AppBar, 'Clients'), findsOneWidget);
     });
 
+    testWidgets('gives the screens the theme of the app, with the app bar on the surface color', (tester) async {
+      await tester.pumpWidget(
+        App(
+          repositories: mockRepositories(),
+          identity: FakeIdentity(),
+          publishQueue: publishQueueOf(mockRepositories()),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      final expected = appTheme();
+      final theme = Theme.of(tester.element(find.byType(ClientListPage)));
+      expect(theme.colorScheme, expected.colorScheme);
+      expect(theme.appBarTheme, expected.appBarTheme);
+      final appBar = tester.widget<Material>(
+        find.descendant(of: find.byType(AppBar), matching: find.byType(Material)).first,
+      );
+      expect(appBar.color, expected.colorScheme.surface);
+    });
+
     testWidgets('provides each repository to the widgets below it', (tester) async {
       final repositories = mockRepositories();
 

@@ -8,6 +8,7 @@ import 'package:kkomkkomi/l10n/l10n.dart';
 import 'package:kkomkkomi/presentation/company_profile/company_profile.dart';
 import 'package:kkomkkomi/presentation/shared/confirm_dialog.dart';
 import 'package:kkomkkomi/presentation/shared/load_failure.dart';
+import 'package:kkomkkomi/presentation/shared/notice.dart';
 import 'package:kkomkkomi/presentation/shared/photo_thumbnail.dart';
 import 'package:kkomkkomi/presentation/shared/save_guard.dart';
 import 'package:kkomkkomi/presentation/visit_report/cubit/report_link_cubit.dart';
@@ -210,7 +211,7 @@ class _CompanyNameNotice extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final l10n = context.l10n;
-    return _Notice(
+    return Notice(
       children: [
         Text(l10n.reportCompanyNameMissingMessage),
         Align(
@@ -241,7 +242,7 @@ class _MissingPhotos extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final l10n = context.l10n;
-    return _Notice(
+    return Notice(
       children: [
         Semantics(
           header: true,
@@ -267,25 +268,6 @@ class _MissingPhotos extends StatelessWidget {
       [PhotoSlot.after] => l10n.reportMissingAfterPhoto(record.zoneName),
       _ => l10n.reportMissingBothPhotos(record.zoneName),
     };
-  }
-}
-
-/// A box that sets a notice apart from the preview.
-class _Notice extends StatelessWidget {
-  const new({required this.children});
-
-  final List<Widget> children;
-
-  @override
-  Widget build(BuildContext context) {
-    final colors = Theme.of(context).colorScheme;
-    return DecoratedBox(
-      decoration: BoxDecoration(color: colors.surfaceContainerHighest, borderRadius: BorderRadius.circular(12)),
-      child: Padding(
-        padding: const EdgeInsets.all(12),
-        child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: children),
-      ),
-    );
   }
 }
 
@@ -447,9 +429,7 @@ class _ShareBar extends StatelessWidget {
   Widget build(BuildContext context) {
     final l10n = context.l10n;
     final hasLink = linkState.status != ReportLinkStatus.unavailable;
-    final pdfLabel = isSharing
-        ? const SizedBox.square(dimension: 20, child: CircularProgressIndicator(strokeWidth: 2))
-        : Text(l10n.reportShareButton);
+    final pdfLabel = isSharing ? _Progress(label: l10n.reportShareButton) : Text(l10n.reportShareButton);
     final message = _linkMessageOf(linkState, l10n);
     return SafeArea(
       minimum: const EdgeInsets.all(16),
@@ -464,15 +444,18 @@ class _ShareBar extends StatelessWidget {
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              if (message != null) ...[
-                Semantics(liveRegion: true, child: Text(message)),
+              if (message case (final text, final tone)) ...[
+                Semantics(
+                  liveRegion: true,
+                  child: Notice(tone: tone, children: [Text(text)]),
+                ),
                 const SizedBox(height: 8),
               ],
               if (hasLink) ...[
                 FilledButton(
                   onPressed: onShareLink,
                   child: linkState.status == ReportLinkStatus.publishing
-                      ? const SizedBox.square(dimension: 20, child: CircularProgressIndicator(strokeWidth: 2))
+                      ? _Progress(label: l10n.reportLinkShareButton)
                       : Text(l10n.reportLinkShareButton),
                 ),
                 const SizedBox(height: 8),
@@ -486,21 +469,42 @@ class _ShareBar extends StatelessWidget {
     );
   }
 
-  /// What the screen says about the link share in [state], or null when it says nothing.
-  static String? _linkMessageOf(ReportLinkState state, AppLocalizations l10n) => switch (state.status) {
-    ReportLinkStatus.publishing => l10n.reportLinkPublishingMessage,
-    ReportLinkStatus.waitingForRetry => l10n.reportLinkWaitingMessage,
-    ReportLinkStatus.failed => switch (state.failure) {
-      PublishFailure.revoked => l10n.reportLinkRevokedMessage,
-      PublishFailure.deletion => l10n.reportLinkStoppedByDeletionMessage,
-      PublishFailure.photoMissing => l10n.reportLinkPhotoMissingMessage,
-      PublishFailure.photoNotJpeg || PublishFailure.photoTooLarge => l10n.reportLinkPhotoUnusableMessage,
-      PublishFailure.unavailable || PublishFailure.refused || null => l10n.reportLinkFailedMessage,
-    },
-    ReportLinkStatus.published => l10n.reportLinkPublishedMessage,
+  /// What the screen says about the link share in [state] and in which tone, or null when it says nothing.
+  ///
+  /// A job that waits for its next try is still on its way, so only a job that stopped is a failure.
+  static (String, NoticeTone)? _linkMessageOf(ReportLinkState state, AppLocalizations l10n) => switch (state.status) {
+    ReportLinkStatus.publishing => (l10n.reportLinkPublishingMessage, NoticeTone.info),
+    ReportLinkStatus.waitingForRetry => (l10n.reportLinkWaitingMessage, NoticeTone.info),
+    ReportLinkStatus.failed => (
+      switch (state.failure) {
+        PublishFailure.revoked => l10n.reportLinkRevokedMessage,
+        PublishFailure.deletion => l10n.reportLinkStoppedByDeletionMessage,
+        PublishFailure.photoMissing => l10n.reportLinkPhotoMissingMessage,
+        PublishFailure.photoNotJpeg || PublishFailure.photoTooLarge => l10n.reportLinkPhotoUnusableMessage,
+        PublishFailure.unavailable || PublishFailure.refused || null => l10n.reportLinkFailedMessage,
+      },
+      NoticeTone.error,
+    ),
+    ReportLinkStatus.published => (l10n.reportLinkPublishedMessage, NoticeTone.info),
     ReportLinkStatus.loading ||
     ReportLinkStatus.unavailable ||
     ReportLinkStatus.ready ||
     ReportLinkStatus.shareFailed => null,
   };
+}
+
+/// What a share control shows in place of its text while its share is on its way. A screen reader still reads
+/// [label] as the name of the control.
+class _Progress extends StatelessWidget {
+  const new({required this.label});
+
+  final String label;
+
+  @override
+  Widget build(BuildContext context) {
+    return SizedBox.square(
+      dimension: 20,
+      child: CircularProgressIndicator(strokeWidth: 2, semanticsLabel: label),
+    );
+  }
 }

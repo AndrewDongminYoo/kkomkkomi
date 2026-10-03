@@ -8,6 +8,7 @@ import 'package:kkomkkomi/presentation/shared/confirm_dialog.dart';
 import 'package:kkomkkomi/presentation/shared/load_failure.dart';
 import 'package:kkomkkomi/presentation/shared/name_entry.dart';
 import 'package:kkomkkomi/presentation/shared/name_field.dart';
+import 'package:kkomkkomi/presentation/shared/notice.dart';
 import 'package:kkomkkomi/presentation/shared/save_guard.dart';
 import 'package:material_ui/material_ui.dart';
 
@@ -171,13 +172,15 @@ class _DataDeletion extends StatelessWidget {
           Text(l10n.dataDeletingMessage),
         ] else if (failure case final failure?) ...[
           const SizedBox(height: 16),
-          Text(
-            switch (failure) {
-              DeletionStep.publishedData => l10n.dataDeletionPublishedFailedMessage,
-              DeletionStep.account => l10n.dataDeletionAccountFailedMessage,
-              DeletionStep.deviceData => l10n.dataDeletionDeviceFailedMessage,
-            },
-            style: TextStyle(color: theme.colorScheme.error),
+          Notice(
+            tone: NoticeTone.error,
+            children: [
+              Text(switch (failure) {
+                DeletionStep.publishedData => l10n.dataDeletionPublishedFailedMessage,
+                DeletionStep.account => l10n.dataDeletionAccountFailedMessage,
+                DeletionStep.deviceData => l10n.dataDeletionDeviceFailedMessage,
+              }),
+            ],
           ),
         ],
       ],
@@ -192,6 +195,7 @@ class _DataDeletion extends StatelessWidget {
       title: l10n.dataDeletionDialogTitle,
       message: l10n.dataDeletionDialogMessage,
       confirmLabel: l10n.dataDeletionConfirmButton,
+      isDestructive: true,
     );
     if (confirmed) await cubit.deleteAllData();
   }

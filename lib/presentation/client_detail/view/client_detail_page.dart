@@ -9,6 +9,7 @@ import 'package:kkomkkomi/presentation/client_detail/cubit/client_link_cubit.dar
 import 'package:kkomkkomi/presentation/shared/confirm_dialog.dart';
 import 'package:kkomkkomi/presentation/shared/load_failure.dart';
 import 'package:kkomkkomi/presentation/shared/name_dialog.dart';
+import 'package:kkomkkomi/presentation/shared/notice.dart';
 import 'package:kkomkkomi/presentation/shared/save_guard.dart';
 import 'package:kkomkkomi/presentation/visit_capture/visit_capture.dart';
 import 'package:material_ui/material_ui.dart';
@@ -294,7 +295,7 @@ class _LinkSection extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             _SectionTitle(l10n.clientLinkSectionTitle),
-            _SectionMessage(l10n.clientLinkLoadFailedMessage),
+            _SectionNotice(l10n.clientLinkLoadFailedMessage, tone: NoticeTone.error),
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 16),
               child: OutlinedButton(onPressed: () => unawaited(cubit.load()), child: Text(l10n.loadRetryButton)),
@@ -314,9 +315,10 @@ class _LinkSection extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
                   if (_linkMessageOf(state, l10n) case final message?) _SectionMessage(message),
-                  if (state.isClosing) _SectionMessage(l10n.clientLinkClosingMessage),
-                  if (state.hasFailedClose) _SectionMessage(l10n.clientLinkCloseFailedMessage),
-                  if (state.hasUnfinishedDeletion) _SectionMessage(l10n.clientLinkDeletionUnfinishedMessage),
+                  if (state.isClosing) _SectionNotice(l10n.clientLinkClosingMessage, tone: NoticeTone.info),
+                  if (state.hasFailedClose) _SectionNotice(l10n.clientLinkCloseFailedMessage, tone: NoticeTone.error),
+                  if (state.hasUnfinishedDeletion)
+                    _SectionNotice(l10n.clientLinkDeletionUnfinishedMessage, tone: NoticeTone.error),
                 ],
               ),
             ),
@@ -360,6 +362,7 @@ class _LinkSection extends StatelessWidget {
       title: l10n.clientLinkCloseDialogTitle,
       message: l10n.clientLinkCloseDialogMessage,
       confirmLabel: l10n.clientLinkCloseButton,
+      isDestructive: true,
     );
     if (confirmed) await cubit.closeLink();
   }
@@ -372,6 +375,8 @@ class _LinkSection extends StatelessWidget {
       title: l10n.clientLinkReissueDialogTitle,
       message: l10n.clientLinkReissueDialogMessage,
       confirmLabel: l10n.clientLinkReissueButton,
+      // A new link closes every link that was sent.
+      isDestructive: true,
     );
     if (confirmed) await cubit.makeNewLink();
   }
@@ -399,6 +404,22 @@ class _SectionMessage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Padding(padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8), child: Text(text));
+  }
+}
+
+/// A [Notice] in the margins of a [_SectionMessage], for a message that is not a neutral status.
+class _SectionNotice extends StatelessWidget {
+  const new(this.text, {required this.tone});
+
+  final String text;
+  final NoticeTone tone;
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      child: Notice(tone: tone, children: [Text(text)]),
+    );
   }
 }
 
@@ -467,6 +488,7 @@ class _ZoneTile extends StatelessWidget {
       title: l10n.zoneRemoveDialogTitle(zone.name),
       message: l10n.zoneRemoveDialogMessage,
       confirmLabel: l10n.zoneRemoveConfirmButton,
+      isDestructive: true,
     );
     if (confirmed) await cubit.removeZone(zone.id);
   }

@@ -21,6 +21,17 @@ void main() {
       expect(find.widgetWithText(FilledButton, '다시 시도하기'), findsOneWidget);
     });
 
+    testWidgets('uses the theme of the app', (tester) async {
+      await tester.pumpWidget(StartupFailureApp(onRetry: () {}));
+
+      final theme = Theme.of(tester.element(find.byType(FilledButton)));
+      expect(theme.colorScheme, appTheme().colorScheme);
+      final button = tester.widget<Material>(
+        find.descendant(of: find.byType(FilledButton), matching: find.byType(Material)),
+      );
+      expect(button.color, appTheme().colorScheme.primary);
+    });
+
     testWidgets('calls onRetry each time the retry control is pressed', (tester) async {
       var retries = 0;
       await tester.pumpWidget(StartupFailureApp(onRetry: () => retries++));

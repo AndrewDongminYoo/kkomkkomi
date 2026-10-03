@@ -3,11 +3,13 @@ import 'dart:async';
 import 'package:bloc_test/bloc_test.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:kkomkkomi/app/app.dart';
 import 'package:kkomkkomi/application/application.dart';
 import 'package:kkomkkomi/domain/domain.dart';
 import 'package:kkomkkomi/export/export.dart';
 import 'package:kkomkkomi/l10n/l10n.dart';
 import 'package:kkomkkomi/presentation/presentation.dart';
+import 'package:kkomkkomi/presentation/shared/notice.dart';
 import 'package:material_ui/material_ui.dart';
 import 'package:mocktail/mocktail.dart';
 
@@ -453,6 +455,8 @@ void main() {
         await tester.pumpAndSettle();
         expect(find.widgetWithText(AlertDialog, 'Share a link?'), findsOneWidget);
         expect(find.text(notice), findsOneWidget);
+        // The notice warns, and the share deletes nothing, so its question is not destructive.
+        expect(tester.filledButtonColor('Share'), appTheme().colorScheme.primary);
 
         await tester.tap(find.widgetWithText(TextButton, 'Cancel'));
         await tester.pumpAndSettle();
@@ -954,6 +958,14 @@ void main() {
       );
     });
 
+    testWidgets('keeps the name of the share control for a screen reader while a share is on its way', (tester) async {
+      final semantics = tester.ensureSemantics();
+      await pumpView(tester, shown(VisitReportStatus.sharing));
+
+      expect(tester.getSemantics(find.byType(FilledButton)).label, 'Share PDF');
+      semantics.dispose();
+    });
+
     testWidgets('shows the message of a failed share once, when the status changes to it', (tester) async {
       final states = StreamController<VisitReportState>();
       addTearDown(states.close);
@@ -1020,8 +1032,24 @@ void main() {
           await pumpView(tester, shown(VisitReportStatus.ready));
 
           expect(find.text(english), findsOneWidget);
+          // Only a job that stopped is a failure. One that waits for its next try is still on its way.
+          expect(
+            tester.noticeToneOf(english),
+            linkState.status == ReportLinkStatus.failed ? NoticeTone.error : NoticeTone.info,
+          );
         });
       }
+
+      testWidgets('keeps the name of the link control for a screen reader while the report uploads', (tester) async {
+        final semantics = tester.ensureSemantics();
+        when(() => linkCubit.state).thenReturn(const ReportLinkState(status: ReportLinkStatus.publishing));
+
+        await pumpView(tester, shown(VisitReportStatus.ready));
+
+        expect(find.text('Share link'), findsNothing);
+        expect(tester.getSemantics(find.byType(FilledButton)).label, 'Share link');
+        semantics.dispose();
+      });
 
       for (final linkState in const [
         ReportLinkState(),

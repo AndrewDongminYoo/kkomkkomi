@@ -5,10 +5,12 @@ import 'package:flutter/gestures.dart';
 import 'package:flutter/semantics.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:kkomkkomi/app/app.dart';
 import 'package:kkomkkomi/application/application.dart';
 import 'package:kkomkkomi/domain/domain.dart';
 import 'package:kkomkkomi/presentation/presentation.dart';
 import 'package:kkomkkomi/presentation/shared/name_dialog.dart';
+import 'package:kkomkkomi/presentation/shared/notice.dart';
 import 'package:material_ui/material_ui.dart';
 import 'package:mocktail/mocktail.dart';
 
@@ -489,6 +491,7 @@ void main() {
         await tester.pumpAndSettle();
         expect(find.widgetWithText(AlertDialog, 'Remove 복도?'), findsOneWidget);
         expect(find.text('New visits leave this zone out. Past visits keep their records of it.'), findsOneWidget);
+        expect(tester.filledButtonColor('Remove'), appTheme().colorScheme.error);
         await tester.tap(find.widgetWithText(FilledButton, 'Remove'));
         await tester.pumpAndSettle();
 
@@ -587,6 +590,8 @@ void main() {
           find.text("It leaves the client list, and you can't bring it back yet. Its visit records are kept."),
           findsOneWidget,
         );
+        // An archive deletes nothing, so its question is not destructive.
+        expect(tester.filledButtonColor('Archive'), appTheme().colorScheme.primary);
         await tester.tap(find.widgetWithText(FilledButton, 'Archive'));
         await tester.pumpAndSettle();
 
@@ -1076,11 +1081,13 @@ void main() {
       await tester.pumpAndSettle();
       expect(find.text(en.closeTitle), findsOneWidget);
       expect(find.text(en.closeMessage), findsOneWidget);
+      expect(tester.filledButtonColor(en.close), appTheme().colorScheme.error);
       await tester.tap(find.widgetWithText(FilledButton, en.close));
       await tester.pumpAndSettle();
 
       expect(publisher.calls, ['revokePage ${openPage.id}']);
       await scrollTo(tester, en.closing);
+      expect(tester.noticeToneOf(en.closing), NoticeTone.info);
       expect(find.text(en.open), findsNothing);
       expect(find.text(en.closed), findsNothing);
       expect(find.text(en.close), findsNothing);
@@ -1126,6 +1133,8 @@ void main() {
       await tester.pumpAndSettle();
       expect(find.text(en.reissueTitle), findsOneWidget);
       expect(find.text(en.reissueMessage), findsOneWidget);
+      // A new link closes the links that were sent.
+      expect(tester.filledButtonColor(en.reissue), appTheme().colorScheme.error);
       await tester.tap(find.widgetWithText(FilledButton, en.reissue));
       await tester.pumpAndSettle();
 
@@ -1151,6 +1160,7 @@ void main() {
       await pressAndConfirm(tester, en.close);
 
       await scrollTo(tester, en.failed);
+      expect(tester.noticeToneOf(en.failed), NoticeTone.error);
       expect(find.text(en.closing), findsNothing);
       expect(find.text(en.closed), findsNothing);
       expect(find.text(en.none), findsNothing);
@@ -1162,6 +1172,7 @@ void main() {
       await pumpLinkPage(tester);
 
       await scrollTo(tester, en.deletionUnfinished);
+      expect(tester.noticeToneOf(en.deletionUnfinished), NoticeTone.error);
       expect(find.text(en.failed), findsNothing);
       expect(find.text(en.closing), findsNothing);
       expect(find.text(en.closed), findsNothing);
@@ -1210,6 +1221,7 @@ void main() {
       await pumpLinkPage(tester);
 
       await scrollTo(tester, en.loadFailed);
+      expect(tester.noticeToneOf(en.loadFailed), NoticeTone.error);
       publishing.failure = null;
       await scrollTo(tester, en.retry);
       await tester.tap(find.widgetWithText(OutlinedButton, en.retry));

@@ -3,9 +3,11 @@ import 'dart:async';
 import 'package:bloc_test/bloc_test.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:kkomkkomi/app/app.dart';
 import 'package:kkomkkomi/application/application.dart';
 import 'package:kkomkkomi/domain/domain.dart';
 import 'package:kkomkkomi/presentation/presentation.dart';
+import 'package:kkomkkomi/presentation/shared/notice.dart';
 import 'package:material_ui/material_ui.dart';
 import 'package:mocktail/mocktail.dart';
 
@@ -336,6 +338,7 @@ void main() {
         findsOneWidget,
       );
       expect(localData.erasures, 0);
+      expect(tester.filledButtonColor('Delete'), appTheme().colorScheme.error);
 
       await tester.tap(find.widgetWithText(FilledButton, 'Delete'));
       await tester.pumpAndSettle();
@@ -387,13 +390,11 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(find.byType(CompanyProfilePage), findsOneWidget);
-      expect(
-        find.text(
+      const message =
           "Can't delete your anonymous account. Check your connection and try again. Your uploaded reports and photos "
-          'are deleted, and the data on this phone is still here.',
-        ),
-        findsOneWidget,
-      );
+          'are deleted, and the data on this phone is still here.';
+      expect(find.text(message), findsOneWidget);
+      expect(tester.noticeToneOf(message), NoticeTone.error);
       expect(localData.erasures, 0);
 
       await tapDelete(tester, 'Delete All Data');

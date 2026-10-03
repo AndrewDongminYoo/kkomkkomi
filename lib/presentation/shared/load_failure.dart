@@ -1,7 +1,9 @@
 import 'package:kkomkkomi/l10n/l10n.dart';
+import 'package:kkomkkomi/presentation/shared/notice.dart';
 import 'package:material_ui/material_ui.dart';
 
-/// What a screen shows in place of its content when the content did not load: [message] and a retry control.
+/// What a screen shows in place of its content when the content did not load: [message] in an error notice and a
+/// retry control.
 class LoadFailure extends StatelessWidget {
   const new({required this.message, required this.onRetry, super.key});
 
@@ -16,7 +18,7 @@ class LoadFailure extends StatelessWidget {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Text(message, textAlign: TextAlign.center),
+            Notice(tone: NoticeTone.error, children: [Text(message)]),
             const SizedBox(height: 16),
             FilledButton(onPressed: onRetry, child: Text(context.l10n.loadRetryButton)),
           ],
