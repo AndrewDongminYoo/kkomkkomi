@@ -225,7 +225,7 @@ void main() {
         final before = await repository.pageById('page-1');
         final jobs = await repository.jobsOfPage('page-1');
         await database.execute(
-          "CREATE TRIGGER refuse_stop BEFORE UPDATE OF status ON publish_jobs "
+          'CREATE TRIGGER refuse_stop BEFORE UPDATE OF status ON publish_jobs '
           "WHEN NEW.failure = 'deletion' BEGIN SELECT RAISE(ABORT, 'refused'); END",
         );
         Future<List<PublishJob>> change() => confirmation

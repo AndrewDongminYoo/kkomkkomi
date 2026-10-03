@@ -141,7 +141,7 @@ const _transient = PublishException(PublishErrorKind.transient, 'unavailable');
 const _refused = PublishException(PublishErrorKind.refused, 'permission-denied');
 
 class _LostAcknowledgementPublisher extends FakePublisher {
-  var loseAcknowledgement = true;
+  bool loseAcknowledgement = true;
   @override
   Future<void> deletePage(String pageId) async {
     await super.deletePage(pageId);

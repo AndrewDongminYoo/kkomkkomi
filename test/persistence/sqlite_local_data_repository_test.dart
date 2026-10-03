@@ -28,7 +28,7 @@ class _PostCommitFailureDatabase extends Mock implements Database {
   @override
   Future<List<Map<String, Object?>>> rawQuery(String sql, [List<Object?>? arguments]) async {
     if (sql == statement) throw StateError('Post-commit cleanup failed');
-    return inner.rawQuery(sql, arguments);
+    return await inner.rawQuery(sql, arguments);
   }
 }
 

@@ -275,8 +275,8 @@ final class PublishQueue {
   /// Each delete runs through [timed], which the deletion of all data gives so that it keeps a delete that does not
   /// answer in time until the delete ends. Without [timed], a delete fails after the step timeout of the queue. The
   /// page future includes intent, remote deletion, confirmation, and notifications. Thus a late acknowledgement still
-  /// records confirmation before the caller releases the hold. The record of a photo goes after its delete answers; a record that stays names an object that may exist, which a
-  /// next call deletes again, and [forgetArrivedUploads] keeps a publish from trusting it.
+  /// records confirmation before the caller releases the hold. The record of a photo goes after its delete answers.
+  /// A record that stays names an object that may exist, which a next call deletes again, and [forgetArrivedUploads] keeps a publish from trusting it.
   ///
   /// Throws a [StateError] while the queue is not held, because a job that runs at the same time could write again
   /// what this call deleted. Throws a [PublishException] that a retry can fix while an upload that a cancel did not
@@ -296,9 +296,7 @@ final class PublishQueue {
     // A delete may reach the backend even when its answer does not reach the app, so the jobs stop before the first.
     final stopped = await _repository.stopPendingJobs(PublishFailure.deletion);
     if (!_disposed) {
-      for (final job in stopped) {
-        _updates.add(job);
-      }
+      stopped.forEach(_updates.add);
     }
     for (final page in pages) {
       for (final objectPath in await _repository.uploadedObjects(page.id)) {
@@ -329,9 +327,7 @@ final class PublishQueue {
 
   void _notifyPageChange(String clientId, List<PublishJob> stopped) {
     if (_disposed) return;
-    for (final job in stopped) {
-      _updates.add(job);
-    }
+    stopped.forEach(_updates.add);
     _pageChanges.add(clientId);
   }
 

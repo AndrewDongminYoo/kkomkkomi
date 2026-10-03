@@ -9,7 +9,8 @@ part 'client_link_state.dart';
 ///
 /// A close is done on the phone when storage takes it, and on the backend only when its revoke job is done. So the
 /// state reads pages and revoke jobs at committed changes. A link is closed after a completed revoke or confirmed
-/// page deletion. Unconfirmed deletion intent quarantines its page but does not prove that access is removed. A job that fails for a reason that a retry can fix stays pending, and the link stays closing.
+/// page deletion. Unconfirmed deletion intent quarantines its page but does not prove that access is removed.
+/// A job that fails for a reason that a retry can fix stays pending, and the link stays closing.
 class ClientLinkCubit extends Cubit<ClientLinkState> {
   new({required this._clientId, required this._publishQueue}) : super(const ClientLinkState());
 

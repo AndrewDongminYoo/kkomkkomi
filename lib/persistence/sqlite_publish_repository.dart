@@ -139,7 +139,7 @@ final class SqlitePublishRepository implements PublishRepository {
           [at.toUtc().microsecondsSinceEpoch, pageId],
         );
         if (changed == 0) throw StateError('The page does not exist');
-        return _stopJobs(transaction, PublishFailure.deletion, pageId: pageId);
+        return await _stopJobs(transaction, PublishFailure.deletion, pageId: pageId);
       });
 
   static Future<List<PublishJob>> _stopJobs(
@@ -150,7 +150,7 @@ final class SqlitePublishRepository implements PublishRepository {
     final rows = await database.query(
       'publish_jobs',
       where: pageId == null ? 'status = ?' : 'status = ? AND page_id = ?',
-      whereArgs: [PublishJobStatus.pending.name, if (pageId != null) pageId],
+      whereArgs: [PublishJobStatus.pending.name, ?pageId],
       orderBy: 'created_at, rowid',
     );
     final stopped = <PublishJob>[];

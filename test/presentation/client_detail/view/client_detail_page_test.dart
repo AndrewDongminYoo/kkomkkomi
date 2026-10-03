@@ -910,7 +910,7 @@ void main() {
           "Can't close a link you sent, so it can still open the reports. To have it closed, write to the contact in "
           'the privacy policy at the bottom of a report page.',
       deletionUnfinished:
-          "A previous link may still open because its deletion is unconfirmed. A new link does not close it. To finish "
+          'A previous link may still open because its deletion is unconfirmed. A new link does not close it. To finish '
           'deleting all data, use Delete All Data in Company profile again.',
       loadFailed: "Can't load the link. Try again.",
       retry: 'Try Again',
