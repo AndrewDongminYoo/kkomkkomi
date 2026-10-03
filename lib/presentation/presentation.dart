@@ -11,6 +11,7 @@ export 'adapters/unavailable_publisher.dart';
 export 'client_detail/client_detail.dart';
 export 'client_list/client_list.dart';
 export 'company_profile/company_profile.dart';
+export 'shared/corner_radius.dart';
 export 'shared/name_entry.dart';
 export 'shared/photo_thumbnail.dart';
 export 'visit_capture/visit_capture.dart';

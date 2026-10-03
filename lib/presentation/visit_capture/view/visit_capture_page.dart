@@ -5,7 +5,9 @@ import 'package:kkomkkomi/application/application.dart';
 import 'package:kkomkkomi/domain/domain.dart';
 import 'package:kkomkkomi/l10n/l10n.dart';
 import 'package:kkomkkomi/presentation/shared/confirm_dialog.dart';
+import 'package:kkomkkomi/presentation/shared/corner_radius.dart';
 import 'package:kkomkkomi/presentation/shared/load_failure.dart';
+import 'package:kkomkkomi/presentation/shared/notice.dart';
 import 'package:kkomkkomi/presentation/shared/photo_thumbnail.dart';
 import 'package:kkomkkomi/presentation/shared/save_guard.dart';
 import 'package:kkomkkomi/presentation/visit_capture/cubit/visit_capture_cubit.dart';
@@ -141,6 +143,7 @@ class VisitCaptureView extends StatelessWidget {
       title: l10n.visitLeaveUnsavedDialogTitle,
       message: l10n.visitLeaveUnsavedDialogMessage,
       confirmLabel: l10n.visitLeaveUnsavedConfirmButton,
+      isDestructive: true,
     );
     if (leaves) navigator.pop();
   }
@@ -227,28 +230,23 @@ class _UnsavedNotice extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final l10n = context.l10n;
-    final colors = Theme.of(context).colorScheme;
     return Semantics(
       container: true,
       liveRegion: true,
-      child: ColoredBox(
-        color: colors.errorContainer,
-        child: Padding(
-          padding: const EdgeInsets.fromLTRB(16, 12, 16, 4),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              Text(l10n.visitUnsavedMessage, style: TextStyle(color: colors.onErrorContainer)),
-              Align(
-                alignment: AlignmentDirectional.centerEnd,
-                child: TextButton(
-                  style: TextButton.styleFrom(foregroundColor: colors.onErrorContainer),
-                  onPressed: () => unawaited(context.read<VisitCaptureCubit>().saveAgain()),
-                  child: Text(l10n.visitSaveAgainButton),
-                ),
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(16, 12, 16, 4),
+        child: Notice(
+          tone: NoticeTone.error,
+          children: [
+            Text(l10n.visitUnsavedMessage),
+            Align(
+              alignment: AlignmentDirectional.centerEnd,
+              child: TextButton(
+                onPressed: () => unawaited(context.read<VisitCaptureCubit>().saveAgain()),
+                child: Text(l10n.visitSaveAgainButton),
               ),
-            ],
-          ),
+            ),
+          ],
         ),
       ),
     );
@@ -349,7 +347,7 @@ class _PhotoControl extends StatelessWidget {
     return OutlinedButton(
       style: OutlinedButton.styleFrom(
         padding: EdgeInsets.zero,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(cornerRadius)),
       ),
       clipBehavior: Clip.antiAlias,
       onPressed: () {

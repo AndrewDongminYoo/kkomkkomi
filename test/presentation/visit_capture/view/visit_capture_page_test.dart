@@ -3,9 +3,11 @@ import 'dart:async';
 import 'package:bloc_test/bloc_test.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:kkomkkomi/app/app.dart';
 import 'package:kkomkkomi/application/application.dart';
 import 'package:kkomkkomi/domain/domain.dart';
 import 'package:kkomkkomi/presentation/presentation.dart';
+import 'package:kkomkkomi/presentation/shared/notice.dart';
 import 'package:material_ui/material_ui.dart';
 import 'package:mocktail/mocktail.dart';
 
@@ -150,6 +152,18 @@ void main() {
       expect(control('zone-1', 'Take After Photo'), findsOneWidget);
       expect(tester.photoPathsIn(zone('zone-1')), isEmpty);
       expect(find.descendant(of: zone('zone-1'), matching: find.byIcon(Icons.photo_camera_outlined)), findsNWidgets(2));
+    });
+
+    testWidgets('gives a photo control the radius of the buttons of the theme', (tester) async {
+      await pumpPage(tester);
+
+      final material = tester.widget<Material>(
+        find.descendant(of: control('zone-1', 'Take Before Photo'), matching: find.byType(Material)).first,
+      );
+      expect(
+        material.shape,
+        isA<RoundedRectangleBorder>().having((s) => s.borderRadius, 'borderRadius', BorderRadius.circular(10)),
+      );
     });
 
     testWidgets('shows a zone with one photo as that photo, which can be taken again, and an empty after slot', (
@@ -410,6 +424,7 @@ void main() {
         await tester.pumpAndSettle();
 
         expect(find.text("Can't save your notes right now."), findsOneWidget);
+        expect(tester.noticeToneOf("Can't save your notes right now."), NoticeTone.error);
         expect(find.widgetWithText(TextButton, 'Save Again'), findsOneWidget);
         expect(tester.widget<TextField>(noteField('zone-1')).controller!.text, '유리');
         visits.failure = null;
@@ -528,6 +543,7 @@ void main() {
 
         expect(find.widgetWithText(AlertDialog, 'Leave without saving?'), findsOneWidget);
         expect(find.text('Your unsaved notes will be lost.'), findsOneWidget);
+        expect(tester.filledButtonColor('Leave'), appTheme().colorScheme.error);
         await tester.tap(find.widgetWithText(TextButton, 'Cancel'));
         await tester.pumpAndSettle();
 

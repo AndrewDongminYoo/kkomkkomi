@@ -5,4 +5,5 @@ export 'name_entry_cubit.dart';
 export 'pdf_summary.dart';
 export 'photos.dart';
 export 'pump_app.dart';
+export 'styles.dart';
 export 'test_cubit.dart';

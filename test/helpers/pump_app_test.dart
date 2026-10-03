@@ -1,5 +1,6 @@
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:kkomkkomi/app/app.dart';
 import 'package:kkomkkomi/application/application.dart';
 import 'package:kkomkkomi/l10n/l10n.dart';
 import 'package:material_ui/material_ui.dart';
@@ -18,6 +19,14 @@ void main() {
       expect(Localizations.localeOf(context).languageCode, 'ko');
       expect(MaterialLocalizations.of(context).backButtonTooltip, '뒤로');
       expect(context.l10n.startupFailureRetryButton, '다시 시도하기');
+    });
+
+    testWidgets('serves the theme of the app', (tester) async {
+      await tester.pumpApp(const SizedBox());
+
+      final theme = Theme.of(tester.element(find.byType(SizedBox)));
+      expect(theme.colorScheme, appTheme().colorScheme);
+      expect(theme.appBarTheme, appTheme().appBarTheme);
     });
 
     testWidgets('shows the English strings when no locale is given', (tester) async {
