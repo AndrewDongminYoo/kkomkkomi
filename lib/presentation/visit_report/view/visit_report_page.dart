@@ -7,6 +7,7 @@ import 'package:kkomkkomi/export/export.dart';
 import 'package:kkomkkomi/l10n/l10n.dart';
 import 'package:kkomkkomi/presentation/company_profile/company_profile.dart';
 import 'package:kkomkkomi/presentation/shared/confirm_dialog.dart';
+import 'package:kkomkkomi/presentation/shared/keep_all_text.dart';
 import 'package:kkomkkomi/presentation/shared/load_failure.dart';
 import 'package:kkomkkomi/presentation/shared/notice.dart';
 import 'package:kkomkkomi/presentation/shared/photo_thumbnail.dart';
@@ -81,7 +82,7 @@ class VisitReportView extends StatelessWidget {
     final l10n = context.l10n;
     void showShareFailed() => ScaffoldMessenger.of(context)
       ..hideCurrentSnackBar()
-      ..showSnackBar(SnackBar(content: Text(l10n.reportShareFailedMessage)));
+      ..showSnackBar(SnackBar(content: KeepAllText(l10n.reportShareFailedMessage)));
     return MultiBlocListener(
       listeners: [
         BlocListener<VisitReportCubit, VisitReportState>(
@@ -115,7 +116,7 @@ class _ReportScaffold extends StatelessWidget {
         return SaveGuard(
           isSaving: state.status == VisitReportStatus.sharing,
           child: Scaffold(
-            appBar: AppBar(title: Text(l10n.visitReportTitle)),
+            appBar: AppBar(title: KeepAllText(l10n.visitReportTitle)),
             body: SafeArea(
               child: switch (document) {
                 null when state.status == VisitReportStatus.loadFailed => LoadFailure(
@@ -195,7 +196,7 @@ class _ReportBody extends StatelessWidget {
         ],
         Semantics(
           header: true,
-          child: Text(l10n.reportPreviewTitle, style: Theme.of(context).textTheme.titleMedium),
+          child: KeepAllText(l10n.reportPreviewTitle, style: Theme.of(context).textTheme.titleMedium),
         ),
         const SizedBox(height: 8),
         _ReportPreview(document: document, pathOf: state.pathOf),
@@ -213,12 +214,12 @@ class _CompanyNameNotice extends StatelessWidget {
     final l10n = context.l10n;
     return Notice(
       children: [
-        Text(l10n.reportCompanyNameMissingMessage),
+        KeepAllText(l10n.reportCompanyNameMissingMessage),
         Align(
           alignment: AlignmentDirectional.centerEnd,
           child: TextButton(
             onPressed: () => unawaited(_openCompanyProfile(context)),
-            child: Text(l10n.reportCompanyNameAddButton),
+            child: KeepAllText(l10n.reportCompanyNameAddButton),
           ),
         ),
       ],
@@ -246,15 +247,15 @@ class _MissingPhotos extends StatelessWidget {
       children: [
         Semantics(
           header: true,
-          child: Text(l10n.reportMissingPhotosTitle, style: Theme.of(context).textTheme.titleSmall),
+          child: KeepAllText(l10n.reportMissingPhotosTitle, style: Theme.of(context).textTheme.titleSmall),
         ),
         const SizedBox(height: 4),
-        Text(l10n.reportMissingPhotosMessage),
+        KeepAllText(l10n.reportMissingPhotosMessage),
         const SizedBox(height: 8),
         for (final record in records)
           Padding(
             padding: const EdgeInsets.only(top: 4),
-            child: Text(_gapOf(record, l10n)),
+            child: KeepAllText(_gapOf(record, l10n)),
           ),
       ],
     );
@@ -296,18 +297,18 @@ class _ReportPreview extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            if (document.companyName case final companyName?) Text(companyName, style: secondary),
-            Text(labels.title, style: theme.textTheme.titleLarge),
+            if (document.companyName case final companyName?) KeepAllText(companyName, style: secondary),
+            KeepAllText(labels.title, style: theme.textTheme.titleLarge),
             const SizedBox(height: 4),
-            Text(document.clientName, style: theme.textTheme.titleMedium),
-            Text(labels.visitDate, style: secondary),
+            KeepAllText(document.clientName, style: theme.textTheme.titleMedium),
+            KeepAllText(labels.visitDate, style: secondary),
             const Divider(height: 24),
-            if (document.zones.isEmpty) Text(l10n.reportEmptyMessage),
+            if (document.zones.isEmpty) KeepAllText(l10n.reportEmptyMessage),
             for (final zone in document.zones) ...[
               _PreviewZone(zone: zone, labels: labels, pathOf: pathOf),
               const SizedBox(height: 16),
             ],
-            Text(labels.footer, style: secondary),
+            KeepAllText(labels.footer, style: secondary),
           ],
         ),
       ),
@@ -332,7 +333,7 @@ class _PreviewZone extends StatelessWidget {
       children: [
         Semantics(
           header: true,
-          child: Text(zone.name, style: theme.textTheme.titleMedium),
+          child: KeepAllText(zone.name, style: theme.textTheme.titleMedium),
         ),
         const SizedBox(height: 4),
         Row(
@@ -353,8 +354,8 @@ class _PreviewZone extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                Text(labels.note, style: secondary),
-                Text(zone.note),
+                KeepAllText(labels.note, style: secondary),
+                KeepAllText(zone.note),
               ],
             ),
           ),
@@ -383,7 +384,7 @@ class _PreviewSlot extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          Text(label, style: theme.textTheme.bodySmall?.copyWith(color: theme.colorScheme.onSurfaceVariant)),
+          KeepAllText(label, style: theme.textTheme.bodySmall?.copyWith(color: theme.colorScheme.onSurfaceVariant)),
           const SizedBox(height: 4),
           AspectRatio(
             aspectRatio: reportSlotAspectRatio,
@@ -429,7 +430,7 @@ class _ShareBar extends StatelessWidget {
   Widget build(BuildContext context) {
     final l10n = context.l10n;
     final hasLink = linkState.status != ReportLinkStatus.unavailable;
-    final pdfLabel = isSharing ? _Progress(label: l10n.reportShareButton) : Text(l10n.reportShareButton);
+    final pdfLabel = isSharing ? _Progress(label: l10n.reportShareButton) : KeepAllText(l10n.reportShareButton);
     final message = _linkMessageOf(linkState, l10n);
     return SafeArea(
       minimum: const EdgeInsets.all(16),
@@ -447,7 +448,7 @@ class _ShareBar extends StatelessWidget {
               if (message case (final text, final tone)) ...[
                 Semantics(
                   liveRegion: true,
-                  child: Notice(tone: tone, children: [Text(text)]),
+                  child: Notice(tone: tone, children: [KeepAllText(text)]),
                 ),
                 const SizedBox(height: 8),
               ],
@@ -456,7 +457,7 @@ class _ShareBar extends StatelessWidget {
                   onPressed: onShareLink,
                   child: linkState.status == ReportLinkStatus.publishing
                       ? _Progress(label: l10n.reportLinkShareButton)
-                      : Text(l10n.reportLinkShareButton),
+                      : KeepAllText(l10n.reportLinkShareButton),
                 ),
                 const SizedBox(height: 8),
                 OutlinedButton(onPressed: onShare, child: pdfLabel),

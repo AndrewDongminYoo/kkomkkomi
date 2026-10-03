@@ -5,6 +5,7 @@ import 'package:kkomkkomi/application/application.dart';
 import 'package:kkomkkomi/l10n/l10n.dart';
 import 'package:kkomkkomi/presentation/company_profile/cubit/company_profile_cubit.dart';
 import 'package:kkomkkomi/presentation/shared/confirm_dialog.dart';
+import 'package:kkomkkomi/presentation/shared/keep_all_text.dart';
 import 'package:kkomkkomi/presentation/shared/load_failure.dart';
 import 'package:kkomkkomi/presentation/shared/name_entry.dart';
 import 'package:kkomkkomi/presentation/shared/name_field.dart';
@@ -49,9 +50,9 @@ class CompanyProfileView extends StatelessWidget {
         if (state.deletion == DataDeletion.deleted) {
           // The app is as at its first launch, so it goes back to the client list, which is empty now.
           Navigator.of(context).popUntil((route) => route.isFirst);
-          messenger.showSnackBar(SnackBar(content: Text(l10n.dataDeletedMessage)));
+          messenger.showSnackBar(SnackBar(content: KeepAllText(l10n.dataDeletedMessage)));
         } else {
-          messenger.showSnackBar(SnackBar(content: Text(l10n.companyProfileSavedMessage)));
+          messenger.showSnackBar(SnackBar(content: KeepAllText(l10n.companyProfileSavedMessage)));
         }
       },
       // A person who leaves while the name is on its way would not see that storage did not take it, and one who
@@ -59,7 +60,7 @@ class CompanyProfileView extends StatelessWidget {
       builder: (context, state) => SaveGuard(
         isSaving: state.entry == NameEntry.saving || state.deletion == DataDeletion.deleting,
         child: Scaffold(
-          appBar: AppBar(title: Text(l10n.companyProfileTitle)),
+          appBar: AppBar(title: KeepAllText(l10n.companyProfileTitle)),
           body: SafeArea(
             child: switch (state.status) {
               CompanyProfileStatus.loading => const Center(child: CircularProgressIndicator()),
@@ -130,7 +131,7 @@ class _CompanyProfileFormState extends State<_CompanyProfileForm> {
             onSubmitted: save,
           ),
           const SizedBox(height: 16),
-          FilledButton(onPressed: isSaving ? null : save, child: Text(l10n.nameSaveButton)),
+          FilledButton(onPressed: isSaving ? null : save, child: KeepAllText(l10n.nameSaveButton)),
           const SizedBox(height: 32),
           const Divider(),
           const SizedBox(height: 16),
@@ -156,26 +157,26 @@ class _DataDeletion extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        Text(l10n.dataDeletionTitle, style: theme.textTheme.titleMedium),
+        KeepAllText(l10n.dataDeletionTitle, style: theme.textTheme.titleMedium),
         const SizedBox(height: 8),
-        Text(l10n.dataDeletionDescription),
+        KeepAllText(l10n.dataDeletionDescription),
         const SizedBox(height: 16),
         OutlinedButton(
           style: OutlinedButton.styleFrom(foregroundColor: theme.colorScheme.error),
           onPressed: isDeleting ? null : () => unawaited(_confirmAndDelete(context)),
-          child: Text(l10n.dataDeletionButton),
+          child: KeepAllText(l10n.dataDeletionButton),
         ),
         if (isDeleting) ...[
           const SizedBox(height: 16),
           const LinearProgressIndicator(),
           const SizedBox(height: 8),
-          Text(l10n.dataDeletingMessage),
+          KeepAllText(l10n.dataDeletingMessage),
         ] else if (failure case final failure?) ...[
           const SizedBox(height: 16),
           Notice(
             tone: NoticeTone.error,
             children: [
-              Text(switch (failure) {
+              KeepAllText(switch (failure) {
                 DeletionStep.publishedData => l10n.dataDeletionPublishedFailedMessage,
                 DeletionStep.account => l10n.dataDeletionAccountFailedMessage,
                 DeletionStep.deviceData => l10n.dataDeletionDeviceFailedMessage,

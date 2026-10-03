@@ -115,7 +115,7 @@ void main() {
       await submitName(tester, '   ');
 
       expect(find.byType(NameDialog), findsOneWidget);
-      expect(tester.widget<TextField>(find.byType(TextField)).decoration!.errorText, 'Enter a name.');
+      expect(tester.widget<TextField>(find.byType(TextField)).decoration!.errorMessage, 'Enter a name.');
       expect(await clients.activeClients(), isEmpty);
     });
 
@@ -129,7 +129,7 @@ void main() {
       await tester.tap(find.widgetWithText(FilledButton, '추가하기'));
       await tester.pumpAndSettle();
 
-      expect(tester.widget<TextField>(find.byType(TextField)).decoration!.errorText, '이름을 입력해 주세요.');
+      expect(tester.widget<TextField>(find.byType(TextField)).decoration!.errorMessage, '이름을 입력해 주세요.');
     });
 
     testWidgets('opens the dialog again without the problem of the name before', (tester) async {
@@ -143,7 +143,7 @@ void main() {
       await tester.tap(addButton());
       await tester.pumpAndSettle();
 
-      expect(tester.widget<TextField>(find.byType(TextField)).decoration!.errorText, isNull);
+      expect(tester.widget<TextField>(find.byType(TextField)).decoration!.errorMessage, isNull);
     });
 
     testWidgets('shows a failure of storage under the name field and adds the client on the next try', (tester) async {
@@ -155,7 +155,7 @@ void main() {
       await submitName(tester, '다온 카페');
 
       expect(
-        tester.widget<TextField>(find.byType(TextField)).decoration!.errorText,
+        tester.widget<TextField>(find.byType(TextField)).decoration!.errorMessage,
         "Can't save right now. Try again.",
       );
 

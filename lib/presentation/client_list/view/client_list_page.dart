@@ -7,6 +7,7 @@ import 'package:kkomkkomi/l10n/l10n.dart';
 import 'package:kkomkkomi/presentation/client_detail/client_detail.dart';
 import 'package:kkomkkomi/presentation/client_list/cubit/client_list_cubit.dart';
 import 'package:kkomkkomi/presentation/company_profile/company_profile.dart';
+import 'package:kkomkkomi/presentation/shared/keep_all_text.dart';
 import 'package:kkomkkomi/presentation/shared/load_failure.dart';
 import 'package:kkomkkomi/presentation/shared/name_dialog.dart';
 import 'package:material_ui/material_ui.dart';
@@ -40,7 +41,7 @@ class ClientListView extends StatelessWidget {
     final l10n = context.l10n;
     return Scaffold(
       appBar: AppBar(
-        title: Text(l10n.clientListTitle),
+        title: KeepAllText(l10n.clientListTitle),
         actions: [
           IconButton(
             tooltip: l10n.companyProfileTitle,
@@ -93,7 +94,7 @@ class _ClientList extends StatelessWidget {
           child: FilledButton.icon(
             onPressed: () => _showAddDialog(context),
             icon: const Icon(Icons.add),
-            label: Text(context.l10n.clientListAddButton),
+            label: KeepAllText(context.l10n.clientListAddButton),
           ),
         ),
       ],
@@ -129,13 +130,13 @@ class _EmptyClientList extends StatelessWidget {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Text(
+            KeepAllText(
               l10n.clientListEmptyTitle,
               style: Theme.of(context).textTheme.titleLarge,
               textAlign: TextAlign.center,
             ),
             const SizedBox(height: 8),
-            Text(l10n.clientListEmptyMessage, textAlign: TextAlign.center),
+            KeepAllText(l10n.clientListEmptyMessage, textAlign: TextAlign.center),
           ],
         ),
       ),
@@ -151,7 +152,7 @@ class _ClientTile extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return ListTile(
-      title: Text(client.name),
+      title: KeepAllText(client.name),
       trailing: const Icon(Icons.chevron_right),
       onTap: () async {
         final cubit = context.read<ClientListCubit>();

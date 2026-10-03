@@ -1,4 +1,5 @@
 import 'package:kkomkkomi/l10n/l10n.dart';
+import 'package:kkomkkomi/presentation/shared/keep_all_text.dart';
 import 'package:kkomkkomi/presentation/shared/name_entry.dart';
 import 'package:kkomkkomi/presentation/shared/name_entry_message.dart';
 import 'package:material_ui/material_ui.dart';
@@ -37,6 +38,9 @@ class NameField extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final helper = this.helper;
+    final error = entry.message(context.l10n);
     // The label and the field are one node for a screen reader, which then reads the label as the name of the
     // field.
     return MergeSemantics(
@@ -44,7 +48,7 @@ class NameField extends StatelessWidget {
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          Text(label, style: Theme.of(context).textTheme.labelLarge),
+          KeepAllText(label, style: theme.textTheme.labelLarge),
           TextField(
             controller: controller,
             autofocus: autofocus,
@@ -52,11 +56,22 @@ class NameField extends StatelessWidget {
             // name on the screen.
             readOnly: entry == NameEntry.saving,
             textInputAction: TextInputAction.done,
+            // The messages are widgets and not the strings of the decoration, which Flutter shows as a Text of its
+            // own, so that Korean text breaks between words. A widget takes neither the line limit of the decoration
+            // nor, for the helper, its style: the error gets the error style from the decoration, and the helper
+            // style is the Material 3 default, because the theme sets no input decoration theme.
             decoration: InputDecoration(
-              helperText: helper,
-              helperMaxLines: _messageMaxLines,
-              errorText: entry.message(context.l10n),
-              errorMaxLines: _messageMaxLines,
+              helper: helper == null
+                  ? null
+                  : KeepAllText(
+                      helper,
+                      style: theme.textTheme.bodySmall?.copyWith(color: theme.colorScheme.onSurfaceVariant),
+                      overflow: TextOverflow.ellipsis,
+                      maxLines: _messageMaxLines,
+                    ),
+              error: error == null
+                  ? null
+                  : KeepAllText(error, overflow: TextOverflow.ellipsis, maxLines: _messageMaxLines),
             ),
             onSubmitted: (_) => onSubmitted(),
           ),

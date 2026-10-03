@@ -65,7 +65,7 @@ void main() {
 
       expect(companyProfile.profile, CompanyProfile(name: '반짝 클린'));
       expect(find.widgetWithText(SnackBar, 'Company name saved.'), findsOneWidget);
-      expect(field(tester).decoration!.errorText, isNull);
+      expect(field(tester).decoration!.errorMessage, isNull);
       expect(field(tester).controller!.text, ' 반짝 클린 ');
     });
 
@@ -95,7 +95,7 @@ void main() {
       await tester.tap(find.widgetWithText(FilledButton, 'Save'));
       await tester.pump();
 
-      expect(field(tester).decoration!.errorText, 'Enter a name.');
+      expect(field(tester).decoration!.errorMessage, 'Enter a name.');
       expect(find.byType(SnackBar), findsNothing);
       expect(companyProfile.profile, CompanyProfile(name: '반짝 클린'));
     });
@@ -108,7 +108,7 @@ void main() {
       await tester.tap(find.widgetWithText(FilledButton, 'Save'));
       await tester.pump();
 
-      expect(field(tester).decoration!.errorText, "Can't save right now. Try again.");
+      expect(field(tester).decoration!.errorMessage, "Can't save right now. Try again.");
       expect(find.byType(SnackBar), findsNothing);
     });
 
@@ -149,7 +149,7 @@ void main() {
       companyProfile.gate!.completeError(failure);
       companyProfile.gate = null;
       await tester.pumpAndSettle();
-      expect(field(tester).decoration!.errorText, "Can't save right now. Try again.");
+      expect(field(tester).decoration!.errorMessage, "Can't save right now. Try again.");
       expect(field(tester).controller!.text, '반짝 클린');
 
       await tester.pageBack();
@@ -185,7 +185,7 @@ void main() {
 
       await tester.tap(find.widgetWithText(FilledButton, '저장하기'));
       await tester.pump();
-      expect(field(tester).decoration!.errorText, '이름을 입력해 주세요.');
+      expect(field(tester).decoration!.errorMessage, '이름을 입력해 주세요.');
 
       await tester.enterText(find.byType(TextField), '반짝 클린');
       await tester.tap(find.widgetWithText(FilledButton, '저장하기'));

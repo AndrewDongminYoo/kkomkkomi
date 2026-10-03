@@ -104,7 +104,7 @@ void main() {
     await tester.pumpAndSettle();
   }
 
-  String? fieldError(WidgetTester tester) => tester.widget<TextField>(find.byType(TextField)).decoration!.errorText;
+  String? fieldError(WidgetTester tester) => tester.widget<TextField>(find.byType(TextField)).decoration!.errorMessage;
 
   /// Drags the handle of the zone at [index] by [rows] rows, where a row is the height of the first zone tile.
   ///

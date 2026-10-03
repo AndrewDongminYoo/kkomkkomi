@@ -1,4 +1,5 @@
 import 'package:kkomkkomi/l10n/l10n.dart';
+import 'package:kkomkkomi/presentation/shared/keep_all_text.dart';
 import 'package:kkomkkomi/presentation/shared/notice.dart';
 import 'package:material_ui/material_ui.dart';
 
@@ -18,9 +19,9 @@ class LoadFailure extends StatelessWidget {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Notice(tone: NoticeTone.error, children: [Text(message)]),
+            Notice(tone: NoticeTone.error, children: [KeepAllText(message)]),
             const SizedBox(height: 16),
-            FilledButton(onPressed: onRetry, child: Text(context.l10n.loadRetryButton)),
+            FilledButton(onPressed: onRetry, child: KeepAllText(context.l10n.loadRetryButton)),
           ],
         ),
       ),

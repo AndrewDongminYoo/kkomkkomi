@@ -1,6 +1,7 @@
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:kkomkkomi/l10n/l10n.dart';
 import 'package:kkomkkomi/presentation/shared/dialog_layout.dart';
+import 'package:kkomkkomi/presentation/shared/keep_all_text.dart';
 import 'package:kkomkkomi/presentation/shared/name_entry.dart';
 import 'package:kkomkkomi/presentation/shared/name_field.dart';
 import 'package:kkomkkomi/presentation/shared/save_guard.dart';
@@ -87,7 +88,7 @@ class _NameDialogState extends State<NameDialog> {
       child: AlertDialog(
         scrollable: true,
         insetPadding: dialogInsetPadding,
-        title: Text(widget.title),
+        title: KeepAllText(widget.title),
         content: NameField(
           controller: _controller,
           label: widget.fieldLabel,
@@ -98,9 +99,9 @@ class _NameDialogState extends State<NameDialog> {
         actions: [
           TextButton(
             onPressed: isSaving ? null : () => Navigator.of(context).pop(),
-            child: Text(context.l10n.dialogCancelButton),
+            child: KeepAllText(context.l10n.dialogCancelButton),
           ),
-          FilledButton(onPressed: isSaving ? null : submit, child: Text(widget.submitLabel)),
+          FilledButton(onPressed: isSaving ? null : submit, child: KeepAllText(widget.submitLabel)),
         ],
       ),
     );

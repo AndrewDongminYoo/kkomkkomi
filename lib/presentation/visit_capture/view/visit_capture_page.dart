@@ -7,6 +7,7 @@ import 'package:kkomkkomi/domain/domain.dart';
 import 'package:kkomkkomi/l10n/l10n.dart';
 import 'package:kkomkkomi/presentation/shared/confirm_dialog.dart';
 import 'package:kkomkkomi/presentation/shared/corner_radius.dart';
+import 'package:kkomkkomi/presentation/shared/keep_all_text.dart';
 import 'package:kkomkkomi/presentation/shared/load_failure.dart';
 import 'package:kkomkkomi/presentation/shared/notice.dart';
 import 'package:kkomkkomi/presentation/shared/photo_thumbnail.dart';
@@ -85,7 +86,7 @@ class VisitCaptureView extends StatelessWidget {
         final message = recovery!.isRecovered
             ? l10n.visitCaptureRecoveredPhotoMessage
             : l10n.visitCaptureRecoveryFailedMessage;
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(message)));
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: KeepAllText(message)));
       },
       child: _buildScreen(context, l10n),
     );
@@ -107,7 +108,7 @@ class VisitCaptureView extends StatelessWidget {
         if (message == null) return;
         ScaffoldMessenger.of(context)
           ..hideCurrentSnackBar()
-          ..showSnackBar(SnackBar(content: Text(message)));
+          ..showSnackBar(SnackBar(content: KeepAllText(message)));
       },
       builder: (context, state) {
         final visit = state.visit;
@@ -155,7 +156,7 @@ class VisitCaptureView extends StatelessWidget {
       DateTime(visit.visitDate.year, visit.visitDate.month, visit.visitDate.day),
     );
     final clientName = state.clientName;
-    if (clientName == null) return AppBar(title: Text(date));
+    if (clientName == null) return AppBar(title: KeepAllText(date));
 
     final theme = Theme.of(context);
     final lines = [
@@ -170,7 +171,8 @@ class VisitCaptureView extends StatelessWidget {
           _backButtonWidth -
           2 * NavigationToolbar.kMiddleSpacing,
     );
-    // A Text widget applies these settings of the system to its style, so the measurement applies them too.
+    // A Text widget applies these settings of the system to its style, so the measurement applies them too, and it
+    // measures the string with the joiners that KeepAllText shows.
     final systemOverrides = TextStyle(
       fontWeight: MediaQuery.boldTextOf(context) ? FontWeight.bold : null,
       height: MediaQuery.maybeLineHeightScaleFactorOverrideOf(context),
@@ -180,7 +182,7 @@ class VisitCaptureView extends StatelessWidget {
     var titleHeight = 0.0;
     for (final (text, style, maxLines) in lines) {
       final painter = TextPainter(
-        text: TextSpan(text: text, style: (style ?? const TextStyle()).merge(systemOverrides)),
+        text: TextSpan(text: keepAll(text), style: (style ?? const TextStyle()).merge(systemOverrides)),
         textDirection: Directionality.of(context),
         textScaler: textScaler,
         maxLines: maxLines,
@@ -201,7 +203,7 @@ class VisitCaptureView extends StatelessWidget {
           children: [
             // The AppBar shows its title on one line with an ellipsis, which would cut a name that fits in a few lines.
             for (final (text, style, maxLines) in lines)
-              Text(
+              KeepAllText(
                 text,
                 style: style,
                 softWrap: true,
@@ -297,7 +299,7 @@ class _ReportButton extends StatelessWidget {
                 Navigator.of(context).push(VisitReportPage.route(visitId: visitId));
               }
             : null,
-        child: Text(context.l10n.visitReportOpenButton),
+        child: KeepAllText(context.l10n.visitReportOpenButton),
       ),
     );
   }
@@ -318,12 +320,12 @@ class _UnsavedNotice extends StatelessWidget {
         child: Notice(
           tone: NoticeTone.error,
           children: [
-            Text(l10n.visitUnsavedMessage),
+            KeepAllText(l10n.visitUnsavedMessage),
             Align(
               alignment: AlignmentDirectional.centerEnd,
               child: TextButton(
                 onPressed: () => unawaited(context.read<VisitCaptureCubit>().saveAgain()),
-                child: Text(l10n.visitSaveAgainButton),
+                child: KeepAllText(l10n.visitSaveAgainButton),
               ),
             ),
           ],
@@ -343,7 +345,7 @@ class _EmptyVisit extends StatelessWidget {
     return Center(
       child: SingleChildScrollView(
         padding: const EdgeInsets.all(24),
-        child: Text(message, textAlign: TextAlign.center),
+        child: KeepAllText(message, textAlign: TextAlign.center),
       ),
     );
   }
@@ -378,7 +380,7 @@ class _ZoneCapture extends StatelessWidget {
         children: [
           Semantics(
             header: true,
-            child: Text(record.zoneName, style: Theme.of(context).textTheme.titleMedium),
+            child: KeepAllText(record.zoneName, style: Theme.of(context).textTheme.titleMedium),
           ),
           const SizedBox(height: 8),
           Row(
@@ -449,7 +451,7 @@ class _PhotoControl extends StatelessWidget {
           ),
           Padding(
             padding: const EdgeInsets.all(8),
-            child: Text(label, textAlign: TextAlign.center),
+            child: KeepAllText(label, textAlign: TextAlign.center),
           ),
         ],
       ),
@@ -471,7 +473,7 @@ class _PreviousPhotoRow extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        Text(
+        KeepAllText(
           l10n.previousPhotosTitle(DateTime(date.year, date.month, date.day)),
           style: Theme.of(context).textTheme.bodySmall,
         ),
@@ -561,7 +563,7 @@ class _NoteFieldState extends State<_NoteField> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          Text(context.l10n.noteFieldLabel, style: Theme.of(context).textTheme.labelLarge),
+          KeepAllText(context.l10n.noteFieldLabel, style: Theme.of(context).textTheme.labelLarge),
           TextField(
             controller: _controller,
             readOnly: widget.readOnly,

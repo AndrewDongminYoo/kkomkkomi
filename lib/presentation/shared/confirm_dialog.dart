@@ -1,5 +1,6 @@
 import 'package:kkomkkomi/l10n/l10n.dart';
 import 'package:kkomkkomi/presentation/shared/dialog_layout.dart';
+import 'package:kkomkkomi/presentation/shared/keep_all_text.dart';
 import 'package:material_ui/material_ui.dart';
 
 /// Asks [title] with [message] under it, and completes with true when the person presses the [confirmLabel] button.
@@ -20,16 +21,19 @@ Future<bool> showConfirmDialog({
       return AlertDialog(
         scrollable: true,
         insetPadding: dialogInsetPadding,
-        title: Text(title),
-        content: Text(message),
+        title: KeepAllText(title),
+        content: KeepAllText(message),
         actions: [
-          TextButton(onPressed: () => Navigator.of(context).pop(false), child: Text(context.l10n.dialogCancelButton)),
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(false),
+            child: KeepAllText(context.l10n.dialogCancelButton),
+          ),
           FilledButton(
             style: isDestructive
                 ? FilledButton.styleFrom(backgroundColor: colors.error, foregroundColor: colors.onError)
                 : null,
             onPressed: () => Navigator.of(context).pop(true),
-            child: Text(confirmLabel),
+            child: KeepAllText(confirmLabel),
           ),
         ],
       );
