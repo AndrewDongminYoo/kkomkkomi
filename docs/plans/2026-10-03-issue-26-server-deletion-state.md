@@ -256,3 +256,10 @@ After implementation, run `merry run check` and `merry run coverage` and meet th
 The unchanged rules contract remains under `merry run rules`; report any environment limitation explicitly.
 Run the repository's Markdown format, lint, and spelling checks for changed docs and the conventional PR title.
 None of these future implementation gates is evidence that this design is already implemented.
+
+## Reconciliation, 2026-10-04
+
+This brief was not implemented as written: the operator approved the combined design in [the durable page deletion specification](../specs/2026-10-03-durable-page-deletion-design.md), which adds a deletion intent recorded before the remote delete to the confirmation that this brief proposes, and pull request #32 implemented that specification as `1b1b93a`.
+The shipped code under `lib/` and its tests are the authority; the specification's own reconciliation section lists the evidence.
+For issue #26 itself, `test/application/delete_all_data_test.dart` ("confirmation remains when … deletion fails", run once for the account step and once for the database transaction) shows that a page whose deletion the backend confirmed is no longer open after a later step fails, and `test/presentation/client_detail/view/client_detail_page_test.dart` ("confirmed deletion uses closed copy without a revoke job") shows that the screen then offers no old-link controls.
+Issue #26 was closed on 2026-10-04.

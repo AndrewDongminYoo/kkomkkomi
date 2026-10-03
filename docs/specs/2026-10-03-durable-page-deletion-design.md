@@ -282,3 +282,11 @@ Document exact validation results in the implementation PR; this specification d
 The combined design and fresh-ID policy are approved; this written specification still requires operator review.
 After that review, prepare the implementation plan and agree on its execution before product changes.
 This document is a specification, not an implementation plan or a claim that either issue is fixed.
+
+## Reconciliation, 2026-10-04
+
+Pull request #32 implemented this specification and merged as `1b1b93a`; the shipped code under `lib/` and its tests are now the authority, and the status lines above record the state before that merge.
+The intent and confirmation timestamps are schema version 4 (`lib/persistence/schema.dart`), the queue records them around each page delete (`PublishQueue.deletePublished`), and `ClientPage.isOpen` is false while a page is quarantined, so the client detail screen offers no old-link controls for it.
+A read-only check on 2026-10-04 mapped the acceptance rows of issue #29 to tests in `test/application/delete_all_data_test.dart`, `test/application/publish_queue_test.dart`, `test/persistence/sqlite_publish_repository_test.dart`, `test/persistence/open_repositories_test.dart`, and the client link Cubit and view tests, and ran the 17 "durable page deletion" tests of `delete_all_data_test.dart`, which passed.
+Four rows are covered in part and accepted as limits: a restart is a closed and reopened database file, not a killed process; the first confirmation time is kept at the model and repository level without an end-to-end repeated recovery; the two-page case covers a refused page B, not a timed-out one; and the parity of the fake repository has no dedicated test.
+Issues #26 and #29 were closed on 2026-10-04 with comments that cite this evidence.
