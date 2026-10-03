@@ -105,7 +105,15 @@ class _GatedRepository implements PublishRepository {
   Future<List<PublishJob>> jobsOfPage(String pageId) => _inner.jobsOfPage(pageId);
 
   @override
-  Future<void> stopPendingJobs(PublishFailure reason) => _inner.stopPendingJobs(reason);
+  Future<List<PublishJob>> stopPendingJobs(PublishFailure reason) => _inner.stopPendingJobs(reason);
+
+  @override
+  Future<List<PublishJob>> beginPageServerDeletion(String pageId, DateTime at) =>
+      _inner.beginPageServerDeletion(pageId, at);
+
+  @override
+  Future<List<PublishJob>> markPageServerDeleted(String pageId, DateTime at) =>
+      _inner.markPageServerDeleted(pageId, at);
 
   @override
   Future<void> clearRetryDelays() => _inner.clearRetryDelays();
@@ -131,6 +139,15 @@ class _GatedRepository implements PublishRepository {
 
 const _transient = PublishException(PublishErrorKind.transient, 'unavailable');
 const _refused = PublishException(PublishErrorKind.refused, 'permission-denied');
+
+class _LostAcknowledgementPublisher extends FakePublisher {
+  bool loseAcknowledgement = true;
+  @override
+  Future<void> deletePage(String pageId) async {
+    await super.deletePage(pageId);
+    if (loseAcknowledgement) throw _transient;
+  }
+}
 
 void main() {
   final start = DateTime.utc(2026, 10, 2, 9);
@@ -167,12 +184,16 @@ void main() {
   late List<_Timer> timers;
   late List<PublishQueue> queues;
 
-  PublishQueue newQueue({PublishRepository? repository, Duration stepTimeout = PublishQueue.defaultStepTimeout}) {
+  PublishQueue newQueue({
+    Repositories? store,
+    PublishRepository? repository,
+    Duration stepTimeout = PublishQueue.defaultStepTimeout,
+  }) {
     final queue = PublishQueue(
-      repository: repository ?? repositories.publishing,
-      clients: repositories.clients,
-      visits: repositories.visits,
-      companyProfile: repositories.companyProfile,
+      repository: repository ?? (store ?? repositories).publishing,
+      clients: (store ?? repositories).clients,
+      visits: (store ?? repositories).visits,
+      companyProfile: (store ?? repositories).companyProfile,
       photoStore: photoStore,
       publisher: publisher,
       identity: identity,
@@ -242,6 +263,235 @@ void main() {
       await queue.dispose();
     }
     await database.close();
+  });
+
+  group('durable queue deletion', () {
+    test('zero stopped jobs still invalidate readers on every committed marker', () async {
+      final queue = newQueue();
+      final job = await queue.publishVisit('visit-1');
+      await settle();
+      await queue.hold();
+      final pages = <String>[];
+      final updates = <PublishJob>[];
+      final pageSubscription = queue.pageChanges.listen(pages.add);
+      final jobSubscription = queue.updates.listen(updates.add);
+      await queue.deletePublished();
+      await queue.deletePublished();
+      await settle();
+      expect(pages, ['client-1', 'client-1', 'client-1', 'client-1']);
+      expect(updates, isEmpty);
+      expect((await jobOf(job)).status, PublishJobStatus.done);
+      expect((await queue.pagesOf('client-1')).single.isOpen, isFalse);
+      expect(await queue.pagesOf('another-client'), isEmpty);
+      await pageSubscription.cancel();
+      await jobSubscription.cancel();
+    });
+
+    for (final confirmed in [false, true]) {
+      test('both stale job kinds stop before identity for confirmed=$confirmed', () async {
+        final repository = FakePublishRepository();
+        final page = ClientPage(
+          id: 'old',
+          clientId: 'client-1',
+          createdAt: start,
+          revokedAt: start,
+          serverDeleteRequestedAt: start,
+          serverDeletedAt: confirmed ? start : null,
+        );
+        repository.pagesById[page.id] = page;
+        for (final kind in PublishJobKind.values) {
+          repository.jobs[kind.name] = PublishJob(
+            id: kind.name,
+            kind: kind,
+            pageId: page.id,
+            visitId: kind == PublishJobKind.publish ? 'visit-1' : null,
+            createdAt: start,
+          );
+        }
+        final gate = identity.gate = Completer<void>();
+        final queue = newQueue(repository: repository);
+        try {
+          await queue.start().timeout(const Duration(milliseconds: 100));
+          expect(identity.calls, 0);
+          expect(publisher.calls, isEmpty);
+          expect(repository.jobs.values.map((job) => job.failure), everyElement(PublishFailure.deletion));
+        } finally {
+          gate.complete();
+          await settle();
+        }
+      });
+    }
+
+    test('lost acknowledgement retains intent until explicit idempotent retry', () async {
+      final backend = _LostAcknowledgementPublisher();
+      publisher = backend;
+      final queue = newQueue();
+      final job = await queue.publishVisit('visit-1');
+      await settle();
+      await queue.hold();
+      await expectLater(queue.deletePublished(), throwsA(_transient));
+      final pending = (await queue.pagesOf('client-1')).single;
+      expect(pending.isServerDeletionPending, isTrue);
+      expect(publisher.pages, isEmpty);
+      backend.loseAcknowledgement = false;
+      clock.time = start.add(const Duration(minutes: 1));
+      await queue.deletePublished();
+      final confirmed = (await queue.pagesOf('client-1')).single;
+      expect(confirmed.serverDeleteRequestedAt, pending.serverDeleteRequestedAt);
+      expect(confirmed.serverDeletedAt, clock.time);
+      expect((await jobOf(job)).status, PublishJobStatus.done);
+    });
+
+    test('global pending stops emit actual job updates', () async {
+      final queue = newQueue();
+      await queue.hold();
+      final job = await queue.publishVisit('visit-1');
+      final updates = <PublishJob>[];
+      final subscription = queue.updates.listen(updates.add);
+      await queue.deletePublished();
+      await settle();
+      expect(updates, [job.fail(PublishFailure.deletion)]);
+      await subscription.cancel();
+    });
+
+    test('missing page dispatch makes no identity or backend call', () async {
+      final repository = FakePublishRepository();
+      repository.jobs['orphan'] = PublishJob(
+        id: 'orphan',
+        kind: PublishJobKind.publish,
+        pageId: 'missing',
+        visitId: 'visit-1',
+        createdAt: start,
+      );
+      await newQueue(repository: repository).start();
+      expect(identity.calls, 0);
+      expect(publisher.calls, isEmpty);
+      expect(repository.jobs['orphan']!.attempts, 1);
+    });
+
+    test('archived pages and independent A success B failure C unattempted', () async {
+      final client = (await repositories.clients.clientById('client-1'))!;
+      await repositories.clients.save(client.archive());
+      for (var index = 0; index < 3; index++) {
+        await database.insert('client_pages', {
+          'id': 'page-$index',
+          'client_id': client.id,
+          'created_at': start.add(Duration(seconds: index)).microsecondsSinceEpoch,
+        });
+      }
+      publisher.failures['deletePage'] = [null, _refused];
+      final queue = newQueue();
+      await queue.hold();
+      await expectLater(queue.deletePublished(), throwsA(_refused));
+      final pages = await queue.pagesOf(client.id);
+      expect(pages[0].serverDeletedAt, isNotNull);
+      expect(pages[1].isServerDeletionPending, isTrue);
+      expect(pages[2].isOpen, isTrue);
+      expect(publisher.calls, ['deletePage page-0', 'deletePage page-1']);
+    });
+
+    test('accepted publish during hold is stopped at intent and emits its actual change', () async {
+      final queue = newQueue();
+      final first = await queue.publishVisit('visit-1');
+      await settle();
+      await queue.hold();
+      final gate = publisher.gates['deletePhoto'] = Completer<void>();
+      final updates = <PublishJob>[];
+      final subscription = queue.updates.listen(updates.add);
+      final deleting = queue.deletePublished();
+      await settle();
+      final late = await queue.publishVisit('visit-2');
+      expect(late.pageId, first.pageId);
+      gate.complete();
+      await deleting;
+      await settle();
+      expect(updates.single.id, late.id);
+      expect(updates.single.failure, PublishFailure.deletion);
+      queue.release();
+      await settle();
+      expect(publisher.pages, isEmpty);
+      final fresh = await queue.publishVisit('visit-2');
+      await settle();
+      expect(fresh.pageId, isNot(first.pageId));
+      expect(publisher.reports.keys, ['${fresh.pageId}/visit-2']);
+      await subscription.cancel();
+    });
+
+    for (final remoteSucceeded in [false, true]) {
+      test('file restart quarantines both jobs after remote success=$remoteSucceeded', () async {
+        final directory = Directory.systemTemp.createTempSync('durable_page_restart');
+        final path = '${directory.path}/app.db';
+        var file = await openAppDatabase(testDatabaseFactory, path);
+        try {
+          var stored = sqliteRepositories(file);
+          await stored.clients.save(
+            (await repositories.clients.clientById('client-1'))!,
+            zones: ClientZones(
+              clientId: 'client-1',
+              zones: [
+                for (var index = 1; index <= 3; index++)
+                  Zone(id: 'zone-$index', clientId: 'client-1', name: '구역 $index', position: index - 1),
+              ],
+            ),
+          );
+          await stored.visits.save(visit1);
+          await stored.publishing.openPageOf(
+            'client-1',
+            create: () => ClientPage(id: 'old', clientId: 'client-1', createdAt: start, revokedAt: start),
+          );
+          final historical = PublishJob(
+            id: 'history',
+            kind: PublishJobKind.publish,
+            pageId: 'old',
+            visitId: 'visit-1',
+            createdAt: start,
+          );
+          await stored.publishing.enqueue(historical);
+          await stored.publishing.saveJob(historical.succeed());
+          await stored.publishing.beginPageServerDeletion('old', start);
+          if (remoteSucceeded) await publisher.deletePage('old');
+          await file.close();
+          file = await openAppDatabase(testDatabaseFactory, path);
+          stored = sqliteRepositories(file);
+          for (final kind in PublishJobKind.values) {
+            await file.insert('publish_jobs', {
+              'id': kind.name,
+              'kind': kind.name,
+              'page_id': 'old',
+              'visit_id': kind == PublishJobKind.publish ? 'visit-1' : null,
+              'created_at': start.microsecondsSinceEpoch,
+              'status': 'pending',
+              'attempts': 0,
+              'generation': 0,
+            });
+          }
+          final queue = newQueue(store: stored);
+          publisher.calls.clear();
+          await queue.start();
+          expect(identity.calls, 0);
+          expect(publisher.calls, isEmpty);
+          expect(
+            (await stored.publishing.jobsOfPage('old')).where((job) => job.id != 'history').map((job) => job.failure),
+            everyElement(PublishFailure.deletion),
+          );
+          clock.time = start.add(const Duration(hours: 1));
+          await queue.hold();
+          await queue.deletePublished();
+          final confirmation = (await stored.publishing.pageById('old'))!.serverDeletedAt;
+          await queue.dispose();
+          await file.close();
+          file = await openAppDatabase(testDatabaseFactory, path);
+          stored = sqliteRepositories(file);
+          final page = (await stored.publishing.pageById('old'))!;
+          expect(page.serverDeleteRequestedAt, start);
+          expect(page.serverDeletedAt, confirmation);
+          expect((await stored.publishing.jobsOfPage('old')).first, historical.succeed());
+        } finally {
+          await file.close();
+          directory.deleteSync(recursive: true);
+        }
+      });
+    }
   });
 
   group('retryDelay', () {

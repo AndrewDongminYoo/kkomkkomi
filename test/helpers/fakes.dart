@@ -448,7 +448,7 @@ class FakePublishRepository implements PublishRepository {
   Future<ClientPage?> openPageOf(String clientId, {ClientPage Function()? create}) async {
     _throwFailure();
     for (final page in pagesById.values) {
-      if (page.clientId == clientId && !page.isRevoked) return page;
+      if (page.clientId == clientId && page.isOpen) return page;
     }
     if (create == null) return null;
     final page = create();
@@ -484,6 +484,9 @@ class FakePublishRepository implements PublishRepository {
   Future<PublishJob> enqueue(PublishJob job) async {
     _throwFailure();
     await beforeEnqueueGate?.future;
+    final page = pagesById[job.pageId];
+    if (page == null) throw StateError('The page does not exist');
+    if (page.isQuarantined) throw StateError('The page is quarantined');
     var stored = job;
     for (final pending in jobs.values) {
       if (pending.status == PublishJobStatus.pending &&
@@ -518,7 +521,7 @@ class FakePublishRepository implements PublishRepository {
     await revokeGate?.future;
     if (revokeFailure case final failure?) throw failure;
     final stored = pagesById[page.id];
-    if (stored == null || stored.isRevoked) return false;
+    if (stored == null || !stored.isOpen) return false;
     pagesById[page.id] = stored.revoke(at);
     final ofPage = [
       for (final job in jobs.values)
@@ -559,12 +562,49 @@ class FakePublishRepository implements PublishRepository {
       if (job.status == PublishJobStatus.pending) job,
   ]..sort((a, b) => a.createdAt.compareTo(b.createdAt));
 
+  Completer<void>? beginDeletionGate;
+  Completer<void>? markDeletedGate;
+  Object? beginDeletionFailure;
+  Object? markDeletedFailure;
+
   @override
-  Future<void> stopPendingJobs(PublishFailure reason) async {
+  Future<List<PublishJob>> beginPageServerDeletion(String pageId, DateTime at) async {
+    await beginDeletionGate?.future;
     _throwFailure();
+    if (beginDeletionFailure case final failure?) Error.throwWithStackTrace(failure, StackTrace.current);
+    final page = pagesById[pageId];
+    if (page == null) throw StateError('The page does not exist');
+    pagesById[pageId] = page.requestServerDeletion(at);
+    return _stopJobs(PublishFailure.deletion, pageId: pageId);
+  }
+
+  @override
+  Future<List<PublishJob>> markPageServerDeleted(String pageId, DateTime at) async {
+    await markDeletedGate?.future;
+    _throwFailure();
+    if (markDeletedFailure case final failure?) Error.throwWithStackTrace(failure, StackTrace.current);
+    final page = pagesById[pageId];
+    if (page == null) throw StateError('The page does not exist');
+    pagesById[pageId] = page.confirmServerDeletion(at);
+    return _stopJobs(PublishFailure.deletion, pageId: pageId);
+  }
+
+  @override
+  Future<List<PublishJob>> stopPendingJobs(PublishFailure reason) async {
+    _throwFailure();
+    return _stopJobs(reason);
+  }
+
+  List<PublishJob> _stopJobs(PublishFailure reason, {String? pageId}) {
+    final stopped = <PublishJob>[];
     for (final job in [...jobs.values]) {
-      if (job.status == PublishJobStatus.pending) jobs[job.id] = job.fail(reason);
+      if (job.status == PublishJobStatus.pending && (pageId == null || job.pageId == pageId)) {
+        final changed = job.fail(reason);
+        jobs[job.id] = changed;
+        stopped.add(changed);
+      }
     }
+    return stopped..sort((a, b) => a.createdAt.compareTo(b.createdAt));
   }
 
   @override

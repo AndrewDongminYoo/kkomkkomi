@@ -502,7 +502,7 @@
     "@clientLinkCloseFailedMessage": {
         "description": "Shown when the close of a link stopped for a reason that a retry does not fix. The web report page links to the privacy policy at its bottom"
     },
-    "clientLinkDeletionUnfinishedMessage": "Delete All Data didn't finish, so a link you sent may still open the reports. To finish, use Delete All Data in Company profile again.",
+    "clientLinkDeletionUnfinishedMessage": "A previous link may still open because its deletion is unconfirmed. A new link does not close it. To finish deleting all data, use Delete All Data in Company profile again.",
     "@clientLinkDeletionUnfinishedMessage": {
         "description": "Shown when Delete All Data stopped the close of a link and then did not finish"
     },
@@ -522,7 +522,7 @@
     "@clientLinkCloseDialogTitle": {
         "description": "Title of the question before the link of a client is closed"
     },
-    "clientLinkCloseDialogMessage": "Every link of this client that you sent stops opening, and its photos are deleted from the server. The next time you share a link, a new one is made.",
+    "clientLinkCloseDialogMessage": "The current link of this client stops opening, and its photos are deleted from the server. The next time you share a link, a new one is made.",
     "@clientLinkCloseDialogMessage": {
         "description": "Text of the question before the link of a client is closed"
     },
@@ -530,7 +530,7 @@
     "@clientLinkReissueDialogTitle": {
         "description": "Title of the question before the link of a client is replaced with a new one"
     },
-    "clientLinkReissueDialogMessage": "The links you sent stop opening, and the reports are uploaded again under a new link. To send the new link, share it from a visit report.",
+    "clientLinkReissueDialogMessage": "The current link stops opening, and its reports are uploaded again under a new link. To send the new link, share it from a visit report.",
     "@clientLinkReissueDialogMessage": {
         "description": "Text of the question before the link of a client is replaced with a new one"
     },

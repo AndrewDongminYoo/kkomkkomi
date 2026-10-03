@@ -448,7 +448,7 @@
     "@clientLinkCloseFailedMessage": {
         "description": "다시 시도해도 고칠 수 없는 이유로 링크 막기가 멈췄을 때 표시되는 문구. 웹 보고서 페이지 아래에 개인정보 처리방침 링크가 있다"
     },
-    "clientLinkDeletionUnfinishedMessage": "모든 데이터 지우기가 끝나지 않아서 보낸 링크로 보고서가 아직 열릴 수 있어요. 회사 정보에서 모든 데이터 지우기를 다시 해 주세요.",
+    "clientLinkDeletionUnfinishedMessage": "이전 링크가 지워졌는지 확인되지 않아 보고서가 아직 열릴 수 있어요. 새 링크를 만들어도 이전 링크는 닫히지 않아요. 회사 정보에서 모든 데이터 지우기를 다시 해 주세요.",
     "@clientLinkDeletionUnfinishedMessage": {
         "description": "모든 데이터 지우기가 링크 막기를 멈춘 뒤 끝나지 않았을 때 표시되는 문구"
     },
@@ -468,7 +468,7 @@
     "@clientLinkCloseDialogTitle": {
         "description": "거래처의 링크를 막기 전에 묻는 창의 제목"
     },
-    "clientLinkCloseDialogMessage": "이 거래처에 보낸 링크가 모두 더 이상 열리지 않고, 서버에 올린 사진을 지워요. 다음에 링크로 공유하면 새 링크가 만들어져요.",
+    "clientLinkCloseDialogMessage": "이 거래처의 현재 링크가 더 이상 열리지 않고, 그 링크로 올린 사진을 서버에서 지워요. 다음에 링크로 공유하면 새 링크가 만들어져요.",
     "@clientLinkCloseDialogMessage": {
         "description": "거래처의 링크를 막기 전에 묻는 창의 본문"
     },
@@ -476,7 +476,7 @@
     "@clientLinkReissueDialogTitle": {
         "description": "거래처의 링크를 새 링크로 바꾸기 전에 묻는 창의 제목"
     },
-    "clientLinkReissueDialogMessage": "지금까지 보낸 링크는 더 이상 열리지 않고, 보고서를 새 링크로 다시 올려요. 새 링크는 방문 보고서에서 링크로 공유해서 보낼 수 있어요.",
+    "clientLinkReissueDialogMessage": "현재 링크는 더 이상 열리지 않고, 그 링크의 보고서를 새 링크로 다시 올려요. 새 링크는 방문 보고서에서 링크로 공유해서 보낼 수 있어요.",
     "@clientLinkReissueDialogMessage": {
         "description": "거래처의 링크를 새 링크로 바꾸기 전에 묻는 창의 본문"
     },

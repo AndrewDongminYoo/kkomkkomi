@@ -68,7 +68,9 @@
             zone
           </li>
           <li>
-            The IDs of the pages it published, and the state of its publish jobs
+            The IDs of the pages it published, the state of its publish jobs,
+            and the times when it recorded a page deletion request and
+            confirmation
           </li>
         </ul>
         <p>
@@ -204,13 +206,13 @@
         </p>
         <ul>
           <li>
-            "Close Link" closes every link of the client that you sent. The next
-            time you share a link, a new one is made.
+            "Close Link" closes this client's current link. The next time you
+            share a link, a new one is made.
           </li>
           <li>
-            "Make New Link" closes every link that you sent and uploads the
-            reports of the client again under a new link. You send the new link
-            by sharing it from a visit report.
+            "Make New Link" closes the current link and uploads its reports
+            again under a new link. You send the new link by sharing it from a
+            visit report.
           </li>
           <li>
             Until the server has closed the link, the app says that it is
@@ -219,6 +221,13 @@
             again when the app opens again and when the connection returns.
           </li>
         </ul>
+        <p>
+          These controls apply to the current link. A previous page with a
+          deletion request but no confirmation is not used again by these
+          controls, and its link may still open. The app keeps its warning and
+          includes it in the confirmation dialog. Use "Delete All Data" in
+          section 6 to finish deleting such pages.
+        </p>
         <p>
           To close every link you shared and delete the data on the server, use
           "Delete All Data" in section 6, or ask the operator at the contact in
@@ -269,16 +278,38 @@
         </ol>
         <p>
           If a step fails, the app runs none of the steps after it, and the
-          screen says which step failed. The data on the phone stays until the
-          data on the server and the account are deleted, so you can try again.
-          The development and test builds of the app have no server, so they
-          delete only the data on the phone.
+          screen says which step failed. The app starts deleting data on the
+          phone only after the server data and account are deleted. A device
+          cleanup failure can occur after the database rows are already gone,
+          while rewriting the database file, clearing its log, or deleting photo
+          files. You can explicitly try again. The development and test builds
+          have no server, so they delete only the data on the phone.
         </p>
         <p>
           Before it starts to delete the data on the server, the app stops the
           report uploads and link closings that are still waiting. If the
           deletion stops halfway or the app starts again, a stopped report is
           not uploaded again, unless you tap Share link again.
+        </p>
+        <p>
+          Immediately before requesting deletion of each client page, the app
+          records that request on the phone. It records confirmation only after
+          the server acknowledges the deletion. A page with either record is not
+          used for uploads or link closing again, including after restart. A
+          request without confirmation does not prove the link is closed: the
+          server may have deleted it even if its answer was lost, or deletion
+          may have failed. The app does not automatically continue deleting all
+          data after restart. Use "Delete All Data" again to finish.
+        </p>
+        <p>
+          If you explicitly share a visit again after a page deletion request,
+          it uses a new link and uploads only that visit. Making or sharing a
+          new link does not close a previous unconfirmed link. Its warning
+          remains until deletion is confirmed. The next "Delete All Data"
+          attempt also includes new pages recorded on this phone. These local
+          records remain until the database erase commits; an account deletion
+          failure preserves them, while a device cleanup failure can happen
+          after they are gone.
         </p>
         <p>
           After the deletion, the links you shared no longer open, and the app

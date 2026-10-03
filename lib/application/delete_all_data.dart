@@ -32,8 +32,8 @@ final class DeletionFailure implements Exception {
 /// Deletes everything that the app holds for the person: what it published, the anonymous account, and the data on
 /// the device, in that order.
 ///
-/// A step that fails stops the deletion before the next one, so the data on the device stays until the backend holds
-/// nothing of the person, and the person can try again. Each call runs every step again, because a share between two
+/// A step that fails stops deletion before the next one. A device-stage failure can occur after the database erase
+/// committed, during VACUUM, checkpoint, or photo-file removal. The person can explicitly try again. Each call runs every step again, because a share between two
 /// calls can publish again, and every step is safe to repeat: a delete of what is gone changes nothing, and the rules
 /// allow it for any signed-in user. A call after the account is gone signs in with a new account, which the call
 /// deletes again.
@@ -41,7 +41,7 @@ final class DeletionFailure implements Exception {
 /// The publish queue is held while the deletion runs, so that no job writes again what a step deleted, and the first
 /// step stops every pending job in storage before its first delete, so that none runs after a failure or a restart.
 /// The queue runs again when the call ends, whether it completed or failed, so a share that the person starts later
-/// publishes again. In a flavor without a backend, only the data on the device is deleted.
+/// publishes its requested visit under a fresh ID after a page deletion intent. In a flavor without a backend, only the data on the device is deleted.
 ///
 /// The first step, before any delete, marks every recorded upload as one that may not have arrived
 /// ([PublishQueue.forgetArrivedUploads]). A publish skips the upload of a photo whose record says that it arrived, and
@@ -59,8 +59,9 @@ final class DeletionFailure implements Exception {
 /// - A delete of the account that ends late could otherwise remove the user ID that such a share published under.
 ///   When it ends with success, the queue stays held, because the account is gone, and the next call goes on with
 ///   the data on the device.
-/// - A report or page delete that ends late conflicts with no write of the app, because the Firestore client sends
-///   its writes in order, so a later write lands after the delete. It is kept and waited for all the same.
+/// - A page operation includes intent, remote deletion, durable confirmation, and notifications. A late success
+///   still records confirmation before releasing the hold. No late success resumes account or device deletion.
+/// - A report delete is also kept until it settles, before a subsequent share can run.
 ///
 /// A next call while a late delete is on its way starts no second delete of it: it waits for every one, as long as a
 /// step may take, and names the earliest step that is still on its way when one does not end in that time.

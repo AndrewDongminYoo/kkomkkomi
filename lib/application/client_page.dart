@@ -9,9 +9,17 @@ import 'dart:math';
 /// [id] is the client's fixed URL, so it is hard to guess: [newPageId] makes it. A revoked page stays revoked, and a
 /// reissue gives the client a new page.
 final class ClientPage {
-  new({required this.id, required this.clientId, required DateTime createdAt, DateTime? revokedAt})
-    : createdAt = createdAt.toUtc(),
-      revokedAt = revokedAt?.toUtc();
+  new({
+    required this.id,
+    required this.clientId,
+    required DateTime createdAt,
+    DateTime? revokedAt,
+    DateTime? serverDeleteRequestedAt,
+    DateTime? serverDeletedAt,
+  }) : createdAt = createdAt.toUtc(),
+       revokedAt = revokedAt?.toUtc(),
+       serverDeleteRequestedAt = serverDeleteRequestedAt?.toUtc(),
+       serverDeletedAt = serverDeletedAt?.toUtc();
 
   final String id;
   final String clientId;
@@ -19,12 +27,35 @@ final class ClientPage {
   /// The creation time in UTC. The published page holds the same time, so a repeated write does not change it.
   final DateTime createdAt;
 
-  /// The time of the access removal in UTC, or null while the page is open.
+  /// The local revoke request time in UTC, before its backend job completes.
   final DateTime? revokedAt;
 
-  bool get isRevoked => revokedAt != null;
+  /// The first persisted intent to delete this server page, which does not prove remote success.
+  final DateTime? serverDeleteRequestedAt;
 
-  ClientPage revoke(DateTime at) => ClientPage(id: id, clientId: clientId, createdAt: createdAt, revokedAt: at);
+  /// The first locally persisted backend deletion acknowledgement in UTC.
+  final DateTime? serverDeletedAt;
+
+  bool get isRevoked => revokedAt != null;
+  bool get isQuarantined => serverDeleteRequestedAt != null || serverDeletedAt != null;
+  bool get isServerDeletionPending => serverDeleteRequestedAt != null && serverDeletedAt == null;
+  bool get isOpen => !isRevoked && !isQuarantined;
+
+  ClientPage revoke(DateTime at) => _copyWith(revokedAt: at);
+
+  ClientPage requestServerDeletion(DateTime at) => _copyWith(serverDeleteRequestedAt: serverDeleteRequestedAt ?? at);
+
+  ClientPage confirmServerDeletion(DateTime at) => _copyWith(serverDeletedAt: serverDeletedAt ?? at);
+
+  ClientPage _copyWith({DateTime? revokedAt, DateTime? serverDeleteRequestedAt, DateTime? serverDeletedAt}) =>
+      ClientPage(
+        id: id,
+        clientId: clientId,
+        createdAt: createdAt,
+        revokedAt: revokedAt ?? this.revokedAt,
+        serverDeleteRequestedAt: serverDeleteRequestedAt ?? this.serverDeleteRequestedAt,
+        serverDeletedAt: serverDeletedAt ?? this.serverDeletedAt,
+      );
 
   @override
   bool operator ==(Object other) =>
@@ -32,13 +63,15 @@ final class ClientPage {
       other.id == id &&
       other.clientId == clientId &&
       other.createdAt == createdAt &&
-      other.revokedAt == revokedAt;
+      other.revokedAt == revokedAt &&
+      other.serverDeleteRequestedAt == serverDeleteRequestedAt &&
+      other.serverDeletedAt == serverDeletedAt;
 
   @override
-  int get hashCode => Object.hash(id, clientId, createdAt, revokedAt);
+  int get hashCode => Object.hash(id, clientId, createdAt, revokedAt, serverDeleteRequestedAt, serverDeletedAt);
 
   @override
-  String toString() => 'ClientPage($id, $clientId, $createdAt, $revokedAt)';
+  String toString() => 'ClientPage($id, $clientId, $createdAt, $revokedAt, $serverDeleteRequestedAt, $serverDeletedAt)';
 }
 
 /// The number of random bits in the ID of a client page.

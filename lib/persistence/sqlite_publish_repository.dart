@@ -10,19 +10,21 @@ final class SqlitePublishRepository implements PublishRepository {
   final Database _database;
 
   @override
-  Future<ClientPage?> openPageOf(String clientId, {ClientPage Function()? create}) =>
-      _database.transaction((transaction) async {
-        final rows = await transaction.query(
-          'client_pages',
-          where: 'client_id = ? AND revoked_at IS NULL',
-          whereArgs: [clientId],
-        );
-        if (rows.isNotEmpty) return _pageFromRow(rows.single);
-        if (create == null) return null;
-        final page = create();
-        await transaction.insert('client_pages', _pageToRow(page));
-        return page;
-      });
+  Future<ClientPage?> openPageOf(String clientId, {ClientPage Function()? create}) => _database.transaction((
+    transaction,
+  ) async {
+    final rows = await transaction.query(
+      'client_pages',
+      where:
+          'client_id = ? AND revoked_at IS NULL AND server_delete_requested_at IS NULL AND server_deleted_at IS NULL',
+      whereArgs: [clientId],
+    );
+    if (rows.isNotEmpty) return _pageFromRow(rows.single);
+    if (create == null) return null;
+    final page = create();
+    await transaction.insert('client_pages', _pageToRow(page));
+    return page;
+  });
 
   @override
   Future<ClientPage?> pageById(String id) async {
@@ -38,6 +40,9 @@ final class SqlitePublishRepository implements PublishRepository {
 
   @override
   Future<PublishJob> enqueue(PublishJob job) => _database.transaction((transaction) async {
+    final pages = await transaction.query('client_pages', where: 'id = ?', whereArgs: [job.pageId]);
+    if (pages.isEmpty) throw StateError('The page does not exist');
+    if (_pageFromRow(pages.single).isQuarantined) throw StateError('The page is quarantined');
     final rows = await transaction.query(
       'publish_jobs',
       where: 'kind = ? AND page_id = ? AND visit_id IS ? AND status = ?',
@@ -63,7 +68,7 @@ final class SqlitePublishRepository implements PublishRepository {
     final revoked = await transaction.update(
       'client_pages',
       {'revoked_at': at.toUtc().microsecondsSinceEpoch},
-      where: 'id = ? AND revoked_at IS NULL',
+      where: 'id = ? AND revoked_at IS NULL AND server_delete_requested_at IS NULL AND server_deleted_at IS NULL',
       whereArgs: [page.id],
     );
     if (revoked == 0) return false;
@@ -116,16 +121,46 @@ final class SqlitePublishRepository implements PublishRepository {
   }
 
   @override
-  Future<void> stopPendingJobs(PublishFailure reason) => _database.transaction((transaction) async {
-    final rows = await transaction.query(
+  Future<List<PublishJob>> stopPendingJobs(PublishFailure reason) =>
+      _database.transaction((transaction) => _stopJobs(transaction, reason));
+
+  @override
+  Future<List<PublishJob>> beginPageServerDeletion(String pageId, DateTime at) =>
+      _recordDeletion(pageId, at, 'server_delete_requested_at');
+
+  @override
+  Future<List<PublishJob>> markPageServerDeleted(String pageId, DateTime at) =>
+      _recordDeletion(pageId, at, 'server_deleted_at');
+
+  Future<List<PublishJob>> _recordDeletion(String pageId, DateTime at, String column) =>
+      _database.transaction((transaction) async {
+        final changed = await transaction.rawUpdate(
+          'UPDATE client_pages SET $column = COALESCE($column, ?) WHERE id = ?',
+          [at.toUtc().microsecondsSinceEpoch, pageId],
+        );
+        if (changed == 0) throw StateError('The page does not exist');
+        return await _stopJobs(transaction, PublishFailure.deletion, pageId: pageId);
+      });
+
+  static Future<List<PublishJob>> _stopJobs(
+    DatabaseExecutor database,
+    PublishFailure reason, {
+    String? pageId,
+  }) async {
+    final rows = await database.query(
       'publish_jobs',
-      where: 'status = ?',
-      whereArgs: [PublishJobStatus.pending.name],
+      where: pageId == null ? 'status = ?' : 'status = ? AND page_id = ?',
+      whereArgs: [PublishJobStatus.pending.name, ?pageId],
+      orderBy: 'created_at, rowid',
     );
+    final stopped = <PublishJob>[];
     for (final row in rows) {
-      await _updateJob(transaction, _jobFromRow(row).fail(reason));
+      final job = _jobFromRow(row).fail(reason);
+      await _updateJob(database, job);
+      stopped.add(job);
     }
-  });
+    return stopped;
+  }
 
   @override
   Future<List<PublishJob>> jobsOfPage(String pageId) async {
@@ -213,6 +248,8 @@ final class SqlitePublishRepository implements PublishRepository {
     'client_id': page.clientId,
     'created_at': page.createdAt.microsecondsSinceEpoch,
     'revoked_at': page.revokedAt?.microsecondsSinceEpoch,
+    'server_delete_requested_at': page.serverDeleteRequestedAt?.microsecondsSinceEpoch,
+    'server_deleted_at': page.serverDeletedAt?.microsecondsSinceEpoch,
   };
 
   static ClientPage _pageFromRow(Map<String, Object?> row) => ClientPage(
@@ -220,6 +257,8 @@ final class SqlitePublishRepository implements PublishRepository {
     clientId: row['client_id']! as String,
     createdAt: _time(row['created_at'])!,
     revokedAt: _time(row['revoked_at']),
+    serverDeleteRequestedAt: _time(row['server_delete_requested_at']),
+    serverDeletedAt: _time(row['server_deleted_at']),
   );
 
   static Map<String, Object?> _jobToRow(PublishJob job) => {

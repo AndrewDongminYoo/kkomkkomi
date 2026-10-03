@@ -84,6 +84,22 @@ void main() {
     });
   });
 
+  test('round trips both deletion timestamps in UTC microseconds', () async {
+    final at = DateTime.parse('2026-10-03T10:00:00.123456+09:00');
+    final stored = ClientPage(
+      id: 'page-1',
+      clientId: 'client-1',
+      createdAt: at,
+      serverDeleteRequestedAt: at,
+      serverDeletedAt: at,
+    );
+    await repository.openPageOf('client-1', create: () => stored);
+    expect(await repository.pageById('page-1'), stored);
+    final row = (await database.query('client_pages')).single;
+    expect(row['server_delete_requested_at'], 1790989200123456);
+    expect(row['server_deleted_at'], 1790989200123456);
+  });
+
   test('pageById gives null for an unknown page', () async {
     expect(await repository.pageById('page-9'), isNull);
   });
@@ -121,6 +137,114 @@ void main() {
       job('waiting', visitId: 'visit-2', minute: 2).fail(PublishFailure.deletion),
       job('revoke', visitId: null, kind: PublishJobKind.revoke, minute: 3).fail(PublishFailure.deletion),
     ]);
+  });
+
+  group('page deletion transactions', () {
+    final at = DateTime.utc(2026, 10, 3);
+    final later = DateTime.utc(2026, 10, 4);
+
+    Future<void> seed() async {
+      await repository.openPageOf('client-1', create: () => page('page-1'));
+      await repository.enqueue(job('done', minute: 1));
+      await repository.saveJob(job('done', minute: 1).succeed());
+      await repository.enqueue(job('failed', visitId: 'visit-2', minute: 2));
+      await repository.saveJob(job('failed', visitId: 'visit-2', minute: 2).fail(PublishFailure.refused));
+      await repository.enqueue(job('waiting', minute: 3));
+      await repository.enqueue(job('revoke', visitId: null, kind: PublishJobKind.revoke, minute: 4));
+    }
+
+    test('intent stops both job kinds and preserves history', () async {
+      await seed();
+      final stopped = await repository.beginPageServerDeletion('page-1', at);
+      expect(stopped.map((job) => job.id), ['waiting', 'revoke']);
+      expect(
+        stopped.map((job) => (job.status, job.failure)),
+        everyElement((PublishJobStatus.failed, PublishFailure.deletion)),
+      );
+      final stored = (await repository.pageById('page-1'))!;
+      expect(stored.serverDeleteRequestedAt, at);
+      expect(stored.serverDeletedAt, isNull);
+      expect(await repository.openPageOf('client-1'), isNull);
+      final history = await repository.jobsOfPage('page-1');
+      expect(history.first, job('done', minute: 1).succeed());
+      expect(history[1], job('failed', visitId: 'visit-2', minute: 2).fail(PublishFailure.refused));
+      expect(await repository.saveJob(job('waiting', minute: 3).succeed()), isFalse);
+      expect(await repository.beginPageServerDeletion('page-1', later), isEmpty);
+      expect((await repository.pageById('page-1'))!.serverDeleteRequestedAt, at);
+    });
+
+    test('confirmation preserves first time and legacy revoke time', () async {
+      final revoked = page('page-1', revokedAt: at);
+      await repository.openPageOf('client-1', create: () => revoked);
+      await repository.enqueue(job('revoke', visitId: null, kind: PublishJobKind.revoke));
+      final stopped = await repository.markPageServerDeleted('page-1', at);
+      expect(stopped.single.failure, PublishFailure.deletion);
+      expect(await repository.markPageServerDeleted('page-1', later), isEmpty);
+      final stored = (await repository.pageById('page-1'))!;
+      expect((stored.revokedAt, stored.serverDeletedAt, stored.serverDeleteRequestedAt), (at, at, null));
+      expect(await repository.pages(), [stored]);
+    });
+
+    test('enqueue and revoke reject a stale quarantined page', () async {
+      await seed();
+      final stale = (await repository.openPageOf('client-1'))!;
+      await repository.beginPageServerDeletion('page-1', at);
+      for (final kind in PublishJobKind.values) {
+        await expectLater(repository.enqueue(job('late', kind: kind)), throwsStateError);
+      }
+      final before = await repository.jobsOfPage('page-1');
+      expect(
+        await repository.revoke(
+          stale,
+          at: later,
+          revokeJob: job('late-revoke', visitId: null),
+          replacement: page('page-2'),
+          republish: (visitId) => job('republish', visitId: visitId),
+        ),
+        isFalse,
+      );
+      expect(await repository.jobsOfPage('page-1'), before);
+      expect(await repository.pageById('page-2'), isNull);
+      final fresh = await repository.openPageOf('client-1', create: () => page('page-new'));
+      expect(fresh!.id, 'page-new');
+      await repository.markPageServerDeleted('page-new', at);
+      await expectLater(repository.enqueue(job('late-confirmed', pageId: 'page-new')), throwsStateError);
+    });
+
+    test('missing page rejects without side effects', () async {
+      await expectLater(repository.beginPageServerDeletion('missing', at), throwsStateError);
+      await expectLater(repository.markPageServerDeleted('missing', at), throwsStateError);
+      await expectLater(repository.enqueue(job('missing', pageId: 'missing')), throwsStateError);
+      expect(await repository.pages(), isEmpty);
+      expect(await repository.pendingJobs(), isEmpty);
+    });
+
+    for (final confirmation in [false, true]) {
+      test('${confirmation ? 'confirmation' : 'intent'} rolls back when stopping jobs fails', () async {
+        await seed();
+        final before = await repository.pageById('page-1');
+        final jobs = await repository.jobsOfPage('page-1');
+        await database.execute(
+          'CREATE TRIGGER refuse_stop BEFORE UPDATE OF status ON publish_jobs '
+          "WHEN NEW.failure = 'deletion' BEGIN SELECT RAISE(ABORT, 'refused'); END",
+        );
+        Future<List<PublishJob>> change() => confirmation
+            ? repository.markPageServerDeleted('page-1', at)
+            : repository.beginPageServerDeletion('page-1', at);
+        await expectLater(change(), throwsA(isA<DatabaseException>()));
+        expect(await repository.pageById('page-1'), before);
+        expect(await repository.jobsOfPage('page-1'), jobs);
+        await database.execute('DROP TRIGGER refuse_stop');
+        expect(await change(), hasLength(2));
+      });
+    }
+
+    test('global stop returns actual changed jobs only', () async {
+      await seed();
+      final changed = await repository.stopPendingJobs(PublishFailure.deletion);
+      expect(changed.map((job) => job.id), ['waiting', 'revoke']);
+      expect(await repository.stopPendingJobs(PublishFailure.deletion), isEmpty);
+    });
   });
 
   group('jobs', () {

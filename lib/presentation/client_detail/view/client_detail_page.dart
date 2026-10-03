@@ -92,7 +92,7 @@ class ClientDetailView extends StatelessWidget {
         builder: (context, state) {
           final client = state.client;
           final isRequestingLink = context.select<ClientLinkCubit, bool>(
-            (cubit) => cubit.state.status == ClientLinkStatus.requesting,
+            (cubit) => cubit.state.isRequesting,
           );
           // The archived status closes the top route and a started visit opens over it, so the screen must still be
           // that route when storage answers. A close or a new link waits for storage in the same way, so that its
@@ -348,8 +348,9 @@ class _LinkSection extends StatelessWidget {
   /// What the screen says about the open link in [state], or null while it says only that a link is closing, did not
   /// close, or waits for the deletion of all data to finish.
   static String? _linkMessageOf(ClientLinkState state, AppLocalizations l10n) {
+    // The current open page takes priority; warnings still describe any earlier unconfirmed page.
     if (state.hasOpenLink) return l10n.clientLinkOpenMessage;
-    // A link is closed only when its revoke job is done on the backend.
+    // A completed revoke or persisted server deletion confirmation closes that page.
     if (state.isClosing || state.hasFailedClose || state.hasUnfinishedDeletion) return null;
     return state.hasClosedLink ? l10n.clientLinkClosedMessage : l10n.clientLinkNoneMessage;
   }
@@ -360,7 +361,10 @@ class _LinkSection extends StatelessWidget {
     final confirmed = await showConfirmDialog(
       context: context,
       title: l10n.clientLinkCloseDialogTitle,
-      message: l10n.clientLinkCloseDialogMessage,
+      message: [
+        l10n.clientLinkCloseDialogMessage,
+        if (cubit.state.hasUnfinishedDeletion) l10n.clientLinkDeletionUnfinishedMessage,
+      ].join('\n\n'),
       confirmLabel: l10n.clientLinkCloseButton,
       isDestructive: true,
     );
@@ -373,9 +377,12 @@ class _LinkSection extends StatelessWidget {
     final confirmed = await showConfirmDialog(
       context: context,
       title: l10n.clientLinkReissueDialogTitle,
-      message: l10n.clientLinkReissueDialogMessage,
+      message: [
+        l10n.clientLinkReissueDialogMessage,
+        if (cubit.state.hasUnfinishedDeletion) l10n.clientLinkDeletionUnfinishedMessage,
+      ].join('\n\n'),
       confirmLabel: l10n.clientLinkReissueButton,
-      // A new link closes every link that was sent.
+      // A new link closes the current eligible page; earlier quarantined pages are unchanged.
       isDestructive: true,
     );
     if (confirmed) await cubit.makeNewLink();
