@@ -43,6 +43,7 @@ INFOPLIST
 instancer
 iphoneos
 IPTC
+jamo
 JFIF
 jvmargs
 keytool
