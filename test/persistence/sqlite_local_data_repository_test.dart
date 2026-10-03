@@ -4,9 +4,33 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:kkomkkomi/application/application.dart';
 import 'package:kkomkkomi/domain/domain.dart';
 import 'package:kkomkkomi/persistence/persistence.dart';
+import 'package:mocktail/mocktail.dart';
 import 'package:sqflite_common_ffi/sqflite_ffi.dart';
 
 import 'support.dart';
+
+/// Fails only a post-commit cleanup operation while the transaction uses real SQLite.
+class _PostCommitFailureDatabase extends Mock implements Database {
+  new(this.inner, this.statement);
+  final Database inner;
+  final String statement;
+
+  @override
+  Future<T> transaction<T>(Future<T> Function(Transaction) action, {bool? exclusive}) =>
+      inner.transaction(action, exclusive: exclusive);
+
+  @override
+  Future<void> execute(String sql, [List<Object?>? arguments]) async {
+    if (sql == statement) throw StateError('Post-commit cleanup failed');
+    await inner.execute(sql, arguments);
+  }
+
+  @override
+  Future<List<Map<String, Object?>>> rawQuery(String sql, [List<Object?>? arguments]) async {
+    if (sql == statement) throw StateError('Post-commit cleanup failed');
+    return inner.rawQuery(sql, arguments);
+  }
+}
 
 void main() {
   late Directory directory;
@@ -123,6 +147,19 @@ void main() {
 
       expect((await rowCounts()).values, everyElement(0));
     });
+
+    for (final statement in ['VACUUM', 'PRAGMA wal_checkpoint(TRUNCATE)']) {
+      test('rows are erased before a $statement failure', () async {
+        await fill(sqliteRepositories(database));
+        final repository = SqliteLocalDataRepository(_PostCommitFailureDatabase(database, statement));
+        await expectLater(repository.eraseAll(), throwsStateError);
+        expect((await rowCounts()).values, everyElement(0));
+        await database.close();
+        database = await openAppDatabase(testDatabaseFactory, path);
+        expect((await rowCounts()).values, everyElement(0));
+        await sqliteRepositories(database).localData.eraseAll();
+      });
+    }
 
     test('keeps every row when the erase fails', () async {
       final repositories = sqliteRepositories(database);

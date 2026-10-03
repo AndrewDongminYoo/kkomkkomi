@@ -108,6 +108,7 @@ final class PublishQueue {
   final Duration _stepTimeout;
 
   final _updates = StreamController<PublishJob>.broadcast();
+  final _pageChanges = StreamController<String>.broadcast();
   StreamSubscription<void>? _network;
   Timer? _timer;
   Future<void>? _running;
@@ -120,6 +121,15 @@ final class PublishQueue {
 
   /// Each job after a run of it changed its state, for a screen that shows where a job is and why it stopped.
   Stream<PublishJob> get updates => _updates.stream;
+
+  /// The client ID after a page deletion field is committed, even when no job changed.
+  Stream<String> get pageChanges => _pageChanges.stream;
+
+  /// All recorded pages of the client, including revoked and quarantined pages, oldest first.
+  Future<List<ClientPage>> pagesOf(String clientId) async => [
+    for (final page in await _repository.pages())
+      if (page.clientId == clientId) page,
+  ];
 
   /// Whether the flavor has a backend. Every job of a flavor without one stops with [PublishFailure.unavailable].
   bool get isAvailable => _publisher.isAvailable;
@@ -154,6 +164,7 @@ final class PublishQueue {
     _timer?.cancel();
     await _network?.cancel();
     await _updates.close();
+    await _pageChanges.close();
   }
 
   /// Adds a job that publishes the visit with [visitId] under the open page of its client, and returns the job.
@@ -258,9 +269,13 @@ final class PublishQueue {
   /// delete is safe to repeat, so a call after a failed one deletes what is left. The local pages and jobs stay: the
   /// caller erases the local data after this call.
   ///
+  /// Each page records intent immediately before its delete and confirmation after acknowledgement. Both durable
+  /// writes stop its pending jobs. Explicit sharing then uses a fresh page ID; historical jobs stay stopped.
+  ///
   /// Each delete runs through [timed], which the deletion of all data gives so that it keeps a delete that does not
   /// answer in time until the delete ends. Without [timed], a delete fails after the step timeout of the queue. The
-  /// record of a photo goes after its delete answers; a record that stays names an object that may exist, which a
+  /// page future includes intent, remote deletion, confirmation, and notifications. Thus a late acknowledgement still
+  /// records confirmation before the caller releases the hold. The record of a photo goes after its delete answers; a record that stays names an object that may exist, which a
   /// next call deletes again, and [forgetArrivedUploads] keeps a publish from trusting it.
   ///
   /// Throws a [StateError] while the queue is not held, because a job that runs at the same time could write again
@@ -279,7 +294,12 @@ final class PublishQueue {
       throw const PublishException(PublishErrorKind.transient, 'No user is signed in');
     }
     // A delete may reach the backend even when its answer does not reach the app, so the jobs stop before the first.
-    await _repository.stopPendingJobs(PublishFailure.deletion);
+    final stopped = await _repository.stopPendingJobs(PublishFailure.deletion);
+    if (!_disposed) {
+      for (final job in stopped) {
+        _updates.add(job);
+      }
+    }
     for (final page in pages) {
       for (final objectPath in await _repository.uploadedObjects(page.id)) {
         _expectSettled(objectPath);
@@ -294,8 +314,25 @@ final class PublishQueue {
       }
     }
     for (final page in pages) {
-      await run(_publisher.deletePage(page.id));
+      await run(_deletePageAndRecord(page));
     }
+  }
+
+  /// Keep persistence and notifications inside the future tracked through a deletion timeout.
+  Future<void> _deletePageAndRecord(ClientPage page) async {
+    final stopped = await _repository.beginPageServerDeletion(page.id, _clock.now());
+    _notifyPageChange(page.clientId, stopped);
+    await _publisher.deletePage(page.id);
+    final confirmed = await _repository.markPageServerDeleted(page.id, _clock.now());
+    _notifyPageChange(page.clientId, confirmed);
+  }
+
+  void _notifyPageChange(String clientId, List<PublishJob> stopped) {
+    if (_disposed) return;
+    for (final job in stopped) {
+      _updates.add(job);
+    }
+    _pageChanges.add(clientId);
   }
 
   ClientPage _newPage(String clientId) =>
@@ -367,6 +404,9 @@ final class PublishQueue {
     PublishJob result;
     try {
       if (!_publisher.isAvailable) throw const _Stop(PublishFailure.unavailable);
+      final page = await _repository.pageById(job.pageId);
+      if (page == null) throw StateError('The job page no longer exists');
+      if (page.isQuarantined) throw const _Stop(PublishFailure.deletion);
       final ownerUid = await _step(_identity.currentUserId());
       if (ownerUid == null) throw const PublishException(PublishErrorKind.transient, 'No user is signed in');
       switch (job.kind) {

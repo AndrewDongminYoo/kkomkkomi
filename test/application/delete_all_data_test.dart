@@ -75,14 +75,163 @@ void main() {
     );
     await publishing.saveUploadedPhoto(pageId: 'page-1', objectPath: object, photoPath: 'photos/visit-1/photo-1.jpg');
     publisher.objects[object] = fixturePhotoBytes();
-    localData.onErase = () => steps
-      ..addAll(publisher.calls)
-      ..add('deleteAccount x${identity.deletions}')
-      ..add('eraseAll')
-      ..add('deleteAll x${photoStore.deletionsOfAll}');
+    localData.onErase = () {
+      steps
+        ..addAll(publisher.calls)
+        ..add('deleteAccount x${identity.deletions}')
+        ..add('eraseAll')
+        ..add('deleteAll x${photoStore.deletionsOfAll}');
+      if (localData.failure == null) {
+        publishing.pagesById.clear();
+        publishing.jobs.clear();
+      }
+    };
   });
 
   tearDown(() => queue.dispose());
+
+  group('durable page deletion', () {
+    test('intent exists before deletePage and confirmation follows acknowledgement', () async {
+      await queue.hold();
+      final gate = publisher.gates['deletePage'] = Completer<void>();
+      final running = queue.deletePublished();
+      await pumpEventQueue();
+      try {
+        expect(publishing.pagesById['page-1']!.serverDeleteRequestedAt, isNotNull);
+        expect(publishing.pagesById['page-1']!.serverDeletedAt, isNull);
+      } finally {
+        gate.complete();
+        await running;
+      }
+      expect(publishing.pagesById['page-1']!.serverDeletedAt, isNotNull);
+    });
+
+    for (final device in [false, true]) {
+      test('confirmation remains when ${device ? 'database transaction' : 'account'} deletion fails', () async {
+        if (device) {
+          localData.failure = Exception('disk');
+        } else {
+          identity.deleteFailures.add(Exception('account'));
+        }
+        await expectLater(deleteAllData()(), failsAt(device ? DeletionStep.deviceData : DeletionStep.account));
+        final stored = publishing.pagesById['page-1']!;
+        expect(stored.serverDeleteRequestedAt, isNotNull);
+        expect(stored.serverDeletedAt, isNotNull);
+        expect(stored.isOpen, isFalse);
+      });
+    }
+
+    test('intent failure sends no page delete and stops later stages', () async {
+      publishing.beginDeletionFailure = Exception('intent transaction');
+      await expectLater(deleteAllData()(), failsAt(DeletionStep.publishedData));
+      expect(publisher.calls, isNot(contains('deletePage page-1')));
+      expect(identity.deletions, 0);
+      expect(localData.erasures, 0);
+      expect(publishing.pagesById['page-1']!.serverDeleteRequestedAt, isNull);
+    });
+
+    test('confirmation failure retains intent and explicit retry preserves its first time', () async {
+      publishing.markDeletedFailure = StateError('confirmation transaction');
+      final deletion = deleteAllData();
+      await expectLater(deletion(), failsAt(DeletionStep.publishedData));
+      final requestedAt = publishing.pagesById['page-1']!.serverDeleteRequestedAt;
+      expect(requestedAt, isNotNull);
+      expect(publishing.pagesById['page-1']!.serverDeletedAt, isNull);
+      expect(identity.deletions, 0);
+      expect(localData.erasures, 0);
+      publishing.markDeletedFailure = null;
+      identity.deleteFailures.add(Exception('keep rows'));
+      await expectLater(deletion(), failsAt(DeletionStep.account));
+      expect(publishing.pagesById['page-1']!.serverDeleteRequestedAt, requestedAt);
+      expect(publishing.pagesById['page-1']!.serverDeletedAt, isNotNull);
+    });
+
+    test('remote refusal keeps unresolved intent', () async {
+      publisher.failures['deletePage'] = [const PublishException(PublishErrorKind.refused, 'refused')];
+      await expectLater(deleteAllData()(), failsAt(DeletionStep.publishedData));
+      expect(publishing.pagesById['page-1']!.isServerDeletionPending, isTrue);
+      expect(queue.isHeld, isFalse);
+    });
+
+    for (final method in ['deletePhoto', 'deleteReport']) {
+      test('early $method failure does not add a page intent', () async {
+        publisher.failures[method] = [transient];
+        await expectLater(deleteAllData()(), failsAt(DeletionStep.publishedData));
+        expect(publishing.pagesById['page-1']!.isOpen, isTrue);
+        expect(publishing.pagesById['page-1']!.serverDeleteRequestedAt, isNull);
+      });
+    }
+
+    for (final phase in ['intent', 'remote', 'confirmation']) {
+      for (final fails in [false, true]) {
+        test('timeout during $phase retains the combined future until late ${fails ? 'failure' : 'success'}', () async {
+          final gate = Completer<void>();
+          switch (phase) {
+            case 'intent':
+              publishing.beginDeletionGate = gate;
+            case 'remote':
+              publisher.gates['deletePage'] = gate;
+              if (fails) publisher.failures['deletePage'] = [transient];
+            case 'confirmation':
+              publishing.markDeletedGate = gate;
+          }
+          await expectLater(
+            deleteAllData(stepTimeout: const Duration(milliseconds: 10))(),
+            failsAt(DeletionStep.publishedData),
+          );
+          expect(queue.isHeld, isTrue);
+          if (fails && phase != 'remote') {
+            gate.completeError(Exception('late SQLite failure'));
+          } else {
+            gate.complete();
+          }
+          await pumpEventQueue();
+          final stored = publishing.pagesById['page-1']!;
+          expect(stored.serverDeletedAt != null, !fails);
+          expect(stored.serverDeleteRequestedAt != null, !fails || phase != 'intent');
+          expect(identity.deletions, 0);
+          expect(localData.erasures, 0);
+          expect(queue.isHeld, isFalse);
+        });
+      }
+    }
+
+    test('late remote success stays held through delayed confirmation persistence', () async {
+      final remote = publisher.gates['deletePage'] = Completer<void>();
+      final marker = publishing.markDeletedGate = Completer<void>();
+      await expectLater(
+        deleteAllData(stepTimeout: const Duration(milliseconds: 10))(),
+        failsAt(DeletionStep.publishedData),
+      );
+      remote.complete();
+      await pumpEventQueue();
+      expect(queue.isHeld, isTrue);
+      expect(publishing.pagesById['page-1']!.serverDeletedAt, isNull);
+      marker.complete();
+      await pumpEventQueue();
+      expect(publishing.pagesById['page-1']!.serverDeletedAt, isNotNull);
+      expect(queue.isHeld, isFalse);
+      expect(identity.deletions, 0);
+    });
+
+    test('disposal lets a pending delete finish durable confirmation', () async {
+      await queue.hold();
+      final gate = publisher.gates['deletePage'] = Completer<void>();
+      final running = queue.deletePublished();
+      await pumpEventQueue();
+      await queue.dispose();
+      gate.complete();
+      await running;
+      expect(publishing.pagesById['page-1']!.serverDeletedAt, isNotNull);
+    });
+
+    test('device failure after photo-file cleanup begins can have no database rows', () async {
+      photoStore.deleteAllFailure = const FileSystemFailure();
+      await expectLater(deleteAllData()(), failsAt(DeletionStep.deviceData));
+      expect(publishing.pagesById, isEmpty);
+      expect(publishing.jobs, isEmpty);
+    });
+  });
 
   group('quarantine request races', () {
     test('rejects a share that read the page before intent committed', () async {
@@ -270,8 +419,9 @@ void main() {
       final job = await queue.publishVisit('visit-1');
       await pumpEventQueue();
       expect(publishing.jobs[job.id]!.status, PublishJobStatus.done);
-      expect(publisher.pages.keys, ['page-1']);
-      expect(publisher.reports.keys, ['page-1/visit-1']);
+      expect(job.pageId, isNot('page-1'));
+      expect(publisher.pages.keys, [job.pageId]);
+      expect(publisher.reports.keys, ['${job.pageId}/visit-1']);
 
       await deletion();
 
@@ -547,7 +697,7 @@ void main() {
       final job = await queue.publishVisit('visit-1');
       await pumpEventQueue();
       expect(identity.calls, asked);
-      expect((await publishing.jobsOfPage('page-1')).singleWhere((stored) => stored.id == job.id).attempts, 0);
+      expect((await publishing.jobsOfPage(job.pageId)).singleWhere((stored) => stored.id == job.id).attempts, 0);
 
       publisher.gates.remove('deletePage')!.complete();
       await running;
