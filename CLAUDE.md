@@ -41,7 +41,8 @@ After `flutterfire configure`, run `dart format lib/firebase_options.dart`, beca
 `firestore.rules` and `storage.rules` let anyone read a client page, its reports, and their photos by page ID while the page is open, and let the owner delete them.
 The operator approved each deploy. The rules and Hosting were first deployed from `ab6d8d7` on 2026-10-02, and again from `34d5d23` on 2026-10-02, after the account deletion merged, which added the owner delete to `firestore.rules` and published the privacy pages under `web/privacy/`.
 Hosting alone was deployed a third time from `bc4d57c` on 2026-10-03, after the client link pull request merged, which changed section 5 and the effective date of the privacy pages.
-The deployed rules equal the tracked ones at `34d5d23`, and the deployed Hosting files equal the tracked ones at `bc4d57c`.
+Hosting alone was deployed a fourth time from `d438781` on 2026-10-04, after the durable page deletion pull request (#32) merged, which changed the privacy pages; the same deploy carried a formatting-only change of `web/index.html` and `web/report/index.html`.
+The deployed rules equal the tracked ones at `34d5d23`, and the deployed Hosting files equal the tracked ones at `d438781`.
 A deploy is the operator's decision each time: do not deploy rules or Hosting without that approval.
 
 `storage.rules` reads the client page through `firestore.get`, which needs the Firebase Storage service agent (`service-146496738802@gcp-sa-firebasestorage.iam.gserviceaccount.com`) to hold `roles/firebaserules.firestoreServiceAgent`.
