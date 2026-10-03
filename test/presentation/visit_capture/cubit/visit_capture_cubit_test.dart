@@ -48,8 +48,11 @@ void main() {
     ),
   };
   final failure = Exception('storage failed');
+  const clientName = '한빛빌딩';
+  final client = Client(id: clientId, name: clientName, createdAt: DateTime.utc(2026, 9, 2));
 
   late MockVisitRepository visits;
+  late MockClientRepository clients;
   late FakePhotoCapture photoCapture;
   late FakePhotoStore photoStore;
   late FakeOpenCaptureRepository openCaptures;
@@ -57,6 +60,7 @@ void main() {
   VisitCaptureCubit build() => VisitCaptureCubit(
     visitId: visitId,
     visits: visits,
+    clients: clients,
     photoCapture: photoCapture,
     photoStore: photoStore,
     idGenerator: SequenceIdGenerator(),
@@ -71,6 +75,7 @@ void main() {
   }) => VisitCaptureState(
     status: status,
     visit: shown ?? visit,
+    clientName: clientName,
     previousPhotos: previousPhotos,
     photoDirectory: FakePhotoStore.directory,
     isStored: isStored,
@@ -100,12 +105,14 @@ void main() {
 
   setUp(() {
     visits = MockVisitRepository();
+    clients = MockClientRepository();
     photoCapture = FakePhotoCapture();
     photoStore = FakePhotoStore();
     openCaptures = FakeOpenCaptureRepository();
     when(() => visits.visitById(visitId)).thenAnswer((_) async => visit);
     when(() => visits.visitsOf(clientId)).thenAnswer((_) async => [visit, earlier]);
     when(() => visits.save(any())).thenAnswer((_) async {});
+    when(() => clients.clientById(clientId)).thenAnswer((_) async => client);
   });
 
   group('VisitCaptureStatus', () {
@@ -135,6 +142,17 @@ void main() {
       expect(loaded(), isNot(loaded(isSavingNote: true)));
       expect(
         loaded(),
+        isNot(
+          VisitCaptureState(
+            status: VisitCaptureStatus.ready,
+            visit: visit,
+            previousPhotos: previousPhotos,
+            photoDirectory: FakePhotoStore.directory,
+          ),
+        ),
+      );
+      expect(
+        loaded(),
         isNot(VisitCaptureState(status: VisitCaptureStatus.ready, visit: visit, photoDirectory: '/documents')),
       );
       expect(
@@ -147,7 +165,8 @@ void main() {
       expect(loaded().pathOf(oldPhoto), '/documents/photos/visit-2/old.jpg');
     });
 
-    test('copyWith keeps the previous photos, the photo directory, and what it is not given', () {
+    test('copyWith keeps the client name, the previous photos, the photo directory, and what it is not given', () {
+      expect(loaded().copyWith(visit: withNote('zone-1', '유리')).clientName, clientName);
       expect(loaded().copyWith(status: VisitCaptureStatus.saveFailed), loaded(status: VisitCaptureStatus.saveFailed));
       expect(loaded().copyWith(isStored: false), loaded(isStored: false));
       expect(loaded(isStored: false).copyWith(status: VisitCaptureStatus.capturing).isStored, isFalse);
@@ -183,6 +202,47 @@ void main() {
           expect(cubit.state.visit!.recordFor('zone-2'), hall);
           expect(cubit.state.previousPhotos.keys, ['zone-1']);
         },
+      );
+
+      blocTest<VisitCaptureCubit, VisitCaptureState>(
+        'reads the name of the client of the visit',
+        build: build,
+        act: (cubit) => cubit.load(),
+        verify: (cubit) {
+          expect(cubit.state.clientName, clientName);
+          verify(() => clients.clientById(clientId)).called(1);
+        },
+      );
+
+      blocTest<VisitCaptureCubit, VisitCaptureState>(
+        'shows the visit without a client name when storage has no such client',
+        setUp: () => when(() => clients.clientById(clientId)).thenAnswer((_) async => null),
+        build: build,
+        act: (cubit) => cubit.load(),
+        expect: () => [
+          VisitCaptureState(
+            status: VisitCaptureStatus.ready,
+            visit: visit,
+            previousPhotos: previousPhotos,
+            photoDirectory: FakePhotoStore.directory,
+          ),
+        ],
+      );
+
+      blocTest<VisitCaptureCubit, VisitCaptureState>(
+        'reports a failure to read the client, and shows the visit without a client name',
+        setUp: () => when(() => clients.clientById(clientId)).thenThrow(failure),
+        build: build,
+        act: (cubit) => cubit.load(),
+        expect: () => [
+          VisitCaptureState(
+            status: VisitCaptureStatus.ready,
+            visit: visit,
+            previousPhotos: previousPhotos,
+            photoDirectory: FakePhotoStore.directory,
+          ),
+        ],
+        errors: () => [failure],
       );
 
       blocTest<VisitCaptureCubit, VisitCaptureState>(

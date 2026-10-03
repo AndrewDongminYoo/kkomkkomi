@@ -36,6 +36,7 @@ final class VisitCaptureState {
   const new({
     this.status = VisitCaptureStatus.loading,
     this.visit,
+    this.clientName,
     this.previousPhotos = const {},
     this.photoDirectory = '',
     this.isStored = true,
@@ -46,6 +47,9 @@ final class VisitCaptureState {
 
   /// The visit, or null while it is not loaded.
   final Visit? visit;
+
+  /// The name of the client of [visit], or null while the visit is not loaded or storage did not give the client.
+  final String? clientName;
 
   /// The previous photos of each zone of the visit, by zone identifier. A zone without an earlier record has no entry.
   final Map<String, PreviousPhotos> previousPhotos;
@@ -72,6 +76,7 @@ final class VisitCaptureState {
       VisitCaptureState(
         status: status ?? this.status,
         visit: visit ?? this.visit,
+        clientName: clientName,
         previousPhotos: previousPhotos,
         photoDirectory: photoDirectory,
         isStored: isStored ?? this.isStored,
@@ -83,6 +88,7 @@ final class VisitCaptureState {
       other is VisitCaptureState &&
       other.status == status &&
       other.visit == visit &&
+      other.clientName == clientName &&
       other.photoDirectory == photoDirectory &&
       other.isStored == isStored &&
       other.isSavingNote == isSavingNote &&
@@ -92,6 +98,7 @@ final class VisitCaptureState {
   int get hashCode => Object.hash(
     status,
     visit,
+    clientName,
     photoDirectory,
     isStored,
     isSavingNote,
