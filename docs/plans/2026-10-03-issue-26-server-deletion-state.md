@@ -204,6 +204,10 @@ It would also change the current behavior after an early remote failure by barri
 Leave that extra state and behavior outside this minimum scope.
 Do not infer success or invent legacy confirmations to hide the gap.
 
+Operator decision, 2026-10-03: retain this minimum acknowledgement-only design and defer durable deletion intent and quarantine to [issue #29](https://github.com/AndrewDongminYoo/kkomkkomi/issues/29).
+The follow-up tracks the failure window, early-failure behavior, recovery decisions, and acceptance tests raised in [the CodeRabbit review](https://github.com/AndrewDongminYoo/kkomkkomi/pull/28#discussion_r4171729803).
+This is an intentional deferral; the gap remains and no stronger guarantee is implemented here.
+
 ## Implementation diff units
 
 1. **Model and migration:** `lib/application/client_page.dart`, `lib/persistence/schema.dart`, value tests, and database upgrade/reopen tests. Add version 4 and preserve the nullable time in every mapper and copy.
