@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:bloc_test/bloc_test.dart';
+import 'package:flutter/rendering.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:kkomkkomi/app/app.dart';
@@ -79,6 +80,7 @@ void main() {
     Exception? loadFailure,
     bool keepScreen = false,
     LostCaptureRecovery? recovery,
+    FakeClientRepository? clients,
   }) async {
     if (!keepScreen) useTallPhoneScreen(tester);
     visits = FakeVisitRepository(visits: [visit ?? current, ...history])..failure = loadFailure;
@@ -95,7 +97,7 @@ void main() {
       ),
       locale: locale,
       repositories: Repositories(
-        clients: FakeClientRepository(),
+        clients: clients ?? FakeClientRepository(),
         visits: visits,
         companyProfile: FakeCompanyProfileRepository(),
         publishing: MockPublishRepository(),
@@ -729,6 +731,137 @@ void main() {
         await pumpPage(tester, locale: const Locale('ko'));
 
         expect(reportButton('보고서 보기'), findsOneWidget);
+      });
+    });
+
+    group('title', () {
+      Client clientNamed(String name) => Client(id: clientId, name: name, createdAt: DateTime.utc(2026, 9, 2));
+
+      Finder inAppBar(String text) => find.descendant(of: find.byType(AppBar), matching: find.text(text));
+
+      testWidgets('names the client above the visit date, in the order of the report preview', (tester) async {
+        await pumpPage(tester, clients: FakeClientRepository(clients: [clientNamed('한빛빌딩')]));
+
+        expect(inAppBar('한빛빌딩'), findsOneWidget);
+        expect(inAppBar('October 1, 2026'), findsOneWidget);
+        expect(
+          tester.getRect(inAppBar('한빛빌딩')).bottom,
+          lessThanOrEqualTo(tester.getRect(inAppBar('October 1, 2026')).top),
+        );
+      });
+
+      testWidgets('shows the visit date alone when storage has no such client', (tester) async {
+        await pumpPage(tester);
+
+        expect(find.descendant(of: find.byType(AppBar), matching: find.byType(Text)), findsOneWidget);
+        expect(inAppBar('October 1, 2026'), findsOneWidget);
+      });
+
+      testWidgets('shows the visit date alone and the visit when storage fails to give the client', (tester) async {
+        await pumpPage(tester, clients: FakeClientRepository(clients: [clientNamed('한빛빌딩')])..failure = failure);
+
+        expect(find.descendant(of: find.byType(AppBar), matching: find.byType(Text)), findsOneWidget);
+        expect(inAppBar('October 1, 2026'), findsOneWidget);
+        expect(control('zone-1', 'Take Before Photo'), findsOneWidget);
+      });
+
+      for (final (locale, name, date) in [
+        (const Locale('en'), 'Hanbit Tower 3F Clinic', 'October 1, 2026'),
+        (const Locale('ko'), '한빛타워 메디컬센터 3층 사무실', '2026년 10월 1일'),
+      ]) {
+        testWidgets('fits a client name that wraps and the visit date in ${locale.languageCode}', (tester) async {
+          tester.useNarrowScreenWithLargestText();
+
+          await pumpPage(
+            tester,
+            locale: locale,
+            keepScreen: true,
+            clients: FakeClientRepository(clients: [clientNamed(name)]),
+          );
+
+          expect(tester.takeException(), isNull);
+          tester
+            ..expectWholeText(name)
+            ..expectWholeText(date);
+          // One line of the name is less than twice as tall as the line of the date, so the name takes two lines or more.
+          expect(
+            tester.getRect(inAppBar(name)).height,
+            greaterThanOrEqualTo(2 * tester.getRect(inAppBar(date)).height),
+            reason: '"$name" does not wrap',
+          );
+          // The AppBar clips its title without an overflow error, so each line must lie inside the AppBar.
+          final appBar = tester.getRect(find.byType(AppBar));
+          for (final text in [name, date]) {
+            final rect = tester.getRect(inAppBar(text));
+            expect(rect.top, greaterThanOrEqualTo(appBar.top), reason: '"$text" starts above the AppBar');
+            expect(rect.bottom, lessThanOrEqualTo(appBar.bottom), reason: '"$text" ends below the AppBar');
+          }
+          // The list of zones keeps room on the screen below the title.
+          expect(zone('zone-1'), findsOneWidget);
+        });
+      }
+
+      // The Text widgets of the title apply these settings of the system to their style, so the toolbar must too. The
+      // line height override makes each line taller, and the spacing overrides make the name wrap to one more line.
+      // The test font draws every weight at the same width, so the bold case cannot fail here; on a device, bold text
+      // can make the name wrap to one more line.
+      for (final (setting, apply) in <(String, void Function(TestPlatformDispatcher))>[
+        (
+          'bold text',
+          (dispatcher) => dispatcher.accessibilityFeaturesTestValue = const FakeAccessibilityFeatures(boldText: true),
+        ),
+        ('a line height override', (dispatcher) => dispatcher.lineHeightScaleFactorOverrideTestValue = 2),
+        ('a letter spacing override', (dispatcher) => dispatcher.letterSpacingOverrideTestValue = 12),
+        ('a word spacing override', (dispatcher) => dispatcher.wordSpacingOverrideTestValue = 100),
+      ]) {
+        testWidgets('fits a client name that wraps and the visit date with $setting', (tester) async {
+          tester.useNarrowScreenWithLargestText();
+          apply(tester.platformDispatcher);
+          addTearDown(tester.platformDispatcher.clearAllTestValues);
+          const name = 'Han Bit Tower';
+          const date = 'October 1, 2026';
+
+          await pumpPage(tester, keepScreen: true, clients: FakeClientRepository(clients: [clientNamed(name)]));
+
+          expect(tester.takeException(), isNull);
+          tester
+            ..expectWholeText(name)
+            ..expectWholeText(date);
+          final appBar = tester.getRect(find.byType(AppBar));
+          for (final text in [name, date]) {
+            final rect = tester.getRect(inAppBar(text));
+            expect(rect.top, greaterThanOrEqualTo(appBar.top), reason: '"$text" starts above the AppBar');
+            expect(rect.bottom, lessThanOrEqualTo(appBar.bottom), reason: '"$text" ends below the AppBar');
+          }
+        });
+      }
+
+      testWidgets('ends a client name that takes more than three lines in an ellipsis and keeps room for the zones', (
+        tester,
+      ) async {
+        tester.useNarrowScreenWithLargestText();
+        final name = List.filled(20, '한빛타워 메디컬센터').join(' ');
+
+        await pumpPage(
+          tester,
+          locale: const Locale('ko'),
+          keepScreen: true,
+          clients: FakeClientRepository(clients: [clientNamed(name)]),
+        );
+
+        expect(tester.takeException(), isNull);
+        final nameParagraph = tester.renderObject<RenderParagraph>(
+          find.descendant(of: inAppBar(name), matching: find.byType(RichText)),
+        );
+        expect(nameParagraph.didExceedMaxLines, isTrue, reason: 'the name is not cut');
+        tester.expectWholeText('2026년 10월 1일');
+        final appBar = tester.getRect(find.byType(AppBar));
+        for (final text in [name, '2026년 10월 1일']) {
+          expect(tester.getRect(inAppBar(text)).bottom, lessThanOrEqualTo(appBar.bottom), reason: '"$text" is clipped');
+        }
+        final screenHeight = tester.view.physicalSize.height / tester.view.devicePixelRatio;
+        expect(appBar.height, lessThan(screenHeight / 3));
+        expect(tester.getRect(zone('zone-1')).top, lessThan(screenHeight));
       });
     });
 

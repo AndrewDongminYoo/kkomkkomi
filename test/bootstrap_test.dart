@@ -349,7 +349,8 @@ void main() {
           photoCapture: photoCapture,
           photoStore: photoStore,
           openRepositories: () async => Repositories(
-            clients: mocks.clients,
+            // The visit screen that the recovery opens reads the client of the visit.
+            clients: FakeClientRepository(),
             visits: visits,
             companyProfile: mocks.companyProfile,
             publishing: mocks.publishing,

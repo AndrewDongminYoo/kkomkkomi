@@ -249,11 +249,12 @@ void main() {
         createdAt: DateTime.utc(2026, 10, 2, 1),
         zoneRecords: [ZoneRecord(zoneId: 'zone-1', zoneName: '로비')],
       );
+      final client = Client(id: 'client-1', name: '한빛빌딩', createdAt: DateTime.utc(2026, 9, 2));
 
       Future<void> pumpWithRecovery(WidgetTester tester, LostCaptureRecovery recovery) async {
         final mocks = mockRepositories();
         final repositories = Repositories(
-          clients: mocks.clients,
+          clients: FakeClientRepository(clients: [client]),
           visits: FakeVisitRepository(visits: [visit]),
           companyProfile: mocks.companyProfile,
           publishing: mocks.publishing,
@@ -282,6 +283,9 @@ void main() {
 
         expect(tester.widget<VisitCapturePage>(find.byType(VisitCapturePage)).visitId, 'visit-1');
         expect(tester.widget<VisitCapturePage>(find.byType(VisitCapturePage)).recovery, same(recovery));
+        // No client detail screen is under the visit, so the title is what tells which client the photo went to.
+        expect(find.descendant(of: find.byType(AppBar), matching: find.text('한빛빌딩')), findsOneWidget);
+        expect(find.descendant(of: find.byType(AppBar), matching: find.text('October 2, 2026')), findsOneWidget);
         expect(
           find.text('The app restarted while the camera was open. The photo you took is in this visit.'),
           findsOneWidget,

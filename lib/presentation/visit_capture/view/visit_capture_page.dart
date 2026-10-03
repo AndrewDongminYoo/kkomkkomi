@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:math' as math;
 
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:kkomkkomi/application/application.dart';
@@ -19,6 +20,20 @@ const double _photoAspectRatio = 4 / 3;
 
 /// The space between the before column and the after column of a zone.
 const _columnGap = 12.0;
+
+/// The largest text scale of the title of the AppBar, which is the scale that the AppBar itself clamps its title to,
+/// so that a large text size does not let the title take the screen.
+const _maxTitleTextScale = 1.34;
+
+/// The width of the back button before the title of the AppBar, which is the default leading width of the AppBar.
+const double _backButtonWidth = kToolbarHeight;
+
+/// The space above and below the title of the AppBar when the title is taller than the default toolbar.
+const _titleVerticalPadding = 8.0;
+
+/// The most lines of the client name in the title of the AppBar, the same as in the PDF of the report. A client name
+/// has no length limit, so a longer name ends in an ellipsis and the list of zones keeps room on the screen.
+const _clientNameMaxLines = 3;
 
 /// The screen of one visit: for each zone record a before photo, an after photo, the previous photos, and a note.
 class VisitCapturePage extends StatelessWidget {
@@ -41,6 +56,7 @@ class VisitCapturePage extends StatelessWidget {
         final cubit = VisitCaptureCubit(
           visitId: visitId,
           visits: context.read<VisitRepository>(),
+          clients: context.read<ClientRepository>(),
           photoCapture: context.read<PhotoCapture>(),
           photoStore: context.read<PhotoStore>(),
           idGenerator: context.read<IdGenerator>(),
@@ -107,15 +123,7 @@ class VisitCaptureView extends StatelessWidget {
               if (!didPop && isAnswered && !state.isStored) unawaited(_confirmLeave(context));
             },
             child: Scaffold(
-              appBar: AppBar(
-                title: visit == null
-                    ? null
-                    : Text(
-                        l10n.visitDateLabel(
-                          DateTime(visit.visitDate.year, visit.visitDate.month, visit.visitDate.day),
-                        ),
-                      ),
-              ),
+              appBar: _buildAppBar(context, state),
               body: SafeArea(
                 child: switch (visit) {
                   null when state.status == VisitCaptureStatus.loadFailed => LoadFailure(
@@ -131,6 +139,78 @@ class VisitCaptureView extends StatelessWidget {
           ),
         );
       },
+    );
+  }
+
+  /// The AppBar of the visit: the name of the client with the visit date under it, in the order of the report
+  /// preview, or the date alone when storage did not give the client.
+  ///
+  /// A client name can be long, and the AppBar cuts a title that is taller than its toolbar, so the toolbar takes
+  /// the height of the title at the width that the title has beside a back button. The name shows at most
+  /// [_clientNameMaxLines] lines, so the toolbar never takes the screen.
+  PreferredSizeWidget _buildAppBar(BuildContext context, VisitCaptureState state) {
+    final visit = state.visit;
+    if (visit == null) return AppBar();
+    final date = context.l10n.visitDateLabel(
+      DateTime(visit.visitDate.year, visit.visitDate.month, visit.visitDate.day),
+    );
+    final clientName = state.clientName;
+    if (clientName == null) return AppBar(title: Text(date));
+
+    final theme = Theme.of(context);
+    final lines = [
+      (clientName, theme.textTheme.titleMedium, _clientNameMaxLines),
+      (date, theme.textTheme.bodySmall?.copyWith(color: theme.colorScheme.onSurfaceVariant), null),
+    ];
+    final textScaler = MediaQuery.textScalerOf(context).clamp(maxScaleFactor: _maxTitleTextScale);
+    final width = math.max<double>(
+      0,
+      MediaQuery.sizeOf(context).width -
+          MediaQuery.paddingOf(context).horizontal -
+          _backButtonWidth -
+          2 * NavigationToolbar.kMiddleSpacing,
+    );
+    // A Text widget applies these settings of the system to its style, so the measurement applies them too.
+    final systemOverrides = TextStyle(
+      fontWeight: MediaQuery.boldTextOf(context) ? FontWeight.bold : null,
+      height: MediaQuery.maybeLineHeightScaleFactorOverrideOf(context),
+      letterSpacing: MediaQuery.maybeLetterSpacingOverrideOf(context),
+      wordSpacing: MediaQuery.maybeWordSpacingOverrideOf(context),
+    );
+    var titleHeight = 0.0;
+    for (final (text, style, maxLines) in lines) {
+      final painter = TextPainter(
+        text: TextSpan(text: text, style: (style ?? const TextStyle()).merge(systemOverrides)),
+        textDirection: Directionality.of(context),
+        textScaler: textScaler,
+        maxLines: maxLines,
+        ellipsis: maxLines == null ? null : '\u2026',
+        locale: Localizations.maybeLocaleOf(context),
+      )..layout(maxWidth: width);
+      titleHeight += painter.height;
+      painter.dispose();
+    }
+
+    return AppBar(
+      toolbarHeight: math.max(kToolbarHeight, titleHeight + 2 * _titleVerticalPadding),
+      title: MediaQuery.withClampedTextScaling(
+        maxScaleFactor: _maxTitleTextScale,
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            // The AppBar shows its title on one line with an ellipsis, which would cut a name that fits in a few lines.
+            for (final (text, style, maxLines) in lines)
+              Text(
+                text,
+                style: style,
+                softWrap: true,
+                maxLines: maxLines,
+                overflow: maxLines == null ? TextOverflow.visible : TextOverflow.ellipsis,
+              ),
+          ],
+        ),
+      ),
     );
   }
 

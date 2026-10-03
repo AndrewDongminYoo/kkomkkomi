@@ -14,6 +14,7 @@ class VisitCaptureCubit extends Cubit<VisitCaptureState> {
   new({
     required this._visitId,
     required this._visits,
+    required this._clients,
     required this._photoCapture,
     required this._photoStore,
     required this._idGenerator,
@@ -22,6 +23,7 @@ class VisitCaptureCubit extends Cubit<VisitCaptureState> {
 
   final String _visitId;
   final VisitRepository _visits;
+  final ClientRepository _clients;
   final PhotoCapture _photoCapture;
   final PhotoStore _photoStore;
   final IdGenerator _idGenerator;
@@ -30,10 +32,11 @@ class VisitCaptureCubit extends Cubit<VisitCaptureState> {
   /// The answer to the newest save: true when storage took its visit.
   Future<bool> _newestSave = Future.value(true);
 
-  /// Reads the visit, the previous photos of its zones, and the photo directory.
+  /// Reads the visit, the name of its client, the previous photos of its zones, and the photo directory.
   ///
-  /// A visit that storage does not have is a failed load, because no visit is ever deleted. A call does nothing
-  /// while the visit is on the screen, because storage can be behind the screen while a change is on its way.
+  /// A visit that storage does not have is a failed load, because no visit is ever deleted. A client that storage
+  /// does not give leaves the name out, and the visit shows all the same. A call does nothing while the visit is on
+  /// the screen, because storage can be behind the screen while a change is on its way.
   Future<void> load() async {
     if (state.visit != null) return;
     if (state.status != VisitCaptureStatus.loading) emit(const VisitCaptureState());
@@ -43,12 +46,14 @@ class VisitCaptureCubit extends Cubit<VisitCaptureState> {
         _show(const VisitCaptureState(status: VisitCaptureStatus.loadFailed));
         return;
       }
+      final clientName = await _clientNameOf(visit);
       final previousPhotos = await FindPreviousPhotos(visits: _visits)(visit);
       final photoDirectory = await _photoStore.directoryPath();
       _show(
         VisitCaptureState(
           status: VisitCaptureStatus.ready,
           visit: visit,
+          clientName: clientName,
           previousPhotos: previousPhotos,
           photoDirectory: photoDirectory,
         ),
@@ -56,6 +61,19 @@ class VisitCaptureCubit extends Cubit<VisitCaptureState> {
     } on Exception catch (error, stackTrace) {
       _report(error, stackTrace);
       _show(const VisitCaptureState(status: VisitCaptureStatus.loadFailed));
+    }
+  }
+
+  /// The name of the client of [visit], or null when storage does not give the client.
+  ///
+  /// The name only tells the person where the photos go, so a failure of storage is reported and does not fail the
+  /// load.
+  Future<String?> _clientNameOf(Visit visit) async {
+    try {
+      return (await _clients.clientById(visit.clientId))?.name;
+    } on Exception catch (error, stackTrace) {
+      _report(error, stackTrace);
+      return null;
     }
   }
 
