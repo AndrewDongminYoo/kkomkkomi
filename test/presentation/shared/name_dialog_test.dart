@@ -68,7 +68,7 @@ void main() {
       testWidgets('shows the problem of the ${entry.name} entry under the field', (tester) async {
         await pumpDialog(tester, entry: entry);
 
-        expect(tester.widget<TextField>(find.byType(TextField)).decoration!.errorText, message);
+        expect(tester.widget<TextField>(find.byType(TextField)).decoration!.errorMessage, message);
         expect(find.text(message), findsOneWidget);
       });
     }
@@ -77,7 +77,7 @@ void main() {
       testWidgets('shows no problem for the ${entry.name} entry', (tester) async {
         await pumpDialog(tester, entry: entry);
 
-        expect(tester.widget<TextField>(find.byType(TextField)).decoration!.errorText, isNull);
+        expect(tester.widget<TextField>(find.byType(TextField)).decoration!.errorMessage, isNull);
       });
     }
   });

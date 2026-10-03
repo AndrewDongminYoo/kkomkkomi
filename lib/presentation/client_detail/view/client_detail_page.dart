@@ -7,6 +7,7 @@ import 'package:kkomkkomi/l10n/l10n.dart';
 import 'package:kkomkkomi/presentation/client_detail/cubit/client_detail_cubit.dart';
 import 'package:kkomkkomi/presentation/client_detail/cubit/client_link_cubit.dart';
 import 'package:kkomkkomi/presentation/shared/confirm_dialog.dart';
+import 'package:kkomkkomi/presentation/shared/keep_all_text.dart';
 import 'package:kkomkkomi/presentation/shared/load_failure.dart';
 import 'package:kkomkkomi/presentation/shared/name_dialog.dart';
 import 'package:kkomkkomi/presentation/shared/notice.dart';
@@ -75,7 +76,7 @@ class ClientDetailView extends StatelessWidget {
           previous.status != current.status && current.status == ClientLinkStatus.requestFailed,
       listener: (context, _) => ScaffoldMessenger.of(context)
         ..hideCurrentSnackBar()
-        ..showSnackBar(SnackBar(content: Text(l10n.clientLinkRequestFailedMessage))),
+        ..showSnackBar(SnackBar(content: KeepAllText(l10n.clientLinkRequestFailedMessage))),
       child: BlocConsumer<ClientDetailCubit, ClientDetailState>(
         listenWhen: (previous, current) => previous.status != current.status,
         listener: (context, state) {
@@ -86,7 +87,7 @@ class ClientDetailView extends StatelessWidget {
           if (state.status == ClientDetailStatus.saveFailed) {
             ScaffoldMessenger.of(context)
               ..hideCurrentSnackBar()
-              ..showSnackBar(SnackBar(content: Text(l10n.saveFailedMessage)));
+              ..showSnackBar(SnackBar(content: KeepAllText(l10n.saveFailedMessage)));
           }
         },
         builder: (context, state) {
@@ -101,7 +102,7 @@ class ClientDetailView extends StatelessWidget {
             isSaving: state.status == ClientDetailStatus.saving || isRequestingLink,
             child: Scaffold(
               appBar: AppBar(
-                title: client == null ? null : Text(client.name),
+                title: client == null ? null : KeepAllText(client.name),
                 actions: [if (client != null) _ClientMenu(client: client)],
               ),
               body: SafeArea(
@@ -142,8 +143,8 @@ class _ClientMenu extends StatelessWidget {
         _ClientAction.archive => unawaited(_confirmArchive(context)),
       },
       itemBuilder: (context) => [
-        PopupMenuItem(value: _ClientAction.rename, child: Text(l10n.clientDetailRenameAction)),
-        PopupMenuItem(value: _ClientAction.archive, child: Text(l10n.clientDetailArchiveAction)),
+        PopupMenuItem(value: _ClientAction.rename, child: KeepAllText(l10n.clientDetailRenameAction)),
+        PopupMenuItem(value: _ClientAction.archive, child: KeepAllText(l10n.clientDetailArchiveAction)),
       ],
     );
   }
@@ -202,7 +203,7 @@ class _ClientContent extends StatelessWidget {
             // A visit keeps the zones that it started with, so a client without zones has no visit to start.
             child: FilledButton(
               onPressed: zones.isEmpty ? null : () => unawaited(_pickDateAndStartVisit(context)),
-              child: Text(l10n.clientDetailStartVisitButton),
+              child: KeepAllText(l10n.clientDetailStartVisitButton),
             ),
           ),
           _SectionTitle(l10n.zoneSectionTitle),
@@ -220,14 +221,14 @@ class _ClientContent extends StatelessWidget {
             child: OutlinedButton.icon(
               onPressed: () => _showAddZoneDialog(context),
               icon: const Icon(Icons.add),
-              label: Text(l10n.zoneAddButton),
+              label: KeepAllText(l10n.zoneAddButton),
             ),
           ),
           _SectionTitle(l10n.visitSectionTitle),
           if (visits.isEmpty) _SectionMessage(l10n.visitEmptyMessage),
           for (final visit in visits)
             ListTile(
-              title: Text(
+              title: KeepAllText(
                 l10n.visitDateLabel(DateTime(visit.visitDate.year, visit.visitDate.month, visit.visitDate.day)),
               ),
               trailing: const Icon(Icons.chevron_right),
@@ -298,7 +299,7 @@ class _LinkSection extends StatelessWidget {
             _SectionNotice(l10n.clientLinkLoadFailedMessage, tone: NoticeTone.error),
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 16),
-              child: OutlinedButton(onPressed: () => unawaited(cubit.load()), child: Text(l10n.loadRetryButton)),
+              child: OutlinedButton(onPressed: () => unawaited(cubit.load()), child: KeepAllText(l10n.loadRetryButton)),
             ),
           ],
         );
@@ -330,12 +331,12 @@ class _LinkSection extends StatelessWidget {
                   children: [
                     OutlinedButton(
                       onPressed: onAction ? () => unawaited(_confirmNewLink(context)) : null,
-                      child: Text(l10n.clientLinkReissueButton),
+                      child: KeepAllText(l10n.clientLinkReissueButton),
                     ),
                     const SizedBox(height: 8),
                     OutlinedButton(
                       onPressed: onAction ? () => unawaited(_confirmClose(context)) : null,
-                      child: Text(l10n.clientLinkCloseButton),
+                      child: KeepAllText(l10n.clientLinkCloseButton),
                     ),
                   ],
                 ),
@@ -391,7 +392,7 @@ class _SectionTitle extends StatelessWidget {
   Widget build(BuildContext context) {
     return Padding(
       padding: const EdgeInsets.fromLTRB(16, 24, 16, 8),
-      child: Semantics(header: true, child: Text(text, style: Theme.of(context).textTheme.titleMedium)),
+      child: Semantics(header: true, child: KeepAllText(text, style: Theme.of(context).textTheme.titleMedium)),
     );
   }
 }
@@ -403,7 +404,7 @@ class _SectionMessage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Padding(padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8), child: Text(text));
+    return Padding(padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8), child: KeepAllText(text));
   }
 }
 
@@ -418,7 +419,7 @@ class _SectionNotice extends StatelessWidget {
   Widget build(BuildContext context) {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-      child: Notice(tone: tone, children: [Text(text)]),
+      child: Notice(tone: tone, children: [KeepAllText(text)]),
     );
   }
 }
@@ -444,7 +445,7 @@ class _ZoneTile extends StatelessWidget {
         index: index,
         child: const SizedBox.square(dimension: 48, child: Icon(Icons.drag_handle)),
       ),
-      title: Text(zone.name),
+      title: KeepAllText(zone.name),
       trailing: Row(
         mainAxisSize: MainAxisSize.min,
         children: [

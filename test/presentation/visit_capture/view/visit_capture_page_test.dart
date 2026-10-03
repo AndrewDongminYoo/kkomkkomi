@@ -8,6 +8,7 @@ import 'package:kkomkkomi/app/app.dart';
 import 'package:kkomkkomi/application/application.dart';
 import 'package:kkomkkomi/domain/domain.dart';
 import 'package:kkomkkomi/presentation/presentation.dart';
+import 'package:kkomkkomi/presentation/shared/keep_all_text.dart';
 import 'package:kkomkkomi/presentation/shared/notice.dart';
 import 'package:material_ui/material_ui.dart';
 import 'package:mocktail/mocktail.dart';
@@ -753,14 +754,14 @@ void main() {
       testWidgets('shows the visit date alone when storage has no such client', (tester) async {
         await pumpPage(tester);
 
-        expect(find.descendant(of: find.byType(AppBar), matching: find.byType(Text)), findsOneWidget);
+        expect(find.descendant(of: find.byType(AppBar), matching: find.byType(KeepAllText)), findsOneWidget);
         expect(inAppBar('October 1, 2026'), findsOneWidget);
       });
 
       testWidgets('shows the visit date alone and the visit when storage fails to give the client', (tester) async {
         await pumpPage(tester, clients: FakeClientRepository(clients: [clientNamed('한빛빌딩')])..failure = failure);
 
-        expect(find.descendant(of: find.byType(AppBar), matching: find.byType(Text)), findsOneWidget);
+        expect(find.descendant(of: find.byType(AppBar), matching: find.byType(KeepAllText)), findsOneWidget);
         expect(inAppBar('October 1, 2026'), findsOneWidget);
         expect(control('zone-1', 'Take Before Photo'), findsOneWidget);
       });
@@ -835,6 +836,33 @@ void main() {
           }
         });
       }
+
+      testWidgets('makes room for a Korean client name that breaks only between words', (tester) async {
+        tester.useNarrowScreenWithLargestText();
+        // Broken between any two syllables, the name takes two lines; broken between words, it takes three.
+        const name = '서초구청별관 한빛메디컬 삼층사무실';
+        const date = '2026년 10월 1일';
+
+        await pumpPage(
+          tester,
+          locale: const Locale('ko'),
+          keepScreen: true,
+          clients: FakeClientRepository(clients: [clientNamed(name)]),
+        );
+
+        expect(tester.takeException(), isNull);
+        expect(
+          tester.getRect(inAppBar(name)).height,
+          greaterThanOrEqualTo(3 * tester.getRect(inAppBar(date)).height),
+          reason: '"$name" does not take three lines',
+        );
+        final appBar = tester.getRect(find.byType(AppBar));
+        for (final text in [name, date]) {
+          final rect = tester.getRect(inAppBar(text));
+          expect(rect.top, greaterThanOrEqualTo(appBar.top), reason: '"$text" starts above the AppBar');
+          expect(rect.bottom, lessThanOrEqualTo(appBar.bottom), reason: '"$text" ends below the AppBar');
+        }
+      });
 
       testWidgets('ends a client name that takes more than three lines in an ellipsis and keeps room for the zones', (
         tester,

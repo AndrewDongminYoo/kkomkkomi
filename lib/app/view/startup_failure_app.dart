@@ -1,5 +1,6 @@
 import 'package:kkomkkomi/app/view/app_theme.dart';
 import 'package:kkomkkomi/l10n/l10n.dart';
+import 'package:kkomkkomi/presentation/shared/keep_all_text.dart';
 import 'package:material_ui/material_ui.dart';
 
 /// The app that `bootstrap` shows while the database does not open: a message and a retry control.
@@ -25,9 +26,9 @@ class StartupFailureApp extends StatelessWidget {
                   child: Column(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      Text(l10n.startupFailureMessage, textAlign: TextAlign.center),
+                      KeepAllText(l10n.startupFailureMessage, textAlign: TextAlign.center),
                       const SizedBox(height: 16),
-                      FilledButton(onPressed: onRetry, child: Text(l10n.startupFailureRetryButton)),
+                      FilledButton(onPressed: onRetry, child: KeepAllText(l10n.startupFailureRetryButton)),
                     ],
                   ),
                 ),

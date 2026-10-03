@@ -9,6 +9,7 @@ import 'package:kkomkkomi/domain/domain.dart';
 import 'package:kkomkkomi/export/export.dart';
 import 'package:kkomkkomi/l10n/l10n.dart';
 import 'package:kkomkkomi/presentation/presentation.dart';
+import 'package:kkomkkomi/presentation/shared/keep_all_text.dart';
 import 'package:kkomkkomi/presentation/shared/notice.dart';
 import 'package:material_ui/material_ui.dart';
 import 'package:mocktail/mocktail.dart';
@@ -1062,7 +1063,7 @@ void main() {
           await pumpView(tester, shown(VisitReportStatus.ready));
 
           final bar = find.ancestor(of: find.text('Share link'), matching: find.byType(Column)).first;
-          expect(find.descendant(of: bar, matching: find.byType(Text)), findsNWidgets(2));
+          expect(find.descendant(of: bar, matching: find.byType(KeepAllText)), findsNWidgets(2));
         });
       }
 
