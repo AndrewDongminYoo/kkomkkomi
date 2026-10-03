@@ -105,7 +105,15 @@ class _GatedRepository implements PublishRepository {
   Future<List<PublishJob>> jobsOfPage(String pageId) => _inner.jobsOfPage(pageId);
 
   @override
-  Future<void> stopPendingJobs(PublishFailure reason) => _inner.stopPendingJobs(reason);
+  Future<List<PublishJob>> stopPendingJobs(PublishFailure reason) => _inner.stopPendingJobs(reason);
+
+  @override
+  Future<List<PublishJob>> beginPageServerDeletion(String pageId, DateTime at) =>
+      _inner.beginPageServerDeletion(pageId, at);
+
+  @override
+  Future<List<PublishJob>> markPageServerDeleted(String pageId, DateTime at) =>
+      _inner.markPageServerDeleted(pageId, at);
 
   @override
   Future<void> clearRetryDelays() => _inner.clearRetryDelays();

@@ -3,7 +3,7 @@ import 'package:kkomkkomi/application/publish_job.dart';
 
 /// Stores the client pages, the publish jobs, and which photo file the app uploaded to which object.
 abstract interface class PublishRepository {
-  /// The open page of the client with [clientId], or null when the client has none.
+  /// The eligible page with no revoke, deletion intent, or confirmation, or null when none exists.
   ///
   /// When the client has none and [create] is given, stores the page that [create] makes and returns it, in one
   /// transaction, so that a client never gets two open pages.
@@ -12,10 +12,10 @@ abstract interface class PublishRepository {
   /// The page with [id], or null when none exists.
   Future<ClientPage?> pageById(String id);
 
-  /// Every page that the app made, open and revoked, oldest first.
+  /// Every page, including revoked and quarantined pages, oldest first.
   Future<List<ClientPage>> pages();
 
-  /// Adds [job] and returns it.
+  /// Adds [job] and returns it, rejecting an absent or quarantined page inside the transaction.
   ///
   /// When a pending publish job for the same page and visit exists, adds nothing and returns that job after
   /// [PublishJob.restart], so that a visit is not published twice at one time.
@@ -46,8 +46,18 @@ abstract interface class PublishRepository {
   Future<List<PublishJob>> pendingJobs();
 
   /// Stops every pending job, publish and revoke, with [reason], in one transaction. The jobs keep their rows, so
-  /// [jobsOfPage] still lists them.
-  Future<void> stopPendingJobs(PublishFailure reason);
+  /// [jobsOfPage] still lists them. Returns only jobs changed by this call.
+  Future<List<PublishJob>> stopPendingJobs(PublishFailure reason);
+
+  /// Records the first deletion intent and stops this page's pending jobs, in one transaction.
+  ///
+  /// Returns only jobs changed by this call. Intent does not confirm remote deletion.
+  Future<List<PublishJob>> beginPageServerDeletion(String pageId, DateTime at);
+
+  /// Records the first backend deletion acknowledgement and stops pending jobs, in one transaction.
+  ///
+  /// Keeps intent, revoke time, and completed/failed history, and returns only changed jobs.
+  Future<List<PublishJob>> markPageServerDeleted(String pageId, DateTime at);
 
   /// Every job of the page with [pageId], oldest first.
   Future<List<PublishJob>> jobsOfPage(String pageId);

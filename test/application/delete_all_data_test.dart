@@ -84,6 +84,47 @@ void main() {
 
   tearDown(() => queue.dispose());
 
+  group('quarantine request races', () {
+    test('rejects a share that read the page before intent committed', () async {
+      await queue.hold();
+      final gate = publishing.beforeEnqueueGate = Completer<void>();
+      final request = queue.publishVisit('visit-1');
+      await pumpEventQueue();
+      final rejected = expectLater(request, throwsStateError);
+      await publishing.beginPageServerDeletion('page-1', DateTime.utc(2026, 10, 3));
+      gate.complete();
+      await rejected;
+      expect(publisher.calls, isEmpty);
+      expect(await publishing.pendingJobs(), isEmpty);
+    });
+
+    test('a delayed revoke cannot add work after intent committed', () async {
+      await queue.hold();
+      final gate = publishing.revokeGate = Completer<void>();
+      final request = queue.revokeClientPage('client-1');
+      await pumpEventQueue();
+      await publishing.beginPageServerDeletion('page-1', DateTime.utc(2026, 10, 3));
+      gate.complete();
+      expect(await request, isNull);
+      expect(publishing.jobs.values.where((job) => job.kind == PublishJobKind.revoke), isEmpty);
+      expect(publisher.calls, isEmpty);
+    });
+
+    test('a delayed reissue never republishes historical visits from an intent page', () async {
+      await queue.hold();
+      final gate = publishing.revokeGate = Completer<void>();
+      final request = queue.reissueClientPage('client-1');
+      await pumpEventQueue();
+      await publishing.beginPageServerDeletion('page-1', DateTime.utc(2026, 10, 3));
+      gate.complete();
+      final fresh = await request;
+      expect(fresh.id, isNot('page-1'));
+      expect(fresh.isOpen, isTrue);
+      expect(publishing.jobs.values, hasLength(1));
+      expect(publisher.calls, isEmpty);
+    });
+  });
+
   group('DeleteAllData', () {
     test('deletes the photos, the reports, the pages, the account, and then the data on the device', () async {
       await deleteAllData()();
