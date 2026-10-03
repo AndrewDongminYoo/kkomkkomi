@@ -44,6 +44,48 @@ void main() {
 
   tearDown(() => publishQueue.dispose());
 
+  for (final step in [DeletionStep.account, DeletionStep.deviceData]) {
+    test('page confirmation keeps Company profile failure at ${step.name}', () async {
+      final publishing = FakePublishRepository();
+      final page = ClientPage(id: 'page', clientId: 'client', createdAt: DateTime.utc(2026));
+      publishing.pagesById[page.id] = page;
+      final backend = FakePublisher();
+      final identity = FakeIdentity(userId: 'owner');
+      if (step == DeletionStep.account) identity.deleteFailures.add(failure);
+      if (step == DeletionStep.deviceData) photoStore.deleteAllFailure = failure;
+      localData.onErase = () {
+        publishing.pagesById.clear();
+        publishing.jobs.clear();
+      };
+      final queue = publishQueueOf(
+        Repositories(
+          clients: FakeClientRepository(),
+          visits: FakeVisitRepository(),
+          companyProfile: FakeCompanyProfileRepository(),
+          publishing: publishing,
+          openCaptures: FakeOpenCaptureRepository(),
+          localData: localData,
+        ),
+        publisher: backend,
+      );
+      final cubit = CompanyProfileCubit(
+        companyProfile: companyProfile,
+        deleteAllData: DeleteAllData(
+          publishQueue: queue,
+          identity: identity,
+          localData: localData,
+          photoStore: photoStore,
+        ),
+      );
+      await cubit.deleteAllData();
+      expect(cubit.state.deletionFailure, step);
+      if (step == DeletionStep.account) expect(publishing.pagesById[page.id]!.serverDeletedAt, isNotNull);
+      if (step == DeletionStep.deviceData) expect(publishing.pagesById, isEmpty);
+      await cubit.close();
+      await queue.dispose();
+    });
+  }
+
   group('CompanyProfileState', () {
     test('is equal to a state with the same fields', () {
       expect(ready(name: '반짝 클린'), ready(name: '반짝 클린'));

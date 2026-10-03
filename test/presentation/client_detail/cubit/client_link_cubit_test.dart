@@ -74,11 +74,128 @@ void main() {
     await publish();
     final cubit = build();
     await cubit.load();
+    await pumpEventQueue();
     expect(cubit.state, const ClientLinkState(status: ClientLinkStatus.ready, hasOpenLink: true));
     return cubit;
   }
 
   group('ClientLinkCubit', () {
+    group('durable page feedback', () {
+      test('intent and confirmation without revoke update automatically with no stopped jobs', () async {
+        final cubit = await loadedWithOpenLink();
+        await queue.hold();
+        final gate = publisher.gates['deletePage'] = Completer<void>();
+        final deleting = queue.deletePublished();
+        await pumpEventQueue();
+        expect(cubit.state, const ClientLinkState(status: ClientLinkStatus.ready, hasUnfinishedDeletion: true));
+        gate.complete();
+        await deleting;
+        await pumpEventQueue();
+        expect(cubit.state, const ClientLinkState(status: ClientLinkStatus.ready, hasClosedLink: true));
+        await cubit.close();
+      });
+
+      test('confirmed old page plus fresh open selects the current open state', () async {
+        final cubit = await loadedWithOpenLink();
+        await queue.hold();
+        await queue.deletePublished();
+        queue.release();
+        await publish();
+        expect(
+          cubit.state,
+          const ClientLinkState(status: ClientLinkStatus.ready, hasOpenLink: true, hasClosedLink: true),
+        );
+        await cubit.close();
+      });
+
+      test('old intent plus fresh open keeps a warning and current controls', () async {
+        final cubit = await loadedWithOpenLink();
+        await queue.hold();
+        publisher.failures['deletePage'] = [refused];
+        await expectLater(queue.deletePublished(), throwsA(refused));
+        queue.release();
+        await publish();
+        expect(
+          cubit.state,
+          const ClientLinkState(status: ClientLinkStatus.ready, hasOpenLink: true, hasUnfinishedDeletion: true),
+        );
+        await cubit.close();
+      });
+
+      test('a current refresh failure hides stale open controls and retry reloads', () async {
+        final cubit = await loadedWithOpenLink();
+        await queue.hold();
+        final gate = publisher.gates['deletePage'] = Completer<void>();
+        final deleting = queue.deletePublished();
+        await pumpEventQueue();
+        final readGate = publishing.pagesGate = Completer<void>();
+        gate.complete();
+        await deleting;
+        await pumpEventQueue();
+        readGate.completeError(Exception('storage unavailable'));
+        await pumpEventQueue();
+        expect(cubit.state, const ClientLinkState(status: ClientLinkStatus.loadFailed));
+        expect(cubit.state.takesAction, isFalse);
+        await cubit.load();
+        await pumpEventQueue();
+        expect(cubit.state.hasClosedLink, isTrue);
+        await cubit.close();
+      });
+
+      for (final action in ['load', 'close', 'reissue']) {
+        test('an older read error does not overwrite a newer $action result', () async {
+          final cubit = await loadedWithOpenLink();
+          final gate = publishing.pagesGate = Completer<void>();
+          final reading = cubit.load();
+          await pumpEventQueue();
+          if (action == 'load') await cubit.load();
+          await pumpEventQueue();
+          if (action == 'close') {
+            await cubit.load();
+            await pumpEventQueue();
+            await cubit.closeLink();
+          }
+          if (action == 'reissue') {
+            await cubit.load();
+            await pumpEventQueue();
+            await cubit.makeNewLink();
+          }
+          await pumpEventQueue();
+          final current = cubit.state;
+          gate.completeError(Exception('old read failed'));
+          await reading;
+          expect(cubit.state, current);
+          expect(observer.errors, isEmpty);
+          await cubit.close();
+        });
+      }
+
+      test('page invalidations for another client do not refresh this client', () async {
+        final cubit = await loadedWithOpenLink();
+        publishing.pagesById.clear();
+        publishing.pagesById['other'] = ClientPage(id: 'other', clientId: 'other-client', createdAt: visit.createdAt);
+        await queue.hold();
+        await queue.deletePublished();
+        await pumpEventQueue();
+        expect(cubit.state.hasOpenLink, isTrue);
+        await cubit.close();
+      });
+
+      test('closed Cubit cancels both subscriptions and ignores an in-flight error', () async {
+        final cubit = await loadedWithOpenLink();
+        final gate = publishing.pagesGate = Completer<void>();
+        final reading = cubit.load();
+        await pumpEventQueue();
+        await cubit.close();
+        gate.completeError(Exception('closed read'));
+        await reading;
+        await queue.hold();
+        await queue.deletePublished();
+        await pumpEventQueue();
+        expect(observer.errors, isEmpty);
+      });
+    });
+
     group('load', () {
       test('shows nothing about links in a flavor without a backend', () async {
         publisher.isAvailable = false;
@@ -86,6 +203,7 @@ void main() {
         final cubit = build();
 
         await cubit.load();
+        await pumpEventQueue();
 
         expect(cubit.state, const ClientLinkState(status: ClientLinkStatus.unavailable));
         expect(cubit.state.takesAction, isFalse);
@@ -97,6 +215,7 @@ void main() {
         final cubit = build();
 
         await cubit.load();
+        await pumpEventQueue();
 
         expect(cubit.state, const ClientLinkState(status: ClientLinkStatus.ready));
         expect(cubit.state.takesAction, isTrue);
@@ -113,6 +232,7 @@ void main() {
         final cubit = build();
 
         await cubit.load();
+        await pumpEventQueue();
         expect(cubit.state, const ClientLinkState(status: ClientLinkStatus.loadFailed));
         expect(cubit.state.takesAction, isFalse);
         expect(observer.errors, [publishing.failure]);
@@ -121,6 +241,7 @@ void main() {
         final states = <ClientLinkState>[];
         final subscription = cubit.stream.listen(states.add);
         await cubit.load();
+        await pumpEventQueue();
         await pumpEventQueue();
 
         expect(states, [const ClientLinkState(), const ClientLinkState(status: ClientLinkStatus.ready)]);
@@ -131,6 +252,7 @@ void main() {
       test('shows the link that a publish gives the client while the screen is open', () async {
         final cubit = build();
         await cubit.load();
+        await pumpEventQueue();
 
         await publish();
 
@@ -148,6 +270,7 @@ void main() {
 
         await publish();
         await cubit.load();
+        await pumpEventQueue();
         const later = ClientLinkState(status: ClientLinkStatus.ready, hasOpenLink: true);
         expect(cubit.state, later);
 
@@ -207,8 +330,8 @@ void main() {
         await cubit.close();
       });
 
-      test('says that the deletion of all data did not finish, and not that the close failed, when the deletion '
-          'stopped the revoke job', () async {
+      test('suppresses an old close warning once page deletion is confirmed '
+          'after it stopped the revoke job', () async {
         final cubit = await loadedWithOpenLink();
         publisher.failures['revokePage'] = [Exception('offline')];
         await cubit.closeLink();
@@ -221,15 +344,16 @@ void main() {
         await queue.deletePublished();
         queue.release();
         await cubit.load();
+        await pumpEventQueue();
 
         final job = publishing.jobs.values.singleWhere((job) => job.kind == PublishJobKind.revoke);
         expect((job.status, job.failure), (PublishJobStatus.failed, PublishFailure.deletion));
         expect(publisher.calls.last, startsWith('deletePage'));
-        expect(cubit.state, const ClientLinkState(status: ClientLinkStatus.ready, hasUnfinishedDeletion: true));
+        expect(cubit.state, const ClientLinkState(status: ClientLinkStatus.ready, hasClosedLink: true));
         await cubit.close();
       });
 
-      test('says both when one close failed and the deletion of all data stopped another', () async {
+      test('confirmation suppresses only its own warnings while another deletion is unconfirmed', () async {
         final cubit = await loadedWithOpenLink();
         publisher.failures['revokePage'] = [refused];
         await cubit.makeNewLink();
@@ -239,13 +363,15 @@ void main() {
         await pumpEventQueue();
 
         await queue.hold();
-        await queue.deletePublished();
+        publisher.failures['deletePage'] = [null, refused];
+        await expectLater(queue.deletePublished(), throwsA(refused));
         queue.release();
         await cubit.load();
+        await pumpEventQueue();
 
         expect(
           cubit.state,
-          const ClientLinkState(status: ClientLinkStatus.ready, hasFailedClose: true, hasUnfinishedDeletion: true),
+          const ClientLinkState(status: ClientLinkStatus.ready, hasClosedLink: true, hasUnfinishedDeletion: true),
         );
         await cubit.close();
       });
@@ -263,7 +389,7 @@ void main() {
         await cubit.close();
       });
 
-      test('says that the link is closing when storage took the close and the read after it fails', () async {
+      test('shows retry when storage took the close but a current read fails', () async {
         final cubit = await loadedWithOpenLink();
         final gate = publishing.revokeGate = Completer<void>();
         final closing = cubit.closeLink();
@@ -272,7 +398,7 @@ void main() {
         gate.complete();
 
         await closing;
-        expect(cubit.state, const ClientLinkState(status: ClientLinkStatus.ready, isClosing: true));
+        expect(cubit.state, const ClientLinkState(status: ClientLinkStatus.loadFailed));
         expect(observer.errors, [publishing.failure]);
 
         // The revoke job ends, and the read after it fails too, so the state keeps what it showed.
@@ -281,12 +407,12 @@ void main() {
           publishing.jobs.values.singleWhere((job) => job.kind == PublishJobKind.revoke).status,
           PublishJobStatus.done,
         );
-        expect(cubit.state, const ClientLinkState(status: ClientLinkStatus.ready, isClosing: true));
+        expect(cubit.state, const ClientLinkState(status: ClientLinkStatus.loadFailed));
         expect(observer.errors, [publishing.failure, publishing.failure]);
         await cubit.close();
       });
 
-      test('says that no link is open, and not that one is closing, when a revoke came first and the read after the '
+      test('shows retry when a revoke came first and the read after the '
           'close fails', () async {
         final cubit = await loadedWithOpenLink();
         final gate = publishing.revokeGate = Completer<void>();
@@ -300,7 +426,7 @@ void main() {
 
         await closing;
 
-        expect(cubit.state, const ClientLinkState(status: ClientLinkStatus.ready));
+        expect(cubit.state, const ClientLinkState(status: ClientLinkStatus.loadFailed));
         expect(publishing.jobs.values.where((job) => job.kind == PublishJobKind.revoke), isEmpty);
         expect(observer.errors, [publishing.failure]);
         await cubit.close();
@@ -309,6 +435,7 @@ void main() {
       test('does nothing while the client has no open link, and while a request is on its way', () async {
         final cubit = build();
         await cubit.load();
+        await pumpEventQueue();
 
         await cubit.closeLink();
         expect(cubit.state, const ClientLinkState(status: ClientLinkStatus.ready));

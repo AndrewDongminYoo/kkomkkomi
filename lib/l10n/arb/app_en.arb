@@ -502,7 +502,7 @@
     "@clientLinkCloseFailedMessage": {
         "description": "Shown when the close of a link stopped for a reason that a retry does not fix. The web report page links to the privacy policy at its bottom"
     },
-    "clientLinkDeletionUnfinishedMessage": "Delete All Data didn't finish, so a link you sent may still open the reports. To finish, use Delete All Data in Company profile again.",
+    "clientLinkDeletionUnfinishedMessage": "A previous link may still open because its deletion is unconfirmed. A new link does not close it. To finish deleting all data, use Delete All Data in Company profile again.",
     "@clientLinkDeletionUnfinishedMessage": {
         "description": "Shown when Delete All Data stopped the close of a link and then did not finish"
     },

@@ -35,7 +35,7 @@ final class ClientLinkState {
 
   final ClientLinkStatus status;
 
-  /// Whether the client has an open link, which anyone who has it can open.
+  /// Whether the client has an eligible open page with no locally recorded revoke or deletion.
   final bool hasOpenLink;
 
   /// Whether a link of the client is closed on the phone and not yet on the backend, so that it can still open.
@@ -45,9 +45,8 @@ final class ClientLinkState {
   /// backend, so that the link still opens.
   final bool hasFailedClose;
 
-  /// Whether the deletion of all data stopped the close of a link of the client and then did not finish, so that the
-  /// link may still open. The deletion deletes the page after it stops the close, so the page is gone when the
-  /// deletion failed at a later step, and not when it failed at that delete.
+  /// Whether an earlier page has unconfirmed deletion intent or a deletion-stopped revoke. A new page does not
+  /// close it. Confirmation suppresses warnings for that page, independently of whole-app deletion stages.
   final bool hasUnfinishedDeletion;
 
   /// Whether a link of the client is closed on the backend.

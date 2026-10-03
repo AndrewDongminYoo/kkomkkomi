@@ -910,8 +910,8 @@ void main() {
           "Can't close a link you sent, so it can still open the reports. To have it closed, write to the contact in "
           'the privacy policy at the bottom of a report page.',
       deletionUnfinished:
-          "Delete All Data didn't finish, so a link you sent may still open the reports. To finish, use Delete All "
-          'Data in Company profile again.',
+          "A previous link may still open because its deletion is unconfirmed. A new link does not close it. To finish "
+          'deleting all data, use Delete All Data in Company profile again.',
       loadFailed: "Can't load the link. Try again.",
       retry: 'Try Again',
       close: 'Close Link',
@@ -934,7 +934,8 @@ void main() {
       closed: '링크를 막았어요. 보낸 링크는 더 이상 열리지 않아요. 다음에 링크로 공유하면 새 링크가 만들어져요.',
       closing: '보낸 링크를 막고 있어요. 다 막을 때까지는 그 링크로 보고서가 열릴 수 있어요.',
       failed: '보낸 링크를 막지 못해서 그 링크로 보고서가 아직 열릴 수 있어요. 링크를 막으려면 보고서 페이지 아래의 개인정보 처리방침에 있는 연락처로 요청해 주세요.',
-      deletionUnfinished: '모든 데이터 지우기가 끝나지 않아서 보낸 링크로 보고서가 아직 열릴 수 있어요. 회사 정보에서 모든 데이터 지우기를 다시 해 주세요.',
+      deletionUnfinished:
+          '이전 링크가 지워졌는지 확인되지 않아 보고서가 아직 열릴 수 있어요. 새 링크를 만들어도 이전 링크는 닫히지 않아요. 회사 정보에서 모든 데이터 지우기를 다시 해 주세요.',
       loadFailed: '링크를 불러오지 못했어요. 다시 시도해 주세요.',
       retry: '다시 불러오기',
       close: '링크 막기',
@@ -1047,6 +1048,62 @@ void main() {
       await tester.tap(find.widgetWithText(FilledButton, confirm ?? button));
       await tester.pumpAndSettle();
     }
+
+    testWidgets('intent-only page warns without old link controls', (tester) async {
+      storePage(openPage.requestServerDeletion(created));
+      await pumpLinkPage(tester);
+      await scrollTo(tester, en.deletionUnfinished);
+      expect(find.text(en.close), findsNothing);
+      expect(find.text(en.reissue), findsNothing);
+      expect(find.text(en.open), findsNothing);
+      expect(find.text(en.closed), findsNothing);
+    });
+
+    testWidgets('confirmed deletion uses closed copy without a revoke job', (tester) async {
+      storePage(openPage.confirmServerDeletion(created));
+      await pumpLinkPage(tester);
+      await scrollTo(tester, en.closed);
+      expect(find.text(en.close), findsNothing);
+      expect(find.text(en.deletionUnfinished), findsNothing);
+    });
+
+    for (final confirmed in [false, true]) {
+      testWidgets('fresh open controls coexist with old page confirmed=$confirmed', (tester) async {
+        final old = ClientPage(
+          id: 'old',
+          clientId: clientId,
+          createdAt: created,
+          serverDeleteRequestedAt: created,
+          serverDeletedAt: confirmed ? created : null,
+        );
+        storePage(old);
+        storePage(openPage);
+        await pumpLinkPage(tester);
+        await scrollTo(tester, en.open);
+        expect(find.text(en.close), findsOneWidget);
+        expect(find.text(en.reissue), findsOneWidget);
+        expect(find.text(en.closed), findsNothing);
+        if (!confirmed) {
+          await scrollTo(tester, en.deletionUnfinished);
+          expect(find.text(en.deletionUnfinished), findsOneWidget);
+        } else {
+          expect(find.text(en.deletionUnfinished), findsNothing);
+        }
+      });
+    }
+
+    testWidgets('failed link read shows retry and no stale controls, then reloads', (tester) async {
+      storePage(openPage);
+      publishing.failure = Exception('read failed');
+      await pumpLinkPage(tester);
+      await scrollTo(tester, en.retry);
+      expect(find.text(en.close), findsNothing);
+      publishing.failure = null;
+      await tester.tap(find.text(en.retry));
+      await tester.pumpAndSettle();
+      await scrollTo(tester, en.open);
+      expect(find.text(en.close), findsOneWidget);
+    });
 
     testWidgets('shows no link section in a flavor without a backend', (tester) async {
       await pumpPage(tester, visits: [september]);

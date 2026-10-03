@@ -348,6 +348,7 @@ class _LinkSection extends StatelessWidget {
   /// What the screen says about the open link in [state], or null while it says only that a link is closing, did not
   /// close, or waits for the deletion of all data to finish.
   static String? _linkMessageOf(ClientLinkState state, AppLocalizations l10n) {
+    // The current open page takes priority; warnings still describe any earlier unconfirmed page.
     if (state.hasOpenLink) return l10n.clientLinkOpenMessage;
     // A link is closed only when its revoke job is done on the backend.
     if (state.isClosing || state.hasFailedClose || state.hasUnfinishedDeletion) return null;

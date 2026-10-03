@@ -8,8 +8,8 @@ part 'client_link_state.dart';
 /// Shows the link of one client, closes it, and replaces it with a new link, through the publish queue of the app.
 ///
 /// A close is done on the phone when storage takes it, and on the backend only when its revoke job is done. So the
-/// state reads the revoke jobs of the client again at each change of a job, and says that a link is closed only after
-/// its job is done. A job that fails for a reason that a retry can fix stays pending, and the link stays closing.
+/// state reads pages and revoke jobs at committed changes. A link is closed after a completed revoke or confirmed
+/// page deletion. Unconfirmed deletion intent quarantines its page but does not prove that access is removed. A job that fails for a reason that a retry can fix stays pending, and the link stays closing.
 class ClientLinkCubit extends Cubit<ClientLinkState> {
   new({required this._clientId, required this._publishQueue}) : super(const ClientLinkState());
 
@@ -17,6 +17,7 @@ class ClientLinkCubit extends Cubit<ClientLinkState> {
   final PublishQueue _publishQueue;
 
   StreamSubscription<PublishJob>? _updates;
+  StreamSubscription<String>? _pageChanges;
 
   /// How many reads of the link started, so that a read that a later read overtook does not show older data.
   var _reads = 0;
@@ -30,85 +31,67 @@ class ClientLinkCubit extends Cubit<ClientLinkState> {
     if (state.status != ClientLinkStatus.loading) emit(const ClientLinkState());
     // A publish can give the client its first link, and a revoke job can close one, while the screen is open.
     _updates ??= _publishQueue.updates.listen((_) => unawaited(_refresh()));
-    try {
-      await _read(status: ClientLinkStatus.ready);
-    } on Exception catch (error, stackTrace) {
-      _report(error, stackTrace);
-      _show(const ClientLinkState(status: ClientLinkStatus.loadFailed));
-    }
+    _pageChanges ??= _publishQueue.pageChanges.listen((clientId) {
+      if (clientId == _clientId) unawaited(_refresh());
+    });
+    await _read(status: ClientLinkStatus.ready);
   }
 
   /// Closes the open link of the client: every link of the client that was sent stops opening when the revoke job is
   /// done, and the next link share makes a new link. A call does nothing while the client has no open link and while
   /// the state takes no action.
-  Future<void> closeLink() => _request(() => _publishQueue.revokeClientPage(_clientId), keepsOpenLink: false);
+  Future<void> closeLink() => _request(() => _publishQueue.revokeClientPage(_clientId));
 
   /// Replaces the open link of the client with a new link: the old links stop opening when the revoke job is done,
   /// and the queue publishes the reports again under the new link. A call does nothing while the client has no open
   /// link and while the state takes no action.
-  Future<void> makeNewLink() => _request(() => _publishQueue.reissueClientPage(_clientId), keepsOpenLink: true);
+  Future<void> makeNewLink() => _request(() => _publishQueue.reissueClientPage(_clientId));
 
-  Future<void> _request(Future<Object?> Function() request, {required bool keepsOpenLink}) async {
+  Future<void> _request(Future<Object?> Function() request) async {
     if (!state.takesAction || !state.hasOpenLink) return;
     _show(state.copyWith(status: ClientLinkStatus.requesting));
-    final Object? result;
     try {
-      result = await request();
+      await request();
     } on Exception catch (error, stackTrace) {
       _report(error, stackTrace);
       _show(state.copyWith(status: ClientLinkStatus.requestFailed));
       return;
     }
-    try {
-      await _read(status: ClientLinkStatus.ready);
-    } on Exception catch (error, stackTrace) {
-      _report(error, stackTrace);
-      if (result == null) {
-        // The request found no open link to close, so storage took no revoke job from it, and no job update will
-        // correct a closing state.
-        _show(state.copyWith(status: ClientLinkStatus.ready, hasOpenLink: false));
-      } else {
-        // Storage took the revoke and its job, which has not run yet, so the link is closing.
-        _show(state.copyWith(status: ClientLinkStatus.ready, hasOpenLink: keepsOpenLink, isClosing: true));
-      }
-    }
+    await _read(status: ClientLinkStatus.ready);
   }
 
-  Future<void> _refresh() async {
-    try {
-      await _read();
-    } on Exception catch (error, stackTrace) {
-      // The state keeps what it showed, and the next change of a job reads again.
-      _report(error, stackTrace);
-    }
-  }
+  Future<void> _refresh() => _read();
 
-  /// Reads the link of the client and shows it with [status], or with the status that the state has when the read
-  /// ends. A read that a later read overtook shows only [status], because its data can be older.
+  /// Every current read owns its success and failure. Superseded reads change nothing.
   Future<void> _read({ClientLinkStatus? status}) async {
     final read = ++_reads;
-    final hasOpenLink = await _publishQueue.hasOpenPage(_clientId);
-    final revokes = await _publishQueue.revokeJobsOf(_clientId);
-    if (read != _reads) {
-      if (status != null) _show(state.copyWith(status: status));
-      return;
+    try {
+      final pages = await _publishQueue.pagesOf(_clientId);
+      final revokes = await _publishQueue.revokeJobsOf(_clientId);
+      if (read != _reads) return;
+      final confirmed = {
+        for (final page in pages)
+          if (page.serverDeletedAt != null) page.id,
+      };
+      final unconfirmed = revokes.where((job) => !confirmed.contains(job.pageId));
+      bool stopped({required bool byDeletion}) => unconfirmed.any(
+        (job) => job.status == PublishJobStatus.failed && (job.failure == PublishFailure.deletion) == byDeletion,
+      );
+      _show(
+        ClientLinkState(
+          status: status ?? ClientLinkStatus.ready,
+          hasOpenLink: pages.any((page) => page.isOpen),
+          isClosing: unconfirmed.any((job) => job.status == PublishJobStatus.pending),
+          hasFailedClose: stopped(byDeletion: false),
+          hasUnfinishedDeletion: pages.any((page) => page.isServerDeletionPending) || stopped(byDeletion: true),
+          hasClosedLink: confirmed.isNotEmpty || revokes.any((job) => job.status == PublishJobStatus.done),
+        ),
+      );
+    } on Object catch (error, stackTrace) {
+      if (read != _reads) return;
+      _report(error, stackTrace);
+      _show(const ClientLinkState(status: ClientLinkStatus.loadFailed));
     }
-    bool any(PublishJobStatus jobStatus) => revokes.any((job) => job.status == jobStatus);
-    // The deletion of all data stops a pending revoke job before it deletes the page, so such a job does not say that
-    // the link still opens: the deletion either deleted the page or failed at that delete.
-    bool stopped({required bool byDeletion}) => revokes.any(
-      (job) => job.status == PublishJobStatus.failed && (job.failure == PublishFailure.deletion) == byDeletion,
-    );
-    _show(
-      ClientLinkState(
-        status: status ?? state.status,
-        hasOpenLink: hasOpenLink,
-        isClosing: any(PublishJobStatus.pending),
-        hasFailedClose: stopped(byDeletion: false),
-        hasUnfinishedDeletion: stopped(byDeletion: true),
-        hasClosedLink: any(PublishJobStatus.done),
-      ),
-    );
   }
 
   void _show(ClientLinkState next) {
@@ -122,7 +105,9 @@ class ClientLinkCubit extends Cubit<ClientLinkState> {
   @override
   Future<void> close() async {
     await _updates?.cancel();
+    await _pageChanges?.cancel();
     _updates = null;
+    _pageChanges = null;
     await super.close();
   }
 }

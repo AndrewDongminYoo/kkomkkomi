@@ -103,6 +103,58 @@ void main() {
   }
 
   group('ReportLinkCubit', () {
+    test('old intent retains the first-share notice and only shares the requested visit under a fresh ID', () async {
+      final old = ClientPage(
+        id: 'old',
+        clientId: 'client-1',
+        createdAt: visit.createdAt,
+        serverDeleteRequestedAt: visit.createdAt,
+      );
+      publishing.pagesById[old.id] = old;
+      final historical = PublishJob(
+        id: 'history',
+        kind: PublishJobKind.publish,
+        pageId: old.id,
+        visitId: visitId,
+        createdAt: visit.createdAt,
+      ).succeed();
+      publishing.jobs[historical.id] = historical;
+      final cubit = build();
+      await cubit.load();
+      expect(cubit.state.isFirstShare, isTrue);
+      await cubit.share();
+      await until(cubit, (state) => state.status == ReportLinkStatus.ready);
+      final fresh = publishing.pagesById.values.singleWhere((page) => page.isOpen);
+      expect(fresh.id, isNot(old.id));
+      expect(publisher.reports.keys, ['${fresh.id}/$visitId']);
+      expect(publishing.jobs[historical.id], historical);
+      expect(linkShare.shared.single.path, contains(fresh.id));
+      await cubit.close();
+    });
+
+    test('intent between page read and enqueue rejects the share, then a new explicit share uses a fresh ID', () async {
+      final cubit = build();
+      await cubit.load();
+      final gate = publishing.beforeEnqueueGate = Completer<void>();
+      final sharing = cubit.share();
+      await pumpEventQueue();
+      final old = onlyPage();
+      await publishing.beginPageServerDeletion(old.id, visit.createdAt);
+      gate.complete();
+      await sharing;
+      expect(cubit.state.status, ReportLinkStatus.failed);
+      expect(linkShare.shared, isEmpty);
+      expect(observer.errors.single, isA<StateError>());
+      publishing.beforeEnqueueGate = null;
+      await cubit.load();
+      expect(cubit.state.isFirstShare, isTrue);
+      await cubit.share();
+      await until(cubit, (state) => state.status == ReportLinkStatus.ready);
+      expect(publishing.pagesById.values.singleWhere((page) => page.isOpen).id, isNot(old.id));
+      expect(linkShare.shared, hasLength(1));
+      await cubit.close();
+    });
+
     group('load', () {
       test('offers no link in a flavor without a backend', () async {
         publisher.isAvailable = false;
