@@ -801,6 +801,41 @@ void main() {
         });
       }
 
+      // The Text widgets of the title apply these settings of the system to their style, so the toolbar must too. The
+      // line height override makes each line taller, and the spacing overrides make the name wrap to one more line.
+      // The test font draws every weight at the same width, so the bold case cannot fail here; on a device, bold text
+      // can make the name wrap to one more line.
+      for (final (setting, apply) in <(String, void Function(TestPlatformDispatcher))>[
+        (
+          'bold text',
+          (dispatcher) => dispatcher.accessibilityFeaturesTestValue = const FakeAccessibilityFeatures(boldText: true),
+        ),
+        ('a line height override', (dispatcher) => dispatcher.lineHeightScaleFactorOverrideTestValue = 2),
+        ('a letter spacing override', (dispatcher) => dispatcher.letterSpacingOverrideTestValue = 12),
+        ('a word spacing override', (dispatcher) => dispatcher.wordSpacingOverrideTestValue = 100),
+      ]) {
+        testWidgets('fits a client name that wraps and the visit date with $setting', (tester) async {
+          tester.useNarrowScreenWithLargestText();
+          apply(tester.platformDispatcher);
+          addTearDown(tester.platformDispatcher.clearAllTestValues);
+          const name = 'Han Bit Tower';
+          const date = 'October 1, 2026';
+
+          await pumpPage(tester, keepScreen: true, clients: FakeClientRepository(clients: [clientNamed(name)]));
+
+          expect(tester.takeException(), isNull);
+          tester
+            ..expectWholeText(name)
+            ..expectWholeText(date);
+          final appBar = tester.getRect(find.byType(AppBar));
+          for (final text in [name, date]) {
+            final rect = tester.getRect(inAppBar(text));
+            expect(rect.top, greaterThanOrEqualTo(appBar.top), reason: '"$text" starts above the AppBar');
+            expect(rect.bottom, lessThanOrEqualTo(appBar.bottom), reason: '"$text" ends below the AppBar');
+          }
+        });
+      }
+
       testWidgets('ends a client name that takes more than three lines in an ellipsis and keeps room for the zones', (
         tester,
       ) async {

@@ -170,10 +170,17 @@ class VisitCaptureView extends StatelessWidget {
           _backButtonWidth -
           2 * NavigationToolbar.kMiddleSpacing,
     );
+    // A Text widget applies these settings of the system to its style, so the measurement applies them too.
+    final systemOverrides = TextStyle(
+      fontWeight: MediaQuery.boldTextOf(context) ? FontWeight.bold : null,
+      height: MediaQuery.maybeLineHeightScaleFactorOverrideOf(context),
+      letterSpacing: MediaQuery.maybeLetterSpacingOverrideOf(context),
+      wordSpacing: MediaQuery.maybeWordSpacingOverrideOf(context),
+    );
     var titleHeight = 0.0;
     for (final (text, style, maxLines) in lines) {
       final painter = TextPainter(
-        text: TextSpan(text: text, style: style),
+        text: TextSpan(text: text, style: (style ?? const TextStyle()).merge(systemOverrides)),
         textDirection: Directionality.of(context),
         textScaler: textScaler,
         maxLines: maxLines,
