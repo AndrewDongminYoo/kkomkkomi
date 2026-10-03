@@ -468,7 +468,7 @@
     "@clientLinkCloseDialogTitle": {
         "description": "거래처의 링크를 막기 전에 묻는 창의 제목"
     },
-    "clientLinkCloseDialogMessage": "이 거래처에 보낸 링크가 모두 더 이상 열리지 않고, 서버에 올린 사진을 지워요. 다음에 링크로 공유하면 새 링크가 만들어져요.",
+    "clientLinkCloseDialogMessage": "이 거래처의 현재 링크가 더 이상 열리지 않고, 그 링크로 올린 사진을 서버에서 지워요. 다음에 링크로 공유하면 새 링크가 만들어져요.",
     "@clientLinkCloseDialogMessage": {
         "description": "거래처의 링크를 막기 전에 묻는 창의 본문"
     },
@@ -476,7 +476,7 @@
     "@clientLinkReissueDialogTitle": {
         "description": "거래처의 링크를 새 링크로 바꾸기 전에 묻는 창의 제목"
     },
-    "clientLinkReissueDialogMessage": "지금까지 보낸 링크는 더 이상 열리지 않고, 보고서를 새 링크로 다시 올려요. 새 링크는 방문 보고서에서 링크로 공유해서 보낼 수 있어요.",
+    "clientLinkReissueDialogMessage": "현재 링크는 더 이상 열리지 않고, 그 링크의 보고서를 새 링크로 다시 올려요. 새 링크는 방문 보고서에서 링크로 공유해서 보낼 수 있어요.",
     "@clientLinkReissueDialogMessage": {
         "description": "거래처의 링크를 새 링크로 바꾸기 전에 묻는 창의 본문"
     },

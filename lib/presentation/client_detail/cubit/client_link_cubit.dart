@@ -22,9 +22,11 @@ class ClientLinkCubit extends Cubit<ClientLinkState> {
 
   /// How many reads of the link started, so that a read that a later read overtook does not show older data.
   var _reads = 0;
+  var _requestInFlight = false;
 
   /// Reads whether the flavor publishes, and the link of the client, and then follows each change of a job.
   Future<void> load() async {
+    if (_requestInFlight) return;
     if (!_publishQueue.isAvailable) {
       _show(const ClientLinkState(status: ClientLinkStatus.unavailable));
       return;
@@ -38,26 +40,35 @@ class ClientLinkCubit extends Cubit<ClientLinkState> {
     await _read(status: ClientLinkStatus.ready);
   }
 
-  /// Closes the open link of the client: every link of the client that was sent stops opening when the revoke job is
-  /// done, and the next link share makes a new link. A call does nothing while the client has no open link and while
+  /// Closes the client's current eligible link when its revoke job is done. Earlier unconfirmed deletion requires
+  /// Delete All Data recovery; the next explicit share makes a new link. A call does nothing while the client has no open link and while
   /// the state takes no action.
   Future<void> closeLink() => _request(() => _publishQueue.revokeClientPage(_clientId));
 
-  /// Replaces the open link of the client with a new link: the old links stop opening when the revoke job is done,
-  /// and the queue publishes the reports again under the new link. A call does nothing while the client has no open
+  /// Replaces the current eligible link when its revoke job is done and republishes its reports under a new link.
+  /// Earlier quarantined links are unchanged and require Delete All Data recovery. A call does nothing while the client has no open
   /// link and while the state takes no action.
   Future<void> makeNewLink() => _request(() => _publishQueue.reissueClientPage(_clientId));
 
   Future<void> _request(Future<Object?> Function() request) async {
-    if (!state.takesAction || !state.hasOpenLink) return;
-    _show(state.copyWith(status: ClientLinkStatus.requesting));
+    if (_requestInFlight || !state.takesAction || !state.hasOpenLink) return;
+    _requestInFlight = true;
+    // A read that started before this mutation cannot describe its result or release its protection.
+    _reads++;
+    _show(state.copyWith(status: ClientLinkStatus.requesting, isRequesting: true));
     try {
       await request();
     } on Exception catch (error, stackTrace) {
+      _requestInFlight = false;
       _report(error, stackTrace);
-      _show(state.copyWith(status: ClientLinkStatus.requestFailed));
+      // A failed read leaves the link unknown; keep its retry controls when the mutation also fails.
+      final status = state.status == ClientLinkStatus.loadFailed
+          ? ClientLinkStatus.loadFailed
+          : ClientLinkStatus.requestFailed;
+      _show(state.copyWith(status: status, isRequesting: false));
       return;
     }
+    _requestInFlight = false;
     await _read(status: ClientLinkStatus.ready);
   }
 
@@ -80,7 +91,8 @@ class ClientLinkCubit extends Cubit<ClientLinkState> {
       );
       _show(
         ClientLinkState(
-          status: status ?? ClientLinkStatus.ready,
+          status: _requestInFlight ? ClientLinkStatus.requesting : status ?? ClientLinkStatus.ready,
+          isRequesting: _requestInFlight,
           hasOpenLink: pages.any((page) => page.isOpen),
           isClosing: unconfirmed.any((job) => job.status == PublishJobStatus.pending),
           hasFailedClose: stopped(byDeletion: false),
@@ -91,7 +103,7 @@ class ClientLinkCubit extends Cubit<ClientLinkState> {
     } on Object catch (error, stackTrace) {
       if (read != _reads) return;
       _report(error, stackTrace);
-      _show(const ClientLinkState(status: ClientLinkStatus.loadFailed));
+      _show(ClientLinkState(status: ClientLinkStatus.loadFailed, isRequesting: _requestInFlight));
     }
   }
 

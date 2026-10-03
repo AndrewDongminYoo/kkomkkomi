@@ -31,9 +31,13 @@ final class ClientLinkState {
     this.hasFailedClose = false,
     this.hasUnfinishedDeletion = false,
     this.hasClosedLink = false,
-  });
+    bool? isRequesting,
+  }) : isRequesting = isRequesting ?? status == ClientLinkStatus.requesting;
 
   final ClientLinkStatus status;
+
+  /// Whether a storage mutation is still running, independently of a refresh success or error.
+  final bool isRequesting;
 
   /// Whether the client has an eligible open page with no locally recorded revoke or deletion.
   final bool hasOpenLink;
@@ -53,14 +57,17 @@ final class ClientLinkState {
   final bool hasClosedLink;
 
   /// Whether a close or a new link can start in this status.
-  bool get takesAction => status == ClientLinkStatus.ready || status == ClientLinkStatus.requestFailed;
+  bool get takesAction =>
+      !isRequesting && (status == ClientLinkStatus.ready || status == ClientLinkStatus.requestFailed);
 
   ClientLinkState copyWith({
     ClientLinkStatus? status,
     bool? hasOpenLink,
     bool? isClosing,
+    bool? isRequesting,
   }) => ClientLinkState(
     status: status ?? this.status,
+    isRequesting: isRequesting ?? this.isRequesting,
     hasOpenLink: hasOpenLink ?? this.hasOpenLink,
     isClosing: isClosing ?? this.isClosing,
     hasFailedClose: hasFailedClose,
@@ -72,6 +79,7 @@ final class ClientLinkState {
   bool operator ==(Object other) =>
       other is ClientLinkState &&
       other.status == status &&
+      other.isRequesting == isRequesting &&
       other.hasOpenLink == hasOpenLink &&
       other.isClosing == isClosing &&
       other.hasFailedClose == hasFailedClose &&
@@ -79,10 +87,11 @@ final class ClientLinkState {
       other.hasClosedLink == hasClosedLink;
 
   @override
-  int get hashCode => Object.hash(status, hasOpenLink, isClosing, hasFailedClose, hasUnfinishedDeletion, hasClosedLink);
+  int get hashCode =>
+      Object.hash(status, isRequesting, hasOpenLink, isClosing, hasFailedClose, hasUnfinishedDeletion, hasClosedLink);
 
   @override
   String toString() =>
       'ClientLinkState(${status.name}, open: $hasOpenLink, closing: $isClosing, failed: $hasFailedClose, '
-      'deletion unfinished: $hasUnfinishedDeletion, closed: $hasClosedLink)';
+      'deletion unfinished: $hasUnfinishedDeletion, closed: $hasClosedLink, requesting: $isRequesting)';
 }

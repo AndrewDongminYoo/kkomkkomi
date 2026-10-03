@@ -918,11 +918,11 @@ void main() {
       reissue: 'Make New Link',
       closeTitle: 'Close the link?',
       closeMessage:
-          'Every link of this client that you sent stops opening, and its photos are deleted from the server. The '
+          'The current link of this client stops opening, and its photos are deleted from the server. The '
           'next time you share a link, a new one is made.',
       reissueTitle: 'Make a new link?',
       reissueMessage:
-          'The links you sent stop opening, and the reports are uploaded again under a new link. To send the new '
+          'The current link stops opening, and its reports are uploaded again under a new link. To send the new '
           'link, share it from a visit report.',
       requestFailed: "Can't change the link. Try again.",
       dismiss: 'Cancel',
@@ -941,9 +941,9 @@ void main() {
       close: '링크 막기',
       reissue: '새 링크 만들기',
       closeTitle: '링크를 막을까요?',
-      closeMessage: '이 거래처에 보낸 링크가 모두 더 이상 열리지 않고, 서버에 올린 사진을 지워요. 다음에 링크로 공유하면 새 링크가 만들어져요.',
+      closeMessage: '이 거래처의 현재 링크가 더 이상 열리지 않고, 그 링크로 올린 사진을 서버에서 지워요. 다음에 링크로 공유하면 새 링크가 만들어져요.',
       reissueTitle: '새 링크를 만들까요?',
-      reissueMessage: '지금까지 보낸 링크는 더 이상 열리지 않고, 보고서를 새 링크로 다시 올려요. 새 링크는 방문 보고서에서 링크로 공유해서 보낼 수 있어요.',
+      reissueMessage: '현재 링크는 더 이상 열리지 않고, 그 링크의 보고서를 새 링크로 다시 올려요. 새 링크는 방문 보고서에서 링크로 공유해서 보낼 수 있어요.',
       requestFailed: '링크를 바꾸지 못했어요. 다시 시도해 주세요.',
       dismiss: '닫기',
     );
@@ -953,6 +953,7 @@ void main() {
 
     late FakePublishRepository publishing;
     late FakePublisher publisher;
+    late PublishQueue linkQueue;
 
     setUp(() {
       publishing = FakePublishRepository();
@@ -995,7 +996,7 @@ void main() {
         openCaptures: FakeOpenCaptureRepository(),
         localData: FakeLocalDataRepository(),
       );
-      final queue = publishQueueOf(repositories, publisher: publisher);
+      final queue = linkQueue = publishQueueOf(repositories, publisher: publisher);
       addTearDown(queue.dispose);
       await tester.pumpApp(
         Builder(
@@ -1104,6 +1105,67 @@ void main() {
       await scrollTo(tester, en.open);
       expect(find.text(en.close), findsOneWidget);
     });
+
+    for (final button in [en.close, en.reissue]) {
+      testWidgets('$button dialog describes only the current link when an old deletion is unconfirmed', (tester) async {
+        storePage(ClientPage(id: 'old', clientId: clientId, createdAt: created, serverDeleteRequestedAt: created));
+        storePage(openPage);
+        await pumpLinkPage(tester);
+        await scrollTo(tester, button);
+        await tester.tap(find.widgetWithText(OutlinedButton, button));
+        await tester.pumpAndSettle();
+        final message = button == en.close
+            ? 'The current link of this client stops opening, and its photos are deleted from the server. The next time you share a link, a new one is made.'
+            : 'The current link stops opening, and its reports are uploaded again under a new link. To send the new link, share it from a visit report.';
+        expect(find.text('$message\n\n${en.deletionUnfinished}'), findsOneWidget);
+        expect(find.textContaining('Every link'), findsNothing);
+        expect(find.textContaining('The links you sent stop opening'), findsNothing);
+      });
+    }
+
+    for (final fails in [false, true]) {
+      testWidgets('request guard remains through an unrelated refresh failure=$fails', (tester) async {
+        storePage(openPage);
+        await pumpLinkPage(tester);
+        final requestGate = publishing.revokeGate = Completer<void>();
+        await pressAndConfirm(tester, en.close);
+        final other = ClientPage(
+          id: 'other',
+          clientId: 'other-client',
+          createdAt: created,
+          serverDeleteRequestedAt: created,
+        );
+        publishing.pagesById[other.id] = other;
+        publishing.jobs['other-job'] = PublishJob(
+          id: 'other-job',
+          kind: PublishJobKind.publish,
+          pageId: other.id,
+          visitId: september.id,
+          createdAt: created,
+        );
+        final readGate = publishing.pagesGate = Completer<void>();
+        await linkQueue.start();
+        await tester.pumpAndSettle();
+        if (fails) {
+          readGate.completeError(Exception('refresh failed'));
+        } else {
+          readGate.complete();
+        }
+        await tester.pumpAndSettle();
+        await tester.binding.handlePopRoute();
+        await tester.pumpAndSettle();
+        expect(find.byType(ClientDetailPage), findsOneWidget);
+        final cubit = tester.element(find.byType(ClientDetailView)).read<ClientLinkCubit>();
+        expect(cubit.state.takesAction, isFalse);
+        if (fails) {
+          expect(find.text(en.loadFailed), findsOneWidget);
+          expect(find.text(en.close), findsNothing);
+        }
+        requestGate.complete();
+        await tester.pumpAndSettle();
+        expect(cubit.state.isRequesting, isFalse);
+      });
+    }
 
     testWidgets('shows no link section in a flavor without a backend', (tester) async {
       await pumpPage(tester, visits: [september]);
@@ -1331,8 +1393,8 @@ void main() {
             tester.expectWholeText(text);
           }
           for (final (button, title, message) in [
-            (texts.close, texts.closeTitle, texts.closeMessage),
-            (texts.reissue, texts.reissueTitle, texts.reissueMessage),
+            (texts.close, texts.closeTitle, '${texts.closeMessage}\n\n${texts.deletionUnfinished}'),
+            (texts.reissue, texts.reissueTitle, '${texts.reissueMessage}\n\n${texts.deletionUnfinished}'),
           ]) {
             await scrollTo(tester, button);
             await tester.tap(find.widgetWithText(OutlinedButton, button));

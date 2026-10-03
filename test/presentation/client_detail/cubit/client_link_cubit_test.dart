@@ -80,6 +80,105 @@ void main() {
   }
 
   group('ClientLinkCubit', () {
+    group('request lifetime during refresh', () {
+      test('failed refresh remains retryable when the outstanding mutation also fails', () async {
+        final cubit = await loadedWithOpenLink();
+        final gate = publishing.revokeGate = Completer<void>();
+        final request = cubit.closeLink();
+        await pumpEventQueue();
+        final other = ClientPage(
+          id: 'other',
+          clientId: 'other-client',
+          createdAt: visit.createdAt,
+          serverDeleteRequestedAt: visit.createdAt,
+        );
+        publishing.pagesById[other.id] = other;
+        publishing.jobs['other-job'] = PublishJob(
+          id: 'other-job',
+          kind: PublishJobKind.publish,
+          pageId: other.id,
+          visitId: visit.id,
+          createdAt: visit.createdAt,
+        );
+        final readGate = publishing.pagesGate = Completer<void>();
+        await queue.start();
+        await pumpEventQueue();
+        readGate.completeError(Exception('read failed'));
+        await pumpEventQueue();
+        expect(cubit.state.status, ClientLinkStatus.loadFailed);
+        expect(cubit.state.isRequesting, isTrue);
+        gate.completeError(Exception('request failed'));
+        await request;
+        expect(cubit.state.status, ClientLinkStatus.loadFailed);
+        expect(cubit.state.isRequesting, isFalse);
+        expect(cubit.state.hasOpenLink, isFalse);
+        expect(observer.errors, hasLength(2));
+        await cubit.load();
+        await pumpEventQueue();
+        expect(cubit.state.hasOpenLink, isTrue);
+        await cubit.close();
+      });
+
+      for (final action in ['close', 'reissue']) {
+        for (final beforeRequest in [false, true]) {
+          for (final fails in [false, true]) {
+            test('$action stays guarded when refresh beforeRequest=$beforeRequest fails=$fails', () async {
+              final cubit = await loadedWithOpenLink();
+              final other = ClientPage(
+                id: 'other',
+                clientId: 'other-client',
+                createdAt: visit.createdAt,
+                serverDeleteRequestedAt: visit.createdAt,
+              );
+              publishing.pagesById[other.id] = other;
+              publishing.jobs['other-job'] = PublishJob(
+                id: 'other-job',
+                kind: PublishJobKind.publish,
+                pageId: other.id,
+                visitId: visit.id,
+                createdAt: visit.createdAt,
+              );
+              final readGate = publishing.pagesGate = Completer<void>();
+              if (beforeRequest) {
+                await queue.start();
+                await pumpEventQueue();
+              }
+              final requestGate = publishing.revokeGate = Completer<void>();
+              final request = action == 'close' ? cubit.closeLink() : cubit.makeNewLink();
+              await pumpEventQueue();
+              if (!beforeRequest) {
+                await queue.start();
+                await pumpEventQueue();
+              }
+              if (fails) {
+                readGate.completeError(Exception('refresh failed'));
+              } else {
+                readGate.complete();
+              }
+              await pumpEventQueue();
+              expect(cubit.state.isRequesting, isTrue);
+              expect(cubit.state.takesAction, isFalse);
+              if (fails && !beforeRequest) {
+                expect(cubit.state.status, ClientLinkStatus.loadFailed);
+                expect(cubit.state.hasOpenLink, isFalse);
+              }
+              await cubit.load();
+              await cubit.closeLink();
+              await cubit.makeNewLink();
+              expect(publishing.jobs.values.where((job) => job.kind == PublishJobKind.revoke), isEmpty);
+              requestGate.complete();
+              await request;
+              await pumpEventQueue();
+              expect(cubit.state.isRequesting, isFalse);
+              expect(cubit.state.status, ClientLinkStatus.ready);
+              expect(publishing.jobs.values.where((job) => job.kind == PublishJobKind.revoke), hasLength(1));
+              await cubit.close();
+            });
+          }
+        }
+      }
+    });
+
     group('durable page feedback', () {
       test('intent and confirmation without revoke update automatically with no stopped jobs', () async {
         final cubit = await loadedWithOpenLink();
@@ -468,9 +567,14 @@ void main() {
 
       expect(
         state.toString(),
-        'ClientLinkState(ready, open: true, closing: true, failed: true, deletion unfinished: true, closed: true)',
+        'ClientLinkState(ready, open: true, closing: true, failed: true, deletion unfinished: true, closed: true, requesting: false)',
       );
       expect(state.hashCode, state.copyWith().hashCode);
+      expect(const ClientLinkState(status: ClientLinkStatus.loadFailed, isRequesting: true).takesAction, isFalse);
+      expect(
+        const ClientLinkState(status: ClientLinkStatus.loadFailed, isRequesting: true),
+        isNot(const ClientLinkState(status: ClientLinkStatus.loadFailed)),
+      );
       expect(state.copyWith(), state);
       expect(state.copyWith(isClosing: false), isNot(state));
       expect(state.copyWith(hasOpenLink: false).hasFailedClose, isTrue);
