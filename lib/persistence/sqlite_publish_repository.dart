@@ -213,6 +213,8 @@ final class SqlitePublishRepository implements PublishRepository {
     'client_id': page.clientId,
     'created_at': page.createdAt.microsecondsSinceEpoch,
     'revoked_at': page.revokedAt?.microsecondsSinceEpoch,
+    'server_delete_requested_at': page.serverDeleteRequestedAt?.microsecondsSinceEpoch,
+    'server_deleted_at': page.serverDeletedAt?.microsecondsSinceEpoch,
   };
 
   static ClientPage _pageFromRow(Map<String, Object?> row) => ClientPage(
@@ -220,6 +222,8 @@ final class SqlitePublishRepository implements PublishRepository {
     clientId: row['client_id']! as String,
     createdAt: _time(row['created_at'])!,
     revokedAt: _time(row['revoked_at']),
+    serverDeleteRequestedAt: _time(row['server_delete_requested_at']),
+    serverDeletedAt: _time(row['server_deleted_at']),
   );
 
   static Map<String, Object?> _jobToRow(PublishJob job) => {

@@ -1,7 +1,7 @@
 import 'package:sqflite/sqflite.dart';
 
 /// The version of the schema that [createSchema] creates.
-const schemaVersion = 3;
+const schemaVersion = 4;
 
 // No row of `clients`, `zones`, or `visits` is deleted alone, so the foreign keys declare no delete action. The erase of
 // all data deletes the rows of every table at once, children first.
@@ -96,13 +96,19 @@ CREATE TABLE open_capture (
 )''',
 ];
 
+// Version 4 keeps deletion intent separate from locally recorded backend acknowledgement.
+const _version4 = [
+  'ALTER TABLE client_pages ADD COLUMN server_delete_requested_at INTEGER',
+  'ALTER TABLE client_pages ADD COLUMN server_deleted_at INTEGER',
+];
+
 /// The statements that take the schema from each version to the next, in order: the first item makes version 1.
-const List<List<String>> _migrations = [_version1, _version2, _version3];
+const List<List<String>> _migrations = [_version1, _version2, _version3, _version4];
 
 /// Creates the schema of [schemaVersion]: one table for each of the company profile, clients, zones, visits, and
 /// zone records, the tables of publishing, and the table of the capture that has the camera open.
 ///
-/// `created_at`, `revoked_at`, and `next_attempt_at` hold microseconds since the epoch in UTC, and `visit_date` holds
+/// Time columns hold microseconds since the epoch in UTC, and `visit_date` holds
 /// the calendar date as the number `YYYYMMDD`.
 Future<void> createSchema(DatabaseExecutor database) => upgradeSchema(database, from: 0);
 

@@ -84,6 +84,22 @@ void main() {
     });
   });
 
+  test('round trips both deletion timestamps in UTC microseconds', () async {
+    final at = DateTime.parse('2026-10-03T10:00:00.123456+09:00');
+    final stored = ClientPage(
+      id: 'page-1',
+      clientId: 'client-1',
+      createdAt: at,
+      serverDeleteRequestedAt: at,
+      serverDeletedAt: at,
+    );
+    await repository.openPageOf('client-1', create: () => stored);
+    expect(await repository.pageById('page-1'), stored);
+    final row = (await database.query('client_pages')).single;
+    expect(row['server_delete_requested_at'], 1790989200123456);
+    expect(row['server_deleted_at'], 1790989200123456);
+  });
+
   test('pageById gives null for an unknown page', () async {
     expect(await repository.pageById('page-9'), isNull);
   });

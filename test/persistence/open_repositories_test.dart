@@ -21,7 +21,7 @@ void main() {
   });
 
   group('openAppDatabase', () {
-    test('creates the version 3 schema with one table for each entity, the tables of publishing, and the open '
+    test('creates the version 4 schema with one table for each entity, the tables of publishing, and the open '
         'capture', () async {
       final database = await openMemoryDatabase();
       addTearDown(database.close);
@@ -40,7 +40,12 @@ void main() {
         'zones',
       ]);
       expect(await database.getVersion(), schemaVersion);
-      expect(schemaVersion, 3);
+      expect(schemaVersion, 4);
+      final columns = await database.rawQuery('PRAGMA table_info(client_pages)');
+      for (final name in ['server_delete_requested_at', 'server_deleted_at']) {
+        final column = columns.singleWhere((row) => row['name'] == name);
+        expect((column['type'], column['notnull']), ('INTEGER', 0));
+      }
     });
 
     test('takes a version 1 file to the current version and keeps its data', () async {
@@ -78,7 +83,7 @@ void main() {
       expect(await repositories.publishing.uploadedPhoto(pageId: 'page-1', objectPath: 'a.jpg'), isNull);
     });
 
-    test('takes a version 2 file to version 3, keeps its data, and stores an open capture', () async {
+    test('takes a version 2 file to version 4, keeps its data, and stores an open capture', () async {
       final path = p.join(directory.path, databaseFileName);
       final client = Client(id: 'client-1', name: '한빛 사무실', createdAt: DateTime.utc(2026, 9));
       final zones = ClientZones(
@@ -104,7 +109,12 @@ void main() {
       final written = sqliteRepositories(old);
       await written.clients.save(client, zones: zones);
       await written.visits.save(visit);
-      await written.publishing.openPageOf('client-1', create: () => page);
+      await old.insert('client_pages', {
+        'id': page.id,
+        'client_id': page.clientId,
+        'created_at': page.createdAt.microsecondsSinceEpoch,
+        'revoked_at': null,
+      });
       expect(
         await old.query('sqlite_master', where: "type = 'table' AND name = ?", whereArgs: ['open_capture']),
         isEmpty,
@@ -116,7 +126,7 @@ void main() {
       final repositories = sqliteRepositories(upgraded);
       const capture = OpenCapture(visitId: 'visit-1', zoneId: 'zone-1', slot: PhotoSlot.after);
 
-      expect(await upgraded.getVersion(), 3);
+      expect(await upgraded.getVersion(), 4);
       expect(await repositories.clients.clientById('client-1'), client);
       expect(await repositories.clients.zonesOf('client-1'), zones);
       expect(await repositories.visits.visitById('visit-1'), visit);
@@ -124,6 +134,60 @@ void main() {
       expect(await repositories.openCaptures.load(), isNull);
       await repositories.openCaptures.save(capture);
       expect(await repositories.openCaptures.load(), capture);
+    });
+
+    test('upgrades version 3 without inferring deletion from job history', () async {
+      final path = p.join(directory.path, databaseFileName);
+      final at = DateTime.utc(2026, 10, 3, 1, 0, 0, 123, 456);
+      final old = await testDatabaseFactory.openDatabase(
+        path,
+        options: OpenDatabaseOptions(
+          version: 3,
+          onConfigure: (database) => database.execute('PRAGMA foreign_keys = ON'),
+          onCreate: (database, _) => upgradeSchema(database, from: 0, to: 3),
+        ),
+      );
+      final client = Client(id: 'client-1', name: '한빛', createdAt: at);
+      await sqliteRepositories(old).clients.save(client);
+      await old.insert('client_pages', {
+        'id': 'page-1',
+        'client_id': client.id,
+        'created_at': at.microsecondsSinceEpoch,
+        'revoked_at': at.microsecondsSinceEpoch,
+      });
+      for (final status in ['done', 'failed']) {
+        await old.insert('publish_jobs', {
+          'id': status,
+          'kind': 'revoke',
+          'page_id': 'page-1',
+          'visit_id': null,
+          'created_at': at.microsecondsSinceEpoch,
+          'status': status,
+          'attempts': 1,
+          'next_attempt_at': null,
+          'failure': status == 'failed' ? 'deletion' : null,
+          'generation': 2,
+        });
+      }
+      await old.insert('open_capture', {'id': 1, 'visit_id': 'visit-1', 'zone_id': 'zone-1', 'slot': 'before'});
+      await old.close();
+      final upgraded = await openAppDatabase(testDatabaseFactory, path);
+      addTearDown(upgraded.close);
+      final repositories = sqliteRepositories(upgraded);
+      final stored = (await repositories.publishing.pageById('page-1'))!;
+      expect(await upgraded.getVersion(), 4);
+      expect(stored.createdAt, at);
+      expect(stored.revokedAt, at);
+      expect(stored.serverDeleteRequestedAt, isNull);
+      expect(stored.serverDeletedAt, isNull);
+      expect((await repositories.publishing.jobsOfPage('page-1')).map((job) => job.status), [
+        PublishJobStatus.done,
+        PublishJobStatus.failed,
+      ]);
+      expect(
+        await repositories.openCaptures.load(),
+        const OpenCapture(visitId: 'visit-1', zoneId: 'zone-1', slot: PhotoSlot.before),
+      );
     });
 
     test('enforces foreign keys', () async {
