@@ -14,6 +14,10 @@ Korean is the primary locale, so this touches the text of every screen, and more
 Insert a zero-width joiner (U+200D) between the characters of each whitespace-separated word that contains Hangul, so that the line breaker can break only at spaces and newlines.
 The operator has used this technique before. Implement it in this repository as a small function; do not add a package (`text_ko` does the same and is version 0.1.2).
 
+The operator also found that a line break placed by hand reads best where a layout is fixed.
+It does not replace the joiners here: the app must not overflow at 320 px with the largest text size, and the capture shows that at that size even "아직 거래처가" does not fit one line, so a hand-placed break after it would still break "거래처 / 가".
+Do not add `\n` to the ARB strings in this pull request.
+
 Requirements of the function:
 
 - Match by code point: a `RegExp` with `unicode: true`, so that a joiner never lands between the two halves of a surrogate pair (a client name can hold any character).
