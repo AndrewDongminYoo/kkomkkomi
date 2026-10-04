@@ -11,6 +11,8 @@ class _MockUserCredential extends Mock implements UserCredential;
 
 class _MockUser extends Mock implements User;
 
+class _MockIdTokenResult extends Mock implements IdTokenResult;
+
 void main() {
   late FirebaseAuth auth;
   late int starts;
@@ -239,6 +241,121 @@ void main() {
 
         await expectLater(identity().deleteAccount(), throwsException);
         verifyZeroInteractions(auth);
+      });
+    });
+
+    group('hasPaidEntitlement', () {
+      /// A user whose newly issued token holds [claims].
+      User userWithClaims(Map<String, dynamic>? claims) {
+        final user = userWithId('user-1');
+        final token = _MockIdTokenResult();
+        when(() => token.claims).thenReturn(claims);
+        when(() => user.getIdTokenResult(any())).thenAnswer((_) async => token);
+        when(() => auth.currentUser).thenReturn(user);
+        return user;
+      }
+
+      for (final (entitlements, paid) in <(Object?, bool)>[
+        (['basic'], true),
+        (['pro'], true),
+        (['team', 'pro'], true),
+        ([], false),
+        (['team'], false),
+        ('basic', false),
+        ({'basic': true}, false),
+        (null, false),
+      ]) {
+        test('gives $paid for the claim $entitlements', () async {
+          userWithClaims({'revenueCatEntitlements': entitlements});
+
+          expect(await identity().hasPaidEntitlement(), paid);
+        });
+      }
+
+      test('gives false for a token without the claim, and for a token without claims', () async {
+        userWithClaims({'sub': 'user-1'});
+        expect(await identity().hasPaidEntitlement(), isFalse);
+
+        userWithClaims(null);
+        expect(await identity().hasPaidEntitlement(), isFalse);
+      });
+
+      test('starts Firebase and asks for a newly issued token at each call', () async {
+        final user = userWithClaims({});
+        final token = _MockIdTokenResult();
+        when(() => token.claims).thenReturn({
+          'revenueCatEntitlements': ['basic'],
+        });
+        // The starts of Firebase that came before each token. The answer only records them, because the adapter
+        // catches every object, so an expectation inside the answer would not fail the test.
+        final startsBeforeToken = <int>[];
+        when(() => user.getIdTokenResult(any())).thenAnswer((_) async {
+          startsBeforeToken.add(starts);
+          return token;
+        });
+        final identity = FirebaseIdentity(initializeApp: initializeApp, auth: auth);
+
+        expect(await identity.hasPaidEntitlement(), isTrue);
+        expect(await identity.hasPaidEntitlement(), isTrue);
+
+        // The token comes after the start, because Firebase Auth needs the app.
+        expect(startsBeforeToken, [1, 2]);
+        verify(() => user.getIdTokenResult(true)).called(2);
+        verifyNever(() => auth.signInAnonymously());
+      });
+
+      test('gives false without an account, and never signs in', () async {
+        expect(await identity().hasPaidEntitlement(), isFalse);
+
+        expect(starts, 1);
+        verifyNever(() => auth.signInAnonymously());
+      });
+
+      for (final (kind, failure) in <(String, Object)>[
+        ('a missing network', FirebaseAuthException(code: 'network-request-failed')),
+        ('a disabled account', FirebaseAuthException(code: 'user-disabled')),
+        ('an error', StateError('no plugin')),
+      ]) {
+        test('gives false when the token fails with $kind', () async {
+          final user = userWithId('user-1');
+          when(() => user.getIdTokenResult(any())).thenAnswer((_) => Future.error(failure));
+          when(() => auth.currentUser).thenReturn(user);
+
+          expect(await identity().hasPaidEntitlement(), isFalse);
+        });
+      }
+
+      test('gives false when Firebase does not start', () async {
+        startFailures.add(Exception('no native config'));
+
+        expect(await identity().hasPaidEntitlement(), isFalse);
+        verifyZeroInteractions(auth);
+      });
+
+      test('waits for a sign-in that is on its way, and reads the token of the account that it makes', () async {
+        final signIn = Completer<UserCredential>();
+        final user = userWithId('user-1');
+        final credential = credentialOf(user);
+        final token = _MockIdTokenResult();
+        when(() => token.claims).thenReturn({
+          'revenueCatEntitlements': ['pro'],
+        });
+        when(() => user.getIdTokenResult(any())).thenAnswer((_) async => token);
+        when(() => auth.signInAnonymously()).thenAnswer((_) => signIn.future);
+        final identity = FirebaseIdentity(initializeApp: initializeApp, auth: auth);
+
+        final startedAtLaunch = identity.currentUserId();
+        await pumpEventQueue();
+        final check = identity.hasPaidEntitlement();
+        await pumpEventQueue();
+        verifyNever(() => user.getIdTokenResult(any()));
+
+        when(() => auth.currentUser).thenReturn(user);
+        signIn.complete(credential);
+        await startedAtLaunch;
+
+        expect(await check, isTrue);
+        verify(() => auth.signInAnonymously()).called(1);
       });
     });
   });

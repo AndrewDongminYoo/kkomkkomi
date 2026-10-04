@@ -66,6 +66,22 @@ class FakeIdentity implements Identity {
     }
     userId = null;
   }
+
+  /// Whether the token of the user holds a paid entitlement, which a call of [hasPaidEntitlement] gives.
+  bool paid = false;
+
+  /// How many times the paid entitlement was asked for.
+  int paidChecks = 0;
+
+  /// A check of the paid entitlement waits for this completer while it is set, for a check that does not answer.
+  Completer<void>? paidGate;
+
+  @override
+  Future<bool> hasPaidEntitlement() async {
+    paidChecks++;
+    await paidGate?.future;
+    return paid;
+  }
 }
 
 /// Gives the plan that a test sets, and reports the changes that a test makes with [change].

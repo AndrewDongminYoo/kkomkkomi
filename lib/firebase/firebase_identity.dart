@@ -44,6 +44,27 @@ final class FirebaseIdentity implements Identity {
     }
   }
 
+  @override
+  Future<bool> hasPaidEntitlement() async {
+    try {
+      // A sign-in that is on its way could make the account that this call reads. The attempt never throws.
+      await _attempt;
+      await _initializeApp();
+      final user = (_auth ?? FirebaseAuth.instance).currentUser;
+      // The call never signs in: no account holds no entitlement.
+      if (user == null) return false;
+      // A cached token can keep a claim that the extension removed after an expiry or a transfer, so the call asks
+      // for a newly issued token each time.
+      final claim = (await user.getIdTokenResult(true)).claims?['revenueCatEntitlements'];
+      // As `paid()` in `firestore.rules` reads the claim: a list that holds `basic` or `pro`.
+      return claim is List && claim.any((entitlement) => entitlement == 'basic' || entitlement == 'pro');
+    } on Object catch (error, stackTrace) {
+      // A missing network, a disabled account, or a platform without Firebase: the report keeps the footer.
+      log('The entitlement claim is unavailable: $error', stackTrace: stackTrace);
+      return false;
+    }
+  }
+
   Future<String?> _startAndSignIn() async {
     try {
       // The call gives no options, so Firebase reads the native config file of the platform, and no tracked file

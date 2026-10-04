@@ -17,5 +17,11 @@ void main() {
       await expectLater(identity.deleteAccount(), completes);
       expect(await identity.currentUserId(), isNull);
     });
+
+    test('holds no paid entitlement, because it holds no account', () async {
+      const Identity identity = UnavailableIdentity();
+
+      expect(await identity.hasPaidEntitlement(), isFalse);
+    });
   });
 }
