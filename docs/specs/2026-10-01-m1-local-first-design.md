@@ -97,7 +97,8 @@ A report can be shared while zones lack photos, and the report screen says which
 
 `export/` builds a report document from a visit, its client, and the company profile, then renders an A4 PDF.
 The document holds the company name, the client name, the visit date, and for each zone the before photo, the after photo, and the note.
-The footer prints "꼼꼬미로 만든 보고서".
+~~The footer prints "꼼꼬미로 만든 보고서".~~
+2026-10-05 reconciliation: the M3-01 report branding change (`docs/plans/2026-10-05-m3-01-report-branding.md`) replaced the footer text. The ARB key `reportFooter` owns the current text, and this spec no longer states it.
 The PDF embeds a Korean font that ships with the app under its own license file.
 `printing` shares the PDF, and exactly one file under `lib/presentation/` imports it.
 
@@ -167,7 +168,8 @@ The queue retries with a growing delay, and it resumes at launch and when the ne
 
 A static page under `web/` shows one report, and a second view lists the reports of the client page.
 Hosting rewrites the report paths to that page.
-The footer prints "꼼꼬미로 만든 보고서".
+~~The footer prints "꼼꼬미로 만든 보고서".~~
+2026-10-05 reconciliation: the M3-01 report branding change (`docs/plans/2026-10-05-m3-01-report-branding.md`) replaced the footer text, and a report with `unbranded: true` shows no footer text. `texts.footer` in `web/report/view.js` owns the current text, and the "Web" entry of `CLAUDE.md` owns when the page shows it.
 The link preview in KakaoTalk uses fixed tags in this build, because a preview for each report needs server rendering.
 View tracking and the confirm button belong to M2.
 
