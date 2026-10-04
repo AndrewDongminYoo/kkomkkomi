@@ -135,3 +135,48 @@ build:
   ipa:
     (description): Builds the production release iOS archive and IPA.
     (scripts): flutter build ipa --release --flavor production --target lib/main_production.dart --tree-shake-icons
+
+# --- Store release ----------------------------------------------------------
+# CLAUDE.md, section "Release", owns the environment variables. Every script
+# with 🚨 publishes to a store: the operator runs or approves it each time.
+#
+# A script list runs on after a failed script unless it sets
+# `(execution): once`, so each publish script sets it: a failed check stops
+# the build, and a failed build stops the upload. FASTLANE_SKIP_UPDATE_CHECK
+# keeps fastlane from asking RubyGems for a new version before the lane runs,
+# so a lane without its credentials stops before any network call.
+# `flutter build ipa` exits 0 when the IPA export fails after the archive, so
+# `release ios` deletes build/ios/ipa first, and the `beta` lane stops for an
+# IPA whose version is not the one of pubspec.yaml.
+release:
+  check:
+    (description): Offline checks before a release — a clean tree, the CHANGELOG.md entry and the Play changelogs of the pubspec.yaml version, and the store text limits.
+    (scripts): dart run tool/release_check.dart
+
+  ios:
+    (description): 🚨 Checks, builds the production IPA, and uploads it to TestFlight.
+    (execution): once
+    (scripts):
+      - $release:check
+      - FASTLANE_SKIP_UPDATE_CHECK=1 bundle exec fastlane ios credentials
+      - rm -rf build/ios/ipa
+      - $build:ipa
+      - FASTLANE_SKIP_UPDATE_CHECK=1 bundle exec fastlane ios beta
+
+  android:
+    (description): 🚨 Checks, builds the production App Bundle, and uploads it to the Google Play internal testing track.
+    (execution): once
+    (scripts):
+      - $release:check
+      - FASTLANE_SKIP_UPDATE_CHECK=1 bundle exec fastlane android credentials
+      - $build:aab
+      - FASTLANE_SKIP_UPDATE_CHECK=1 bundle exec fastlane android internal
+
+  metadata:
+    ios:
+      (description): 🚨 Uploads fastlane/metadata/ios and fastlane/screenshots/ios to App Store Connect, without a binary and without a review submission.
+      (scripts): FASTLANE_SKIP_UPDATE_CHECK=1 bundle exec fastlane ios metadata
+
+    android:
+      (description): 🚨 Uploads the texts and images of fastlane/metadata/android to Google Play, without a bundle.
+      (scripts): FASTLANE_SKIP_UPDATE_CHECK=1 bundle exec fastlane android metadata

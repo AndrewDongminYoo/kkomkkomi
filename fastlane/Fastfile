@@ -1,0 +1,210 @@
+# The release lanes. `merry run release ...` runs them, and CLAUDE.md, section
+# "Release", names the scripts and the environment variables.
+#
+# Each lane reads its credentials from environment variables and checks them,
+# and the files that they name, before it calls an action that reaches the
+# network. No credential file belongs in the repository.
+
+opt_out_usage
+skip_docs
+
+ROOT = File.expand_path("..", __dir__)
+IOS_METADATA = File.join(ROOT, "fastlane/metadata/ios")
+IOS_SCREENSHOTS = File.join(ROOT, "fastlane/screenshots/ios")
+ANDROID_METADATA = File.join(ROOT, "fastlane/metadata/android")
+AAB = File.join(ROOT, "build/app/outputs/bundle/productionRelease/app-production-release.aab")
+
+# The names that fastlane's app_store_connect_api_key action reads by default.
+ASC_KEY_ID = "APP_STORE_CONNECT_API_KEY_KEY_ID"
+ASC_ISSUER_ID = "APP_STORE_CONNECT_API_KEY_ISSUER_ID"
+ASC_KEY_FILEPATH = "APP_STORE_CONNECT_API_KEY_KEY_FILEPATH"
+# The name that supply reads by default.
+PLAY_JSON_KEY = "SUPPLY_JSON_KEY"
+# Google Play takes only a draft release while the app is a draft in Play
+# Console, so a draft is the default; `completed` rolls the release out to the
+# testers of the track.
+PLAY_RELEASE_STATUS = "SUPPLY_RELEASE_STATUS"
+PLAY_RELEASE_STATUSES = %w[draft completed].freeze
+
+# Stops the lane and names every variable of `names` that is unset or empty.
+def require_env(*names)
+  missing = names.select { |name| ENV[name].to_s.strip.empty? }
+  return if missing.empty?
+
+  UI.user_error!("Missing environment variable: #{missing.join(', ')}. See CLAUDE.md, section \"Release\".")
+end
+
+# Stops the lane when the variable `name` does not name a file.
+def require_file_env(name)
+  require_env(name)
+  path = File.expand_path(ENV.fetch(name))
+  UI.user_error!("#{name} names no file: #{path}") unless File.file?(path)
+  path
+end
+
+def check_app_store_connect_credentials
+  require_env(ASC_KEY_ID, ASC_ISSUER_ID, ASC_KEY_FILEPATH)
+  require_file_env(ASC_KEY_FILEPATH)
+end
+
+def check_play_credentials
+  require_file_env(PLAY_JSON_KEY)
+end
+
+# Builds the App Store Connect token from the key file. It reads the file and
+# signs the token on this machine, without a network call.
+def app_store_connect_key
+  key_filepath = check_app_store_connect_credentials
+  app_store_connect_api_key(
+    key_id: ENV.fetch(ASC_KEY_ID).strip,
+    issuer_id: ENV.fetch(ASC_ISSUER_ID).strip,
+    key_filepath: key_filepath
+  )
+end
+
+# The version of pubspec.yaml as [name, build number].
+def pubspec_version
+  pubspec = File.read(File.join(ROOT, "pubspec.yaml"))
+  match = pubspec.match(/^version:\s*([^\s+]+)\+(\d+)\s*$/)
+  UI.user_error!("pubspec.yaml has no version of the form <name>+<build>.") if match.nil?
+  [match[1], Integer(match[2], 10)]
+end
+
+# The version name, which names the App Store version that the metadata goes to.
+def pubspec_version_name
+  pubspec_version[0]
+end
+
+# The build number, which is the version code of the Android bundle.
+def pubspec_build_number
+  pubspec_version[1]
+end
+
+def play_release_status
+  status = ENV.fetch(PLAY_RELEASE_STATUS, "draft").strip
+  return status if PLAY_RELEASE_STATUSES.include?(status)
+
+  UI.user_error!("#{PLAY_RELEASE_STATUS} must be one of #{PLAY_RELEASE_STATUSES.join(', ')}, not '#{status}'.")
+end
+
+platform :ios do
+  desc "Checks the App Store Connect API key variables and the key file, without a network call."
+  lane :credentials do
+    check_app_store_connect_credentials
+    UI.success("The App Store Connect API key variables are set.")
+  end
+
+  desc "Uploads build/ios/ipa/*.ipa to TestFlight when its version and build number are those of pubspec.yaml."
+  lane :beta do
+    check_app_store_connect_credentials
+    ipas = Dir.glob(File.join(ROOT, "build/ios/ipa/*.ipa"))
+    UI.user_error!("Expected one IPA in build/ios/ipa, found #{ipas.length}. Run `merry run build ipa`.") unless ipas.length == 1
+    ipa = ipas.first
+
+    # `flutter build ipa` exits 0 when the archive succeeds and the IPA export
+    # fails (the export failure branch of flutter_tools,
+    # lib/src/commands/build_ios.dart, returns success), and it does not delete
+    # an earlier IPA. So the lane reads the version of the IPA and stops for an
+    # IPA that another version left behind. `release ios` also deletes
+    # build/ios/ipa before the build, which this check cannot replace for an
+    # IPA of the same version.
+    name, build = pubspec_version
+    ipa_name = get_ipa_info_plist_value(ipa: ipa, key: "CFBundleShortVersionString").to_s
+    ipa_build = get_ipa_info_plist_value(ipa: ipa, key: "CFBundleVersion").to_s
+    unless ipa_name == name && ipa_build == build.to_s
+      UI.user_error!("#{ipa} is version #{ipa_name}+#{ipa_build}, not #{name}+#{build} of pubspec.yaml. Run `merry run build ipa`.")
+    end
+
+    upload_to_testflight(
+      api_key: app_store_connect_key,
+      ipa: ipa,
+      skip_waiting_for_build_processing: true
+    )
+  end
+
+  desc "Uploads fastlane/metadata/ios and fastlane/screenshots/ios to App Store Connect, without a binary and without a review submission."
+  lane :metadata do
+    api_key = app_store_connect_key
+    skip_screenshots = !File.directory?(IOS_SCREENSHOTS)
+    UI.important("#{IOS_SCREENSHOTS} does not exist, so no screenshot is uploaded.") if skip_screenshots
+
+    # deliver runs precheck after the metadata upload also without a review
+    # submission, and precheck stops with an error for an API key while its
+    # in-app purchase check is on, which is the default
+    # (deliver/lib/deliver/runner.rb in fastlane 2.240.1). The lane submits
+    # nothing for review, so it turns precheck off.
+    upload_to_app_store(
+      api_key: api_key,
+      app_version: pubspec_version_name,
+      metadata_path: IOS_METADATA,
+      screenshots_path: IOS_SCREENSHOTS,
+      skip_binary_upload: true,
+      skip_metadata: false,
+      skip_screenshots: skip_screenshots,
+      submit_for_review: false,
+      run_precheck_before_submit: false,
+      force: true
+    )
+  end
+end
+
+platform :android do
+  desc "Checks SUPPLY_JSON_KEY, SUPPLY_RELEASE_STATUS, and the upload key source, without a network call."
+  lane :credentials do
+    check_play_credentials
+    play_release_status
+    keystore = ENV["ANDROID_KEYSTORE_PATH"].to_s.strip
+    if keystore.empty?
+      key_properties = File.join(ROOT, "android/key.properties")
+      UI.user_error!("Set ANDROID_KEYSTORE_PATH or write android/key.properties to sign the bundle.") unless File.file?(key_properties)
+    else
+      # android/app/build.gradle.kts reads all four once the path is set.
+      require_env("ANDROID_KEYSTORE_ALIAS", "ANDROID_KEYSTORE_PASSWORD", "ANDROID_KEYSTORE_PRIVATE_KEY_PASSWORD")
+      require_file_env("ANDROID_KEYSTORE_PATH")
+    end
+    UI.success("The Google Play variables and the upload key source are set.")
+  end
+
+  desc "Uploads the production App Bundle and its changelogs to the internal testing track."
+  lane :internal do
+    json_key = check_play_credentials
+    release_status = play_release_status
+    UI.user_error!("Production App Bundle not found: #{AAB}. Run `merry run build aab`.") unless File.file?(AAB)
+
+    upload_to_play_store(
+      json_key: json_key,
+      track: "internal",
+      aab: AAB,
+      release_status: release_status,
+      metadata_path: ANDROID_METADATA,
+      skip_upload_apk: true,
+      skip_upload_metadata: true,
+      skip_upload_changelogs: false,
+      skip_upload_images: true,
+      skip_upload_screenshots: true
+    )
+  end
+
+  desc "Uploads the texts and images of fastlane/metadata/android to Google Play, without a bundle. The internal track must hold the bundle of the pubspec build number."
+  lane :metadata do
+    json_key = check_play_credentials
+
+    # supply looks up a release on a track even when it uploads no bundle and
+    # no changelog, and stops when it finds none. The production track has no
+    # release, so the lane names the internal track and the build number of
+    # pubspec.yaml, whose bundle the first upload by hand or the `internal`
+    # lane put there.
+    upload_to_play_store(
+      json_key: json_key,
+      track: "internal",
+      version_code: pubspec_build_number,
+      metadata_path: ANDROID_METADATA,
+      skip_upload_apk: true,
+      skip_upload_aab: true,
+      skip_upload_metadata: false,
+      skip_upload_changelogs: true,
+      skip_upload_images: false,
+      skip_upload_screenshots: false
+    )
+  end
+end

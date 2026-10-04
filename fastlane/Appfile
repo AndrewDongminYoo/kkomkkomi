@@ -1,0 +1,4 @@
+# The production flavor of iOS and Android uses the same identifier, and deliver,
+# pilot, and supply read it from here.
+app_identifier("kr.donminzzi.kkomkkomi")
+package_name("kr.donminzzi.kkomkkomi")
