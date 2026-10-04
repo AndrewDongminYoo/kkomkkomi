@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # Renders the images of the app icon from the launcher-*.svg pictures in this directory:
-# the legacy Android launcher images, the launch images of iOS and macOS, and the Windows icon.
+# the legacy Android launcher images, the Play Store icons, the launch images of iOS and macOS, and the Windows icon.
 #
 # Usage: CHROME=/path/to/chrome-headless-shell tool/app_icon/render.sh
 #
@@ -42,6 +42,12 @@ for flavor in main development staging; do
     render "${flavor},square" "${dir}/ic_launcher.png" "${size}"
     render "${flavor},round" "${dir}/ic_launcher_round.png" "${size}"
   done
+done
+
+# The Play Store icon of each source set, 512 pixels, as a full square in a 32-bit PNG, which Google Play asks for
+# (https://developer.android.com/distribute/google-play/resources/icon-design-specifications).
+for flavor in main development staging; do
+  render "${flavor},full" "${res}/${flavor}/ic_launcher-playstore.png" 512
 done
 
 # The launch image is the square picture of the main source set, 150 points wide.
