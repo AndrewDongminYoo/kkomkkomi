@@ -360,7 +360,7 @@
     "@reportNoteLabel": {
         "description": "미리보기와 PDF에서 구역의 메모 위에 나오는 라벨"
     },
-    "reportFooter": "꼼꼬미로 만든 보고서",
+    "reportFooter": "꼼꼬미로 작성됨",
     "@reportFooter": {
         "description": "미리보기 맨 아래와 PDF의 모든 쪽 아래에 나오는 문구"
     },

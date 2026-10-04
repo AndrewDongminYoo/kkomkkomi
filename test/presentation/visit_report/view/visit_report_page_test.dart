@@ -657,7 +657,7 @@ void main() {
         '미리보기',
         '청소 완료 보고서',
         '2026년 10월 1일',
-        '꼼꼬미로 만든 보고서',
+        '꼼꼬미로 작성됨',
       ]) {
         expect(find.text(text), findsOneWidget, reason: text);
       }
@@ -733,7 +733,7 @@ void main() {
             '청소 후',
             '메모',
             longNote,
-            '꼼꼬미로 만든 보고서',
+            '꼼꼬미로 작성됨',
           ],
           'PDF로 공유하기',
         ),
@@ -858,7 +858,7 @@ void main() {
       expect(labels.afterPhoto, '청소 후');
       expect(labels.noPhoto, '사진 없음');
       expect(labels.note, '메모');
-      expect(labels.footer, '꼼꼬미로 만든 보고서');
+      expect(labels.footer, '꼼꼬미로 작성됨');
     });
   });
 
