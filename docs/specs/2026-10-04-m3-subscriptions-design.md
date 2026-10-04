@@ -64,7 +64,7 @@ The web report is the primary output, and anyone with the link can open it.
 The footer of the web report is the one entitlement effect that the backend enforces.
 
 - The app configures RevenueCat with the Firebase user ID as the RevenueCat app user ID. The Firebase extension needs that equality.
-- The extension writes the active entitlements into the custom claim `revenuecatEntitlements` of that user. Source: RevenueCat, "Firebase Integration" (https://www.revenuecat.com/docs/integrations/third-party-integrations/firebase-integration, read on 2026-10-04), which also says that the project must be on the Blaze plan to install the extension and that the RevenueCat app user ID must be the Firebase UID.
+- The extension writes the active entitlements into the custom claim `revenueCatEntitlements` of that user. The name is case-sensitive, and the code example of the source reads it as `claims.revenueCatEntitlements`. Source: RevenueCat, "Firebase Integration" (https://www.revenuecat.com/docs/integrations/third-party-integrations/firebase-integration, read on 2026-10-04), which also says that the project must be on the Blaze plan to install the extension and that the RevenueCat app user ID must be the Firebase UID.
 - A report gets one optional key, `unbranded`, whose only allowed value is `true`.
 - `firestore.rules` accepts `unbranded` only when the claim of the writer holds `basic` or `pro`.
 - The web report prints the footer when the key is absent. A report that exists today has no such key, so it keeps its footer.
