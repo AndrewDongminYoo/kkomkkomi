@@ -127,14 +127,35 @@ List<String> releaseProblems({
   return problems;
 }
 
-/// A build without the keys file stops, so that no build lacks the keys by
-/// accident. The file with empty keys passes: it builds an app without
-/// subscriptions on purpose.
+/// The names of the `--dart-define` values that [revenueCatKeysPath] must hold,
+/// as `String.fromEnvironment` in `lib/billing/` reads them.
+const revenueCatKeyNames = ['REVENUECAT_IOS_API_KEY', 'REVENUECAT_ANDROID_API_KEY'];
+
+/// A build without the keys file, or with a file that does not hold each key
+/// as a string, stops, so that no build lacks the keys by accident. The file
+/// with empty keys passes: it builds an app without subscriptions on purpose.
 List<String> _revenueCatKeysProblems(Directory root) {
-  if (File('${root.path}/$revenueCatKeysPath').existsSync()) return const [];
-  const fix = 'or keep them empty for a build without subscriptions.';
+  final file = File('${root.path}/$revenueCatKeysPath');
+  if (!file.existsSync()) {
+    const fix = 'or keep them empty for a build without subscriptions.';
+    return [
+      '$revenueCatKeysPath is missing: copy $revenueCatKeysExamplePath to it and fill in the RevenueCat public SDK keys, $fix',
+    ];
+  }
+
+  final Object? keys;
+  try {
+    keys = jsonDecode(file.readAsStringSync());
+  } on FormatException catch (error) {
+    return ['$revenueCatKeysPath is not valid JSON: ${error.message}.'];
+  }
+  if (keys is! Map<String, Object?>) {
+    return ['$revenueCatKeysPath does not hold a JSON object; see $revenueCatKeysExamplePath.'];
+  }
+  const fix = 'keep the value empty for a build without subscriptions.';
   return [
-    '$revenueCatKeysPath is missing: copy $revenueCatKeysExamplePath to it and fill in the RevenueCat public SDK keys, $fix',
+    for (final name in revenueCatKeyNames)
+      if (keys[name] is! String) '$revenueCatKeysPath has no string "$name"; see $revenueCatKeysExamplePath, and $fix',
   ];
 }
 

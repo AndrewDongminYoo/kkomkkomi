@@ -124,9 +124,10 @@ reinstall:
 # No `(default)`: which artifact this project ships is a release decision.
 # Windows has no script on purpose: its build is verified only in CI.
 # Each script reads the RevenueCat keys from config/revenuecat.json, which git
-# ignores, and `release check` stops when the file is missing. Empty keys build
-# an app without subscriptions. The metadata lanes build nothing, so they run
-# the check with `--metadata`, which leaves out the keys file.
+# ignores, and `release check` stops when the file is missing or lacks one of
+# its two keys. Empty keys build an app without subscriptions. The metadata
+# lanes build nothing, so they run the check with `--metadata`, which leaves
+# out the keys file.
 build:
   apk:
     (description): Builds the production release APK.
