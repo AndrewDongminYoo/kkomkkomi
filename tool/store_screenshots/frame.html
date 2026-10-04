@@ -1,0 +1,145 @@
+<!doctype html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      rel="stylesheet"
+      href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700;800&display=swap" />
+    <style>
+      /*
+       * The frame of one store screenshot: the headline of copy.js above a raw screen of render_screens.dart.
+       * render.sh opens it as frame.html?screen=<name>&lang=<ko|en>&image=<raw PNG> at the store size, so every length is
+       * in vw and the phone takes the height that the words leave.
+       * The color tokens are copies from web/index.html, so a change to them there must be repeated here.
+       */
+      :root {
+        --bg: #faf7f1;
+        --ink: #16243b;
+        --ink-2: #4b5870;
+        --teal: #0f7f7a;
+        --teal-ink: #0a5e5a;
+        --teal-soft: #dff2ef;
+      }
+      * {
+        box-sizing: border-box;
+      }
+      html,
+      body {
+        margin: 0;
+        width: 100vw;
+        height: 100vh;
+        overflow: hidden;
+      }
+      body {
+        background: linear-gradient(
+          180deg,
+          var(--bg) 0%,
+          var(--bg) 55%,
+          var(--teal-soft) 100%
+        );
+        color: var(--ink);
+        font-family: "Noto Sans KR", sans-serif;
+        -webkit-font-smoothing: antialiased;
+        word-break: keep-all;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        padding: 7vw 6vw 0;
+        text-align: center;
+      }
+      header {
+        /* Two lines of the headline and one of the line under it, so that every phone starts at the same height. */
+        min-height: 27vw;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+      }
+      h1 {
+        margin: 0;
+        font-size: 7.4vw;
+        line-height: 1.28;
+        font-weight: 800;
+        letter-spacing: -0.02em;
+        text-wrap: balance;
+      }
+      h1 em {
+        font-style: normal;
+        color: var(--teal-ink);
+      }
+      p {
+        margin: 2.2vw 0 0;
+        font-size: 3.9vw;
+        line-height: 1.45;
+        font-weight: 500;
+        color: var(--ink-2);
+        text-wrap: balance;
+      }
+      .stage {
+        flex: 1 1 0;
+        min-height: 0;
+        width: 100%;
+        margin-top: 4vw;
+        display: flex;
+        justify-content: center;
+        align-items: flex-start;
+      }
+      .phone {
+        box-sizing: content-box;
+        height: calc(100% - 1.6vw);
+        padding: 1.6vw 1.6vw 0;
+        border-radius: 8vw 8vw 0 0;
+        background: var(--ink);
+        box-shadow: 0 3vw 8vw -3vw rgba(22, 36, 59, 0.45);
+      }
+      .phone img {
+        display: block;
+        width: 100%;
+        height: 100%;
+        border-radius: 6.6vw 6.6vw 0 0;
+      }
+    </style>
+    <script src="copy.js"></script>
+  </head>
+  <body>
+    <header>
+      <h1 id="headline"></h1>
+      <p id="sub"></p>
+    </header>
+    <div class="stage">
+      <div class="phone"><img id="screen" alt="" /></div>
+    </div>
+    <script>
+      const params = new URLSearchParams(location.search);
+      const copy =
+        window.STORE_COPY.screens[params.get("screen")]?.[params.get("lang")];
+      if (!copy)
+        throw new Error(
+          `No copy for ${params.get("screen")} in ${params.get("lang")}`,
+        );
+      document.documentElement.lang = params.get("lang");
+
+      // Fills `node` with `text`, where a part between two asterisks becomes an accent.
+      function fill(node, text) {
+        text.split("*").forEach((part, index) => {
+          if (part === "") return;
+          if (index % 2 === 1) {
+            const em = document.createElement("em");
+            em.textContent = part;
+            node.append(em);
+          } else {
+            node.append(part);
+          }
+        });
+      }
+      fill(document.getElementById("headline"), copy.headline);
+      fill(document.getElementById("sub"), copy.sub);
+
+      // The raw screen has the ratio of the store size, so the phone takes the ratio of the window.
+      const phone = document.querySelector(".phone");
+      phone.style.aspectRatio = `${innerWidth} / ${innerHeight}`;
+      document.getElementById("screen").src = params.get("image");
+    </script>
+  </body>
+</html>

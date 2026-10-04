@@ -102,6 +102,9 @@ merry run l10n
 # The web report page with fixture data, in Node (part of check)
 merry run web
 
+# The store screenshots and the Play feature graphic, then their check
+CHROME=/path/to/chrome-headless-shell merry run store
+
 # One test file, then one test by name
 flutter test test/domain/client_test.dart
 flutter test test/domain/client_test.dart --plain-name "trims the name"
@@ -111,6 +114,11 @@ The project has no `lib/main.dart`, so a bare `flutter run` fails.
 `lib/l10n/gen/` is ignored by git and generated from the ARB files.
 `flutter pub get` generates it because `pubspec.yaml` sets `generate: true`.
 When that directory is missing, `flutter analyze` reports `AppLocalizations` as undefined and does not regenerate it.
+
+`merry run store` runs `tool/store_screenshots/render.sh`, which owns the steps and the output paths, and `tool/store_screenshots/check.sh` (`merry run store check`) owns the store sizes and the alpha check.
+`CHROME` names the headless Chromium binary, the render needs ImageMagick 7, and the frames load Noto Sans KR from Google Fonts, so it also needs a network connection.
+`render_screens.dart` pumps the real screens with fictional fixture data through the fakes of `test/helpers/`, in `flutter test` outside `test/`, so the suite, the coverage gate, and CI never run it.
+Only the regular weight of Noto Sans KR exists, so bold text in the rendered screens shows at the regular weight.
 
 ## CI
 

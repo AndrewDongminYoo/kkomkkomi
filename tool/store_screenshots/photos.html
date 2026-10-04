@@ -1,0 +1,174 @@
+<!doctype html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <style>
+      /*
+       * The source of the fixture photos under photos/: one illustrated room per zone, before and after cleaning.
+       * render.sh opens it as photos.html?scene=<scene>&state=<before|after> at 1200x900 and converts the image to JPEG.
+       * The rooms hold no person, no screen, and no document. The colors are the illustration tokens of web/index.html.
+       */
+      html,
+      body {
+        margin: 0;
+        width: 100vw;
+        height: 100vh;
+        overflow: hidden;
+        background: #f1ebe0;
+      }
+      svg {
+        display: block;
+        width: 100vw;
+        height: 100vh;
+      }
+    </style>
+  </head>
+  <body>
+    <svg
+      id="room"
+      viewBox="0 0 400 300"
+      preserveAspectRatio="xMidYMid slice"></svg>
+    <script>
+      const c = {
+        wall: "#f1ebe0",
+        wall2: "#e7dfd1",
+        floor: "#d9cdb8",
+        floor2: "#cbbda4",
+        line: "#9f947f",
+        glass: "#dcecf0",
+        frame: "#5d6b84",
+        dirt: "#9c8f78",
+        dirt2: "#b7ab93",
+        clean: "#f7fbfb",
+        teal: "#0f7f7a",
+        tealSoft: "#dff2ef",
+        white: "#ffffff",
+      };
+
+      // Each scene gives the room and the dirt that only the before photo shows.
+      const scenes = {
+        entrance: {
+          room: `
+            <rect width="400" height="300" fill="${c.wall}"/>
+            <rect y="220" width="400" height="80" fill="${c.floor}"/>
+            <rect y="218" width="400" height="4" fill="${c.line}" opacity=".5"/>
+            <rect x="110" y="40" width="180" height="180" rx="4" fill="${c.frame}"/>
+            <rect x="120" y="50" width="78" height="160" fill="${c.glass}"/>
+            <rect x="202" y="50" width="78" height="160" fill="${c.glass}"/>
+            <rect x="198" y="50" width="4" height="160" fill="${c.frame}"/>
+            <rect x="186" y="110" width="7" height="46" rx="3" fill="${c.frame}"/>
+            <rect x="207" y="110" width="7" height="46" rx="3" fill="${c.frame}"/>
+            <path d="M128 60 L150 60 L132 160 L124 160 Z" fill="${c.clean}" opacity=".55"/>
+            <path d="M212 60 L234 60 L216 160 L208 160 Z" fill="${c.clean}" opacity=".55"/>
+            <rect x="130" y="230" width="140" height="34" rx="4" fill="${c.floor2}"/>
+            <rect x="136" y="236" width="128" height="22" rx="3" fill="none" stroke="${c.line}" stroke-width="2" opacity=".6"/>
+            <rect x="320" y="150" width="34" height="70" rx="4" fill="${c.wall2}"/>
+            <ellipse cx="337" cy="140" rx="26" ry="22" fill="${c.teal}" opacity=".75"/>
+            <ellipse cx="327" cy="124" rx="14" ry="16" fill="${c.teal}" opacity=".9"/>`,
+          dirt: `
+            <g fill="${c.dirt}" opacity=".55">
+              <ellipse cx="150" cy="120" rx="16" ry="9" transform="rotate(-20 150 120)"/>
+              <ellipse cx="170" cy="150" rx="11" ry="7"/>
+              <ellipse cx="240" cy="95" rx="18" ry="10" transform="rotate(15 240 95)"/>
+              <ellipse cx="258" cy="170" rx="13" ry="8" transform="rotate(-30 258 170)"/>
+              <circle cx="184" cy="95" r="5"/>
+              <circle cx="226" cy="140" r="4"/>
+            </g>
+            <g fill="${c.dirt2}" opacity=".8">
+              <ellipse cx="160" cy="246" rx="9" ry="14" transform="rotate(-10 160 246)"/>
+              <ellipse cx="178" cy="250" rx="9" ry="14" transform="rotate(10 178 250)"/>
+              <ellipse cx="236" cy="244" rx="9" ry="14" transform="rotate(-10 236 244)"/>
+              <ellipse cx="80" cy="270" rx="10" ry="15" transform="rotate(20 80 270)"/>
+              <ellipse cx="300" cy="276" rx="10" ry="15" transform="rotate(-15 300 276)"/>
+            </g>
+            <rect x="40" y="196" width="36" height="24" rx="3" fill="${c.dirt2}"/>
+            <rect x="46" y="186" width="24" height="12" rx="2" fill="${c.dirt}"/>`,
+        },
+        pantry: {
+          room: `
+            <rect width="400" height="300" fill="${c.wall}"/>
+            <rect y="236" width="400" height="64" fill="${c.floor}"/>
+            <rect x="40" y="30" width="320" height="70" rx="4" fill="${c.wall2}"/>
+            <rect x="48" y="38" width="96" height="54" rx="3" fill="${c.white}" opacity=".7"/>
+            <rect x="152" y="38" width="96" height="54" rx="3" fill="${c.white}" opacity=".7"/>
+            <rect x="256" y="38" width="96" height="54" rx="3" fill="${c.white}" opacity=".7"/>
+            <g fill="${c.frame}">
+              <rect x="136" y="60" width="4" height="16" rx="2"/>
+              <rect x="156" y="60" width="4" height="16" rx="2"/>
+              <rect x="344" y="60" width="4" height="16" rx="2"/>
+            </g>
+            <rect x="40" y="110" width="320" height="50" fill="${c.glass}" opacity=".6"/>
+            <rect x="30" y="160" width="340" height="12" rx="2" fill="${c.frame}"/>
+            <rect x="40" y="172" width="320" height="64" fill="${c.wall2}"/>
+            <g fill="none" stroke="${c.line}" stroke-width="2" opacity=".6">
+              <rect x="48" y="178" width="96" height="52" rx="3"/>
+              <rect x="152" y="178" width="96" height="52" rx="3"/>
+              <rect x="256" y="178" width="96" height="52" rx="3"/>
+            </g>
+            <rect x="196" y="156" width="70" height="6" rx="3" fill="${c.line}"/>
+            <path d="M214 156 V132 Q214 122 226 122 H236" fill="none" stroke="${c.line}" stroke-width="5" stroke-linecap="round"/>
+            <rect x="80" y="138" width="44" height="22" rx="6" fill="${c.teal}" opacity=".85"/>
+            <rect x="88" y="130" width="28" height="10" rx="3" fill="${c.teal}"/>`,
+          dirt: `
+            <g fill="${c.dirt}" opacity=".6">
+              <ellipse cx="160" cy="165" rx="18" ry="3"/>
+              <ellipse cx="300" cy="166" rx="24" ry="3"/>
+              <ellipse cx="230" cy="118" rx="14" ry="8"/>
+              <ellipse cx="320" cy="128" rx="10" ry="6"/>
+            </g>
+            <g fill="${c.white}" stroke="${c.line}" stroke-width="2">
+              <rect x="280" y="138" width="16" height="22" rx="3"/>
+              <rect x="300" y="142" width="14" height="18" rx="3"/>
+              <rect x="150" y="142" width="14" height="18" rx="3"/>
+            </g>
+            <g fill="${c.dirt2}" opacity=".85">
+              <ellipse cx="120" cy="262" rx="30" ry="6"/>
+              <ellipse cx="280" cy="270" rx="22" ry="5"/>
+            </g>
+            <path d="M330 236 Q326 200 344 196 Q362 200 358 236 Z" fill="${c.frame}" opacity=".85"/>`,
+        },
+        restroom: {
+          room: `
+            <rect width="400" height="300" fill="${c.wall}"/>
+            <g stroke="${c.wall2}" stroke-width="2">
+              ${Array.from({ length: 13 }, (_, i) => `<line x1="${i * 32}" y1="0" x2="${i * 32}" y2="300"/>`).join("")}
+              ${Array.from({ length: 10 }, (_, i) => `<line x1="0" y1="${i * 32}" x2="400" y2="${i * 32}"/>`).join("")}
+            </g>
+            <rect y="246" width="400" height="54" fill="${c.floor}"/>
+            <rect x="130" y="34" width="140" height="100" rx="8" fill="${c.frame}"/>
+            <rect x="136" y="40" width="128" height="88" rx="5" fill="${c.glass}"/>
+            <path d="M146 50 L166 50 L150 118 L142 118 Z" fill="${c.clean}" opacity=".6"/>
+            <rect x="110" y="160" width="180" height="16" rx="6" fill="${c.white}" stroke="${c.line}" stroke-width="2"/>
+            <path d="M130 176 H270 Q262 210 200 212 Q138 210 130 176 Z" fill="${c.white}" stroke="${c.line}" stroke-width="2"/>
+            <rect x="194" y="210" width="12" height="36" fill="${c.wall2}"/>
+            <path d="M200 160 V146 Q200 140 208 140 H216" fill="none" stroke="${c.line}" stroke-width="4" stroke-linecap="round"/>
+            <rect x="300" y="150" width="20" height="26" rx="4" fill="${c.teal}" opacity=".85"/>`,
+          dirt: `
+            <g fill="${c.dirt}" opacity=".5">
+              <circle cx="180" cy="70" r="6"/>
+              <circle cx="232" cy="92" r="5"/>
+              <circle cx="214" cy="60" r="4"/>
+              <circle cx="246" cy="112" r="6"/>
+              <circle cx="170" cy="104" r="4"/>
+            </g>
+            <g fill="${c.dirt}" opacity=".55">
+              <ellipse cx="170" cy="186" rx="14" ry="4"/>
+              <ellipse cx="236" cy="190" rx="10" ry="3"/>
+              <ellipse cx="150" cy="167" rx="12" ry="3"/>
+            </g>
+            <g fill="${c.dirt2}" opacity=".9">
+              <ellipse cx="90" cy="270" rx="26" ry="6"/>
+              <ellipse cx="300" cy="262" rx="18" ry="5"/>
+              <ellipse cx="220" cy="284" rx="22" ry="5"/>
+            </g>`,
+        },
+      };
+
+      const params = new URLSearchParams(location.search);
+      const scene = scenes[params.get("scene")];
+      if (!scene) throw new Error(`Unknown scene ${params.get("scene")}`);
+      document.getElementById("room").innerHTML =
+        scene.room + (params.get("state") === "before" ? scene.dirt : "");
+    </script>
+  </body>
+</html>

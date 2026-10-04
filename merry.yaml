@@ -92,6 +92,21 @@ check:
     - $test
     - $web
 
+# --- Store images -----------------------------------------------------------
+store:
+  # Not part of `check`: the render needs a headless Chromium in CHROME,
+  # ImageMagick 7, and a network connection for the Google Fonts of the frames.
+  # tool/store_screenshots/render.sh owns the steps.
+  (default): $store:render
+
+  render:
+    (description): Renders the store screenshots and the Play feature graphic from fixture data, then checks them.
+    (scripts): bash tool/store_screenshots/render.sh
+
+  check:
+    (description): Checks the size and the alpha channel of every store image.
+    (scripts): bash tool/store_screenshots/check.sh
+
 # --- Code generation --------------------------------------------------------
 l10n:
   (aliases): gen-l10n
