@@ -8,7 +8,7 @@ import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import { describe, test } from "node:test";
 
-import { privacyPath } from "../../web/report/view.js";
+import { privacyPath, texts } from "../../web/report/view.js";
 
 const repository = new URL("../../", import.meta.url);
 const read = (path) => readFileSync(new URL(path, repository), "utf8");
@@ -108,6 +108,24 @@ describe("the privacy policy pages", () => {
       assert.match(steps[1], /Cloud Firestore/);
       assert.match(steps[2], /Firebase Authentication/);
       assert.doesNotMatch(steps[3], /Firebase|Cloud/);
+    });
+
+    test(`the ${lang} page lists the mark of a report without the footer text among what a link share sends`, () => {
+      const html = read(page.file);
+      const start = html.indexOf('<h2 id="publish">');
+      const end = html.indexOf("<h2", start + 1);
+      assert.ok(
+        start >= 0 && end > start,
+        'the page has no <h2 id="publish"> section',
+      );
+      // The line breaks of the formatter folded into spaces.
+      const section = html.slice(start, end).replace(/\s+/g, " ");
+
+      // `FirebasePublisher` writes `unbranded: true` into such a report, and the report page then leaves out this text.
+      assert.ok(
+        section.includes(`"${texts.footer}"`),
+        `section 3 does not name "${texts.footer}"`,
+      );
     });
 
     test(`the ${lang} page holds nothing that is wider than a 320 px screen`, () => {
