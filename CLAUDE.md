@@ -139,6 +139,32 @@ Codex reviews every pull request, and CodeRabbit was attached on 2026-10-01 afte
 `/pr-loop` keeps its usual terminal conditions, so a CodeRabbit verdict or skip notice counts when one arrives.
 If CodeRabbit posts nothing on a pull request, the operator's ruling of 2026-10-01 applies: the merge needs a clean Codex verdict on the head commit, every check passing, and no unresolved review thread, and the report states that one reviewer ran.
 
+## Release
+
+A release runs on the operator's machine with fastlane, and no CI job releases.
+The root `Gemfile` pins fastlane (run `bundle install` once), `fastlane/Fastfile` holds the lanes, `fastlane/Appfile` holds the bundle ID, and `merry.yaml` owns the scripts that run them.
+
+- `merry run release check` is offline. It fails for a working tree with uncommitted changes, for a version of `pubspec.yaml` without its entry in `CHANGELOG.md`, for a build number without `fastlane/metadata/android/<locale>/changelogs/<build>.txt` in each locale, and for release notes over the store limits in `tool/release_check.dart`.
+- `merry run release ios` runs the check, checks the credentials, deletes `build/ios/ipa`, builds the production IPA, and uploads it to TestFlight. The upload lane stops for an IPA whose version and build number are not those of `pubspec.yaml`, because `flutter build ipa` exits 0 when the export of the IPA fails after the archive.
+- `merry run release android` runs the check, checks the credentials, builds the production App Bundle, and uploads it with its changelogs to the internal testing track.
+- `merry run release metadata ios` and `merry run release metadata android` upload the texts and images under `fastlane/metadata/` (and `fastlane/screenshots/ios` when it exists) without a binary and without a review submission. The Android lane needs a release on the internal testing track that holds the build number of `pubspec.yaml`, because `supply` stops before it uploads when it finds no release on the track that it is given.
+
+The build number is an integer that grows by one for each upload, so bump `pubspec.yaml`, add the changelogs, and commit before a release.
+iOS signs automatically with the `DEVELOPMENT_TEAM` of the Xcode project, without `match`.
+
+| Variable                                                                                                                | Read by              | Value                                                                                        |
+| ----------------------------------------------------------------------------------------------------------------------- | -------------------- | -------------------------------------------------------------------------------------------- |
+| `APP_STORE_CONNECT_API_KEY_KEY_ID`                                                                                      | the iOS lanes        | The key ID of the App Store Connect API key                                                  |
+| `APP_STORE_CONNECT_API_KEY_ISSUER_ID`                                                                                   | the iOS lanes        | The issuer ID of that key                                                                    |
+| `APP_STORE_CONNECT_API_KEY_KEY_FILEPATH`                                                                                | the iOS lanes        | The path of its `.p8` file, outside the repository                                           |
+| `SUPPLY_JSON_KEY`                                                                                                       | the Android lanes    | The path of the JSON key of the Google Play service account, outside the repository          |
+| `SUPPLY_RELEASE_STATUS`                                                                                                 | `release android`    | `draft` (the default, which a draft app in Play Console needs) or `completed`                |
+| `ANDROID_KEYSTORE_PATH`, `ANDROID_KEYSTORE_ALIAS`, `ANDROID_KEYSTORE_PASSWORD`, `ANDROID_KEYSTORE_PRIVATE_KEY_PASSWORD` | the App Bundle build | The upload key, which `android/app/build.gradle.kts` reads, or else `android/key.properties` |
+
+A lane without its variables, or with a path that names no file, stops before any network call and names the variable.
+Every script but `release check` publishes to a store, which is an external action: the operator runs it or approves each run.
+`docs/notes/2026-10-02-first-test-distribution.md` lists the console steps that stay with the operator.
+
 ## Architecture
 
 The M1 design splits the code under `lib/` into units and owns the table of what each unit may import.
