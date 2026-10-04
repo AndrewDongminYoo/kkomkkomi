@@ -176,7 +176,10 @@ export function decodePage(document) {
   };
 }
 
-/** A report from its Firestore REST document. */
+/**
+ * A report from its Firestore REST document. `unbranded` is true only for the boolean true, so a report without the
+ * key, or with any other value, shows the footer text.
+ */
 export function decodeReport(document) {
   const fields = decodeFields(document.fields ?? {});
   const zones = Array.isArray(fields.zones) ? fields.zones : [];
@@ -192,6 +195,7 @@ export function decodeReport(document) {
         beforePhoto: textOrNull(zone.beforePhoto),
         afterPhoto: textOrNull(zone.afterPhoto),
       })),
+    unbranded: fields.unbranded === true,
   };
 }
 

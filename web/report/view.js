@@ -13,7 +13,7 @@ export const texts = {
   noPhoto: "사진 없음",
   photoFailed: "사진을 불러오지 못했어요",
   note: "메모",
-  footer: "꼼꼬미로 만든 보고서",
+  footer: "꼼꼬미로 작성됨",
   privacyLink: "개인정보 처리방침",
   emptyReport: "이 보고서에는 사진이나 메모가 없어요.",
   emptyHistory: "아직 올라온 보고서가 없어요.",
@@ -65,9 +65,10 @@ function element(
 /** The path of the privacy policy, which Hosting serves from `web/privacy/`. */
 export const privacyPath = "/privacy/";
 
-function footer(doc) {
+/** The footer of a sheet: the footer text of the Free plan unless `branded` is false, and the privacy policy link. */
+function footer(doc, { branded = true } = {}) {
   return element(doc, "footer", { className: "footer" }, [
-    element(doc, "p", { text: texts.footer }),
+    ...(branded ? [element(doc, "p", { text: texts.footer })] : []),
     element(doc, "a", {
       text: texts.privacyLink,
       attributes: { href: privacyPath },
@@ -153,7 +154,7 @@ export function renderReport(doc, { pageId, page, report, photoUrl }) {
         attributes: { href: historyPath(pageId) },
       }),
     ]),
-    footer(doc),
+    footer(doc, { branded: !report.unbranded }),
   ]);
 }
 
@@ -176,7 +177,11 @@ export function renderHistory(doc, { pageId, page, reports }) {
             ]),
           ),
         ),
-    footer(doc),
+    // The list shows the footer text unless it lists a report and every listed report is without the footer.
+    footer(doc, {
+      branded:
+        reports.length === 0 || reports.some((report) => !report.unbranded),
+    }),
   ]);
 }
 
