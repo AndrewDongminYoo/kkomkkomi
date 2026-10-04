@@ -10,4 +10,8 @@ final class UnavailableIdentity implements Identity {
   /// The flavor never signs in, so the device holds no account.
   @override
   Future<void> deleteAccount() async {}
+
+  /// The flavor holds no account, so no token holds a paid entitlement.
+  @override
+  Future<bool> hasPaidEntitlement() async => false;
 }

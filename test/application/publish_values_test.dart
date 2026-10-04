@@ -115,16 +115,21 @@ void main() {
     });
 
     test('a report and its zones have value equality', () {
-      PublishedReport report(String note, {DateTime? publishedAt}) => PublishedReport(
+      PublishedReport report(String note, {DateTime? publishedAt, bool unbranded = false}) => PublishedReport(
         visitDate: VisitDate(2026, 10, 2),
         publishedAt: publishedAt ?? DateTime.utc(2026, 10, 2, 9),
         zones: [PublishedZone(name: '입구', note: note, beforePhoto: 'a.jpg', afterPhoto: null)],
+        unbranded: unbranded,
       );
 
       expect(report('바닥'), report('바닥'));
       expect(report('바닥').hashCode, report('바닥').hashCode);
       expect(report('바닥'), isNot(report('창문')));
       expect(report('바닥'), isNot(report('바닥', publishedAt: DateTime.utc(2026, 10, 2, 10))));
+      expect(report('바닥').unbranded, isFalse);
+      expect(report('바닥'), isNot(report('바닥', unbranded: true)));
+      expect(report('바닥', unbranded: true).hashCode, report('바닥', unbranded: true).hashCode);
+      expect(report('바닥', unbranded: true).toString(), contains('unbranded: true'));
       expect(report('바닥', publishedAt: DateTime(2026, 10, 2, 18)).publishedAt.isUtc, isTrue);
       expect(report('바닥').zones.single.hashCode, report('바닥').zones.single.hashCode);
       expect(report('바닥').toString(), contains('입구'));

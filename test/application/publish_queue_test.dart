@@ -637,6 +637,116 @@ void main() {
       expect(activeTimers(), isEmpty);
     });
 
+    test('writes the report without the footer for a user with a paid entitlement', () async {
+      identity.paid = true;
+      final queue = newQueue();
+
+      final job = await queue.publishVisit('visit-2');
+      await settle();
+
+      expect(publisher.reports['${job.pageId}/visit-2']?.unbranded, isTrue);
+      expect(identity.paidChecks, 1);
+      expect(await jobOf(job), job.succeed());
+    });
+
+    test('writes the report with the footer for a user without a paid entitlement', () async {
+      final queue = newQueue();
+
+      final job = await queue.publishVisit('visit-2');
+      await settle();
+
+      expect(publisher.reports['${job.pageId}/visit-2']?.unbranded, isFalse);
+      expect(identity.paidChecks, 1);
+    });
+
+    test('writes the report again with the footer when the plan ended before the visit is published again', () async {
+      identity.paid = true;
+      final queue = newQueue();
+      final first = await queue.publishVisit('visit-2');
+      await settle();
+      expect(publisher.reports['${first.pageId}/visit-2']?.unbranded, isTrue);
+
+      identity.paid = false;
+      final second = await queue.publishVisit('visit-2');
+      await settle();
+
+      expect(publisher.reports['${second.pageId}/visit-2']?.unbranded, isFalse);
+      expect(identity.paidChecks, 2);
+      expect((await jobOf(second)).status, PublishJobStatus.done);
+    });
+
+    test('a refused report without the footer is written again with the footer in the same run', () async {
+      identity.paid = true;
+      publisher.failures['writeReport'] = [_refused];
+      final queue = newQueue();
+      final updates = <PublishJob>[];
+      queue.updates.listen(updates.add);
+
+      final job = await queue.publishVisit('visit-2');
+      await settle();
+
+      expect(publisher.calls.where((call) => call.startsWith('writeReport')), hasLength(2));
+      expect(publisher.reports['${job.pageId}/visit-2']?.unbranded, isFalse);
+      expect(identity.paidChecks, 1);
+      expect(await jobOf(job), job.succeed());
+      expect(updates, [job.succeed()]);
+      expect(activeTimers(), isEmpty);
+    });
+
+    test('a refusal of the report with the footer after a refused one without it stops the job', () async {
+      identity.paid = true;
+      publisher.failures['writeReport'] = [_refused, _refused];
+      final queue = newQueue();
+
+      final job = await queue.publishVisit('visit-2');
+      await settle();
+
+      expect(publisher.calls.where((call) => call.startsWith('writeReport')), hasLength(2));
+      expect(publisher.reports, isEmpty);
+      expect(await jobOf(job), job.fail(PublishFailure.refused));
+    });
+
+    test('a check of the paid entitlement that does not answer in time gives the report with the footer in the same '
+        'run', () async {
+      identity
+        ..paid = true
+        ..paidGate = Completer<void>();
+      final queue = newQueue(stepTimeout: const Duration(milliseconds: 10));
+
+      final job = await queue.publishVisit('visit-2');
+      await waitUntil(() async => (await jobOf(job)).status != PublishJobStatus.pending);
+
+      expect(publisher.reports['${job.pageId}/visit-2']?.unbranded, isFalse);
+      expect(identity.paidChecks, 1);
+      expect(await jobOf(job), job.succeed());
+      identity.paidGate!.complete();
+    });
+
+    test('a report without the footer that fails for a reason that a retry can fix is not written again, and the job '
+        'that runs again after the plan ended writes it with the footer', () async {
+      identity.paid = true;
+      publisher.failures['writeReport'] = [_transient];
+      final queue = newQueue();
+
+      final job = await queue.publishVisit('visit-2');
+      await settle();
+
+      expect(publisher.calls.where((call) => call.startsWith('writeReport')), hasLength(1));
+      expect(publisher.reports, isEmpty);
+      final stored = await jobOf(job);
+      expect(stored.status, PublishJobStatus.pending);
+      expect(stored.attempts, 1);
+
+      identity.paid = false;
+      clock.time = start.add(const Duration(seconds: 5));
+      activeTimers().single.fire();
+      await settle();
+
+      expect(publisher.reports['${job.pageId}/visit-2']?.unbranded, isFalse);
+      expect(identity.paidChecks, 2);
+      expect(await jobOf(job), stored.succeed());
+    });
+
     test('gives the client one page of 128 random bits and publishes each visit under it', () async {
       final queue = newQueue();
 
@@ -884,7 +994,8 @@ void main() {
   });
 
   group('a step that fails for a reason that a retry cannot fix', () {
-    for (final (step, calls) in [('writePage', 1), ('uploadPhoto', 2), ('writeReport', 3)]) {
+    // Only the report write asks for the paid entitlement, so a job that stops at the page or at a photo asks for none.
+    for (final (step, calls, paidChecks) in [('writePage', 1, 0), ('uploadPhoto', 2, 0), ('writeReport', 3, 1)]) {
       test('$step: the job stops and keeps the refusal as its reason', () async {
         publisher.failures[step] = [_refused];
         final queue = newQueue();
@@ -895,6 +1006,7 @@ void main() {
         await settle();
 
         expect(publisher.calls, hasLength(calls));
+        expect(identity.paidChecks, paidChecks);
         expect(await jobOf(job), job.fail(PublishFailure.refused));
         expect(updates, [job.fail(PublishFailure.refused)]);
         expect(activeTimers(), isEmpty);
@@ -1234,12 +1346,15 @@ void main() {
       final published = await queue.publishVisit('visit-1');
       await settle();
       publisher.calls.clear();
+      identity.paidChecks = 0;
       clock.time = start.add(const Duration(hours: 1));
 
       final revoked = await queue.revokeClientPage('client-1');
       await settle();
 
       final pageId = published.pageId;
+      // A revoke writes no report, so it never asks for the paid entitlement.
+      expect(identity.paidChecks, 0);
       expect(revoked?.id, pageId);
       expect(revoked?.revokedAt, clock.time);
       expect(await repositories.publishing.pageById(pageId), revoked);
