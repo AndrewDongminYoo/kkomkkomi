@@ -2,6 +2,7 @@
 allprojects
 APARTMENTTHREADED
 appbundle
+Appfile
 APPICON
 APSTUDIO
 assetcatalog
@@ -19,6 +20,7 @@ dwmapi
 DWMCOLORIZATIONCOLORCHANGED
 DWMWA
 endfunction
+Fastfile
 FILEFLAGS
 FILEFLAGSMASK
 FILEOS
