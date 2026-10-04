@@ -3,6 +3,9 @@
 // prints one line for each problem that it finds, and the script exits with 1
 // when any check finds one.
 //
+// The metadata lanes, which build nothing, pass `--metadata`, which leaves out
+// the check of the RevenueCat keys file.
+//
 // Run it from the root of the repository.
 import 'dart:convert';
 import 'dart:io';
@@ -65,6 +68,15 @@ const Map<String, int> appStoreTextLimits = {
 /// UTF-8, where a Korean syllable takes 3 bytes. Newlines count too.
 const appStoreKeywordsByteLimit = 100;
 
+/// The file that holds the RevenueCat public SDK keys, which the production
+/// build scripts of `merry.yaml` read with `--dart-define-from-file`. Git
+/// ignores it, so a fresh clone does not have it.
+const revenueCatKeysPath = 'config/revenuecat.json';
+
+/// The tracked file that shows the keys of [revenueCatKeysPath], with empty
+/// values.
+const revenueCatKeysExamplePath = 'config/revenuecat.example.json';
+
 /// The version name and the build number of `version: <name>+<build>` in
 /// `pubspec.yaml`, or null when the file has no such line.
 ({String name, int build})? parsePubspecVersion(String pubspec) {
@@ -79,10 +91,12 @@ const appStoreKeywordsByteLimit = 100;
 /// The problems that block a release of the repository at [root].
 ///
 /// [gitStatus] is the output of `git status --porcelain` in [root], so any
-/// line in it is a change that is not committed.
+/// line in it is a change that is not committed. [forBuild] is false for a
+/// release that builds nothing, which does not read the RevenueCat keys file.
 List<String> releaseProblems({
   required Directory root,
   required String gitStatus,
+  bool forBuild = true,
 }) {
   final problems = <String>[];
 
@@ -109,7 +123,19 @@ List<String> releaseProblems({
   problems
     ..addAll(_playListingProblems(root))
     ..addAll(_appStoreTextProblems(root));
+  if (forBuild) problems.addAll(_revenueCatKeysProblems(root));
   return problems;
+}
+
+/// A build without the keys file stops, so that no build lacks the keys by
+/// accident. The file with empty keys passes: it builds an app without
+/// subscriptions on purpose.
+List<String> _revenueCatKeysProblems(Directory root) {
+  if (File('${root.path}/$revenueCatKeysPath').existsSync()) return const [];
+  const fix = 'or keep them empty for a build without subscriptions.';
+  return [
+    '$revenueCatKeysPath is missing: copy $revenueCatKeysExamplePath to it and fill in the RevenueCat public SDK keys, $fix',
+  ];
 }
 
 List<String> _changelogProblems(Directory root, String versionName) {
@@ -204,7 +230,7 @@ List<String> _localeDirectories(Directory parent) {
   ]..sort();
 }
 
-Future<void> main() async {
+Future<void> main(List<String> arguments) async {
   final root = Directory.current;
   final status = await Process.run('git', [
     'status',
@@ -219,6 +245,7 @@ Future<void> main() async {
   final problems = releaseProblems(
     root: root,
     gitStatus: status.stdout as String,
+    forBuild: !arguments.contains('--metadata'),
   );
   if (problems.isEmpty) {
     final version = parsePubspecVersion(

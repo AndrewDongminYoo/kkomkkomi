@@ -23,6 +23,10 @@ void main() {
     write('fastlane/metadata/android/en-US/changelogs/7.txt', 'A change.\n');
     write('fastlane/metadata/android/ko-KR/changelogs/7.txt', '바뀐 점.\n');
     write('fastlane/metadata/ios/ko/name.txt', '꼼꼬미\n');
+    write(
+      revenueCatKeysPath,
+      '{"REVENUECAT_IOS_API_KEY": "", "REVENUECAT_ANDROID_API_KEY": ""}\n',
+    );
   });
 
   tearDown(() => root.deleteSync(recursive: true));
@@ -196,6 +200,31 @@ void main() {
       expect(releaseProblems(root: root, gitStatus: ''), [
         '$path has 103 bytes in UTF-8, newlines included, and the store takes at most 100.',
       ]);
+    });
+
+    test('fails when the RevenueCat keys file is missing, and names the example file', () {
+      File('${root.path}/$revenueCatKeysPath').deleteSync();
+
+      expect(releaseProblems(root: root, gitStatus: ''), [
+        allOf(
+          contains('config/revenuecat.json is missing'),
+          contains('config/revenuecat.example.json'),
+        ),
+      ]);
+    });
+
+    test('does not read the RevenueCat keys file for a release that builds nothing', () {
+      File('${root.path}/$revenueCatKeysPath').deleteSync();
+
+      expect(releaseProblems(root: root, gitStatus: '', forBuild: false), isEmpty);
+    });
+
+    test('passes with the RevenueCat keys file that holds empty keys, for a build without subscriptions', () {
+      expect(
+        File('${root.path}/$revenueCatKeysPath').readAsStringSync(),
+        contains('"REVENUECAT_IOS_API_KEY": ""'),
+      );
+      expect(releaseProblems(root: root, gitStatus: ''), isEmpty);
     });
 
     test('reports every problem at once', () {

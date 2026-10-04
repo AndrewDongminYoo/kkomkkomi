@@ -150,3 +150,7 @@ fastlane/*.json
 *service-account*.json
 *service_account*.json
 fastlane/.env*
+
+# The RevenueCat public SDK keys, which the production build reads with
+# --dart-define-from-file. config/revenuecat.example.json shows the two keys.
+config/revenuecat.json
