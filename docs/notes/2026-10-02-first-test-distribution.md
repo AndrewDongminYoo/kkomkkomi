@@ -23,6 +23,7 @@ The same page allows up to 100 internal testers per app, who are App Store Conne
 | Bundle ID and application ID   | `kr.donminzzi.kkomkkomi` (production flavor)                                                     |
 | Version                        | `1.0.0`, build `1`, from `pubspec.yaml`                                                          |
 | iOS minimum version            | 15.0 (`IPHONEOS_DEPLOYMENT_TARGET`)                                                              |
+| iOS devices                    | iPhone only (`TARGETED_DEVICE_FAMILY = 1` in the Runner target, operator decision of 2026-10-04) |
 | Android minimum and target SDK | 24 and 36, read from the built bundle                                                            |
 | Privacy policy                 | `https://kkomkkomi.web.app/privacy/` (Korean), `https://kkomkkomi.web.app/privacy/en/` (English) |
 | App Store categories           | Business, then Productivity (`fastlane/metadata/ios/*_category.txt`)                             |
@@ -34,10 +35,11 @@ The same page allows up to 100 internal testers per app, who are App Store Conne
 1. **Bundle ID.** In Certificates, Identifiers & Profiles, register the explicit App ID `kr.donminzzi.kkomkkomi`. The app uses no capability that needs a switch there: no push notification, no sign in with Apple, no app group.
 2. **App Store Connect app record.** Create a new iOS app with the bundle ID above, the primary language Korean, the name `꼼꼬미`, and an SKU of your choice.
 3. **App information.** Set the category, the privacy policy URL, and the content rights. Answer the age rating questions.
-4. **Export compliance.** App Store Connect asks about the encryption of the build. No code under `lib/` or `ios/Runner/` encrypts anything; the Firebase SDKs use TLS, and the build bundles the `openssl_grpc` framework of gRPC. Decide the answer, and whether to put `ITSAppUsesNonExemptEncryption` in `Info.plist` in a separate change.
-5. **Build and upload.** Set the team, then run `merry run build ipa` and upload the IPA with Xcode Organizer or Transporter. The build needs `ios/Runner/GoogleService-Info.plist` from `flutterfire configure`, as `CLAUDE.md` says. The repository has no `Deliverfile`, and `deliver` reads `fastlane/metadata` by default, so a later `deliver` run needs `metadata_path("./fastlane/metadata/ios")`; `supply` reads `fastlane/metadata/android` by default.
-6. **TestFlight.** Make an internal group, add the testers, and paste the "What to Test" text below. For an external group, settle the open items above first.
-7. **App Privacy.** Enter the answers in "Draft answers for App Privacy" below.
+4. **Export compliance.** Decided by the operator on 2026-10-04: `ios/Runner/Info.plist` declares `ITSAppUsesNonExemptEncryption` as `NO`, because no code under `lib/` or `ios/Runner/` encrypts anything and the Firebase SDKs use HTTPS. The build bundles the `openssl_grpc` framework of gRPC.
+5. **App Store Connect API key.** In Users and Access, Integrations, generate a team API key whose role can upload builds and edit the app information. Keep the `.p8` file outside the repository, and set the three `APP_STORE_CONNECT_API_KEY_*` variables that the "Release" section of `CLAUDE.md` names.
+6. **Build and upload.** Run `merry run release ios`, which checks, builds, and uploads the IPA to TestFlight; the "Release" section of `CLAUDE.md` owns the scripts. The build needs `ios/Runner/GoogleService-Info.plist` from `flutterfire configure`, as `CLAUDE.md` says. `merry run release metadata ios` uploads the store texts of `fastlane/metadata/ios` without a binary and without a review submission.
+7. **TestFlight.** Make an internal group and add the testers. `merry run release ios` uploads the build without waiting for processing and adds it to no group (`skip_waiting_for_build_processing: true` and no `groups` in the `beta` lane of `fastlane/Fastfile`). Apple's page "Add internal testers" says: "If automatic distribution isn't enabled, you must manually add all builds to the group" (https://developer.apple.com/help/app-store-connect/test-a-beta-version/add-internal-testers, read on 2026-10-04). So when processing is done, open the group in the TestFlight tab, click Add Builds, choose build 1, click Next, paste the "What to Test" text below, and click Add. The same page describes the checkbox as Xcode delivery: "To enable Xcode to automatically deliver builds to all group members, select the "Enable automatic distribution" checkbox", and the lane uploads through fastlane, not Xcode, so check that build 1 shows in the group before the testers start. For an external group, settle the open items above first.
+8. **App Privacy.** Enter the answers in "Draft answers for App Privacy" below.
 
 ### "What to Test" for build 1
 
@@ -61,14 +63,16 @@ en-US:
 1. **Play Console app.** Create the app with the default language Korean (`ko-KR`), the name from `fastlane/metadata/android/ko-KR/title.txt`, the type App, and free or paid as you decide.
 2. **Store settings.** Choose the category Business, and enter the contact details.
 3. **App content.** Enter the privacy policy URL. For app access, all functions work without a login. Ads: none. Answer the content rating questions and the target audience. Enter the Data safety answers below.
-4. **Internal testing track.** Create a release on the internal testing track, upload the App Bundle, add the testers' email list, and use `fastlane/metadata/android/<locale>/changelogs/1.txt` as the release notes.
+4. **Internal testing track, first bundle by hand.** Build the first App Bundle with `merry run build aab`, create a release on the internal testing track in Play Console, upload the bundle there, add the testers' email list, and use `fastlane/metadata/android/<locale>/changelogs/1.txt` as the release notes. `supply` cannot make the first upload: "Before using _supply_ to connect to Google Play Store, you'll need to set up your app manually first by uploading at least one build to Google Play Store" (https://docs.fastlane.tools/actions/supply/, "Quick Start"; the same text is in the documentation of fastlane 2.240.1, which `Gemfile.lock` pins).
 5. **App signing.** Play App Signing keeps the key that signs the app for users. The bundle that you upload is signed with your upload key.
+6. **Service account.** Make a Google Cloud service account and a JSON key for it, as the "Setup" section of the same page describes, and invite the service account in Play Console with the permission to release the app. Keep the key outside the repository and set `SUPPLY_JSON_KEY` to its path.
+7. **Later builds.** Run `merry run release android`, which checks, builds, and uploads the bundle with its changelogs to the internal testing track. By default the release is a draft, which Google Play requires while the app is a draft in Play Console, and it goes to the testers when you roll it out there; `SUPPLY_RELEASE_STATUS=completed` rolls it out at upload (the "Release" section of `CLAUDE.md`). `merry run release metadata android` uploads the store texts and images of `fastlane/metadata/android` without a bundle.
 
 ### The upload key
 
 - Make it once with `keytool -genkeypair` (RSA 2048, a long validity) and keep the keystore and its passwords outside the repository, with a backup. `.gitignore` already ignores `*.jks`, `*.keystore`, and `key.properties`.
 - `android/app/build.gradle.kts` reads it from the four variables `ANDROID_KEYSTORE_PATH`, `ANDROID_KEYSTORE_ALIAS`, `ANDROID_KEYSTORE_PASSWORD`, and `ANDROID_KEYSTORE_PRIVATE_KEY_PASSWORD`, or from `android/key.properties` when `ANDROID_KEYSTORE_PATH` is not set.
-- Then run `merry run build aab` with those variables, and upload `build/app/outputs/bundle/productionRelease/app-production-release.aab`. The bundle needs `android/app/google-services.json` from `flutterfire configure`.
+- `merry run build aab` (the first bundle) and `merry run release android` (each later bundle) build `build/app/outputs/bundle/productionRelease/app-production-release.aab` with that key. The bundle needs `android/app/google-services.json` from `flutterfire configure`.
 - Play Console Help says: "If you lose your upload key or suspect that it was compromised, you are not locked out of your app", and a new upload key is then registered through a reset request (https://support.google.com/googleplay/android-developer/answer/9842756, read on 2026-10-02). The same page says that a new app is enrolled in Play App Signing with keys that Google generates.
 
 ## Firebase

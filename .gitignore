@@ -134,3 +134,19 @@ firestore-debug.log
 
 # Worktrees that agent sessions create inside the checkout
 .claude/worktrees/
+
+# fastlane output, and a gem install inside the repository
+fastlane/report.xml
+fastlane/README.md
+fastlane/Preview.html
+fastlane/test_output/
+.bundle/
+vendor/bundle/
+
+# Release credentials, which stay outside the repository: the App Store Connect
+# API key, the Google Play service account key, and fastlane env files
+*.p8
+fastlane/*.json
+*service-account*.json
+*service_account*.json
+fastlane/.env*
