@@ -9,6 +9,14 @@ service cloud.firestore {
       return request.auth != null;
     }
 
+    // The entitlements that the RevenueCat Firebase extension writes into the token of a paying user. A missing claim
+    // or a claim that is not a list is not paid.
+    function paid() {
+      return signedIn()
+        && request.auth.token.get('revenueCatEntitlements', []) is list
+        && request.auth.token.get('revenueCatEntitlements', []).hasAny(['basic', 'pro']);
+    }
+
     function isPage(data) {
       return data.keys().hasOnly(['ownerUid', 'companyName', 'clientName', 'createdAt', 'revokedAt'])
         && data.keys().hasAll(['ownerUid', 'clientName', 'createdAt'])
@@ -19,12 +27,14 @@ service cloud.firestore {
         && (data.get('revokedAt', null) == null || data.revokedAt is timestamp);
     }
 
+    // A report without the footer of the Free plan carries unbranded: true, and only a paid writer may write it.
     function isReport(data) {
-      return data.keys().hasOnly(['visitDate', 'publishedAt', 'zones'])
+      return data.keys().hasOnly(['visitDate', 'publishedAt', 'zones', 'unbranded'])
         && data.keys().hasAll(['visitDate', 'publishedAt', 'zones'])
         && data.visitDate is string
         && data.publishedAt is timestamp
-        && data.zones is list;
+        && data.zones is list
+        && (!data.keys().hasAny(['unbranded']) || (data.unbranded == true && paid()));
     }
 
     function pageOf(pageId) {

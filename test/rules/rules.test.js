@@ -92,6 +92,9 @@ function photoPath(pageId, fileName = "zone-1-before-photo-1.jpg") {
 
 const reader = () => env.unauthenticatedContext();
 const signedIn = (uid) => env.authenticatedContext(uid);
+// `authenticatedContext` spreads its token options into the token, so the claim reaches `request.auth.token`.
+const withEntitlements = (uid, entitlements) =>
+  env.authenticatedContext(uid, { revenueCatEntitlements: entitlements });
 
 describe("firestore: readers", () => {
   test("a reader gets an open page by its ID", async () => {
@@ -306,6 +309,55 @@ describe("firestore: writers", () => {
         .firestore()
         .doc(`clientPages/${openPage}/reports/visit-2`)
         .set({ ...report(), extra: true }),
+    );
+  });
+
+  test("a report without the footer needs a basic or pro entitlement in the token", async () => {
+    const path = `clientPages/${openPage}/reports/visit-2`;
+    const unbranded = { ...report(), unbranded: true };
+    await assertSucceeds(
+      withEntitlements(owner, ["basic"]).firestore().doc(path).set(unbranded),
+    );
+    await assertSucceeds(
+      withEntitlements(owner, ["pro", "basic"])
+        .firestore()
+        .doc(path)
+        .set(unbranded),
+    );
+    await assertFails(signedIn(owner).firestore().doc(path).set(unbranded));
+    await assertFails(
+      withEntitlements(owner, []).firestore().doc(path).set(unbranded),
+    );
+    await assertFails(
+      withEntitlements(owner, ["team"]).firestore().doc(path).set(unbranded),
+    );
+    await assertFails(
+      withEntitlements(owner, "basic").firestore().doc(path).set(unbranded),
+    );
+  });
+
+  test("unbranded takes only the value true", async () => {
+    const db = withEntitlements(owner, ["pro"]).firestore();
+    const path = `clientPages/${openPage}/reports/visit-2`;
+    await assertFails(db.doc(path).set({ ...report(), unbranded: false }));
+    await assertFails(db.doc(path).set({ ...report(), unbranded: "true" }));
+  });
+
+  test("a paid owner may still write a report with the footer", async () => {
+    await assertSucceeds(
+      withEntitlements(owner, ["basic"])
+        .firestore()
+        .doc(`clientPages/${openPage}/reports/visit-2`)
+        .set(report()),
+    );
+  });
+
+  test("a paid stranger cannot write a report under a page of another owner", async () => {
+    await assertFails(
+      withEntitlements(stranger, ["pro"])
+        .firestore()
+        .doc(`clientPages/${openPage}/reports/visit-2`)
+        .set({ ...report(), unbranded: true }),
     );
   });
 });
