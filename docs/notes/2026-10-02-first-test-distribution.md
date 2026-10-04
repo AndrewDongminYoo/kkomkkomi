@@ -33,8 +33,8 @@ The same page allows up to 100 internal testers per app, who are App Store Conne
 ## Apple
 
 1. **Bundle ID.** In Certificates, Identifiers & Profiles, register the explicit App ID `kr.donminzzi.kkomkkomi`. The app uses no capability that needs a switch there: no push notification, no sign in with Apple, no app group.
-2. **App Store Connect app record.** Create a new iOS app with the bundle ID above, the primary language Korean, the name `꼼꼬미`, and an SKU of your choice.
-3. **App information.** Set the category, the privacy policy URL, and the content rights. Answer the age rating questions.
+2. **App Store Connect app record.** Create a new iOS app with the bundle ID above, the primary language Korean, the name from `fastlane/metadata/ios/ko/name.txt`, and an SKU of your choice. The operator chose that name on 2026-10-04, after finding that an app named 꼼꼬미 already exists.
+3. **App information.** Set the category, the privacy policy URL, and the content rights. Answer the age rating questions. In Pricing and Availability, make the app free: the operator decided on 2026-10-04 that the app is free to download and that the paid plans are in-app subscriptions (M3, issue 36).
 4. **Export compliance.** Decided by the operator on 2026-10-04: `ios/Runner/Info.plist` declares `ITSAppUsesNonExemptEncryption` as `NO`, because no code under `lib/` or `ios/Runner/` encrypts anything and the Firebase SDKs use HTTPS. The build bundles the `openssl_grpc` framework of gRPC.
 5. **App Store Connect API key.** In Users and Access, Integrations, generate a team API key whose role can upload builds and edit the app information. Keep the `.p8` file outside the repository, and set the three `APP_STORE_CONNECT_API_KEY_*` variables that the "Release" section of `CLAUDE.md` names.
 6. **Build and upload.** Run `merry run release ios`, which checks, builds, and uploads the IPA to TestFlight; the "Release" section of `CLAUDE.md` owns the scripts. The build needs `ios/Runner/GoogleService-Info.plist` from `flutterfire configure`, as `CLAUDE.md` says. `merry run release metadata ios` uploads the store texts of `fastlane/metadata/ios` without a binary and without a review submission.
@@ -60,7 +60,7 @@ en-US:
 
 ## Google Play
 
-1. **Play Console app.** Create the app with the default language Korean (`ko-KR`), the name from `fastlane/metadata/android/ko-KR/title.txt`, the type App, and free or paid as you decide.
+1. **Play Console app.** Create the app with the default language Korean (`ko-KR`), the name from `fastlane/metadata/android/ko-KR/title.txt`, the type App, and Free (operator decision, 2026-10-04; the paid plans are in-app subscriptions, M3, issue 36). The choice is final: "Once your app has been offered for free, the app can't be changed to paid" (Play Console Help, "Set up your app's prices", https://support.google.com/googleplay/android-developer/answer/6334373, read on 2026-10-04).
 2. **Store settings.** Choose the category Business, and enter the contact details.
 3. **App content.** Enter the privacy policy URL. For app access, all functions work without a login. Ads: none. Answer the content rating questions and the target audience. Enter the Data safety answers below.
 4. **Internal testing track, first bundle by hand.** Build the first App Bundle with `merry run build aab`, create a release on the internal testing track in Play Console, upload the bundle there, add the testers' email list, and use `fastlane/metadata/android/<locale>/changelogs/1.txt` as the release notes. `supply` cannot make the first upload: "Before using _supply_ to connect to Google Play Store, you'll need to set up your app manually first by uploading at least one build to Google Play Store" (https://docs.fastlane.tools/actions/supply/, "Quick Start"; the same text is in the documentation of fastlane 2.240.1, which `Gemfile.lock` pins).
