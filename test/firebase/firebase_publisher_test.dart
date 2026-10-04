@@ -113,11 +113,30 @@ void main() {
       );
 
       final data = written('clientPages/page-1/reports/visit-1');
+      // A report with the footer has no `unbranded` key, as before the key existed.
+      expect(data.keys, ['visitDate', 'publishedAt', 'zones']);
       expect(data['visitDate'], '2026-10-02');
       expect(data['publishedAt'], Timestamp.fromDate(DateTime.utc(2026, 10, 2, 9, 30)));
       expect(data['zones'], [
         {'name': '입구', 'note': '바닥', 'beforePhoto': 'a.jpg', 'afterPhoto': null},
       ]);
+    });
+
+    test('writes unbranded: true into a report without the footer', () async {
+      await publisher.writeReport(
+        pageId: 'page-1',
+        visitId: 'visit-1',
+        report: PublishedReport(
+          visitDate: VisitDate(2026, 10, 2),
+          publishedAt: DateTime.utc(2026, 10, 2, 9, 30),
+          zones: const [],
+          unbranded: true,
+        ),
+      );
+
+      final data = written('clientPages/page-1/reports/visit-1');
+      expect(data.keys, ['visitDate', 'publishedAt', 'zones', 'unbranded']);
+      expect(data['unbranded'], isTrue);
     });
 
     test('uploads a photo as a JPEG to its path', () async {

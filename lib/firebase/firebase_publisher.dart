@@ -51,6 +51,9 @@ final class FirebasePublisher implements Publisher {
                 'afterPhoto': zone.afterPhoto,
               },
           ],
+          // The rules take only the value true, and only from a paid writer, so a report with the footer leaves the
+          // key out.
+          if (report.unbranded) 'unbranded': true,
         }),
       );
 

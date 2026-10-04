@@ -98,9 +98,13 @@ final class PublishedPage {
 
 /// What the report of one visit shows.
 final class PublishedReport {
-  new({required this.visitDate, required DateTime publishedAt, required Iterable<PublishedZone> zones})
-    : publishedAt = publishedAt.toUtc(),
-      zones = List.unmodifiable(zones);
+  new({
+    required this.visitDate,
+    required DateTime publishedAt,
+    required Iterable<PublishedZone> zones,
+    this.unbranded = false,
+  }) : publishedAt = publishedAt.toUtc(),
+       zones = List.unmodifiable(zones);
 
   final VisitDate visitDate;
 
@@ -110,18 +114,22 @@ final class PublishedReport {
   /// The zones in the order of the visit.
   final List<PublishedZone> zones;
 
+  /// Whether the report shows without the footer, which the rules accept only from a writer with a paid entitlement.
+  final bool unbranded;
+
   @override
   bool operator ==(Object other) =>
       other is PublishedReport &&
       other.visitDate == visitDate &&
       other.publishedAt == publishedAt &&
-      sameElements(other.zones, zones);
+      sameElements(other.zones, zones) &&
+      other.unbranded == unbranded;
 
   @override
-  int get hashCode => Object.hash(visitDate, publishedAt, Object.hashAll(zones));
+  int get hashCode => Object.hash(visitDate, publishedAt, Object.hashAll(zones), unbranded);
 
   @override
-  String toString() => 'PublishedReport($visitDate, $publishedAt, $zones)';
+  String toString() => 'PublishedReport($visitDate, $publishedAt, $zones, unbranded: $unbranded)';
 }
 
 /// What a report shows for one zone. A photo is the path of its object, never a download URL.
