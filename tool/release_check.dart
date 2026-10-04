@@ -4,6 +4,7 @@
 // when any check finds one.
 //
 // Run it from the root of the repository.
+import 'dart:convert';
 import 'dart:io';
 
 /// The longest release notes of a locale that Google Play takes, in Unicode
@@ -14,6 +15,55 @@ const playChangelogLimit = 500;
 /// The longest release notes of a locale that App Store Connect takes, in
 /// Unicode characters, from the `release-cut` skill. Newlines count too.
 const appStoreReleaseNotesLimit = 4000;
+
+/// The store texts of a locale in `fastlane/metadata/android/<locale>/` that
+/// the Android `metadata` lane uploads, and the most Unicode characters that
+/// Google Play takes for each. Newlines count, as in [playChangelogLimit].
+///
+/// Source: Play Console Help, "Create and set up your app", the table under
+/// "Product details" (https://support.google.com/googleplay/android-developer/answer/9859152,
+/// accessed 2026-10-04): "App name ... 30 character limit", "Short description
+/// ... 80 character limit", and "Full description ... 4000 character limit".
+/// Its note says that the limits apply to full-width and half-width characters
+/// alike, so a Korean syllable counts as one character.
+const Map<String, int> playListingLimits = {
+  'title.txt': 30,
+  'short_description.txt': 80,
+  'full_description.txt': 4000,
+};
+
+/// The store texts of a locale in `fastlane/metadata/ios/<locale>/` that the
+/// iOS `metadata` lane uploads, and the most Unicode characters that App Store
+/// Connect takes for each. Newlines count, as in [appStoreReleaseNotesLimit].
+/// The keywords have a limit in bytes instead: see [appStoreKeywordsByteLimit].
+///
+/// Sources, accessed 2026-10-04:
+/// - name and subtitle: App Store Connect Help, "App information"
+///   (https://developer.apple.com/help/app-store-connect/reference/app-information/app-information):
+///   the name has "no more than 30 characters", and the subtitle "can't be
+///   longer than 30 characters".
+/// - description and promotional text: App Store Connect Help, "Platform
+///   version information"
+///   (https://developer.apple.com/help/app-store-connect/reference/app-information/platform-version-information):
+///   the description is "Limited to 4000 characters", and the promotional text
+///   "can't be longer than 170 characters".
+const Map<String, int> appStoreTextLimits = {
+  'name.txt': 30,
+  'subtitle.txt': 30,
+  'description.txt': 4000,
+  'promotional_text.txt': 170,
+  'release_notes.txt': appStoreReleaseNotesLimit,
+};
+
+/// The most bytes of the keywords of a locale, in
+/// `fastlane/metadata/ios/<locale>/keywords.txt`, that App Store Connect takes.
+///
+/// Source: App Store Connect Help, "Platform version information"
+/// (https://developer.apple.com/help/app-store-connect/reference/app-information/platform-version-information,
+/// accessed 2026-10-04): "You can provide up to 100 bytes of content." The
+/// page does not name an encoding, so the check counts the bytes of the file in
+/// UTF-8, where a Korean syllable takes 3 bytes. Newlines count too.
+const appStoreKeywordsByteLimit = 100;
 
 /// The version name and the build number of `version: <name>+<build>` in
 /// `pubspec.yaml`, or null when the file has no such line.
@@ -56,7 +106,9 @@ List<String> releaseProblems({
       ..addAll(_playChangelogProblems(root, version.build));
   }
 
-  problems.addAll(_appStoreReleaseNotesProblems(root));
+  problems
+    ..addAll(_playListingProblems(root))
+    ..addAll(_appStoreTextProblems(root));
   return problems;
 }
 
@@ -97,15 +149,40 @@ List<String> _playChangelogProblems(Directory root, int build) {
   return problems;
 }
 
-List<String> _appStoreReleaseNotesProblems(Directory root) {
+List<String> _playListingProblems(Directory root) {
+  final problems = <String>[];
+  for (final locale in _localeDirectories(
+    Directory('${root.path}/fastlane/metadata/android'),
+  )) {
+    for (final MapEntry(key: name, value: limit) in playListingLimits.entries) {
+      final path = 'fastlane/metadata/android/$locale/$name';
+      final file = File('${root.path}/$path');
+      if (file.existsSync()) problems.addAll(_lengthProblems(file, path, limit));
+    }
+  }
+  return problems;
+}
+
+List<String> _appStoreTextProblems(Directory root) {
   final problems = <String>[];
   for (final locale in _localeDirectories(
     Directory('${root.path}/fastlane/metadata/ios'),
   )) {
-    final path = 'fastlane/metadata/ios/$locale/release_notes.txt';
+    for (final MapEntry(key: name, value: limit) in appStoreTextLimits.entries) {
+      final path = 'fastlane/metadata/ios/$locale/$name';
+      final file = File('${root.path}/$path');
+      if (file.existsSync()) problems.addAll(_lengthProblems(file, path, limit));
+    }
+
+    final path = 'fastlane/metadata/ios/$locale/keywords.txt';
     final file = File('${root.path}/$path');
     if (file.existsSync()) {
-      problems.addAll(_lengthProblems(file, path, appStoreReleaseNotesLimit));
+      final bytes = utf8.encode(file.readAsStringSync()).length;
+      if (bytes > appStoreKeywordsByteLimit) {
+        problems.add(
+          '$path has $bytes bytes in UTF-8, newlines included, and the store takes at most $appStoreKeywordsByteLimit.',
+        );
+      }
     }
   }
   return problems;

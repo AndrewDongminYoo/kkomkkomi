@@ -164,6 +164,40 @@ void main() {
       ]);
     });
 
+    // The limits are literal here, so that a wrong limit in the check fails a
+    // test.
+    for (final (path, limit) in [
+      ('fastlane/metadata/android/en-US/title.txt', 30),
+      ('fastlane/metadata/android/ko-KR/short_description.txt', 80),
+      ('fastlane/metadata/android/en-US/full_description.txt', 4000),
+      ('fastlane/metadata/ios/ko/name.txt', 30),
+      ('fastlane/metadata/ios/en-US/subtitle.txt', 30),
+      ('fastlane/metadata/ios/ko/description.txt', 4000),
+      ('fastlane/metadata/ios/en-US/promotional_text.txt', 170),
+    ]) {
+      test('fails when $path is longer than $limit characters', () {
+        write(path, '${'가' * (limit - 1)}\n');
+        expect(releaseProblems(root: root, gitStatus: ''), isEmpty);
+
+        write(path, '${'가' * limit}\n');
+        expect(releaseProblems(root: root, gitStatus: ''), [
+          '$path has ${limit + 1} characters, newlines included, and the store takes at most $limit.',
+        ]);
+      });
+    }
+
+    test('measures App Store keywords in UTF-8 bytes', () {
+      const path = 'fastlane/metadata/ios/ko/keywords.txt';
+      // 33 syllables of 3 bytes each and a newline make 100 bytes.
+      write(path, '${'가' * 33}\n');
+      expect(releaseProblems(root: root, gitStatus: ''), isEmpty);
+
+      write(path, '${'가' * 34}\n');
+      expect(releaseProblems(root: root, gitStatus: ''), [
+        '$path has 103 bytes in UTF-8, newlines included, and the store takes at most 100.',
+      ]);
+    });
+
     test('reports every problem at once', () {
       write('CHANGELOG.md', '# Changelog\n');
       File('${root.path}/fastlane/metadata/android/en-US/changelogs/7.txt').deleteSync();
