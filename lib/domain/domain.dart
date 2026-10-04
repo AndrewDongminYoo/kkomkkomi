@@ -6,6 +6,7 @@ export 'equality.dart';
 export 'name.dart';
 export 'photo_ref.dart';
 export 'photo_slot.dart';
+export 'plan.dart';
 export 'previous_photos.dart';
 export 'visit.dart';
 export 'visit_date.dart';
