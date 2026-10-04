@@ -466,14 +466,33 @@ final class PublishQueue {
         ),
       );
     }
-    await _step(
+    // The claim of a newly issued token decides the footer right before the write, so a job that runs again after the
+    // plan ended writes the report with the footer. Only the report asks, because only the report carries the key.
+    // A check that does not answer in time gives the footer, so that the check never delays a job that its own steps
+    // would finish.
+    final unbranded = await _identity.hasPaidEntitlement().timeout(_stepTimeout, onTimeout: () => false);
+    Future<void> writeReport({required bool unbranded}) => _step(
       _publisher.writeReport(
         pageId: page.id,
         visitId: visit.id,
         // The time of the request, which a job keeps, so that a job that runs again writes the same report.
-        report: PublishedReport(visitDate: visit.visitDate, publishedAt: job.createdAt, zones: zones),
+        report: PublishedReport(
+          visitDate: visit.visitDate,
+          publishedAt: job.createdAt,
+          zones: zones,
+          unbranded: unbranded,
+        ),
       ),
     );
+    try {
+      await writeReport(unbranded: unbranded);
+    } on PublishException catch (error) {
+      if (!unbranded || error.kind != PublishErrorKind.refused) rethrow;
+      // The rules refuse the key when the token that the backend saw holds no paid entitlement, for example after the
+      // plan ended between the check and the write. The report then shows with the footer instead of stopping.
+      log('A report without the footer was refused, so it is written with the footer: $error');
+      await writeReport(unbranded: false);
+    }
     // An object of the visit that the report no longer names, such as the photo before a retake, is deleted after
     // the report, so that no report ever names a deleted object.
     final named = {
