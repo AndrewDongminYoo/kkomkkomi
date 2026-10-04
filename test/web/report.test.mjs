@@ -156,6 +156,7 @@ describe("decoding", () => {
           afterPhoto: null,
         },
       ],
+      unbranded: false,
     });
   });
 
@@ -169,6 +170,7 @@ describe("decoding", () => {
       visitDate: "",
       publishedAt: "",
       zones: [],
+      unbranded: false,
     });
     assert.deepEqual(decodeReport({ name: `x/reports/${visitId}` }).zones, []);
   });
@@ -381,7 +383,7 @@ describe("renderReport", () => {
       "메모",
       "공사 중이라 사진을 못 찍었어요",
       "이 거래처의 보고서 모두 보기",
-      "꼼꼬미로 만든 보고서",
+      "꼼꼬미로 작성됨",
       "개인정보 처리방침",
     ]);
   });
@@ -473,7 +475,7 @@ describe("renderHistory", () => {
       "행복빌딩",
       "2026년 10월 1일",
       "2026년 9월 24일",
-      "꼼꼬미로 만든 보고서",
+      "꼼꼬미로 작성됨",
       "개인정보 처리방침",
     ]);
     assert.deepEqual(
@@ -490,6 +492,56 @@ describe("renderHistory", () => {
     });
 
     assert.ok(view.texts().includes(texts.emptyHistory));
+  });
+});
+
+describe("unbranded reports", () => {
+  const unbrandedDocument = {
+    ...reportDocument,
+    fields: { ...reportDocument.fields, unbranded: { booleanValue: true } },
+  };
+
+  test("decodes unbranded only from the boolean true", () => {
+    assert.equal(decodeReport(unbrandedDocument).unbranded, true);
+    assert.equal(decodeReport(reportDocument).unbranded, false);
+    const withValue = (value) => ({
+      ...reportDocument,
+      fields: { ...reportDocument.fields, unbranded: value },
+    });
+    assert.equal(
+      decodeReport(withValue({ stringValue: "true" })).unbranded,
+      false,
+    );
+    assert.equal(
+      decodeReport(withValue({ booleanValue: false })).unbranded,
+      false,
+    );
+  });
+
+  test("a report without the footer keeps the privacy link", () => {
+    const view = renderReport(new FakeDocument(), {
+      pageId,
+      page: decodePage(pageDocument),
+      report: decodeReport(unbrandedDocument),
+      photoUrl: (path) => `https://photos.test/${path}`,
+    });
+    assert.ok(!view.texts().includes(texts.footer));
+    assert.ok(view.texts().includes(texts.privacyLink));
+  });
+
+  test("the history shows the footer text unless every listed report is unbranded", () => {
+    const history = (reports) =>
+      renderHistory(new FakeDocument(), {
+        pageId,
+        page: decodePage(pageDocument),
+        reports,
+      }).texts();
+    const unbranded = decodeReport(unbrandedDocument);
+    const branded = decodeReport(olderReportDocument);
+    assert.ok(!history([unbranded]).includes(texts.footer));
+    assert.ok(history([unbranded, branded]).includes(texts.footer));
+    assert.ok(history([]).includes(texts.footer));
+    assert.ok(history([unbranded]).includes(texts.privacyLink));
   });
 });
 
@@ -563,10 +615,7 @@ describe("start", () => {
       "2026년 10월 1일",
       "로비",
     ]);
-    assert.deepEqual(texts.slice(-2), [
-      "꼼꼬미로 만든 보고서",
-      "개인정보 처리방침",
-    ]);
+    assert.deepEqual(texts.slice(-2), ["꼼꼬미로 작성됨", "개인정보 처리방침"]);
     assert.equal(
       root.all("img")[0].getAttribute("src"),
       `https://firebasestorage.googleapis.com/v0/b/demo-kkomkkomi.appspot.com/o/${encodeURIComponent(lobbyBefore)}?alt=media`,

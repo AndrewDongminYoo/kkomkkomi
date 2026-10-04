@@ -126,6 +126,7 @@ describe("web report page: reads without sign-in", () => {
           afterPhoto: null,
         },
       ],
+      unbranded: false,
     });
     assert.deepEqual(
       (await reader.reports(openPage)).map((report) => report.visitId),
