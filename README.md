@@ -31,7 +31,7 @@ $ flutter run --flavor staging --target lib/main_staging.dart
 $ flutter run --flavor production --target lib/main_production.dart
 ```
 
-_\*Kkomkkomi works on iOS, Android, Web, and Windows._
+_\*Kkomkkomi targets iOS and Android. CI also builds Windows, and no Flutter web app exists._
 
 ---
 
@@ -158,7 +158,7 @@ To use the latest translations changes, you will need to generate them:
 flutter gen-l10n --arb-dir="lib/l10n/arb"
 ```
 
-Alternatively, run `flutter run` and code generation will take place automatically.
+Alternatively, run `flutter pub get`, which generates them because `pubspec.yaml` sets `generate: true`.
 
 [coverage_badge]: coverage_badge.svg
 [internationalization_link]: https://docs.flutter.dev/ui/internationalization
