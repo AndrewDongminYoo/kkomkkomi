@@ -2,6 +2,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:kkomkkomi/app/app.dart';
 import 'package:kkomkkomi/application/application.dart';
+import 'package:kkomkkomi/domain/domain.dart';
 import 'package:kkomkkomi/l10n/l10n.dart';
 import 'package:material_ui/material_ui.dart';
 
@@ -67,6 +68,22 @@ void main() {
       await tester.pumpApp(const SizedBox(), repositories: mockRepositories(), identity: identity);
 
       expect(tester.element(find.byType(SizedBox)).read<Identity>(), same(identity));
+    });
+
+    testWidgets('provides entitlements of the Free plan unless it is given others', (tester) async {
+      await tester.pumpApp(const SizedBox(), repositories: mockRepositories());
+
+      final entitlements = tester.element(find.byType(SizedBox)).read<Entitlements>();
+      expect(entitlements, isA<FakeEntitlements>());
+      expect(await entitlements.currentPlan(), Plan.free);
+    });
+
+    testWidgets('provides the entitlements that it is given', (tester) async {
+      final entitlements = FakeEntitlements(plan: Plan.pro);
+
+      await tester.pumpApp(const SizedBox(), repositories: mockRepositories(), entitlements: entitlements);
+
+      expect(tester.element(find.byType(SizedBox)).read<Entitlements>(), same(entitlements));
     });
 
     testWidgets('provides a fake camera and a fake photo store unless it is given others', (tester) async {

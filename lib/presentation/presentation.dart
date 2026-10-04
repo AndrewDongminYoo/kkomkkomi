@@ -1,6 +1,7 @@
 export 'adapters/asset_report_font.dart';
 export 'adapters/connectivity_network_monitor.dart';
 export 'adapters/documents_photo_store.dart';
+export 'adapters/free_entitlements.dart';
 export 'adapters/image_picker_photo_capture.dart';
 export 'adapters/printing_report_share.dart';
 export 'adapters/random_id_generator.dart';

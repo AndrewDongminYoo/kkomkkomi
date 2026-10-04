@@ -68,6 +68,34 @@ class FakeIdentity implements Identity {
   }
 }
 
+/// Gives the plan that a test sets, and reports the changes that a test makes with [change].
+class FakeEntitlements implements Entitlements {
+  new({this.plan = Plan.free});
+
+  /// The plan that a call gives.
+  Plan plan;
+
+  /// How many times the plan was asked for.
+  int calls = 0;
+
+  final _changes = StreamController<Plan>.broadcast();
+
+  @override
+  Future<Plan> currentPlan() async {
+    calls++;
+    return plan;
+  }
+
+  @override
+  Stream<Plan> get planChanges => _changes.stream;
+
+  /// Sets the plan and reports it, as the store does after a renewal or an expiry.
+  void change(Plan plan) {
+    this.plan = plan;
+    _changes.add(plan);
+  }
+}
+
 /// Keeps a flag of whether the database was erased, and can fail.
 class FakeLocalDataRepository implements LocalDataRepository {
   /// How many times the database was erased.

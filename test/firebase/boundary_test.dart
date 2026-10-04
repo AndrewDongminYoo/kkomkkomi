@@ -139,7 +139,8 @@ void main() {
     test('production gives bootstrap the Firebase identity and publisher and no other', () {
       final source = sourceOf('production');
 
-      expect(source, contains('identity: FirebaseIdentity(),'));
+      expect(source, contains('final identity = FirebaseIdentity();'));
+      expect(source, contains('identity: identity,'));
       expect(source, contains('publisher: FirebasePublisher(),'));
       expect(source, isNot(contains('UnavailableIdentity')));
       expect(source, isNot(contains('UnavailablePublisher')));

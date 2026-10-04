@@ -15,6 +15,7 @@ void main() {
         App(
           repositories: mockRepositories(),
           identity: FakeIdentity(),
+          entitlements: FakeEntitlements(),
           publishQueue: publishQueueOf(mockRepositories()),
         ),
       );
@@ -30,6 +31,7 @@ void main() {
         App(
           repositories: mockRepositories(),
           identity: FakeIdentity(),
+          entitlements: FakeEntitlements(),
           publishQueue: publishQueueOf(mockRepositories()),
         ),
       );
@@ -49,7 +51,12 @@ void main() {
       final repositories = mockRepositories();
 
       await tester.pumpWidget(
-        App(repositories: repositories, identity: FakeIdentity(), publishQueue: publishQueueOf(repositories)),
+        App(
+          repositories: repositories,
+          identity: FakeIdentity(),
+          entitlements: FakeEntitlements(),
+          publishQueue: publishQueueOf(repositories),
+        ),
       );
 
       final context = tester.element(find.byType(ClientListPage));
@@ -62,10 +69,32 @@ void main() {
       final identity = FakeIdentity(userId: 'user-1');
 
       await tester.pumpWidget(
-        App(repositories: mockRepositories(), identity: identity, publishQueue: publishQueueOf(mockRepositories())),
+        App(
+          repositories: mockRepositories(),
+          identity: identity,
+          entitlements: FakeEntitlements(),
+          publishQueue: publishQueueOf(mockRepositories()),
+        ),
       );
 
       expect(tester.element(find.byType(ClientListPage)).read<Identity>(), same(identity));
+    });
+
+    testWidgets('provides the entitlements that it is given and does not ask them for the plan', (tester) async {
+      final entitlements = FakeEntitlements(plan: Plan.basic);
+
+      await tester.pumpWidget(
+        App(
+          repositories: mockRepositories(),
+          identity: FakeIdentity(),
+          entitlements: entitlements,
+          publishQueue: publishQueueOf(mockRepositories()),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      expect(tester.element(find.byType(ClientListPage)).read<Entitlements>(), same(entitlements));
+      expect(entitlements.calls, 0);
     });
 
     testWidgets('provides the random identifiers and the device time unless it is given others', (tester) async {
@@ -73,6 +102,7 @@ void main() {
         App(
           repositories: mockRepositories(),
           identity: FakeIdentity(),
+          entitlements: FakeEntitlements(),
           publishQueue: publishQueueOf(mockRepositories()),
         ),
       );
@@ -90,6 +120,7 @@ void main() {
         App(
           repositories: mockRepositories(),
           identity: FakeIdentity(),
+          entitlements: FakeEntitlements(),
           publishQueue: publishQueueOf(mockRepositories()),
           idGenerator: idGenerator,
           clock: clock,
@@ -107,6 +138,7 @@ void main() {
         App(
           repositories: mockRepositories(),
           identity: FakeIdentity(),
+          entitlements: FakeEntitlements(),
           publishQueue: publishQueueOf(mockRepositories()),
         ),
       );
@@ -125,6 +157,7 @@ void main() {
           App(
             repositories: mockRepositories(),
             identity: FakeIdentity(),
+            entitlements: FakeEntitlements(),
             publishQueue: publishQueueOf(mockRepositories()),
           ),
         );
@@ -146,6 +179,7 @@ void main() {
         App(
           repositories: repositories,
           identity: FakeIdentity(),
+          entitlements: FakeEntitlements(),
           publishQueue: publishQueueOf(repositories),
           reportFont: reportFont,
           reportShare: reportShare,
@@ -163,7 +197,14 @@ void main() {
       final repositories = mockRepositories();
       final publishQueue = publishQueueOf(repositories);
 
-      await tester.pumpWidget(App(repositories: repositories, identity: FakeIdentity(), publishQueue: publishQueue));
+      await tester.pumpWidget(
+        App(
+          repositories: repositories,
+          identity: FakeIdentity(),
+          entitlements: FakeEntitlements(),
+          publishQueue: publishQueue,
+        ),
+      );
 
       expect(tester.element(find.byType(ClientListPage)).read<PublishQueue>(), same(publishQueue));
     });
@@ -176,6 +217,7 @@ void main() {
       final app = App(
         repositories: repositories,
         identity: FakeIdentity(),
+        entitlements: FakeEntitlements(),
         publishQueue: publishQueue,
         photoStore: photoStore,
       );
@@ -200,6 +242,7 @@ void main() {
         App(
           repositories: repositories,
           identity: FakeIdentity(),
+          entitlements: FakeEntitlements(),
           publishQueue: publishQueueOf(repositories),
           photoCapture: photoCapture,
           photoStore: photoStore,
@@ -219,6 +262,7 @@ void main() {
         App(
           repositories: mockRepositories(),
           identity: FakeIdentity(),
+          entitlements: FakeEntitlements(),
           publishQueue: publishQueueOf(mockRepositories()),
         ),
       );
@@ -232,7 +276,12 @@ void main() {
       final repositories = mockRepositories();
 
       await tester.pumpWidget(
-        App(repositories: repositories, identity: FakeIdentity(), publishQueue: publishQueueOf(repositories)),
+        App(
+          repositories: repositories,
+          identity: FakeIdentity(),
+          entitlements: FakeEntitlements(),
+          publishQueue: publishQueueOf(repositories),
+        ),
       );
 
       expect(
@@ -265,6 +314,7 @@ void main() {
           App(
             repositories: repositories,
             identity: FakeIdentity(),
+            entitlements: FakeEntitlements(),
             publishQueue: publishQueueOf(repositories),
             recovery: recovery,
             photoCapture: FakePhotoCapture(),

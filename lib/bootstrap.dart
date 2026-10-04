@@ -24,14 +24,17 @@ class AppBlocObserver extends BlocObserver {
   }
 }
 
-/// Opens the database, then runs the app that [builder] makes from the repositories, [identity], and the publish
-/// queue.
+/// Opens the database, then runs the app that [builder] makes from the repositories, [identity], [entitlements], and
+/// the publish queue.
 ///
 /// While the database does not open, the app shows a [StartupFailureApp], and its retry control opens the database
 /// again.
 ///
 /// [identity] is asked for the user ID once, which starts the sign-in of a flavor that has one. The app does not
 /// wait for the answer, and it opens also when [identity] fails.
+///
+/// [entitlements] are the entitlements of the flavor. This function only gives them to [builder] and does not ask
+/// them for the plan, so a start of the app sends nothing to the store.
 ///
 /// When the database is open, a [PublishQueue] with [publisher] starts and runs the publish jobs that an earlier
 /// launch left. It is the one queue of the app, and [builder] gets it for the screens: a second queue on the same
@@ -48,11 +51,13 @@ Future<void> bootstrap(
   FutureOr<Widget> Function(
     Repositories repositories,
     Identity identity,
+    Entitlements entitlements,
     PublishQueue publishQueue,
     LostCaptureRecovery? recovery,
   )
   builder, {
   required Identity identity,
+  required Entitlements entitlements,
   required Publisher publisher,
   Future<Repositories> Function() openRepositories = openDeviceRepositories,
   NetworkMonitor networkMonitor = const ConnectivityNetworkMonitor(),
@@ -98,7 +103,7 @@ Future<void> bootstrap(
   );
   unawaited(_startPublishing(publishQueue));
 
-  runApp(await builder(repositories, identity, publishQueue, recovery));
+  runApp(await builder(repositories, identity, entitlements, publishQueue, recovery));
 }
 
 Future<LostCaptureRecovery?> _recoverLostCapture(RecoverLostCapture recover) async {
