@@ -174,9 +174,15 @@ release:
 
   metadata:
     ios:
-      (description): 🚨 Uploads fastlane/metadata/ios and fastlane/screenshots/ios to App Store Connect, without a binary and without a review submission.
-      (scripts): FASTLANE_SKIP_UPDATE_CHECK=1 bundle exec fastlane ios metadata
+      (description): 🚨 Checks, then uploads fastlane/metadata/ios and fastlane/screenshots/ios to App Store Connect, without a binary and without a review submission.
+      (execution): once
+      (scripts):
+        - $release:check
+        - FASTLANE_SKIP_UPDATE_CHECK=1 bundle exec fastlane ios metadata
 
     android:
-      (description): 🚨 Uploads the texts and images of fastlane/metadata/android to Google Play, without a bundle.
-      (scripts): FASTLANE_SKIP_UPDATE_CHECK=1 bundle exec fastlane android metadata
+      (description): 🚨 Checks, then uploads the texts and images of fastlane/metadata/android to Google Play, without a bundle.
+      (execution): once
+      (scripts):
+        - $release:check
+        - FASTLANE_SKIP_UPDATE_CHECK=1 bundle exec fastlane android metadata
