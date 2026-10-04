@@ -17,7 +17,7 @@ extension PumpApp on WidgetTester {
   /// Pumps [widget] as the home of a `MaterialApp` that has the theme and the localization delegates of the app.
   ///
   /// The app shows the strings of [locale] when one is given, and the English strings otherwise.
-  /// When [repositories] is given, the widgets read its members (the store of the open capture included), [identity], [publishQueue], [idGenerator], [clock],
+  /// When [repositories] is given, the widgets read its members (the store of the open capture included), [identity], [entitlements], [publishQueue], [idGenerator], [clock],
   /// [photoCapture], [photoStore], [reportFont], [reportShare], [linkShare], and [deleteAllData] through
   /// `RepositoryProvider`, as they do under the app. A port that is not given is a fake, the publish queue that is not
   /// given has no backend, and the deletion that is not given acts on the queue, the identity, the stores, and the
@@ -27,6 +27,7 @@ extension PumpApp on WidgetTester {
     Locale? locale,
     Repositories? repositories,
     Identity? identity,
+    Entitlements? entitlements,
     PublishQueue? publishQueue,
     IdGenerator? idGenerator,
     Clock? clock,
@@ -56,6 +57,7 @@ extension PumpApp on WidgetTester {
           RepositoryProvider<CompanyProfileRepository>.value(value: repositories.companyProfile),
           RepositoryProvider<OpenCaptureRepository>.value(value: repositories.openCaptures),
           RepositoryProvider<Identity>.value(value: theIdentity),
+          RepositoryProvider<Entitlements>.value(value: entitlements ?? FakeEntitlements()),
           RepositoryProvider<PublishQueue>.value(value: theQueue),
           RepositoryProvider<IdGenerator>.value(value: idGenerator ?? SequenceIdGenerator()),
           RepositoryProvider<Clock>.value(value: clock ?? FixedClock(DateTime.utc(2026, 10))),

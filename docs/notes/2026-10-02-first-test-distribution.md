@@ -14,7 +14,7 @@ The same page allows up to 100 internal testers per app, who are App Store Conne
 2. **Photo location (issue 20).** Closed by pull request 23: `withoutLocation` removes the location when a photo is stored, before an upload, and before the PDF, on every platform. No device ran it. An object that a build before pull request 23 uploaded keeps its location in Storage.
 3. **Anonymous account clean-up (issue 21).** Closed: the operator turned the automatic clean-up off on 2026-10-02, and the privacy pages no longer say that an account is deleted after 30 days. Firebase documents that an account that was already scheduled for deletion when the clean-up was turned off stays scheduled (https://firebase.google.com/docs/auth/android/anonymous-auth, "Automatic clean-up").
 4. **Support contact.** `support_url.txt` names the landing page `https://kkomkkomi.web.app/`, which has no working contact: its inquiry form is a preview that sends nothing. Guideline 1.5 says: "Make sure your app and its Support URL include an easy way to contact you". Add a contact to that page, or give another support URL.
-5. **Privacy policy.** The pages at `/privacy/` and `/privacy/en/` are live since the Hosting deploy from `34d5d23`, and no placeholder of pull request 19 is left in them. Four clauses are agent defaults that a qualified person should review: the legal basis of the transfer abroad (Article 28-8(1)3 of the Personal Information Protection Act), the cleaning company as the party responsible for the people in the photos, the Firebase support URL as the contact of Google, and the effective date, which is the merge date of the last change to the pages (2026-10-03, the merge of pull request 32).
+5. **Privacy policy.** The pages at `/privacy/` and `/privacy/en/` are live since the Hosting deploy from `34d5d23`, and no placeholder of pull request 19 is left in them. Four clauses are agent defaults that a qualified person should review: the legal basis of the transfer abroad (Article 28-8(1)3 of the Personal Information Protection Act), the cleaning company as the party responsible for the people in the photos, the Firebase support URL as the contact of Google, and the effective date, which is the merge date of the last change to the pages (2026-10-05, the pull request of `docs/plans/2026-10-05-m3-02-entitlements-port.md`, which adds the Purchase History of the RevenueCat manifest to section 10).
 
 ## Values
 
@@ -80,6 +80,11 @@ en-US:
 - The Firebase macOS app is registered as `com.example.myApp` (the `BUNDLE_ID` of `macos/Runner/GoogleService-Info.plist` in the operator's checkout), and the macOS production bundle ID is now `kr.donminzzi.kkomkkomi`. macOS is not a target, so this needs no action now. Before a macOS production build, register the macOS app again and run `flutterfire configure`.
 - Hosting serves the privacy policy URLs since the deploy from `34d5d23`, so a store listing can name them. A later deploy needs your approval again.
 
+## Subscriptions (M3, issue 36)
+
+- **The RevenueCat keys.** Before a release build, create `config/revenuecat.json` from `config/revenuecat.example.json` and fill in the public SDK keys of the RevenueCat iOS and Android apps. The "Release" section of `CLAUDE.md` owns what the build and the release check do with the file.
+- **Play Billing Library before the Play products.** Android's "Getting ready" page says: "Once you've set up a developer account, you must publish a version of your app that includes the Google Play Billing Library. This step is required to enable billing-related features in the Google Play Console, such as configuring the products you want to sell" (https://developer.android.com/google/play/billing/getting-ready, read on 2026-10-05). `purchases_flutter` brings that library into the Android build, so upload a bundle of a build with it before you create the subscriptions in Play Console. Assumption, not a fact: a release that is rolled out on the internal testing track counts as publishing for this step. The page does not say which tracks count, so check it in Play Console when the subscriptions are created.
+
 ## Draft answers for App Privacy (App Store Connect)
 
 Sources: `lib/firebase/firebase_publisher.dart` (what a link share uploads), `lib/firebase/firebase_identity.dart` (anonymous sign-in), the privacy policy pages of pull request 19, and Google's list of the data that each Firebase SDK collects (https://firebase.google.com/docs/android/play-data-disclosure, read on 2026-10-02).
@@ -93,6 +98,7 @@ No data is used for tracking, and no data goes to an ad network or a data broker
 | User Content: Other User Content   | Yes       | Yes                | App Functionality | A link share uploads the company name, the client name, the zone names, the notes, and the visit date.                                                  |
 | Location: Precise Location         | No        | -                  | -                 | The app removes the location of a photo before it stores or uploads the photo (issue 20, pull request 23), and it asks for no location permission.      |
 | Diagnostics: Other Diagnostic Data | Yes       | No                 | Analytics         | The Firebase Auth, Firestore, and Installations privacy manifests declare it as not linked, not tracking, for Analytics (see "Privacy manifest" below). |
+| Purchases: Purchase History        | Yes       | No                 | App Functionality | The RevenueCat privacy manifest declares it as not linked, not tracking, for App Functionality (see "Privacy manifest" below).                          |
 
 Firebase Authentication also processes the IP address and the user agent of each sign-in for security and abuse prevention.
 Apple's page says: "You need to identify all of the data you or your third-party partners collect …", and a third-party SDK is a third-party partner.
@@ -100,7 +106,9 @@ For the IP address it says: "Declare the relevant data types based on how you us
 The definitions are on https://developer.apple.com/app-store/app-privacy-details/ (read on 2026-10-02).
 
 The Diagnostics row is declared, as the Firebase manifests declare it (operator decision, 2026-10-02).
+The Purchase History row follows the RevenueCat manifest in the same way.
 Section 10 of the privacy policy names that data as the manifests declare it (Other Diagnostic Data, not linked to the user, not for tracking, for Analytics, in the Auth, Firestore, and Installations manifests of firebase-ios-sdk 12.19.0), and gives the example that Google's list names for Auth and Firestore: the Firebase user agent (device, OS version, SDK versions).
+It also names the Purchase History that the manifest of the RevenueCat iOS SDK 5.92.0 declares (not linked to the user, not for tracking, for App Functionality), and says that the app version sells no subscription and sends nothing to RevenueCat.
 
 ## Draft answers for Data safety (Play Console)
 
@@ -140,6 +148,7 @@ The app target needs no `PrivacyInfo.xcprivacy` for a required-reason API, so th
 - The plugins and SDKs without a manifest (`firebase_core` 4.15.0, `firebase_auth` 6.7.0, `cloud_firestore` 6.10.0, `firebase_storage` 13.6.0, `printing` 5.15.1, the Firebase Storage SDK, and the interop packages) call none of these APIs in their source (grep of the pub cache and of `build/ios/SourcePackages/checkouts`).
 - Limit: the static plugins and SDKs link into one `Runner` executable, which imports `stat` and `NSUserDefaults`. Without a link map, the call site of each symbol is inferred from the source greps above, not proven.
 - The Firebase Auth, Firestore, and Installations manifests also declare collected data: User ID and Other Diagnostic Data. The draft above lists both, so that the answers match what the bundled SDKs declare.
+- `purchases_flutter` 10.14.0 depends on `purchases-hybrid-common` 19.5.0, which depends on the RevenueCat iOS SDK 5.92.0 (the `Package.swift` of each, read on 2026-10-05). The manifest of that SDK declares UserDefaults (`CA92.1`) and the collected data Purchase History, not linked, not tracking, for App Functionality (https://raw.githubusercontent.com/RevenueCat/purchases-ios/5.92.0/Sources/PrivacyInfo.xcprivacy, read on 2026-10-05). The manifest of `purchases-hybrid-common` declares UserDefaults (`CA92.1`) and no collected data. No release build with these SDKs was made yet, so the count of manifests above predates them.
 
 ### Target SDK
 

@@ -3,6 +3,7 @@ export 'client_repository.dart';
 export 'clock.dart';
 export 'company_profile_repository.dart';
 export 'delete_all_data.dart';
+export 'entitlements.dart';
 export 'find_previous_photos.dart';
 export 'id_generator.dart';
 export 'identity.dart';

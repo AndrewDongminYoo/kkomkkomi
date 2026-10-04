@@ -12,6 +12,7 @@ class App extends StatelessWidget {
   const new({
     required this.repositories,
     required this.identity,
+    required this.entitlements,
     required this.publishQueue,
     this.recovery,
     this.idGenerator = const RandomIdGenerator(),
@@ -31,6 +32,11 @@ class App extends StatelessWidget {
   ///
   /// It has no default, because the flavor decides it: only the production entry point gives the Firebase adapter.
   final Identity identity;
+
+  /// The source of the plan of the company, which the widgets below read through `RepositoryProvider`.
+  ///
+  /// It has no default, because the flavor decides it: only the production entry point gives the RevenueCat adapter.
+  final Entitlements entitlements;
 
   /// The one publish queue of the app, which `bootstrap` starts and the widgets below read through
   /// `RepositoryProvider`.
@@ -72,6 +78,7 @@ class App extends StatelessWidget {
         RepositoryProvider<CompanyProfileRepository>.value(value: repositories.companyProfile),
         RepositoryProvider<OpenCaptureRepository>.value(value: repositories.openCaptures),
         RepositoryProvider<Identity>.value(value: identity),
+        RepositoryProvider<Entitlements>.value(value: entitlements),
         RepositoryProvider<PublishQueue>.value(value: publishQueue),
         RepositoryProvider<IdGenerator>.value(value: idGenerator),
         RepositoryProvider<Clock>.value(value: clock),

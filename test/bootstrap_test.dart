@@ -61,8 +61,19 @@ class _BrokenNetworkMonitor implements NetworkMonitor {
 }
 
 /// The builder of the entry points.
-App _app(Repositories repositories, Identity identity, PublishQueue publishQueue, LostCaptureRecovery? recovery) =>
-    App(repositories: repositories, identity: identity, publishQueue: publishQueue, recovery: recovery);
+App _app(
+  Repositories repositories,
+  Identity identity,
+  Entitlements entitlements,
+  PublishQueue publishQueue,
+  LostCaptureRecovery? recovery,
+) => App(
+  repositories: repositories,
+  identity: identity,
+  entitlements: entitlements,
+  publishQueue: publishQueue,
+  recovery: recovery,
+);
 
 void main() {
   group('AppBlocObserver', () {
@@ -90,6 +101,7 @@ void main() {
 
         await bootstrap(
           _app,
+          entitlements: FakeEntitlements(),
           publisher: const UnavailablePublisher(),
           networkMonitor: FakeNetworkMonitor(),
           identity: FakeIdentity(),
@@ -108,6 +120,7 @@ void main() {
 
         await bootstrap(
           _app,
+          entitlements: FakeEntitlements(),
           publisher: const UnavailablePublisher(),
           networkMonitor: FakeNetworkMonitor(),
           identity: identity,
@@ -121,12 +134,38 @@ void main() {
       });
     });
 
+    testWidgets('gives the entitlements to the builder and does not ask them for the plan', (tester) async {
+      await _keepingGlobals(() async {
+        final entitlements = FakeEntitlements(plan: Plan.pro);
+        Entitlements? built;
+
+        await bootstrap(
+          (repositories, identity, given, publishQueue, recovery) {
+            built = given;
+            return _app(repositories, identity, given, publishQueue, recovery);
+          },
+          identity: FakeIdentity(userId: 'user-1'),
+          entitlements: entitlements,
+          publisher: const UnavailablePublisher(),
+          networkMonitor: FakeNetworkMonitor(),
+          openRepositories: () async => mockRepositories(),
+        );
+        await _settle(tester);
+
+        expect(built, same(entitlements));
+        expect(tester.element(find.byType(ClientListPage)).read<Entitlements>(), same(entitlements));
+        // A call would configure RevenueCat in the production flavor, and nothing in this build may do that yet.
+        expect(entitlements.calls, 0);
+      });
+    });
+
     testWidgets('opens the app while the identity is unavailable', (tester) async {
       await _keepingGlobals(() async {
         final identity = FakeIdentity();
 
         await bootstrap(
           _app,
+          entitlements: FakeEntitlements(),
           publisher: const UnavailablePublisher(),
           networkMonitor: FakeNetworkMonitor(),
           identity: identity,
@@ -149,6 +188,7 @@ void main() {
 
           await bootstrap(
             _app,
+            entitlements: FakeEntitlements(),
             publisher: const UnavailablePublisher(),
             networkMonitor: FakeNetworkMonitor(),
             identity: identity,
@@ -172,6 +212,7 @@ void main() {
         unawaited(
           bootstrap(
             _app,
+            entitlements: FakeEntitlements(),
             publisher: const UnavailablePublisher(),
             networkMonitor: FakeNetworkMonitor(),
             identity: identity,
@@ -193,6 +234,7 @@ void main() {
         await bootstrap(
           _app,
           identity: FakeIdentity(),
+          entitlements: FakeEntitlements(),
           publisher: const UnavailablePublisher(),
           networkMonitor: network,
           openRepositories: () async => repositories,
@@ -213,11 +255,12 @@ void main() {
 
         for (final publisher in publishers) {
           await bootstrap(
-            (repositories, identity, publishQueue, recovery) {
+            (repositories, identity, entitlements, publishQueue, recovery) {
               queues.add(publishQueue);
-              return _app(repositories, identity, publishQueue, recovery);
+              return _app(repositories, identity, entitlements, publishQueue, recovery);
             },
             identity: FakeIdentity(),
+            entitlements: FakeEntitlements(),
             publisher: publisher,
             networkMonitor: FakeNetworkMonitor(),
             openRepositories: () async => mockRepositories(),
@@ -235,6 +278,7 @@ void main() {
         await bootstrap(
           _app,
           identity: FakeIdentity(),
+          entitlements: FakeEntitlements(),
           publisher: const UnavailablePublisher(),
           networkMonitor: _BrokenNetworkMonitor(),
           openRepositories: () async => mockRepositories(),
@@ -250,6 +294,7 @@ void main() {
       await _keepingGlobals(() async {
         await bootstrap(
           _app,
+          entitlements: FakeEntitlements(),
           publisher: const UnavailablePublisher(),
           networkMonitor: FakeNetworkMonitor(),
           identity: FakeIdentity(),
@@ -282,11 +327,17 @@ void main() {
 
         unawaited(
           bootstrap(
-            (opened, identity, publishQueue, _) {
+            (opened, identity, entitlements, publishQueue, _) {
               builds++;
-              return App(repositories: opened, identity: identity, publishQueue: publishQueue);
+              return App(
+                repositories: opened,
+                identity: identity,
+                entitlements: entitlements,
+                publishQueue: publishQueue,
+              );
             },
             identity: identity,
+            entitlements: FakeEntitlements(),
             publisher: const UnavailablePublisher(),
             networkMonitor: FakeNetworkMonitor(),
             openRepositories: open,
@@ -344,6 +395,7 @@ void main() {
         return bootstrap(
           _app,
           identity: FakeIdentity(),
+          entitlements: FakeEntitlements(),
           publisher: const UnavailablePublisher(),
           networkMonitor: FakeNetworkMonitor(),
           photoCapture: photoCapture,
@@ -448,6 +500,7 @@ void main() {
         unawaited(
           bootstrap(
             _app,
+            entitlements: FakeEntitlements(),
             publisher: const UnavailablePublisher(),
             networkMonitor: FakeNetworkMonitor(),
             identity: FakeIdentity(),

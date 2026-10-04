@@ -123,18 +123,23 @@ reinstall:
 # --- Build artifacts --------------------------------------------------------
 # No `(default)`: which artifact this project ships is a release decision.
 # Windows has no script on purpose: its build is verified only in CI.
+# Each script reads the RevenueCat keys from config/revenuecat.json, which git
+# ignores, and `release check` stops when the file is missing or lacks one of
+# its two keys. Empty keys build an app without subscriptions. The metadata
+# lanes build nothing, so they run the check with `--metadata`, which leaves
+# out the keys file.
 build:
   apk:
     (description): Builds the production release APK.
-    (scripts): flutter build apk --release --flavor production --target lib/main_production.dart --tree-shake-icons
+    (scripts): flutter build apk --release --flavor production --target lib/main_production.dart --tree-shake-icons --dart-define-from-file=config/revenuecat.json
 
   aab:
     (description): Builds the production release Android App Bundle.
-    (scripts): flutter build appbundle --release --flavor production --target lib/main_production.dart --tree-shake-icons
+    (scripts): flutter build appbundle --release --flavor production --target lib/main_production.dart --tree-shake-icons --dart-define-from-file=config/revenuecat.json
 
   ipa:
     (description): Builds the production release iOS archive and IPA.
-    (scripts): flutter build ipa --release --flavor production --target lib/main_production.dart --tree-shake-icons
+    (scripts): flutter build ipa --release --flavor production --target lib/main_production.dart --tree-shake-icons --dart-define-from-file=config/revenuecat.json
 
 # --- Store release ----------------------------------------------------------
 # CLAUDE.md, section "Release", owns the environment variables. Every script
@@ -150,7 +155,7 @@ build:
 # IPA whose version is not the one of pubspec.yaml.
 release:
   check:
-    (description): Offline checks before a release — a clean tree, the CHANGELOG.md entry and the Play changelogs of the pubspec.yaml version, and the store text limits.
+    (description): Offline checks before a release — a clean tree, the CHANGELOG.md entry and the Play changelogs of the pubspec.yaml version, the store text limits, and the RevenueCat keys file.
     (scripts): dart run tool/release_check.dart
 
   ios:
@@ -177,12 +182,12 @@ release:
       (description): 🚨 Checks, then uploads fastlane/metadata/ios and fastlane/screenshots/ios to App Store Connect, without a binary and without a review submission.
       (execution): once
       (scripts):
-        - $release:check
+        - dart run tool/release_check.dart --metadata
         - FASTLANE_SKIP_UPDATE_CHECK=1 bundle exec fastlane ios metadata
 
     android:
       (description): 🚨 Checks, then uploads the texts and images of fastlane/metadata/android to Google Play, without a bundle.
       (execution): once
       (scripts):
-        - $release:check
+        - dart run tool/release_check.dart --metadata
         - FASTLANE_SKIP_UPDATE_CHECK=1 bundle exec fastlane android metadata
