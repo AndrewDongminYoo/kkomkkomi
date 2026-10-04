@@ -64,14 +64,21 @@ The web report is the primary output, and anyone with the link can open it.
 The footer of the web report is the one entitlement effect that the backend enforces.
 
 - The app configures RevenueCat with the Firebase user ID as the RevenueCat app user ID. The Firebase extension needs that equality.
-- The extension writes the active entitlements into the custom claim `revenuecatEntitlements` of that user.
+- The extension writes the active entitlements into the custom claim `revenuecatEntitlements` of that user. Source: RevenueCat, "Firebase Integration" (https://www.revenuecat.com/docs/integrations/third-party-integrations/firebase-integration, read on 2026-10-04), which also says that the project must be on the Blaze plan to install the extension and that the RevenueCat app user ID must be the Firebase UID.
 - A report gets one optional key, `unbranded`, whose only allowed value is `true`.
 - `firestore.rules` accepts `unbranded` only when the claim of the writer holds `basic` or `pro`.
 - The web report prints the footer when the key is absent. A report that exists today has no such key, so it keeps its footer.
 
-The app writes `unbranded` from the claim in its current ID token, not from the RevenueCat SDK.
-So the app and the rules read the same value.
-After a purchase, the app refreshes the ID token.
+The `unbranded` key comes from the claim in the current ID token, not from the RevenueCat SDK, so the app and the rules read the same value.
+The units keep their current roles, as `CLAUDE.md` ("Publishing") describes them:
+
+- The `Identity` port gets a second answer beside the user ID: whether the claim of the current token holds `basic` or `pro`. `FirebaseIdentity` reads it from the ID token result.
+- `PublishQueue` asks for it before each job, as it asks for the user ID now, and puts `unbranded` into the report that it gives the publisher.
+- `FirebasePublisher` writes what it is given and decides nothing.
+
+The extension sets the claim from a RevenueCat webhook, so the claim can arrive after the purchase answers in the app.
+One refresh of the token right after the purchase is not enough.
+So before each job, when the `Entitlements` port says paid and the token does not, `Identity` gets a new token once and reads the claim again.
 
 Each disagreement falls back to the footer:
 
@@ -113,7 +120,8 @@ The design follows the boundary pattern of `lib/firebase/`.
 
 ## Accounts and restore
 
-- RevenueCat keeps its default restore behavior, "Transfer to new App User ID". A restore moves the purchase to the current user ID and removes it from the earlier one, so one purchase never serves two owners at the same time.
+- RevenueCat keeps its default restore behavior, "Transfer to new App User ID". A restore moves the purchase to the current user ID and removes it from the earlier one, so one purchase never serves two owners at the same time. Source: RevenueCat, "Restore Behavior" (https://www.revenuecat.com/docs/projects/restore-behavior, read on 2026-10-04).
+- Open item for the implementation: that page does not say whether the extension then removes the claim of the earlier user ID. Check it in the RevenueCat sandbox. Until a check shows it, the earlier user ID can write reports without a footer until its token is refreshed or the claim is removed.
 - After a reinstall or on a new device, the person presses Restore Purchases. The local data does not come back, because the app is local-first. Only the entitlement comes back.
 - A subscription bought on iOS does not unlock Android, and the reverse is also true.
 - Open item for the implementation: check on a device whether the anonymous user ID survives an iOS reinstall, and write the result into the restore copy.
@@ -127,10 +135,16 @@ The design follows the boundary pattern of `lib/firebase/`.
 - The paywall and the store metadata link to the terms of use and the privacy policy, as App Store Review Guideline 3.1.2 requires for auto-renewable subscriptions. The implementation plan quotes the guideline at that time.
 - The Free footer text becomes `꼼꼬미로 작성됨` (operator, 2026-10-04) in the ARB file and in `web/report/view.js`.
 
+## Deploys
+
+The change of `isReport` in `firestore.rules` and the change of `web/report/view.js` each need a deploy, and the operator approves each deploy, as `CLAUDE.md` requires.
+The deployed rules equal `34d5d23` today.
+The rules must deploy before an app version that writes `unbranded`, because the deployed rules refuse a report with a key that `isReport` does not list.
+
 ## Testing
 
 - Unit tests: the mapping from entitlements to the client limit and to the footer, including the boundary at each limit and a downgrade above the limit.
-- Rules tests in the emulators: `unbranded` with a `basic` claim, a `pro` claim, no claim, and an unknown entitlement. The emulators accept custom claims in the token of a test.
+- Rules tests in the emulators: `unbranded` with a `basic` claim, a `pro` claim, no claim, and an unknown entitlement. The implementation plan confirms how `test/rules/` gives a test token a custom claim.
 - Web tests: a report with `unbranded` and a report without it.
 - Store test environments, by hand: each of the four products bought, restored, and changed between plans in the Apple sandbox and in Google Play license testing.
 
