@@ -26,6 +26,7 @@ final class VisitReportState {
     this.document,
     this.zonesLackingPhoto = const [],
     this.photoDirectory = '',
+    this.showsFooterText = true,
   });
 
   final VisitReportStatus status;
@@ -41,6 +42,10 @@ final class VisitReportState {
   /// The absolute path of the directory that the path of each photo is relative to, in this launch of the app.
   final String photoDirectory;
 
+  /// Whether the preview and the PDF show the footer text. Only a company with a paid entitlement leaves it out, and
+  /// the page number of the PDF stays either way.
+  final bool showsFooterText;
+
   /// Whether a share can start: the report is loaded, it prints a zone, and no share is on its way.
   bool get canShare =>
       (status == VisitReportStatus.ready || status == VisitReportStatus.shareFailed) &&
@@ -49,11 +54,12 @@ final class VisitReportState {
   /// The absolute path of the file of [photo] in this launch of the app.
   String pathOf(PhotoRef photo) => '$photoDirectory/${photo.path}';
 
-  VisitReportState copyWith({VisitReportStatus? status}) => VisitReportState(
+  VisitReportState copyWith({VisitReportStatus? status, bool? showsFooterText}) => VisitReportState(
     status: status ?? this.status,
     document: document,
     zonesLackingPhoto: zonesLackingPhoto,
     photoDirectory: photoDirectory,
+    showsFooterText: showsFooterText ?? this.showsFooterText,
   );
 
   @override
@@ -62,8 +68,9 @@ final class VisitReportState {
       other.status == status &&
       other.document == document &&
       other.photoDirectory == photoDirectory &&
+      other.showsFooterText == showsFooterText &&
       sameElements(other.zonesLackingPhoto, zonesLackingPhoto);
 
   @override
-  int get hashCode => Object.hash(status, document, photoDirectory, Object.hashAll(zonesLackingPhoto));
+  int get hashCode => Object.hash(status, document, photoDirectory, showsFooterText, Object.hashAll(zonesLackingPhoto));
 }

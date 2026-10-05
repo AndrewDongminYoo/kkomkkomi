@@ -61,6 +61,27 @@ void main() {
       }
     });
 
+    test('reads where the drawing of each text starts', () async {
+      final font = pw.Font.ttf(ByteData.sublistView(File(FileReportFont.path).readAsBytesSync()));
+      final document = pw.Document(theme: pw.ThemeData.withFont(base: font))
+        ..addPage(
+          pw.Page(
+            pageFormat: PdfPageFormat.a5,
+            margin: const pw.EdgeInsets.all(20),
+            build: (context) => pw.Row(
+              mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
+              children: [pw.Text('left'), pw.Text('right')],
+            ),
+          ),
+        );
+
+      final [left, right] = PdfSummary.read(await document.save()).pages.single.texts;
+
+      expect(left, (text: 'left', x: 20));
+      expect(right.text, 'right');
+      expect(right.x, greaterThan(PdfPageFormat.a5.width / 2));
+    });
+
     test('refuses a file without the PDF header', () async {
       final file = changed(await pdf(), (text) => text.replaceFirst('%PDF-1.', '%PDX-1.'));
 

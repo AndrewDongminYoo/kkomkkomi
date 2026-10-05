@@ -33,6 +33,7 @@ const PdfColor _slotBackground = PdfColors.grey200;
 /// [font] is a TrueType font that has the glyphs of the texts, and the file holds the glyphs that it uses. A
 /// character that the font does not have prints as a crossed box. [photos] holds the bytes of the file of every
 /// photo in [ReportDocument.photos], as a JPEG or a PNG. A note that is longer than a page goes on to the next page.
+/// The foot of every page holds the page number, and the footer text of [labels] when [showsFooterText] is true.
 ///
 /// Throws an [ArgumentError] when [photos] lacks a photo of the document. The image decoder throws when the bytes
 /// of a photo are no image.
@@ -41,6 +42,7 @@ Future<Uint8List> renderReportPdf(
   required ReportLabels labels,
   required ByteData font,
   required Map<PhotoRef, Uint8List> photos,
+  bool showsFooterText = true,
 }) {
   final typeface = pw.Font.ttf(font);
   final pdf = pw.Document(
@@ -55,7 +57,7 @@ Future<Uint8List> renderReportPdf(
       pageFormat: PdfPageFormat.a4,
       margin: const pw.EdgeInsets.all(_pageMargin),
       maxPages: _notePageLimit,
-      footer: (context) => _footer(context, labels),
+      footer: (context) => _footer(context, labels, showsFooterText: showsFooterText),
       build: (context) => [
         _header(document, labels),
         for (final zone in document.zones) ..._zone(zone, labels, images),
@@ -137,12 +139,16 @@ pw.Widget _slot(String label, pw.ImageProvider? image, ReportLabels labels) => p
   ],
 );
 
-pw.Widget _footer(pw.Context context, ReportLabels labels) => pw.Padding(
+pw.Widget _footer(pw.Context context, ReportLabels labels, {required bool showsFooterText}) => pw.Padding(
   padding: const pw.EdgeInsets.only(top: 12),
   child: pw.Row(
     mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
     children: [
-      pw.Text(labels.footer, style: const pw.TextStyle(fontSize: 9, color: _secondaryText)),
+      // Without the text, an empty box keeps the page number at the end of the row.
+      if (showsFooterText)
+        pw.Text(labels.footer, style: const pw.TextStyle(fontSize: 9, color: _secondaryText))
+      else
+        pw.SizedBox(),
       pw.Text(
         '${context.pageNumber} / ${context.pagesCount}',
         style: const pw.TextStyle(fontSize: 9, color: _secondaryText),

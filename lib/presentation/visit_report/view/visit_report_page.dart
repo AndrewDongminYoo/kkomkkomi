@@ -51,6 +51,7 @@ class VisitReportPage extends StatelessWidget {
               photoStore: context.read<PhotoStore>(),
               reportFont: context.read<ReportFont>(),
               reportShare: context.read<ReportShare>(),
+              identity: context.read<Identity>(),
             );
             unawaited(cubit.load());
             return cubit;
@@ -199,7 +200,7 @@ class _ReportBody extends StatelessWidget {
           child: KeepAllText(l10n.reportPreviewTitle, style: Theme.of(context).textTheme.titleMedium),
         ),
         const SizedBox(height: 8),
-        _ReportPreview(document: document, pathOf: state.pathOf),
+        _ReportPreview(document: document, pathOf: state.pathOf, showsFooterText: state.showsFooterText),
       ],
     );
   }
@@ -274,12 +275,15 @@ class _MissingPhotos extends StatelessWidget {
 
 /// The report as the PDF prints it: the same texts and the same zones, in the layout of the screen.
 class _ReportPreview extends StatelessWidget {
-  const new({required this.document, required this.pathOf});
+  const new({required this.document, required this.pathOf, required this.showsFooterText});
 
   final ReportDocument document;
 
   /// Gives the absolute path of the file of a photo.
   final String Function(PhotoRef photo) pathOf;
+
+  /// Whether the preview shows the footer text, as the PDF prints it.
+  final bool showsFooterText;
 
   @override
   Widget build(BuildContext context) {
@@ -308,7 +312,7 @@ class _ReportPreview extends StatelessWidget {
               _PreviewZone(zone: zone, labels: labels, pathOf: pathOf),
               const SizedBox(height: 16),
             ],
-            KeepAllText(labels.footer, style: secondary),
+            if (showsFooterText) KeepAllText(labels.footer, style: secondary),
           ],
         ),
       ),

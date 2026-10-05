@@ -17,6 +17,7 @@ class VisitReportCubit extends Cubit<VisitReportState> {
     required this._photoStore,
     required this._reportFont,
     required this._reportShare,
+    required this._identity,
   }) : super(const VisitReportState());
 
   final String _visitId;
@@ -26,14 +27,26 @@ class VisitReportCubit extends Cubit<VisitReportState> {
   final PhotoStore _photoStore;
   final ReportFont _reportFont;
   final ReportShare _reportShare;
+  final Identity _identity;
+
+  /// The check of a paid entitlement, which the first load starts, so that the screen asks once.
+  Future<void>? _paidCheck;
+
+  /// Whether the token of the user holds a paid entitlement, or null while the check has not answered.
+  bool? _paid;
 
   /// Reads the visit, its client, and the company profile, and builds the report from them.
   ///
+  /// The report shows without the footer text when `Identity.hasPaidEntitlement` answers true, the same token claim
+  /// that decides the footer of the web report. The check asks Firebase for a newly issued token, which can take long
+  /// without a network, so the report does not wait for it: it shows with the footer text until the check answers
+  /// true, and a PDF that is shared before then prints the footer text.
   /// A visit or a client that storage does not have is a failed load, because neither is ever deleted. A call does
   /// nothing while a share is on its way, and after the screen closed.
   Future<void> load() async {
     if (isClosed || state.status == VisitReportStatus.sharing) return;
     if (state.status != VisitReportStatus.loading) emit(const VisitReportState());
+    _paidCheck ??= _checkPaid();
     try {
       final visit = await _visits.visitById(_visitId);
       final client = visit == null ? null : await _clients.clientById(visit.clientId);
@@ -52,6 +65,7 @@ class VisitReportCubit extends Cubit<VisitReportState> {
               if (record.emptySlots.isNotEmpty) record,
           ],
           photoDirectory: photoDirectory,
+          showsFooterText: _paid != true,
         ),
       );
     } on Exception catch (error, stackTrace) {
@@ -76,7 +90,13 @@ class VisitReportCubit extends Cubit<VisitReportState> {
         // it removed here (issue 20).
         photos[photo] = withoutLocation(await _photoStore.read(photo));
       }
-      final bytes = await renderReportPdf(document, labels: labels, font: await _reportFont.load(), photos: photos);
+      final bytes = await renderReportPdf(
+        document,
+        labels: labels,
+        font: await _reportFont.load(),
+        photos: photos,
+        showsFooterText: state.showsFooterText,
+      );
       await _reportShare.sharePdf(
         bytes: bytes,
         fileName: reportFileName(
@@ -94,6 +114,13 @@ class VisitReportCubit extends Cubit<VisitReportState> {
       _report(error, stackTrace);
       _show(state.copyWith(status: VisitReportStatus.shareFailed));
     }
+  }
+
+  /// Asks once whether the user holds a paid entitlement, and leaves the footer text out of a shown report when the
+  /// answer is true. The call of the port never throws.
+  Future<void> _checkPaid() async {
+    final paid = _paid = await _identity.hasPaidEntitlement();
+    if (paid && !isClosed && state.document != null) emit(state.copyWith(showsFooterText: false));
   }
 
   void _show(VisitReportState next) {
