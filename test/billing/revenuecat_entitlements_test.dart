@@ -1,9 +1,11 @@
 import 'dart:async';
 
-import 'package:flutter/foundation.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:kkomkkomi/application/application.dart';
 import 'package:kkomkkomi/billing/billing.dart';
 import 'package:kkomkkomi/domain/domain.dart';
+import 'package:purchases_flutter/purchases_flutter.dart' show PurchasesErrorCode;
 
 import '../helpers/helpers.dart';
 
@@ -61,6 +63,80 @@ class _FakeStore implements RevenueCatStore {
   void addListener(void Function(Iterable<String> activeIds) listener) {
     calls.add('addListener');
     listeners.add(listener);
+  }
+
+  /// The packages of the current offering that a read gives.
+  List<RevenueCatPackage> packages = const [];
+
+  /// The product identifiers of the active entitlements that a read gives.
+  Iterable<String> activeProducts = const [];
+
+  /// What a read of the packages throws while it is set.
+  Object? offersFailure;
+
+  /// What a read of the active products throws while it is set.
+  Object? activeProductsFailure;
+
+  /// The active entitlement identifiers that a purchase gives.
+  Iterable<String> purchasedIds = const [];
+
+  /// What a purchase throws while it is set.
+  Object? purchaseFailure;
+
+  /// The active entitlement identifiers that a restore gives.
+  Iterable<String> restoredIds = const [];
+
+  /// What a restore throws while it is set.
+  Object? restoreFailure;
+
+  /// The management page that a read gives.
+  String? management;
+
+  /// What a read of the management page throws while it is set.
+  Object? managementFailure;
+
+  @override
+  Future<List<RevenueCatPackage>> currentOfferingPackages() async {
+    calls.add('currentOfferingPackages');
+    if (offersFailure case final failure?) Error.throwWithStackTrace(failure, StackTrace.current);
+    return packages;
+  }
+
+  @override
+  Future<Iterable<String>> activeProductIds() async {
+    calls.add('activeProductIds');
+    if (activeProductsFailure case final failure?) Error.throwWithStackTrace(failure, StackTrace.current);
+    return activeProducts;
+  }
+
+  @override
+  Future<Iterable<String>> purchasePackage(String packageId) async {
+    calls.add('purchasePackage $packageId');
+    if (purchaseFailure case final failure?) Error.throwWithStackTrace(failure, StackTrace.current);
+    return purchasedIds;
+  }
+
+  @override
+  Future<Iterable<String>> restore() async {
+    calls.add('restore');
+    if (restoreFailure case final failure?) Error.throwWithStackTrace(failure, StackTrace.current);
+    return restoredIds;
+  }
+
+  @override
+  Future<String?> managementUrl() async {
+    calls.add('managementUrl');
+    if (managementFailure case final failure?) Error.throwWithStackTrace(failure, StackTrace.current);
+    return management;
+  }
+
+  /// What a call of [invalidateCustomerInfoCache] throws while it is set.
+  Object? invalidateFailure;
+
+  @override
+  Future<void> invalidateCustomerInfoCache() async {
+    calls.add('invalidateCustomerInfoCache');
+    if (invalidateFailure case final failure?) Error.throwWithStackTrace(failure, StackTrace.current);
   }
 
   /// Reports [activeIds] to each listener, as RevenueCat does after a renewal or an expiry.
@@ -274,6 +350,271 @@ void main() {
 
       expect(store.listeners, isEmpty);
     });
+  });
+
+  group('RevenueCatEntitlements, selling', () {
+    const basicMonthly = PlanOffer(id: 'basic_monthly', plan: Plan.basic, period: BillingPeriod.monthly, price: 'p1');
+
+    /// A platform error of the plugin with [code] as its code, as `PurchasesErrorHelper.getErrorCode` reads it.
+    PlatformException platformError(PurchasesErrorCode code) => PlatformException(code: '${code.index}');
+
+    test('sells plans', () {
+      expect(entitlements.sellsPlans, isTrue);
+    });
+
+    test('gives the four known packages in the order of the plans, and ignores an unknown one', () async {
+      store.packages = [
+        (id: 'pro_annual', price: 'p4', productId: 'pro.annual'),
+        (id: 'lifetime', price: 'p5', productId: 'lifetime'),
+        (id: 'basic_annual', price: 'p2', productId: 'basic.annual'),
+        (id: 'pro_monthly', price: 'p3', productId: 'pro.monthly'),
+        (id: 'basic_monthly', price: 'p1', productId: 'basic.monthly'),
+      ];
+
+      expect(await entitlements.offers(), const [
+        PlanOffer(id: 'basic_monthly', plan: Plan.basic, period: BillingPeriod.monthly, price: 'p1'),
+        PlanOffer(id: 'basic_annual', plan: Plan.basic, period: BillingPeriod.annual, price: 'p2'),
+        PlanOffer(id: 'pro_monthly', plan: Plan.pro, period: BillingPeriod.monthly, price: 'p3'),
+        PlanOffer(id: 'pro_annual', plan: Plan.pro, period: BillingPeriod.annual, price: 'p4'),
+      ]);
+      expect(store.calls, [
+        'isConfigured',
+        'configure test_key user-1',
+        'addListener',
+        'currentOfferingPackages',
+        'activeProductIds',
+      ]);
+    });
+
+    test('marks the offer whose product grants the active entitlement', () async {
+      store
+        ..packages = [
+          (id: 'basic_monthly', price: 'p1', productId: 'basic:monthly'),
+          (id: 'basic_annual', price: 'p2', productId: 'basic:annual'),
+        ]
+        ..activeProducts = ['basic', 'basic:annual'];
+
+      expect((await entitlements.offers()).map((offer) => (offer.id, offer.isActive)), [
+        ('basic_monthly', false),
+        ('basic_annual', true),
+      ]);
+    });
+
+    test('gives no offers without a user ID, and does not reach RevenueCat', () async {
+      identity.userId = null;
+      store.packages = [(id: 'basic_monthly', price: 'p1', productId: 'basic.monthly')];
+
+      expect(await entitlements.offers(), isEmpty);
+      expect(store.calls, isEmpty);
+    });
+
+    for (final (kind, failure) in <(String, Object)>[
+      ('an exception', PlatformException(code: '10')),
+      ('an error', StateError('no plugin')),
+    ]) {
+      test('gives no offers when the read throws $kind', () async {
+        store.offersFailure = failure;
+
+        expect(await entitlements.offers(), isEmpty);
+      });
+
+      test('gives the offers, none of them active, when the read of the products in use throws $kind', () async {
+        store
+          ..packages = [(id: 'basic_monthly', price: 'p1', productId: 'basic.monthly')]
+          ..activeProducts = ['basic.monthly']
+          ..activeProductsFailure = failure;
+
+        expect(await entitlements.offers(), [basicMonthly]);
+      });
+    }
+
+    test('configures RevenueCat once for a read of the plan and of the offers at one time', () async {
+      store.configureGate = Completer<void>();
+
+      final plan = entitlements.currentPlan();
+      final offers = entitlements.offers();
+      await pumpEventQueue();
+      store.configureGate!.complete();
+      await Future.wait([plan, offers]);
+
+      expect(identity.calls, 1);
+      expect(store.calls.where((call) => call.startsWith('configure')), hasLength(1));
+    });
+
+    test('buys the package of the offer, and reports the plan that the store then grants', () async {
+      store.purchasedIds = ['basic'];
+      final changes = <Plan>[];
+      final subscription = entitlements.planChanges.listen(changes.add);
+      addTearDown(subscription.cancel);
+
+      expect(await entitlements.purchase(basicMonthly), PurchaseOutcome.purchased);
+      await pumpEventQueue();
+
+      expect(store.calls, contains('purchasePackage basic_monthly'));
+      expect(changes, [Plan.basic]);
+      // The plan that the purchase granted is the last plan that the adapter knows.
+      store.readFailure = Exception('offline');
+      expect(await entitlements.currentPlan(), Plan.basic);
+    });
+
+    test('reports no change after a purchase that grants the plan that it knew', () async {
+      store
+        ..activeIds = ['basic']
+        ..purchasedIds = ['basic'];
+      await entitlements.currentPlan();
+      final changes = <Plan>[];
+      final subscription = entitlements.planChanges.listen(changes.add);
+      addTearDown(subscription.cancel);
+
+      expect(await entitlements.purchase(basicMonthly), PurchaseOutcome.purchased);
+      await pumpEventQueue();
+
+      expect(changes, isEmpty);
+    });
+
+    for (final (code, outcome) in <(PurchasesErrorCode, PurchaseOutcome)>[
+      (PurchasesErrorCode.purchaseCancelledError, PurchaseOutcome.cancelled),
+      (PurchasesErrorCode.paymentPendingError, PurchaseOutcome.pending),
+      (PurchasesErrorCode.storeProblemError, PurchaseOutcome.failed),
+      (PurchasesErrorCode.networkError, PurchaseOutcome.failed),
+      (PurchasesErrorCode.productAlreadyPurchasedError, PurchaseOutcome.failed),
+    ]) {
+      test('gives $outcome for the error code $code, and keeps the plan', () async {
+        store.purchaseFailure = platformError(code);
+        final changes = <Plan>[];
+        final subscription = entitlements.planChanges.listen(changes.add);
+        addTearDown(subscription.cancel);
+
+        expect(await entitlements.purchase(basicMonthly), outcome);
+        await pumpEventQueue();
+
+        expect(changes, isEmpty);
+        expect(await entitlements.currentPlan(), Plan.free);
+      });
+    }
+
+    for (final (kind, failure) in <(String, Object)>[
+      ('a platform error whose code is no number', PlatformException(code: 'channel-error')),
+      ('another exception', Exception('offline')),
+      ('an error', StateError('The current offering has no package basic_monthly.')),
+    ]) {
+      test('gives failed for $kind', () async {
+        store.purchaseFailure = failure;
+
+        expect(await entitlements.purchase(basicMonthly), PurchaseOutcome.failed);
+      });
+    }
+
+    test('gives failed for a purchase without a user ID, and does not reach RevenueCat', () async {
+      identity.userId = null;
+
+      expect(await entitlements.purchase(basicMonthly), PurchaseOutcome.failed);
+      expect(store.calls, isEmpty);
+    });
+
+    test('restores a paid plan and reports it', () async {
+      store.restoredIds = ['basic', 'pro'];
+      final changes = <Plan>[];
+      final subscription = entitlements.planChanges.listen(changes.add);
+      addTearDown(subscription.cancel);
+
+      expect(await entitlements.restore(), RestoreOutcome.restored);
+      await pumpEventQueue();
+
+      expect(store.calls, contains('restore'));
+      expect(changes, [Plan.pro]);
+    });
+
+    test('gives nothingFound for a restore without an active entitlement, and reports the Free plan', () async {
+      store
+        ..activeIds = ['basic']
+        ..restoredIds = [];
+      await entitlements.currentPlan();
+      final changes = <Plan>[];
+      final subscription = entitlements.planChanges.listen(changes.add);
+      addTearDown(subscription.cancel);
+
+      expect(await entitlements.restore(), RestoreOutcome.nothingFound);
+      await pumpEventQueue();
+
+      expect(changes, [Plan.free]);
+    });
+
+    for (final (kind, failure) in <(String, Object)>[
+      ('an exception', PlatformException(code: '10')),
+      ('an error', StateError('no plugin')),
+    ]) {
+      test('gives failed when the restore throws $kind', () async {
+        store.restoreFailure = failure;
+
+        expect(await entitlements.restore(), RestoreOutcome.failed);
+      });
+    }
+
+    test('gives failed for a restore without a user ID, and does not reach RevenueCat', () async {
+      identity.userId = null;
+
+      expect(await entitlements.restore(), RestoreOutcome.failed);
+      expect(store.calls, isEmpty);
+    });
+
+    test('gives the management page that RevenueCat knows', () async {
+      store.management = 'https://apps.apple.com/account/subscriptions';
+
+      expect(await entitlements.managementUrl(), Uri.parse('https://apps.apple.com/account/subscriptions'));
+    });
+
+    test('gives no management page when RevenueCat knows none or gives no URL', () async {
+      expect(await entitlements.managementUrl(), isNull);
+
+      store.management = 'http://[';
+
+      expect(await entitlements.managementUrl(), isNull);
+    });
+
+    test('gives no management page without a user ID or when the read throws', () async {
+      identity.userId = null;
+      store.management = 'https://apps.apple.com/account/subscriptions';
+
+      expect(await entitlements.managementUrl(), isNull);
+      expect(store.calls, isEmpty);
+
+      identity.userId = 'user-1';
+      store.managementFailure = Exception('offline');
+
+      expect(await entitlements.managementUrl(), isNull);
+    });
+
+    test('makes RevenueCat forget the customer information that it keeps', () async {
+      await entitlements.currentPlan();
+      store.calls.clear();
+
+      await entitlements.invalidate();
+
+      expect(store.calls, ['invalidateCustomerInfoCache']);
+    });
+
+    test('does not reach RevenueCat at an invalidation before it is configured for the user ID', () async {
+      await entitlements.invalidate();
+      identity.userId = null;
+      await entitlements.currentPlan();
+      await entitlements.invalidate();
+
+      expect(store.calls, isEmpty);
+    });
+
+    for (final (kind, failure) in <(String, Object)>[
+      ('an exception', Exception('offline')),
+      ('an error', StateError('no plugin')),
+    ]) {
+      test('answers without throwing when the invalidation throws $kind', () async {
+        await entitlements.currentPlan();
+        store.invalidateFailure = failure;
+
+        await expectLater(entitlements.invalidate(), completes);
+        expect(store.calls.last, 'invalidateCustomerInfoCache');
+      });
+    }
   });
 
   group('revenueCatEntitlementsFor', () {

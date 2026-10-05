@@ -25,4 +25,23 @@ void main() {
       expect({for (final plan in Plan.values) plan: plan.isPaid}, {Plan.free: false, Plan.basic: true, Plan.pro: true});
     });
   });
+
+  group('clientLimit', () {
+    test('is 2 for Free, 5 for Basic, and none for Pro', () {
+      expect({for (final plan in Plan.values) plan: plan.clientLimit}, {Plan.free: 2, Plan.basic: 5, Plan.pro: null});
+    });
+  });
+
+  group('showsFooter', () {
+    test('is true only for Free', () {
+      expect(
+        {for (final plan in Plan.values) plan: plan.showsFooter},
+        {
+          Plan.free: true,
+          Plan.basic: false,
+          Plan.pro: false,
+        },
+      );
+    });
+  });
 }
