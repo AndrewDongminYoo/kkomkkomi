@@ -52,6 +52,13 @@ The Firestore rules and Hosting were deployed from `135c67f` on 2026-10-05, afte
 The deployed Firestore rules and Hosting files equal the tracked ones at `135c67f`, and the deployed Storage rules equal the tracked ones at `34d5d23`.
 A deploy is the operator's decision each time: do not deploy rules or Hosting without that approval.
 
+The operator installed the RevenueCat Firebase extension from the Firebase console on 2026-10-05, as the instance `firestore-revenuecat-purchases`.
+It is version 0.1.19 in `asia-northeast3`, with `SET_CUSTOM_CLAIMS` enabled and both collection parameters empty, so it writes the `revenueCatEntitlements` claim and nothing in Firestore.
+Its shared secret is in Secret Manager, and `firebase.json` holds no `extensions` block.
+Keep both collection parameters empty unless the privacy pages change first.
+Install, update, or reconfigure the extension only with the operator's approval.
+Issue #51 tracks the update to 0.2.0 before Cloud Functions decommissions `nodejs20` on 2026-10-30, and the replacement of the extension before Firebase Extensions shuts down on 2027-03-31.
+
 `storage.rules` reads the client page through `firestore.get`, which needs the Firebase Storage service agent (`service-146496738802@gcp-sa-firebasestorage.iam.gserviceaccount.com`) to hold `roles/firebaserules.firestoreServiceAgent`.
 The operator granted it on 2026-10-02, after the deploy. A `firebase deploy --only storage` with `--non-interactive` does not offer that grant, so a new project needs the grant by hand, and without it every Storage rule that reads the page denies.
 
