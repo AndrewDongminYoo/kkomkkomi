@@ -42,6 +42,17 @@ The brief of 4b, `2026-10-05-m3-04b-limits-and-pdf.md`, and its shipped code are
 - The PDF footer does not come from the cached entitlements. `VisitReportCubit` reads `Identity.hasPaidEntitlement()` once when the visit report screen opens, the same token claim that decides the web report footer, so the PDF path never reaches RevenueCat, and a device that cannot get a newly issued token prints the footer. The tests are in `test/presentation/visit_report/cubit/visit_report_cubit_test.dart` and `test/export/report_pdf_test.dart`.
 - The constraint that no release build is made between 4a and 4b ends when 4b merges, because the app then has the client limit and the footer that the plans screen describes. A release build is allowed again after that merge, subject to the deploy order in "Operator steps outside the repository": the rules of PR 1 (#42) are deployed before a build that writes `unbranded` reaches a tester.
 
+## PR 5 and the end of the split (2026-10-05)
+
+The brief of PR 5 is `2026-10-05-m3-05-deletion-and-terms.md`, not the file name in the row of PR 5 above, and that brief and its shipped code are the authority where they differ from the row.
+
+- The RevenueCat disclosure in the privacy pages and in the store answers shipped with 4a, and so did the terms of use link of the plans screen.
+- PR 5 ships the subscription notice in the confirmation of Delete All Data (`lib/presentation/company_profile/view/company_profile_page.dart`, tested in `test/presentation/company_profile/view/company_profile_page_test.dart`), the terms of use and privacy policy links at the end of the two App Store descriptions, and the publish token request in section 9 of the privacy pages.
+- The RevenueCat customer record of a deleted user is removed by hand on request (operator, 2026-10-05), and the console note `docs/notes/2026-10-02-first-test-distribution.md` owns that step.
+
+PR 5 is the last pull request of the split, so its merge completes the split.
+#36 stays open after that merge: its acceptance criteria include the purchases in the store test environments in "Operator steps outside the repository", which the operator makes by hand.
+
 ## Checks before PR 2
 
 - The RevenueCat public SDK keys stay out of the repository (operator, 2026-10-05): a file that git ignores holds them, and the production build reads them through `--dart-define`, as `google-services.json` stays out of the repository today.

@@ -320,6 +320,18 @@
     "@dataDeletionConfirmButton": {
         "description": "Label of the button in the confirmation that deletes all data"
     },
+    "dataDeletionSubscriptionMessage": "Deleting your data doesn't cancel a subscription you bought in the store. The store keeps charging you until you cancel it.",
+    "@dataDeletionSubscriptionMessage": {
+        "description": "Notice in the confirmation before all data is deleted, in the build that sells plans. A store subscription stays active after the deletion"
+    },
+    "dataDeletionSubscriptionLink": "Open Google Play Subscriptions",
+    "@dataDeletionSubscriptionLink": {
+        "description": "Link in the confirmation before all data is deleted, on Android, that opens the subscriptions page of Google Play"
+    },
+    "dataDeletionSubscriptionSteps": "To cancel it, open Settings, tap your name, then tap Subscriptions.",
+    "@dataDeletionSubscriptionSteps": {
+        "description": "Steps in the confirmation before all data is deleted, on iOS, that cancel a subscription of the App Store. The names are those of the Settings app"
+    },
     "dataDeletingMessage": "Deleting your data. Keep this screen open until it's done.",
     "@dataDeletingMessage": {
         "description": "Text under the progress bar while all data is deleted"

@@ -3,7 +3,8 @@ import 'package:kkomkkomi/presentation/shared/dialog_layout.dart';
 import 'package:kkomkkomi/presentation/shared/keep_all_text.dart';
 import 'package:material_ui/material_ui.dart';
 
-/// Asks [title] with [message] under it, and completes with true when the person presses the [confirmLabel] button.
+/// Asks [title] with [message] under it, and [details] under the message when given, and completes with true when the
+/// person presses the [confirmLabel] button.
 ///
 /// It completes with false when the person closes the dialog in another way. When [isDestructive] is true, the
 /// confirm button has the error colors, for an action that deletes data, closes a link, or loses a note.
@@ -13,6 +14,7 @@ Future<bool> showConfirmDialog({
   required String message,
   required String confirmLabel,
   bool isDestructive = false,
+  Widget? details,
 }) async {
   final confirmed = await showDialog<bool>(
     context: context,
@@ -22,7 +24,13 @@ Future<bool> showConfirmDialog({
         scrollable: true,
         insetPadding: dialogInsetPadding,
         title: KeepAllText(title),
-        content: KeepAllText(message),
+        content: details == null
+            ? KeepAllText(message)
+            : Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [KeepAllText(message), const SizedBox(height: 16), details],
+              ),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(context).pop(false),
