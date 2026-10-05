@@ -280,6 +280,18 @@
     "@dataDeletionConfirmButton": {
         "description": "확인 창에서 모든 데이터를 지우는 버튼의 라벨"
     },
+    "dataDeletionSubscriptionMessage": "데이터를 지워도 스토어에서 시작한 구독은 해지되지 않아요. 해지하기 전까지 스토어에서 요금이 계속 결제돼요.",
+    "@dataDeletionSubscriptionMessage": {
+        "description": "요금제를 파는 빌드에서 모든 데이터를 지우기 전에 묻는 확인 창의 안내. 지운 뒤에도 스토어 구독은 유지된다"
+    },
+    "dataDeletionSubscriptionLink": "Google Play 구독 열기",
+    "@dataDeletionSubscriptionLink": {
+        "description": "Android에서 모든 데이터를 지우기 전에 묻는 확인 창의 링크. Google Play의 구독 페이지를 연다"
+    },
+    "dataDeletionSubscriptionSteps": "설정에서 내 이름을 누르고 구독을 누르면 해지할 수 있어요.",
+    "@dataDeletionSubscriptionSteps": {
+        "description": "iOS에서 모든 데이터를 지우기 전에 묻는 확인 창의 App Store 구독 해지 방법. 이름은 설정 앱의 이름을 따른다"
+    },
     "dataDeletingMessage": "데이터를 지우고 있어요. 다 지울 때까지 이 화면을 열어 두세요.",
     "@dataDeletingMessage": {
         "description": "모든 데이터를 지우는 동안 진행 표시 아래에 보이는 문구"

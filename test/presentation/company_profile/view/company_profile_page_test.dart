@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:bloc_test/bloc_test.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:kkomkkomi/app/app.dart';
@@ -307,16 +308,25 @@ void main() {
   });
 
   group('the deletion of all data', () {
+    const subscriptionMessage =
+        "Deleting your data doesn't cancel a subscription you bought in the store. The store keeps charging you until "
+        'you cancel it.';
+    const subscriptionLink = 'Open Google Play Subscriptions';
+    const subscriptionSteps = 'To cancel it, open Settings, tap your name, then tap Subscriptions.';
+    const linkFailure = "Can't open the page.";
+
     late FakeLocalDataRepository localData;
     late FakePhotoStore photoStore;
     late FakePublishRepository publishing;
     late FakePublisher publisher;
     late FakeIdentity identity;
     late FakeEntitlements entitlements;
+    late FakeExternalLinks links;
 
     /// Opens the screen over a host screen, as the client list opens it, with a backend when [backend] is true.
     Future<void> pumpOverHost(WidgetTester tester, {bool backend = false, Locale? locale}) async {
       entitlements = FakeEntitlements();
+      links = FakeExternalLinks();
       localData = FakeLocalDataRepository();
       photoStore = FakePhotoStore();
       publishing = FakePublishRepository();
@@ -344,6 +354,7 @@ void main() {
         identity: identity,
         entitlements: entitlements,
         photoStore: photoStore,
+        externalLinks: links,
         publishQueue: publishQueueOf(repositories, publisher: publisher, identity: identity, photoStore: photoStore),
       );
       await tester.tap(find.text('host'));
@@ -434,6 +445,13 @@ void main() {
       );
       expect(entitlements.touched, isEmpty);
 
+      // The production flavor shows the subscription notice in the question without asking for the plan.
+      await tapDelete(tester, 'Delete All Data');
+      expect(find.text(subscriptionMessage), findsOneWidget);
+      expect(entitlements.touched, isEmpty);
+      await tester.tap(find.widgetWithText(TextButton, 'Cancel'));
+      await tester.pumpAndSettle();
+
       await tester.enterText(find.byType(TextField), '반짝 클린 2호점');
       await tester.tap(find.widgetWithText(FilledButton, 'Save'));
       await tester.pumpAndSettle();
@@ -506,6 +524,175 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(find.widgetWithText(SnackBar, '모든 데이터를 지웠어요.'), findsOneWidget);
+    });
+
+    group('the store subscription notice', () {
+      testWidgets('is not in the question of a flavor that does not publish', (tester) async {
+        await pumpOverHost(tester);
+
+        await tapDelete(tester, 'Delete All Data');
+
+        expect(find.text('Delete all data?'), findsOneWidget);
+        expect(find.text(subscriptionMessage), findsNothing);
+        expect(find.text(subscriptionLink), findsNothing);
+        expect(find.text(subscriptionSteps), findsNothing);
+      });
+
+      testWidgets('on Android, says that the subscription goes on and opens the Google Play subscriptions', (
+        tester,
+      ) async {
+        await pumpOverHost(tester, backend: true);
+
+        await tapDelete(tester, 'Delete All Data');
+        expect(find.text(subscriptionMessage), findsOneWidget);
+        expect(tester.noticeToneOf(subscriptionMessage), NoticeTone.info);
+        expect(find.text(subscriptionSteps), findsNothing);
+        await tester.tap(find.widgetWithText(TextButton, subscriptionLink));
+        await tester.pumpAndSettle();
+
+        expect(links.opened, [Uri.parse('https://play.google.com/store/account/subscriptions')]);
+        expect(find.text(linkFailure), findsNothing);
+        // The question stays, so the person can still delete or close it after the store page.
+        expect(find.text('Delete all data?'), findsOneWidget);
+        expect(entitlements.touched, isEmpty);
+        await tester.tap(find.widgetWithText(FilledButton, 'Delete'));
+        await tester.pumpAndSettle();
+        expect(localData.erasures, 1);
+      });
+
+      testWidgets('on Android, tells in the question when the Google Play subscriptions do not open', (tester) async {
+        await pumpOverHost(tester, backend: true);
+        links.opens = false;
+
+        await tapDelete(tester, 'Delete All Data');
+        await tester.tap(find.widgetWithText(TextButton, subscriptionLink));
+        await tester.pumpAndSettle();
+
+        expect(tester.takeException(), isNull);
+        expect(find.text(linkFailure), findsOneWidget);
+        expect(tester.noticeToneOf(linkFailure), NoticeTone.error);
+        expect(find.text('Delete all data?'), findsOneWidget);
+
+        // A later open that works takes the failure away.
+        links.opens = true;
+        await tester.tap(find.widgetWithText(TextButton, subscriptionLink));
+        await tester.pumpAndSettle();
+        expect(find.text(linkFailure), findsNothing);
+        expect(links.opened, hasLength(2));
+      });
+
+      testWidgets('on Android, drops the answer of an open that comes after the question closed', (tester) async {
+        await pumpOverHost(tester, backend: true);
+        links
+          ..opens = false
+          ..gate = Completer<void>();
+
+        await tapDelete(tester, 'Delete All Data');
+        await tester.tap(find.widgetWithText(TextButton, subscriptionLink));
+        await tester.pump();
+        await tester.tap(find.widgetWithText(TextButton, 'Cancel'));
+        await tester.pumpAndSettle();
+        links.gate!.complete();
+        await tester.pumpAndSettle();
+
+        expect(tester.takeException(), isNull);
+        expect(find.text('Delete all data?'), findsNothing);
+        expect(find.text(linkFailure), findsNothing);
+        expect(localData.erasures, 0);
+      });
+
+      testWidgets(
+        'on iOS, says that the subscription goes on and gives the steps in Settings, without a link',
+        (tester) async {
+          await pumpOverHost(tester, backend: true);
+
+          await tapDelete(tester, 'Delete All Data');
+
+          expect(find.text(subscriptionMessage), findsOneWidget);
+          expect(find.text(subscriptionSteps), findsOneWidget);
+          expect(tester.noticeToneOf(subscriptionSteps), NoticeTone.info);
+          expect(find.text(subscriptionLink), findsNothing);
+          expect(entitlements.touched, isEmpty);
+        },
+        variant: TargetPlatformVariant.only(TargetPlatform.iOS),
+      );
+
+      testWidgets(
+        'is not in the question on a platform without a store that sells the plans',
+        (tester) async {
+          await pumpOverHost(tester, backend: true);
+
+          await tapDelete(tester, 'Delete All Data');
+
+          expect(find.text('Delete all data?'), findsOneWidget);
+          expect(find.text(subscriptionMessage), findsNothing);
+        },
+        variant: TargetPlatformVariant.only(TargetPlatform.macOS),
+      );
+
+      testWidgets(
+        'speaks Korean',
+        (tester) async {
+          await pumpOverHost(tester, backend: true, locale: const Locale('ko'));
+
+          await tapDelete(tester, '모든 데이터 지우기');
+
+          expect(find.text('데이터를 지워도 스토어에서 시작한 구독은 해지되지 않아요. 해지하기 전까지 스토어에서 요금이 계속 결제돼요.'), findsOneWidget);
+          if (defaultTargetPlatform == TargetPlatform.iOS) {
+            expect(find.text('설정에서 내 이름을 누르고 구독을 누르면 해지할 수 있어요.'), findsOneWidget);
+          } else {
+            links.opens = false;
+            await tester.tap(find.widgetWithText(TextButton, 'Google Play 구독 열기'));
+            await tester.pumpAndSettle();
+            expect(find.text('페이지를 열지 못했어요.'), findsOneWidget);
+          }
+        },
+        variant: const TargetPlatformVariant({TargetPlatform.android, TargetPlatform.iOS}),
+      );
+
+      for (final locale in [const Locale('en'), const Locale('ko')]) {
+        testWidgets(
+          'cuts none of its texts on a narrow screen at the largest text size in ${locale.languageCode}',
+          (tester) async {
+            tester.useNarrowScreenWithLargestText();
+            final english = locale.languageCode == 'en';
+            await pumpOverHost(tester, backend: true, locale: locale);
+
+            await tapDelete(tester, english ? 'Delete All Data' : '모든 데이터 지우기');
+            final message = english
+                ? subscriptionMessage
+                : '데이터를 지워도 스토어에서 시작한 구독은 해지되지 않아요. 해지하기 전까지 스토어에서 요금이 계속 결제돼요.';
+            await tester.ensureVisible(find.text(message));
+            await tester.pumpAndSettle();
+            tester.expectWholeText(message);
+            if (defaultTargetPlatform == TargetPlatform.iOS) {
+              final steps = english ? subscriptionSteps : '설정에서 내 이름을 누르고 구독을 누르면 해지할 수 있어요.';
+              await tester.ensureVisible(find.text(steps));
+              await tester.pumpAndSettle();
+              tester.expectWholeText(steps);
+            } else {
+              links.opens = false;
+              final link = english ? subscriptionLink : 'Google Play 구독 열기';
+              await tester.ensureVisible(find.widgetWithText(TextButton, link));
+              await tester.pumpAndSettle();
+              tester.expectWholeText(link);
+              // At this size the link is taller than the part of the question that scrolls, so the tap goes to its
+              // top, which the scroll put in view.
+              await tester.tapAt(tester.getRect(find.widgetWithText(TextButton, link)).topCenter.translate(0, 24));
+              await tester.pumpAndSettle();
+              final failure = english ? linkFailure : '페이지를 열지 못했어요.';
+              await tester.ensureVisible(find.text(failure));
+              await tester.pumpAndSettle();
+              tester.expectWholeText(failure);
+            }
+            final confirm = english ? 'Delete' : '지우기';
+            await tester.ensureVisible(find.widgetWithText(FilledButton, confirm));
+            await tester.pumpAndSettle();
+            tester.expectWholeText(confirm);
+          },
+          variant: const TargetPlatformVariant({TargetPlatform.android, TargetPlatform.iOS}),
+        );
+      }
     });
   });
 

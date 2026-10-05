@@ -43,6 +43,35 @@ void main() {
       expect(find.text('Past visits keep their records of it.'), findsOneWidget);
     });
 
+    testWidgets('shows the details under the message', (tester) async {
+      final answers = <bool>[];
+      await tester.pumpApp(
+        Builder(
+          builder: (context) => TextButton(
+            onPressed: () async => answers.add(
+              await showConfirmDialog(
+                context: context,
+                title: 'Remove Lobby?',
+                message: 'Past visits keep their records of it.',
+                confirmLabel: 'Remove',
+                details: const Text('Its photos stay on the phone.'),
+              ),
+            ),
+            child: const Text('open'),
+          ),
+        ),
+      );
+      await tester.tap(find.text('open'));
+      await tester.pumpAndSettle();
+
+      final message = tester.getRect(find.text('Past visits keep their records of it.'));
+      final details = tester.getRect(find.text('Its photos stay on the phone.'));
+      expect(details.top, greaterThan(message.bottom));
+      await tester.tap(find.widgetWithText(FilledButton, 'Remove'));
+      await tester.pumpAndSettle();
+      expect(answers, [true]);
+    });
+
     testWidgets('completes with true when the confirm button is pressed', (tester) async {
       final answers = await openDialog(tester);
 
