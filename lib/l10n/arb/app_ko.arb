@@ -483,5 +483,125 @@
     "clientLinkRequestFailedMessage": "링크를 바꾸지 못했어요. 다시 시도해 주세요.",
     "@clientLinkRequestFailedMessage": {
         "description": "저장소가 링크 막기나 새 링크 만들기를 받지 못했을 때 표시되는 문구"
+    },
+    "companyProfilePlanTitle": "요금제",
+    "@companyProfilePlanTitle": {
+        "description": "회사 정보 화면의 요금제 영역 제목"
+    },
+    "companyProfilePlanMessage": "지금은 {plan} 요금제를 쓰고 있어요.",
+    "@companyProfilePlanMessage": {
+        "description": "회사 정보 화면에 표시되는 지금 요금제"
+    },
+    "companyProfilePlansButton": "요금제 보기",
+    "@companyProfilePlansButton": {
+        "description": "요금제 화면을 여는 버튼"
+    },
+    "plansTitle": "요금제",
+    "@plansTitle": {
+        "description": "요금제 화면 제목"
+    },
+    "planFreeName": "무료",
+    "@planFreeName": {
+        "description": "구독하지 않은 요금제의 이름"
+    },
+    "planBasicName": "베이직",
+    "@planBasicName": {
+        "description": "베이직 요금제의 이름"
+    },
+    "planProName": "프로",
+    "@planProName": {
+        "description": "프로 요금제의 이름"
+    },
+    "plansCurrentLabel": "지금 쓰는 요금제",
+    "@plansCurrentLabel": {
+        "description": "회사가 쓰고 있는 요금제 이름 위의 문구"
+    },
+    "planClientLimit": "거래처를 {count}곳까지 둘 수 있어요.",
+    "@planClientLimit": {
+        "description": "거래처 수에 제한이 있는 요금제의 내용"
+    },
+    "planNoClientLimit": "거래처를 개수 제한 없이 둘 수 있어요.",
+    "@planNoClientLimit": {
+        "description": "거래처 수에 제한이 없는 요금제의 내용"
+    },
+    "planFooterShown": "보고서 아래에 ‘{footer}’ 문구가 들어가요.",
+    "@planFooterShown": {
+        "description": "무료 요금제 보고서에 들어가는 문구"
+    },
+    "planFooterHidden": "보고서에 ‘{footer}’ 문구가 들어가지 않아요.",
+    "@planFooterHidden": {
+        "description": "유료 요금제 보고서에는 문구가 들어가지 않는다는 내용"
+    },
+    "plansArchivedNote": "보관한 거래처는 개수에 들어가지 않아요.",
+    "@plansArchivedNote": {
+        "description": "거래처 수에 보관한 거래처가 들어가지 않는다는 안내"
+    },
+    "plansSubscribeMonthlyButton": "월간 구독하기 (매달 {price})",
+    "@plansSubscribeMonthlyButton": {
+        "description": "요금제의 월간 상품을 구매하는 버튼. 가격은 스토어가 주는 문구"
+    },
+    "plansSubscribeAnnualButton": "연간 구독하기 (매년 {price})",
+    "@plansSubscribeAnnualButton": {
+        "description": "요금제의 연간 상품을 구매하는 버튼. 가격은 스토어가 주는 문구"
+    },
+    "plansMonthlyInUse": "이용 중: 월간 (매달 {price})",
+    "@plansMonthlyInUse": {
+        "description": "회사가 쓰고 있는 월간 상품의 비활성 버튼"
+    },
+    "plansAnnualInUse": "이용 중: 연간 (매년 {price})",
+    "@plansAnnualInUse": {
+        "description": "회사가 쓰고 있는 연간 상품의 비활성 버튼"
+    },
+    "plansUnavailableMessage": "이 버전의 앱에서는 요금제를 구독할 수 없어요.",
+    "@plansUnavailableMessage": {
+        "description": "구독을 팔 수 없는 빌드에서 상품 대신 표시되는 문구"
+    },
+    "plansOffersFailedMessage": "구독 상품을 불러오지 못했어요. 인터넷 연결을 확인하고 다시 시도해 주세요.",
+    "@plansOffersFailedMessage": {
+        "description": "스토어가 상품을 주지 않았을 때 상품 대신 표시되는 문구"
+    },
+    "plansRestoreButton": "구매 복원하기",
+    "@plansRestoreButton": {
+        "description": "스토어 계정의 구매 내역을 복원하는 버튼"
+    },
+    "plansManageButton": "구독 관리하기",
+    "@plansManageButton": {
+        "description": "스토어의 구독 관리 페이지를 여는 버튼"
+    },
+    "plansRenewalNote": "구독은 해지하기 전까지 기간이 끝날 때마다 자동으로 갱신되고, 요금은 스토어 계정으로 결제돼요. 해지는 스토어의 구독 관리에서 할 수 있어요.",
+    "@plansRenewalNote": {
+        "description": "상품 아래에 표시되는 자동 갱신 안내"
+    },
+    "plansTermsLink": "이용약관",
+    "@plansTermsLink": {
+        "description": "이용약관을 여는 링크"
+    },
+    "plansPrivacyLink": "개인정보 처리방침",
+    "@plansPrivacyLink": {
+        "description": "개인정보 처리방침을 여는 링크"
+    },
+    "plansPurchasePendingMessage": "구매가 승인을 기다리고 있어요. 승인되면 요금제가 바뀌어요.",
+    "@plansPurchasePendingMessage": {
+        "description": "구매가 승인을 기다릴 때 표시되는 문구"
+    },
+    "plansPurchaseFailedMessage": "구매하지 못했어요. 잠시 후 다시 시도해 주세요.",
+    "@plansPurchaseFailedMessage": {
+        "description": "구매가 되지 않았을 때 표시되는 문구"
+    },
+    "plansRestoredMessage": "구매 내역을 복원했어요.",
+    "@plansRestoredMessage": {
+        "description": "복원으로 유료 요금제를 찾았을 때 표시되는 문구"
+    },
+    "plansNothingFoundMessage": "복원할 구매 내역이 없어요.",
+    "@plansNothingFoundMessage": {
+        "description": "복원할 유료 요금제가 없을 때 표시되는 문구"
+    },
+    "plansRestoreFailedMessage": "구매 내역을 복원하지 못했어요. 인터넷 연결을 확인하고 다시 시도해 주세요.",
+    "@plansRestoreFailedMessage": {
+        "description": "복원이 되지 않았을 때 표시되는 문구"
+    },
+    "plansLinkFailedMessage": "페이지를 열지 못했어요.",
+    "@plansLinkFailedMessage": {
+        "description": "앱 밖의 페이지가 열리지 않았을 때 표시되는 문구"
     }
 }

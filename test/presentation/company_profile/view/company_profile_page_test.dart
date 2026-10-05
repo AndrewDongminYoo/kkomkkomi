@@ -269,6 +269,102 @@ void main() {
     });
   });
 
+  group('the plan', () {
+    late FakeEntitlements entitlements;
+
+    Future<void> pumpWithPlan(WidgetTester tester, {Plan plan = Plan.free, Locale? locale}) async {
+      entitlements = FakeEntitlements(plan: plan);
+      await tester.pumpApp(
+        const CompanyProfilePage(),
+        locale: locale,
+        entitlements: entitlements,
+        repositories: Repositories(
+          clients: FakeClientRepository(),
+          visits: FakeVisitRepository(),
+          companyProfile: FakeCompanyProfileRepository(),
+          publishing: MockPublishRepository(),
+          openCaptures: FakeOpenCaptureRepository(),
+          localData: FakeLocalDataRepository(),
+        ),
+      );
+      await tester.pumpAndSettle();
+    }
+
+    testWidgets('shows the plan that the store gave, and each plan that it reports', (tester) async {
+      await pumpWithPlan(tester, plan: Plan.basic);
+
+      expect(find.text('Plan'), findsOneWidget);
+      expect(find.text("You're on the Basic plan."), findsOneWidget);
+
+      entitlements.change(Plan.pro);
+      await tester.pumpAndSettle();
+
+      expect(find.text("You're on the Pro plan."), findsOneWidget);
+    });
+
+    testWidgets('shows the plan that the store reported while the read was on its way', (tester) async {
+      final gate = Completer<void>();
+      entitlements = FakeEntitlements()..planGate = gate;
+      await tester.pumpApp(
+        const CompanyProfilePage(),
+        entitlements: entitlements,
+        repositories: Repositories(
+          clients: FakeClientRepository(),
+          visits: FakeVisitRepository(),
+          companyProfile: FakeCompanyProfileRepository(),
+          publishing: MockPublishRepository(),
+          openCaptures: FakeOpenCaptureRepository(),
+          localData: FakeLocalDataRepository(),
+        ),
+      );
+      await tester.pumpAndSettle();
+      expect(find.textContaining("You're on"), findsNothing);
+
+      entitlements.change(Plan.pro);
+      await tester.pumpAndSettle();
+      entitlements.plan = Plan.free;
+      gate.complete();
+      await tester.pumpAndSettle();
+
+      expect(find.text("You're on the Pro plan."), findsOneWidget);
+    });
+
+    testWidgets('opens the plans screen', (tester) async {
+      await pumpWithPlan(tester);
+
+      await tester.ensureVisible(find.widgetWithText(OutlinedButton, 'See Plans'));
+      await tester.tap(find.widgetWithText(OutlinedButton, 'See Plans'));
+      await tester.pumpAndSettle();
+
+      expect(find.byType(PlansPage), findsOneWidget);
+    });
+
+    testWidgets('speaks Korean', (tester) async {
+      await pumpWithPlan(tester, locale: const Locale('ko'));
+
+      expect(find.text('요금제'), findsOneWidget);
+      expect(find.text('지금은 무료 요금제를 쓰고 있어요.'), findsOneWidget);
+      expect(find.widgetWithText(OutlinedButton, '요금제 보기'), findsOneWidget);
+    });
+
+    for (final locale in [const Locale('en'), const Locale('ko')]) {
+      testWidgets('cuts none of its texts on a narrow screen at the largest text size in ${locale.languageCode}', (
+        tester,
+      ) async {
+        tester.useNarrowScreenWithLargestText();
+        await pumpWithPlan(tester, plan: Plan.basic, locale: locale);
+
+        final english = locale.languageCode == 'en';
+        final button = english ? 'See Plans' : '요금제 보기';
+        await tester.ensureVisible(find.widgetWithText(OutlinedButton, button));
+        await tester.pumpAndSettle();
+        tester
+          ..expectWholeText(english ? "You're on the Basic plan." : '지금은 베이직 요금제를 쓰고 있어요.')
+          ..expectWholeText(button);
+      });
+    }
+  });
+
   group('the deletion of all data', () {
     late FakeLocalDataRepository localData;
     late FakePhotoStore photoStore;
@@ -415,7 +511,7 @@ void main() {
 
       expect(find.byType(LinearProgressIndicator), findsOneWidget);
       expect(find.text("Deleting your data. Keep this screen open until it's done."), findsOneWidget);
-      expect(tester.widget<OutlinedButton>(find.byType(OutlinedButton)).onPressed, isNull);
+      expect(tester.widget<OutlinedButton>(find.widgetWithText(OutlinedButton, 'Delete All Data')).onPressed, isNull);
       await tester.binding.handlePopRoute();
       await tester.pump();
       expect(find.byType(CompanyProfilePage), findsOneWidget);
@@ -448,7 +544,12 @@ void main() {
     testWidgets('shows a progress indicator while the profile loads', (tester) async {
       when(() => cubit.state).thenReturn(const CompanyProfileState());
 
-      await tester.pumpApp(BlocProvider.value(value: cubit, child: const CompanyProfileView()));
+      await tester.pumpApp(
+        RepositoryProvider<Entitlements>.value(
+          value: FakeEntitlements(),
+          child: BlocProvider.value(value: cubit, child: const CompanyProfileView()),
+        ),
+      );
 
       expect(find.byType(CircularProgressIndicator), findsOneWidget);
       expect(find.byType(TextField), findsNothing);
@@ -458,7 +559,12 @@ void main() {
       when(() => cubit.state).thenReturn(
         const CompanyProfileState(status: CompanyProfileStatus.ready, name: '반짝 클린', entry: NameEntry.saving),
       );
-      await tester.pumpApp(BlocProvider.value(value: cubit, child: const CompanyProfileView()));
+      await tester.pumpApp(
+        RepositoryProvider<Entitlements>.value(
+          value: FakeEntitlements(),
+          child: BlocProvider.value(value: cubit, child: const CompanyProfileView()),
+        ),
+      );
 
       await tester.tap(find.widgetWithText(FilledButton, 'Save'), warnIfMissed: false);
       await tester.enterText(find.byType(TextField), '다른 이름');
@@ -477,7 +583,12 @@ void main() {
           name: '반짝 클린',
         ).withDeletion(DataDeletion.deleting),
       );
-      await tester.pumpApp(BlocProvider.value(value: cubit, child: const CompanyProfileView()));
+      await tester.pumpApp(
+        RepositoryProvider<Entitlements>.value(
+          value: FakeEntitlements(),
+          child: BlocProvider.value(value: cubit, child: const CompanyProfileView()),
+        ),
+      );
 
       // The screen takes no touch, and the keyboard that was open before the deletion can still submit.
       tester.testTextInput.register();
@@ -493,7 +604,12 @@ void main() {
       addTearDown(states.close);
       const ready = CompanyProfileState(status: CompanyProfileStatus.ready, name: '반짝 클린');
       whenListen(cubit, states.stream, initialState: ready);
-      await tester.pumpApp(BlocProvider.value(value: cubit, child: const CompanyProfileView()));
+      await tester.pumpApp(
+        RepositoryProvider<Entitlements>.value(
+          value: FakeEntitlements(),
+          child: BlocProvider.value(value: cubit, child: const CompanyProfileView()),
+        ),
+      );
 
       await tester.enterText(find.byType(TextField), '반짝 클린 2호');
       states.add(ready.copyWith(name: '반짝 클린 2', entry: NameEntry.saved));
@@ -524,13 +640,21 @@ void main() {
     for (final MapEntry(key: step, value: (english, _)) in failures.entries) {
       testWidgets('names the step ${step.name} when the deletion stopped there', (tester) async {
         when(() => cubit.state).thenReturn(ready.withDeletion(DataDeletion.idle, failure: step));
-        await tester.pumpApp(BlocProvider.value(value: cubit, child: const CompanyProfileView()));
+        await tester.pumpApp(
+          RepositoryProvider<Entitlements>.value(
+            value: FakeEntitlements(),
+            child: BlocProvider.value(value: cubit, child: const CompanyProfileView()),
+          ),
+        );
 
         expect(find.text(english), findsOneWidget);
         for (final other in failures.values.where((texts) => texts.$1 != english)) {
           expect(find.text(other.$1), findsNothing);
         }
-        expect(tester.widget<OutlinedButton>(find.byType(OutlinedButton)).onPressed, isNotNull);
+        expect(
+          tester.widget<OutlinedButton>(find.widgetWithText(OutlinedButton, 'Delete All Data')).onPressed,
+          isNotNull,
+        );
       });
     }
 
@@ -543,10 +667,15 @@ void main() {
           addTearDown(states.close);
           whenListen(cubit, states.stream, initialState: ready);
           await tester.pumpApp(
-            BlocProvider.value(value: cubit, child: const CompanyProfileView()),
+            RepositoryProvider<Entitlements>.value(
+              value: FakeEntitlements(),
+              child: BlocProvider.value(value: cubit, child: const CompanyProfileView()),
+            ),
             locale: locale,
           );
 
+          // The plan arrives after the first frame and moves the controls under it.
+          await tester.pumpAndSettle();
           final button = english ? 'Delete All Data' : '모든 데이터 지우기';
           await tester.ensureVisible(find.widgetWithText(OutlinedButton, button));
           await tester.pumpAndSettle();

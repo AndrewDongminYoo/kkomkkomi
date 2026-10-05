@@ -2,8 +2,10 @@ import 'dart:async';
 
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:kkomkkomi/application/application.dart';
+import 'package:kkomkkomi/domain/domain.dart';
 import 'package:kkomkkomi/l10n/l10n.dart';
 import 'package:kkomkkomi/presentation/company_profile/cubit/company_profile_cubit.dart';
+import 'package:kkomkkomi/presentation/plans/plans.dart';
 import 'package:kkomkkomi/presentation/shared/confirm_dialog.dart';
 import 'package:kkomkkomi/presentation/shared/keep_all_text.dart';
 import 'package:kkomkkomi/presentation/shared/load_failure.dart';
@@ -13,7 +15,7 @@ import 'package:kkomkkomi/presentation/shared/notice.dart';
 import 'package:kkomkkomi/presentation/shared/save_guard.dart';
 import 'package:material_ui/material_ui.dart';
 
-/// The screen that edits the company name, which the report prints, and that deletes all data.
+/// The screen that edits the company name, which the report prints, that opens the plans, and that deletes all data.
 class CompanyProfilePage extends StatelessWidget {
   const new({super.key});
 
@@ -135,9 +137,71 @@ class _CompanyProfileFormState extends State<_CompanyProfileForm> {
           const SizedBox(height: 32),
           const Divider(),
           const SizedBox(height: 16),
+          const _PlanEntry(),
+          const SizedBox(height: 32),
+          const Divider(),
+          const SizedBox(height: 16),
           _DataDeletion(deletion: widget.deletion, failure: widget.deletionFailure),
         ],
       ),
+    );
+  }
+}
+
+/// The plan of the company, which follows what the store reports, and the control that opens the plans.
+class _PlanEntry extends StatefulWidget {
+  const new();
+
+  @override
+  State<_PlanEntry> createState() => _PlanEntryState();
+}
+
+class _PlanEntryState extends State<_PlanEntry> {
+  late final Entitlements _entitlements = context.read<Entitlements>();
+  late final StreamSubscription<Plan> _changes;
+
+  /// The plan that the store gave, or null while it is on its way.
+  Plan? _plan;
+
+  @override
+  void initState() {
+    super.initState();
+    _changes = _entitlements.planChanges.listen(_show);
+    // A plan that the store reported while the read was on its way is newer than the answer of the read.
+    unawaited(
+      _entitlements.currentPlan().then((plan) {
+        if (_plan == null) _show(plan);
+      }),
+    );
+  }
+
+  void _show(Plan plan) {
+    if (mounted) setState(() => _plan = plan);
+  }
+
+  @override
+  void dispose() {
+    unawaited(_changes.cancel());
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = context.l10n;
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        KeepAllText(l10n.companyProfilePlanTitle, style: Theme.of(context).textTheme.titleMedium),
+        if (_plan case final plan?) ...[
+          const SizedBox(height: 8),
+          KeepAllText(l10n.companyProfilePlanMessage(plan.nameIn(l10n))),
+        ],
+        const SizedBox(height: 16),
+        OutlinedButton(
+          onPressed: () => Navigator.of(context).push(PlansPage.route()),
+          child: KeepAllText(l10n.companyProfilePlansButton),
+        ),
+      ],
     );
   }
 }
