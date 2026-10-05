@@ -54,6 +54,7 @@ final class PlansState {
     this.managementUrl,
     this.isBusy = false,
     this.notice,
+    this.pendingOfferId,
   });
 
   /// Whether the build can sell a plan. When it cannot, the screen shows no offer and no purchase control.
@@ -78,6 +79,10 @@ final class PlansState {
   /// The outcome of the last action, or null when it needs no message.
   final PlansNotice? notice;
 
+  /// The id of the offer of the purchase that waits for an approval, while [notice] says so, else null. The message
+  /// stops when the store marks this offer as active.
+  final String? pendingOfferId;
+
   /// Whether [offer] is the product that grants the current plan, so that buying it again does nothing.
   ///
   /// The plan decides, so that an expiry does not leave an old product in use. When the store named no product of the
@@ -89,13 +94,15 @@ final class PlansState {
     return offer.isActive || !storeNamedOne;
   }
 
-  /// This state with the given values. [managementUrl] gives the new management page, so that null can remove it.
+  /// This state with the given values. [managementUrl] gives the new management page, so that null can remove it, and
+  /// [pendingOfferId] gives the new pending offer in the same way.
   PlansState copyWith({
     PlansStatus? status,
     Plan? plan,
     OffersStatus? offersStatus,
     List<PlanOffer>? offers,
     Uri? Function()? managementUrl,
+    String? Function()? pendingOfferId,
   }) => PlansState(
     sellsPlans: sellsPlans,
     status: status ?? this.status,
@@ -105,10 +112,12 @@ final class PlansState {
     managementUrl: managementUrl == null ? this.managementUrl : managementUrl(),
     isBusy: isBusy,
     notice: notice,
+    pendingOfferId: pendingOfferId == null ? this.pendingOfferId : pendingOfferId(),
   );
 
-  /// This state with [isBusy], and [notice] as the outcome of the last action.
-  PlansState withAction({required bool isBusy, PlansNotice? notice}) => PlansState(
+  /// This state with [isBusy], and [notice] as the outcome of the last action. [pendingOfferId] names the offer of a
+  /// purchase that waits for an approval, so the record of an earlier one goes with its message.
+  PlansState withAction({required bool isBusy, PlansNotice? notice, String? pendingOfferId}) => PlansState(
     sellsPlans: sellsPlans,
     status: status,
     plan: plan,
@@ -117,6 +126,7 @@ final class PlansState {
     managementUrl: managementUrl,
     isBusy: isBusy,
     notice: notice,
+    pendingOfferId: pendingOfferId,
   );
 
   @override
@@ -129,9 +139,19 @@ final class PlansState {
       sameElements(other.offers, offers) &&
       other.managementUrl == managementUrl &&
       other.isBusy == isBusy &&
-      other.notice == notice;
+      other.notice == notice &&
+      other.pendingOfferId == pendingOfferId;
 
   @override
-  int get hashCode =>
-      Object.hash(sellsPlans, status, plan, offersStatus, Object.hashAll(offers), managementUrl, isBusy, notice);
+  int get hashCode => Object.hash(
+    sellsPlans,
+    status,
+    plan,
+    offersStatus,
+    Object.hashAll(offers),
+    managementUrl,
+    isBusy,
+    notice,
+    pendingOfferId,
+  );
 }

@@ -31,8 +31,9 @@ abstract interface class Entitlements {
   /// As with [purchase], the plan comes from [currentPlan] and [planChanges].
   Future<RestoreOutcome> restore();
 
-  /// The store page where the subscription is managed, or null when none is known. The call does not throw.
-  Future<Uri?> managementUrl();
+  /// The store page where the subscription is managed, as a known answer, which has no URL when the store knows none,
+  /// or as [ManagementLink.unknown] when the store did not answer. The call does not throw.
+  Future<ManagementLink> managementUrl();
 
   /// Makes the next reads of [currentPlan] and [offers] ask the store, and not give an answer that was kept from
   /// before. The store can change the subscription outside the app, for example a switch of the period in its
@@ -71,6 +72,30 @@ final class PlanOffer {
 
   @override
   String toString() => 'PlanOffer($id, $plan, $period, $price, isActive: $isActive)';
+}
+
+/// The answer of [Entitlements.managementUrl]: a known answer, with or without a URL, or no answer of the store.
+final class ManagementLink {
+  /// The store answered, with [url] as its management page, or with no page when [url] is null.
+  const new(this.url) : isKnown = true;
+
+  /// The store did not answer, so nothing is known of the management page.
+  const new unknown() : url = null, isKnown = false;
+
+  /// The store page where the subscription is managed, or null when the store knows none or did not answer.
+  final Uri? url;
+
+  /// Whether the store answered. A caller keeps the page that it knew when the store did not.
+  final bool isKnown;
+
+  @override
+  bool operator ==(Object other) => other is ManagementLink && other.url == url && other.isKnown == isKnown;
+
+  @override
+  int get hashCode => Object.hash(url, isKnown);
+
+  @override
+  String toString() => isKnown ? 'ManagementLink($url)' : 'ManagementLink.unknown()';
 }
 
 /// What became of a purchase.

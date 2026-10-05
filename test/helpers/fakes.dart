@@ -141,6 +141,9 @@ class FakeEntitlements implements Entitlements {
   /// The store page that [managementUrl] gives.
   Uri? management;
 
+  /// Whether [managementUrl] gives no answer of the store, as when the store does not answer.
+  bool managementFails = false;
+
   final _changes = StreamController<Plan>.broadcast();
 
   @override
@@ -189,9 +192,9 @@ class FakeEntitlements implements Entitlements {
   }
 
   @override
-  Future<Uri?> managementUrl() async {
+  Future<ManagementLink> managementUrl() async {
     touched.add('managementUrl');
-    return management;
+    return managementFails ? const ManagementLink.unknown() : ManagementLink(management);
   }
 
   /// How many times the kept answers were dropped.

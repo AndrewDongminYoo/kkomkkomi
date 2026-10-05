@@ -178,7 +178,7 @@ void main() {
         act: (cubit) => cubit.purchase(_proMonthly),
         expect: () => [
           loaded.withAction(isBusy: true),
-          loaded.withAction(isBusy: false, notice: PlansNotice.purchasePending),
+          loaded.withAction(isBusy: false, notice: PlansNotice.purchasePending, pendingOfferId: 'pro_monthly'),
         ],
       );
 
@@ -199,8 +199,36 @@ void main() {
         },
         expect: () => [
           loaded.withAction(isBusy: true),
-          loaded.withAction(isBusy: false, notice: PlansNotice.purchasePending),
+          loaded.withAction(isBusy: false, notice: PlansNotice.purchasePending, pendingOfferId: 'pro_monthly'),
           loaded.copyWith(plan: Plan.pro),
+        ],
+      );
+
+      // Issue 46: a pending purchase of another plan ends by the rule of the plan, which also drops the record of the
+      // pending offer, so that a later read of the offers does not act on it.
+      blocTest<PlansCubit, PlansState>(
+        'drops the record of the pending offer when a new plan ends the message',
+        setUp: () => entitlements
+          ..plan = Plan.basic
+          ..purchaseOutcome = PurchaseOutcome.pending,
+        build: build,
+        seed: () => loaded.copyWith(plan: Plan.basic),
+        act: (cubit) async {
+          await cubit.load();
+          await cubit.purchase(_proMonthly);
+          // The store did not give the products in use, so no offer is marked, and only the plan tells the approval.
+          entitlements.change(Plan.pro);
+          await pumpEventQueue();
+          entitlements.offerList = [_basicMonthly, _basicAnnual, _activeOf(_proMonthly), _proAnnual];
+          await cubit.refresh();
+        },
+        expect: () => [
+          loaded.copyWith(plan: Plan.basic).withAction(isBusy: true),
+          loaded
+              .copyWith(plan: Plan.basic)
+              .withAction(isBusy: false, notice: PlansNotice.purchasePending, pendingOfferId: 'pro_monthly'),
+          loaded.copyWith(plan: Plan.pro),
+          loaded.copyWith(plan: Plan.pro, offers: [_basicMonthly, _basicAnnual, _activeOf(_proMonthly), _proAnnual]),
         ],
       );
 
@@ -624,6 +652,70 @@ void main() {
         expect: () => [loaded.copyWith(plan: Plan.basic), loaded],
       );
 
+      // Issue 46: no answer of the store is no sign that the subscription ended.
+      blocTest<PlansCubit, PlansState>(
+        'keeps the management page when the store does not answer for it',
+        build: build,
+        seed: () => basicMonthlyInUse.copyWith(managementUrl: () => _management),
+        act: (cubit) async {
+          entitlements
+            ..plan = Plan.basic
+            ..offerList = [_basicMonthly, _activeOf(_basicAnnual), _proMonthly, _proAnnual]
+            ..managementFails = true;
+          await cubit.refresh();
+        },
+        expect: () => [basicAnnualInUse.copyWith(managementUrl: () => _management)],
+      );
+
+      // Issue 46: a switch of the period keeps the plan, so only the offers tell that the store approved it.
+      blocTest<PlansCubit, PlansState>(
+        'stops saying that a purchase waits for approval when the read marks its offer as active',
+        setUp: () => entitlements
+          ..plan = Plan.basic
+          ..purchaseOutcome = PurchaseOutcome.pending,
+        build: build,
+        seed: () => basicMonthlyInUse,
+        act: (cubit) async {
+          await cubit.purchase(_basicAnnual);
+          entitlements.offerList = [_basicMonthly, _activeOf(_basicAnnual), _proMonthly, _proAnnual];
+          await cubit.refresh();
+        },
+        expect: () => [
+          basicMonthlyInUse.withAction(isBusy: true),
+          basicMonthlyInUse.withAction(
+            isBusy: false,
+            notice: PlansNotice.purchasePending,
+            pendingOfferId: 'basic_annual',
+          ),
+          basicAnnualInUse,
+        ],
+      );
+
+      blocTest<PlansCubit, PlansState>(
+        'keeps saying that a purchase waits for approval when the read fails or does not mark its offer',
+        setUp: () => entitlements.plan = Plan.basic,
+        build: build,
+        seed: () => basicMonthlyInUse.withAction(
+          isBusy: false,
+          notice: PlansNotice.purchasePending,
+          pendingOfferId: 'basic_annual',
+        ),
+        act: (cubit) async {
+          entitlements
+            ..offerList = []
+            ..managementFails = true;
+          await cubit.refresh();
+          // The store did not give the products in use, so it marked no offer.
+          entitlements.offerList = _offers.toList();
+          await cubit.refresh();
+        },
+        expect: () => [
+          loaded
+              .copyWith(plan: Plan.basic)
+              .withAction(isBusy: false, notice: PlansNotice.purchasePending, pendingOfferId: 'basic_annual'),
+        ],
+      );
+
       blocTest<PlansCubit, PlansState>(
         'stops saying that a purchase waits for approval when the read finds a new plan',
         build: build,
@@ -885,6 +977,8 @@ void main() {
         loaded.copyWith(managementUrl: () => _management),
         loaded.withAction(isBusy: true),
         loaded.withAction(isBusy: false, notice: PlansNotice.restored),
+        loaded.withAction(isBusy: false, notice: PlansNotice.purchasePending),
+        loaded.withAction(isBusy: false, notice: PlansNotice.purchasePending, pendingOfferId: 'basic_annual'),
         const PlansState(sellsPlans: false),
       ];
       for (final (index, state) in states.indexed) {
@@ -893,6 +987,18 @@ void main() {
         }
       }
       expect(loaded.hashCode, loaded.copyWith().hashCode);
+    });
+
+    test('a copy keeps the pending offer unless it is given, and a new action drops it', () {
+      final pending = loaded.withAction(
+        isBusy: false,
+        notice: PlansNotice.purchasePending,
+        pendingOfferId: 'basic_annual',
+      );
+
+      expect(pending.copyWith(plan: Plan.pro).pendingOfferId, 'basic_annual');
+      expect(pending.copyWith(pendingOfferId: () => null).pendingOfferId, isNull);
+      expect(pending.withAction(isBusy: true).pendingOfferId, isNull);
     });
   });
 }

@@ -70,6 +70,7 @@ class PlansCubit extends Cubit<PlansState> {
           PurchaseOutcome.pending => PlansNotice.purchasePending,
           PurchaseOutcome.failed => PlansNotice.purchaseFailed,
         },
+        pendingOfferId: outcome == PurchaseOutcome.pending ? offer.id : null,
       ),
     );
   }
@@ -161,26 +162,29 @@ class PlansCubit extends Cubit<PlansState> {
 
   /// Reads the offers, and answers null when a read that started later replaced this one.
   Future<bool?> _read(int read, {required bool isLoad}) async {
-    final (offers, managementUrl) = await (_entitlements.offers(), _entitlements.managementUrl()).wait;
+    final (offers, link) = await (_entitlements.offers(), _entitlements.managementUrl()).wait;
     if (isClosed) return false;
     // A read that started later holds a newer answer of the store, for example the one after a purchase, so this one
     // changes nothing.
     if (read != _reads) return null;
-    // The store gives no management page when no subscription is left, for example after an expiry, so the answer
-    // replaces the page from before also when it is null.
-    emit(
-      isLoad
-          ? state.copyWith(
-              offersStatus: offers.isEmpty ? OffersStatus.failed : OffersStatus.loaded,
-              offers: offers,
-              managementUrl: () => managementUrl,
-            )
-          : state.copyWith(
-              offersStatus: offers.isEmpty ? null : OffersStatus.loaded,
-              offers: offers.isEmpty ? null : offers,
-              managementUrl: () => managementUrl,
-            ),
-    );
+    // The store gives no management page when no subscription is left, for example after an expiry, so a known answer
+    // replaces the page from before also when it has none. Without an answer of the store, the page from before stays.
+    final managementUrl = link.isKnown ? () => link.url : null;
+    final next = isLoad
+        ? state.copyWith(
+            offersStatus: offers.isEmpty ? OffersStatus.failed : OffersStatus.loaded,
+            offers: offers,
+            managementUrl: managementUrl,
+          )
+        : state.copyWith(
+            offersStatus: offers.isEmpty ? null : OffersStatus.loaded,
+            offers: offers.isEmpty ? null : offers,
+            managementUrl: managementUrl,
+          );
+    // The store marks the offer of a purchase that waited for an approval as active once it is approved, also when the
+    // plan stays, for example at a switch of the period, so its message no longer applies.
+    final approved = offers.any((offer) => offer.id == next.pendingOfferId && offer.isActive);
+    emit(approved ? next.withAction(isBusy: next.isBusy) : next);
     return offers.isNotEmpty;
   }
 
@@ -194,7 +198,8 @@ class PlansCubit extends Cubit<PlansState> {
   /// Shows [plan] as the plan that the store confirmed.
   void _takePlan(Plan plan) {
     final next = state.copyWith(status: PlansStatus.ready, plan: plan);
-    // A new plan is the answer to a purchase that waited for an approval, so its message no longer applies.
+    // A new plan is the answer to a purchase that waited for an approval, so its message and the record of its offer
+    // no longer apply.
     final approved = state.notice == PlansNotice.purchasePending && plan != state.plan;
     emit(approved ? next.withAction(isBusy: next.isBusy) : next);
   }

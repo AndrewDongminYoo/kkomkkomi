@@ -561,28 +561,31 @@ void main() {
     test('gives the management page that RevenueCat knows', () async {
       store.management = 'https://apps.apple.com/account/subscriptions';
 
-      expect(await entitlements.managementUrl(), Uri.parse('https://apps.apple.com/account/subscriptions'));
+      expect(
+        await entitlements.managementUrl(),
+        ManagementLink(Uri.parse('https://apps.apple.com/account/subscriptions')),
+      );
     });
 
-    test('gives no management page when RevenueCat knows none or gives no URL', () async {
-      expect(await entitlements.managementUrl(), isNull);
+    test('gives a known answer without a page when RevenueCat knows none or gives no URL', () async {
+      expect(await entitlements.managementUrl(), const ManagementLink(null));
 
       store.management = 'http://[';
 
-      expect(await entitlements.managementUrl(), isNull);
+      expect(await entitlements.managementUrl(), const ManagementLink(null));
     });
 
-    test('gives no management page without a user ID or when the read throws', () async {
+    test('gives an unknown answer without a user ID or when the read throws', () async {
       identity.userId = null;
       store.management = 'https://apps.apple.com/account/subscriptions';
 
-      expect(await entitlements.managementUrl(), isNull);
+      expect(await entitlements.managementUrl(), const ManagementLink.unknown());
       expect(store.calls, isEmpty);
 
       identity.userId = 'user-1';
       store.managementFailure = Exception('offline');
 
-      expect(await entitlements.managementUrl(), isNull);
+      expect(await entitlements.managementUrl(), const ManagementLink.unknown());
     });
 
     test('makes RevenueCat forget the customer information that it keeps', () async {

@@ -24,8 +24,9 @@ final class FreeEntitlements implements Entitlements {
   @override
   Future<RestoreOutcome> restore() async => RestoreOutcome.failed;
 
+  /// No store knows a subscription, so the answer is known and has no page.
   @override
-  Future<Uri?> managementUrl() async => null;
+  Future<ManagementLink> managementUrl() async => const ManagementLink(null);
 
   /// Nothing comes from a store, so nothing is kept.
   @override
