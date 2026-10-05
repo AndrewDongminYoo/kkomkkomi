@@ -149,7 +149,7 @@ void main() {
     });
 
     testWidgets(
-      'provides the font of the assets and the share sheets of the plugins unless it is given others',
+      'provides the font of the assets, the share sheets, and the links of the plugins unless it is given others',
       (
         tester,
       ) async {
@@ -166,14 +166,16 @@ void main() {
         expect(context.read<ReportFont>(), isA<AssetReportFont>());
         expect(context.read<ReportShare>(), isA<PrintingReportShare>());
         expect(context.read<LinkShare>(), isA<SharePlusLinkShare>());
+        expect(context.read<ExternalLinks>(), isA<UrlLauncherExternalLinks>());
       },
     );
 
-    testWidgets('provides the report font and the share sheets that it is given', (tester) async {
+    testWidgets('provides the report font, the share sheets, and the links that it is given', (tester) async {
       final repositories = mockRepositories();
       const reportFont = FileReportFont();
       final reportShare = FakeReportShare();
       final linkShare = FakeLinkShare();
+      final externalLinks = FakeExternalLinks();
 
       await tester.pumpWidget(
         App(
@@ -184,6 +186,7 @@ void main() {
           reportFont: reportFont,
           reportShare: reportShare,
           linkShare: linkShare,
+          externalLinks: externalLinks,
         ),
       );
 
@@ -191,6 +194,7 @@ void main() {
       expect(context.read<ReportFont>(), same(reportFont));
       expect(context.read<ReportShare>(), same(reportShare));
       expect(context.read<LinkShare>(), same(linkShare));
+      expect(context.read<ExternalLinks>(), same(externalLinks));
     });
 
     testWidgets('provides the publish queue that it is given', (tester) async {

@@ -4,6 +4,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:kkomkkomi/application/application.dart';
 import 'package:kkomkkomi/l10n/l10n.dart';
 import 'package:kkomkkomi/presentation/company_profile/cubit/company_profile_cubit.dart';
+import 'package:kkomkkomi/presentation/plans/plans.dart';
 import 'package:kkomkkomi/presentation/shared/confirm_dialog.dart';
 import 'package:kkomkkomi/presentation/shared/keep_all_text.dart';
 import 'package:kkomkkomi/presentation/shared/load_failure.dart';
@@ -13,7 +14,7 @@ import 'package:kkomkkomi/presentation/shared/notice.dart';
 import 'package:kkomkkomi/presentation/shared/save_guard.dart';
 import 'package:material_ui/material_ui.dart';
 
-/// The screen that edits the company name, which the report prints, and that deletes all data.
+/// The screen that edits the company name, which the report prints, that opens the plans, and that deletes all data.
 class CompanyProfilePage extends StatelessWidget {
   const new({super.key});
 
@@ -135,9 +136,37 @@ class _CompanyProfileFormState extends State<_CompanyProfileForm> {
           const SizedBox(height: 32),
           const Divider(),
           const SizedBox(height: 16),
+          const _PlanEntry(),
+          const SizedBox(height: 32),
+          const Divider(),
+          const SizedBox(height: 16),
           _DataDeletion(deletion: widget.deletion, failure: widget.deletionFailure),
         ],
       ),
+    );
+  }
+}
+
+/// The control that opens the plans.
+///
+/// It reads nothing from `Entitlements`: in the production flavor a read reaches RevenueCat with the user ID, and that
+/// must happen only when the person opens the plans screen, not when the person opens this screen to delete all data.
+class _PlanEntry extends StatelessWidget {
+  const new();
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = context.l10n;
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        KeepAllText(l10n.companyProfilePlanTitle, style: Theme.of(context).textTheme.titleMedium),
+        const SizedBox(height: 16),
+        OutlinedButton(
+          onPressed: () => Navigator.of(context).push(PlansPage.route()),
+          child: KeepAllText(l10n.companyProfilePlansButton),
+        ),
+      ],
     );
   }
 }

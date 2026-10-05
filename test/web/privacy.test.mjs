@@ -44,6 +44,53 @@ const deletionSection = (html) => {
   return html.slice(start, end);
 };
 
+/** The text of the section with [id], with the line breaks of the formatter folded into spaces. */
+const sectionText = (html, id) => {
+  const start = html.indexOf(`<h2 id="${id}">`);
+  const end = html.indexOf("<h2", start + 1);
+  assert.ok(
+    start >= 0 && end > start,
+    `the page has no <h2 id="${id}"> section`,
+  );
+  return html.slice(start, end).replace(/\s+/g, " ");
+};
+
+/** What each page says about RevenueCat, which the plans screen of the app reaches from pull request 4a of M3. */
+const revenueCat = {
+  ko: {
+    contact: "RevenueCat, Inc. 연락처: compliance@revenuecat.com",
+    linked: "구입 내역은 그 사용자 ID와 연결됩니다",
+    remains: "RevenueCat의 고객 기록",
+    newAccount:
+      "정식 버전 앱에서 요금제 화면을 열 때 새 익명 계정으로 로그인합니다",
+    googleWhen: "앱이 로그인할 때(2항, 6항)",
+    processor:
+      "운영자는 구독 확인, 판매, 복원에 필요한 처리를 RevenueCat에 맡깁니다.",
+    when: "정식 버전 앱에서 요금제 화면을 열 때와 구독을 사거나 복원할 때 인터넷으로 전송.",
+    sync: "요금제 화면을 한 번 연 뒤에는 앱이 완전히 종료될 때까지 RevenueCat SDK가 주기적으로, 그리고 앱이 다시 화면에 나타날 때마다 구독 상태를 동기화하며 전송",
+    onlyWhen: /할 때만/,
+    refuse: "요금제 화면을 열지 않고 구독을 사지 않으면 이전되지 않습니다.",
+    deletion: "모든 데이터 지우기(6항)는 RevenueCat에 연결하지 않습니다.",
+    noRefusal: /거부하는 방법은 지금 없습니다/,
+  },
+  en: {
+    contact: "RevenueCat, Inc. Contact: compliance@revenuecat.com",
+    linked: "the purchase history is linked to that user ID",
+    remains: "The customer record at RevenueCat",
+    newAccount:
+      "or, in the release version, opens the plans screen (section 2)",
+    googleWhen: "when the app signs in (sections 2 and 6)",
+    processor: "The operator entrusts RevenueCat with the processing",
+    when: "when the release version of the app opens the plans screen, and when a subscription is bought or restored.",
+    sync: "After the plans screen has been opened once, the RevenueCat SDK also syncs the subscription state periodically and each time the app comes back to the foreground, until the app is closed completely.",
+    onlyWhen: /only when/,
+    refuse:
+      "Not opening the plans screen and not buying a subscription avoids this transfer.",
+    deletion: "Delete All Data (section 6) does not contact RevenueCat.",
+    noRefusal: /no way to refuse/,
+  },
+};
+
 /** The IDs of the sections of a page, in order. */
 const sectionIds = (html) =>
   [...html.matchAll(/<h2 id="([^"]+)"/g)].map((match) => match[1]);
@@ -136,6 +183,39 @@ describe("the privacy policy pages", () => {
         /<meta\s+name="viewport"\s+content="width=device-width,initial-scale=1,viewport-fit=cover"\s*\/>/,
       );
       assert.doesNotMatch(html, /<table|<pre|<img|<video|<iframe|\swidth=/i);
+    });
+
+    test(`the ${lang} page names RevenueCat as a recipient, the purchase history as linked, and what deletion leaves`, () => {
+      const html = read(page.file);
+      const words = revenueCat[lang];
+
+      assert.ok(sectionText(html, "location").includes(words.contact));
+      assert.ok(sectionText(html, "not-collected").includes(words.linked));
+      assert.ok(sectionText(html, "delete").includes(words.remains));
+      assert.ok(sectionText(html, "retention").includes(words.remains));
+      // Only the plans screen reads the plan, which signs in with a new anonymous account after Delete All Data.
+      assert.ok(sectionText(html, "delete").includes(words.newAccount));
+      assert.ok(sectionText(html, "location").includes(words.googleWhen));
+      // The company profile screen reads no plan, so a person who never opens the plans screen can refuse the
+      // transfer to RevenueCat. The Google part before it keeps its sentence that the sign-in cannot be refused.
+      const location = sectionText(html, "location");
+      const start = location.indexOf(words.processor);
+      assert.ok(start >= 0, "the section names no RevenueCat processing");
+      const revenueCatPart = location.slice(start);
+      assert.ok(revenueCatPart.includes(words.when));
+      // The SDK stays configured after the plans screen closes, and RevenueCat updates CustomerInfo periodically and
+      // when the app becomes active (https://www.revenuecat.com/docs/customers/customer-info, read on 2026-10-05).
+      assert.ok(revenueCatPart.includes(words.sync));
+      assert.doesNotMatch(revenueCatPart, words.onlyWhen);
+      assert.ok(revenueCatPart.includes(words.refuse));
+      assert.ok(revenueCatPart.includes(words.deletion));
+      assert.doesNotMatch(revenueCatPart, words.noRefusal);
+      assert.doesNotMatch(
+        html.replace(/\s+/g, " "),
+        /회사 정보 화면이나 요금제 화면|company profile screen or the plans screen/,
+      );
+      // The build of the plans screen sells subscriptions, so the sentence of pull request 2 is gone.
+      assert.doesNotMatch(html, /구독을 판매하지 않으며|sells no subscription/);
     });
   }
 

@@ -22,6 +22,7 @@ class App extends StatelessWidget {
     this.reportFont = const AssetReportFont(),
     this.reportShare = const PrintingReportShare(),
     this.linkShare = const SharePlusLinkShare(),
+    this.externalLinks = const UrlLauncherExternalLinks(),
     super.key,
   });
 
@@ -69,6 +70,9 @@ class App extends StatelessWidget {
   /// The share sheet for a report link, which the widgets below read through `RepositoryProvider`.
   final LinkShare linkShare;
 
+  /// The opener of web pages outside the app, which the widgets below read through `RepositoryProvider`.
+  final ExternalLinks externalLinks;
+
   @override
   Widget build(BuildContext context) {
     return MultiRepositoryProvider(
@@ -87,6 +91,7 @@ class App extends StatelessWidget {
         RepositoryProvider<ReportFont>.value(value: reportFont),
         RepositoryProvider<ReportShare>.value(value: reportShare),
         RepositoryProvider<LinkShare>.value(value: linkShare),
+        RepositoryProvider<ExternalLinks>.value(value: externalLinks),
         // One for the life of the app, because a deletion that failed goes on from its failed step at the next try.
         RepositoryProvider<DeleteAllData>(
           create: (_) => DeleteAllData(

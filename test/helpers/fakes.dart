@@ -84,31 +84,146 @@ class FakeIdentity implements Identity {
   }
 }
 
-/// Gives the plan that a test sets, and reports the changes that a test makes with [change].
+/// Gives the plan and the offers that a test sets, and reports the changes that a test makes with [change].
 class FakeEntitlements implements Entitlements {
-  new({this.plan = Plan.free});
+  new({this.plan = Plan.free, this._sellsPlans = true, List<PlanOffer>? offerList}) : offerList = offerList ?? [];
+
+  /// The members of the port that the code under test used, in order, getters included.
+  final touched = <String>[];
 
   /// The plan that a call gives.
   Plan plan;
 
+  bool _sellsPlans;
+
+  @override
+  bool get sellsPlans {
+    touched.add('sellsPlans');
+    return _sellsPlans;
+  }
+
+  set sellsPlans(bool value) => _sellsPlans = value;
+
+  /// The offers that a call of [offers] gives.
+  List<PlanOffer> offerList;
+
   /// How many times the plan was asked for.
   int calls = 0;
+
+  /// A read of the plan waits for this completer while it is set, and then gives the plan of that time.
+  Completer<void>? planGate;
+
+  /// How many times the offers were asked for.
+  int offerCalls = 0;
+
+  /// Each read of the offers takes the first of these completers while one is left, and waits for it before it gives
+  /// the offers of the time of the call, as a slow answer of the store does.
+  final offerGates = <Completer<void>>[];
+
+  /// The offers that were given to [purchase], in order.
+  final purchases = <PlanOffer>[];
+
+  /// What a purchase answers.
+  PurchaseOutcome purchaseOutcome = PurchaseOutcome.purchased;
+
+  /// A purchase waits for this completer while it is set, as the store sheet stays open.
+  Completer<void>? purchaseGate;
+
+  /// How many times a restore was asked for.
+  int restores = 0;
+
+  /// What a restore answers.
+  RestoreOutcome restoreOutcome = RestoreOutcome.nothingFound;
+
+  /// A restore waits for this completer while it is set.
+  Completer<void>? restoreGate;
+
+  /// The store page that [managementUrl] gives.
+  Uri? management;
 
   final _changes = StreamController<Plan>.broadcast();
 
   @override
   Future<Plan> currentPlan() async {
+    touched.add('currentPlan');
     calls++;
+    await planGate?.future;
     return plan;
   }
 
   @override
-  Stream<Plan> get planChanges => _changes.stream;
+  Stream<Plan> get planChanges {
+    touched.add('planChanges');
+    return _changes.stream;
+  }
 
-  /// Sets the plan and reports it, as the store does after a renewal or an expiry.
+  /// Sets the plan and reports it, as the store does after a renewal, an expiry, a purchase, or a restore.
   void change(Plan plan) {
     this.plan = plan;
     _changes.add(plan);
+  }
+
+  @override
+  Future<List<PlanOffer>> offers() async {
+    touched.add('offers');
+    offerCalls++;
+    final answer = offerList;
+    if (offerGates.isNotEmpty) await offerGates.removeAt(0).future;
+    return answer;
+  }
+
+  @override
+  Future<PurchaseOutcome> purchase(PlanOffer offer) async {
+    touched.add('purchase');
+    purchases.add(offer);
+    await purchaseGate?.future;
+    return purchaseOutcome;
+  }
+
+  @override
+  Future<RestoreOutcome> restore() async {
+    touched.add('restore');
+    restores++;
+    await restoreGate?.future;
+    return restoreOutcome;
+  }
+
+  @override
+  Future<Uri?> managementUrl() async {
+    touched.add('managementUrl');
+    return management;
+  }
+
+  /// How many times the kept answers were dropped.
+  int invalidations = 0;
+
+  /// A call of [invalidate] waits for this completer while it is set.
+  Completer<void>? invalidateGate;
+
+  @override
+  Future<void> invalidate() async {
+    touched.add('invalidate');
+    invalidations++;
+    await invalidateGate?.future;
+  }
+}
+
+/// Opens no link. It remembers the links that it was asked to open.
+class FakeExternalLinks implements ExternalLinks {
+  /// The links that were asked for, in order, also those that did not open.
+  final opened = <Uri>[];
+
+  /// Whether a link opens.
+  bool opens = true;
+
+  /// An open waits for this completer while it is set.
+  Completer<void>? gate;
+
+  @override
+  Future<bool> open(Uri uri) async {
+    opened.add(uri);
+    await gate?.future;
+    return opens;
   }
 }
 

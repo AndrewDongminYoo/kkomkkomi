@@ -537,5 +537,163 @@
     "clientLinkRequestFailedMessage": "Can't change the link. Try again.",
     "@clientLinkRequestFailedMessage": {
         "description": "Shown when storage does not take a close or a new link"
+    },
+    "companyProfilePlanTitle": "Plans",
+    "@companyProfilePlanTitle": {
+        "description": "Title of the plans section of the company profile screen"
+    },
+    "companyProfilePlansButton": "See Plans",
+    "@companyProfilePlansButton": {
+        "description": "Label of the button that opens the plans screen"
+    },
+    "plansTitle": "Plans",
+    "@plansTitle": {
+        "description": "Title of the plans screen"
+    },
+    "planFreeName": "Free",
+    "@planFreeName": {
+        "description": "Name of the plan without a subscription"
+    },
+    "planBasicName": "Basic",
+    "@planBasicName": {
+        "description": "Name of the Basic plan"
+    },
+    "planProName": "Pro",
+    "@planProName": {
+        "description": "Name of the Pro plan"
+    },
+    "plansCurrentLabel": "Current plan",
+    "@plansCurrentLabel": {
+        "description": "Label above the name of the plan that the company has"
+    },
+    "planClientLimit": "Keep up to {count} clients.",
+    "@planClientLimit": {
+        "description": "What a plan with a client limit holds",
+        "placeholders": {
+            "count": {
+                "type": "int",
+                "example": "2"
+            }
+        }
+    },
+    "planNoClientLimit": "Keep as many clients as you need.",
+    "@planNoClientLimit": {
+        "description": "What a plan without a client limit holds"
+    },
+    "planFooterShown": "Reports show “{footer}” at the bottom.",
+    "@planFooterShown": {
+        "description": "The footer text that the reports of the Free plan carry",
+        "placeholders": {
+            "footer": {
+                "type": "String",
+                "example": "Report made with Kkomkkomi"
+            }
+        }
+    },
+    "planFooterHidden": "Reports don't show “{footer}”.",
+    "@planFooterHidden": {
+        "description": "The paid plans leave the footer text out of reports",
+        "placeholders": {
+            "footer": {
+                "type": "String",
+                "example": "Report made with Kkomkkomi"
+            }
+        }
+    },
+    "plansArchivedNote": "Archived clients don't count.",
+    "@plansArchivedNote": {
+        "description": "Note under the plans that the client limit leaves archived clients out"
+    },
+    "plansSubscribeMonthlyButton": "Subscribe Monthly ({price} per month)",
+    "@plansSubscribeMonthlyButton": {
+        "description": "Label of the button that buys the monthly product of a plan. The price is the text of the store",
+        "placeholders": {
+            "price": {
+                "type": "String",
+                "example": "price"
+            }
+        }
+    },
+    "plansSubscribeAnnualButton": "Subscribe Yearly ({price} per year)",
+    "@plansSubscribeAnnualButton": {
+        "description": "Label of the button that buys the annual product of a plan. The price is the text of the store",
+        "placeholders": {
+            "price": {
+                "type": "String",
+                "example": "price"
+            }
+        }
+    },
+    "plansMonthlyInUse": "In use: monthly ({price} per month)",
+    "@plansMonthlyInUse": {
+        "description": "Label of the disabled button of the monthly product that the company has",
+        "placeholders": {
+            "price": {
+                "type": "String",
+                "example": "price"
+            }
+        }
+    },
+    "plansAnnualInUse": "In use: yearly ({price} per year)",
+    "@plansAnnualInUse": {
+        "description": "Label of the disabled button of the annual product that the company has",
+        "placeholders": {
+            "price": {
+                "type": "String",
+                "example": "price"
+            }
+        }
+    },
+    "plansUnavailableMessage": "Subscriptions aren't available in this version of the app.",
+    "@plansUnavailableMessage": {
+        "description": "Shown in place of the offers in a build that cannot sell"
+    },
+    "plansOffersFailedMessage": "Can't load the subscriptions. Check your connection and try again.",
+    "@plansOffersFailedMessage": {
+        "description": "Shown in place of the offers when the store gave none"
+    },
+    "plansRestoreButton": "Restore Purchases",
+    "@plansRestoreButton": {
+        "description": "Label of the button that asks the store for the purchases of its account"
+    },
+    "plansManageButton": "Manage Subscription",
+    "@plansManageButton": {
+        "description": "Label of the button that opens the subscription management of the store"
+    },
+    "plansRenewalNote": "A subscription renews automatically at the end of each period until you cancel it, and the store charges your store account. You can cancel it in the subscription settings of the store.",
+    "@plansRenewalNote": {
+        "description": "The automatic renewal of a subscription, under the offers"
+    },
+    "plansTermsLink": "Terms of Use",
+    "@plansTermsLink": {
+        "description": "Label of the link that opens the terms of use"
+    },
+    "plansPrivacyLink": "Privacy Policy",
+    "@plansPrivacyLink": {
+        "description": "Label of the link that opens the privacy policy"
+    },
+    "plansPurchasePendingMessage": "The purchase is waiting for approval. Your plan changes once it's approved.",
+    "@plansPurchasePendingMessage": {
+        "description": "Shown when a purchase waits for an approval, for example of Ask to Buy"
+    },
+    "plansPurchaseFailedMessage": "Can't complete the purchase. Try again later.",
+    "@plansPurchaseFailedMessage": {
+        "description": "Shown when a purchase did not work"
+    },
+    "plansRestoredMessage": "Your purchases are restored.",
+    "@plansRestoredMessage": {
+        "description": "Shown when a restore found a paid plan"
+    },
+    "plansNothingFoundMessage": "No purchases to restore.",
+    "@plansNothingFoundMessage": {
+        "description": "Shown when a restore found no paid plan"
+    },
+    "plansRestoreFailedMessage": "Can't restore your purchases. Check your connection and try again.",
+    "@plansRestoreFailedMessage": {
+        "description": "Shown when a restore did not work"
+    },
+    "plansLinkFailedMessage": "Can't open the page.",
+    "@plansLinkFailedMessage": {
+        "description": "Shown when a page outside the app did not open"
     }
 }

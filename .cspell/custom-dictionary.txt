@@ -70,6 +70,7 @@ ORGANIZATIONNAME
 OVERLAPPEDWINDOW
 parallelizable
 pbxproj
+pgrep
 PRODUCTVERSION
 proguard
 protoc
@@ -83,6 +84,7 @@ Testables
 TEXTINCLUDE
 WCAG
 Wconditional
+webfetch
 wght
 wholemodule
 winres

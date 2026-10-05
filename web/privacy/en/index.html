@@ -317,8 +317,8 @@
         <p>
           After the deletion, the links you shared no longer open, and the app
           is as it was when first installed. The app signs in with a new
-          anonymous account the next time it starts or shares a report as a link
-          (section 2).
+          anonymous account the next time it starts, shares a report as a link,
+          or, in the release version, opens the plans screen (section 2).
         </p>
         <p>The following can remain after the deletion.</p>
         <ul>
@@ -348,6 +348,12 @@
             them or the app is uninstalled.
           </li>
           <li>A copy in a phone backup: it stays in your account.</li>
+          <li>
+            The customer record at RevenueCat (sections 9 and 10): the app
+            cannot delete it. Ask at the contact in section 12. A subscription
+            bought in the store is not cancelled; you can cancel it in the
+            subscription settings of the App Store or Google Play.
+          </li>
           <li>
             PDF files that recipients saved or forwarded, and photos and screens
             that they saved from a link
@@ -392,10 +398,16 @@
             logged at sign-in are kept for a few weeks.
           </li>
           <li>IP addresses logged by Firebase Hosting: a few months</li>
+          <li>
+            The customer record at RevenueCat (the user ID and the purchase
+            history): the app has no control that deletes it. It stays until the
+            operator deletes it at RevenueCat at your request.
+          </li>
         </ul>
 
         <h2 id="location">
-          9. Where data is stored, processing by Google, and transfer abroad
+          9. Where data is stored, processing by Google and RevenueCat, and
+          transfer abroad
         </h2>
         <p>
           Firebase, which Google operates, processes the data on the server
@@ -425,8 +437,8 @@
           </dd>
           <dt>When and how</dt>
           <dd>
-            Over the internet, when the app starts and signs in, and when a web
-            page is opened
+            Over the internet, when the app signs in (sections 2 and 6), and
+            when a web page is opened
           </dd>
           <dt>Recipient</dt>
           <dd>
@@ -440,6 +452,45 @@
             The app signs in when it starts, so there is currently no way to
             refuse this transfer while using the app. Not using the app avoids
             it.
+          </dd>
+        </dl>
+        <p>
+          The operator entrusts RevenueCat with the processing that checking,
+          selling, and restoring subscriptions needs. RevenueCat stores the data
+          it processes on Amazon Web Services in the United States. The items on
+          the transfer abroad are below.
+        </p>
+        <dl>
+          <dt>Data transferred</dt>
+          <dd>
+            The user ID of the anonymous account (used as the RevenueCat app
+            user ID), the purchase history of the store (the Apple receipt file
+            or the Google purchase token), the device type and operating system,
+            and the time the app was last used
+          </dd>
+          <dt>Countries</dt>
+          <dd>The United States</dd>
+          <dt>When and how</dt>
+          <dd>
+            Over the internet, when the release version of the app opens the
+            plans screen, and when a subscription is bought or restored. After
+            the plans screen has been opened once, the RevenueCat SDK also syncs
+            the subscription state periodically and each time the app comes back
+            to the foreground, until the app is closed completely.
+          </dd>
+          <dt>Recipient</dt>
+          <dd>RevenueCat, Inc. Contact: compliance@revenuecat.com</dd>
+          <dt>Purpose and retention</dt>
+          <dd>
+            Checking, selling, and restoring subscriptions, fraud prevention,
+            and subscription statistics. Retention is as in section 8.
+          </dd>
+          <dt>How to refuse, and the effect</dt>
+          <dd>
+            Not opening the plans screen and not buying a subscription avoids
+            this transfer. Delete All Data (section 6) does not contact
+            RevenueCat. You can ask for the deletion of the transferred data at
+            the contact in section 12.
           </dd>
         </dl>
 
@@ -459,11 +510,16 @@
             it to provide and improve Firebase services.
           </li>
           <li>
-            The iOS app also contains the RevenueCat SDK, which declares in its
-            own privacy manifest that it collects "purchase history" for app
-            functionality, not linked to the user and not used for tracking.
-            This version of the app sells no subscription and sends nothing to
-            RevenueCat.
+            The App Store and Google Play process the payment of a subscription,
+            and the app receives no payment details. The app uses the RevenueCat
+            SDK to check, sell, and restore subscriptions. RevenueCat collects
+            "purchase history", and because the app uses the user ID of the
+            anonymous account as the RevenueCat app user ID, the purchase
+            history is linked to that user ID. It is used for app functionality
+            (checking subscriptions and preventing fraud) and for analytics
+            (RevenueCat's customer records and statistics), and not for
+            tracking. The development and test builds, and the app on platforms
+            other than iOS and Android, send nothing to RevenueCat.
           </li>
           <li>
             The app does not ask for location permission. It removes a location
