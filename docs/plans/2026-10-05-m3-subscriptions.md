@@ -26,6 +26,15 @@ They moved again, from PR 3 to PR 4, on 2026-10-05 with the brief of PR 3 (`2026
 PR 2 adds only the Purchase History that the RevenueCat privacy manifest declares, as the Diagnostics row follows the Firebase manifests.
 A build that limits clients without a way to buy would leave a tester at 2 clients with no way out.
 
+## PR 4 split into 4a and 4b (2026-10-05)
+
+The operator split PR 4 on 2026-10-05, after the row of PR 4 above was written, and this section is the authority for PR 4 where the two differ.
+
+- 4a, `2026-10-05-m3-04a-plans-screen.md`: the plans screen that the company profile screen opens, purchase, restore, the store subscription management link, the terms of use and privacy policy links, and the RevenueCat disclosure in the privacy pages and in the App Privacy and Data safety answers. The terms of use link moved here from PR 5, because Apple asks for it on the purchase screen; the operator chose Apple's standard EULA.
+- 4b: the active client limit, with a second entry to the plans screen at the limit, and the PDF footer from the cached entitlements.
+
+No release build is made between the merges of 4a and 4b: the plans screen of 4a describes the client limit and the footer of each plan, which only 4b ships, so a build of 4a alone would describe behavior that it does not have (App Store Review Guideline 3.1.2(c), "clearly describe what the user will get").
+
 ## Checks before PR 2
 
 - The RevenueCat public SDK keys stay out of the repository (operator, 2026-10-05): a file that git ignores holds them, and the production build reads them through `--dart-define`, as `google-services.json` stays out of the repository today.
