@@ -6,6 +6,7 @@ extension NameEntryMessage on NameEntry {
   String? message(AppLocalizations l10n) => switch (this) {
     NameEntry.empty => l10n.nameEmptyError,
     NameEntry.duplicate => l10n.zoneDuplicateNameError,
+    NameEntry.limitReached => l10n.clientLimitReachedError,
     NameEntry.failed => l10n.saveFailedMessage,
     NameEntry.editing || NameEntry.saving || NameEntry.saved => null,
   };

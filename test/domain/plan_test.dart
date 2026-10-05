@@ -32,6 +32,25 @@ void main() {
     });
   });
 
+  group('allowsAnotherClient', () {
+    for (final (plan, activeClients, allowed) in <(Plan, int, bool)>[
+      (Plan.free, 0, true),
+      (Plan.free, 1, true),
+      (Plan.free, 2, false),
+      (Plan.free, 3, false),
+      (Plan.basic, 4, true),
+      (Plan.basic, 5, false),
+      (Plan.basic, 6, false),
+      (Plan.pro, 0, true),
+      (Plan.pro, 12, true),
+      (Plan.pro, 10000, true),
+    ]) {
+      test('is $allowed for $plan with $activeClients active clients', () {
+        expect(plan.allowsAnotherClient(activeClients), allowed);
+      });
+    }
+  });
+
   group('showsFooter', () {
     test('is true only for Free', () {
       expect(

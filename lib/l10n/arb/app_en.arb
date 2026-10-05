@@ -48,6 +48,24 @@
     "@clientListAddButton": {
         "description": "Label of the button on the client list that opens the dialog to add a client"
     },
+    "clientLimitReachedMessage": "The {plan} plan keeps up to {count} clients. To add a client, change your plan or archive a client.",
+    "@clientLimitReachedMessage": {
+        "description": "Notice of the client list when the plan of the company holds no more active clients. Archived clients don't count toward the limit",
+        "placeholders": {
+            "plan": {
+                "type": "String",
+                "example": "Free"
+            },
+            "count": {
+                "type": "int",
+                "example": "2"
+            }
+        }
+    },
+    "clientLimitReachedError": "Your plan can't keep more clients.",
+    "@clientLimitReachedError": {
+        "description": "Error under the client name field when the plan of the company changed while the dialog was open and holds no more active clients"
+    },
     "clientListLoadFailedMessage": "Can't load your clients. Try again.",
     "@clientListLoadFailedMessage": {
         "description": "Message shown in place of the client list when it did not load"

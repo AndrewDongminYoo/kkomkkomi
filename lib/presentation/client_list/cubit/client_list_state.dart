@@ -14,8 +14,26 @@ enum ClientListStatus {
   ready,
 }
 
+/// Where a press of the add control stands.
+enum ClientAddition {
+  /// No press waits for an answer.
+  idle,
+
+  /// The plan of the company is on its way. The add control takes no press.
+  checking,
+
+  /// The plan allows one more client, so the dialog for a new client opens.
+  allowed,
+}
+
 final class ClientListState {
-  const new({this.status = ClientListStatus.loading, this.clients = const [], this.entry = NameEntry.editing});
+  const new({
+    this.status = ClientListStatus.loading,
+    this.clients = const [],
+    this.entry = NameEntry.editing,
+    this.addition = ClientAddition.idle,
+    this.limitPlan,
+  });
 
   final ClientListStatus status;
 
@@ -25,10 +43,24 @@ final class ClientListState {
   /// What became of the name that the dialog for a new client last submitted.
   final NameEntry entry;
 
-  ClientListState copyWith({ClientListStatus? status, List<Client>? clients, NameEntry? entry}) => ClientListState(
+  /// Where the last press of the add control stands.
+  final ClientAddition addition;
+
+  /// The plan whose client limit stopped the last addition, or null when none did since the list was last read.
+  final Plan? limitPlan;
+
+  ClientListState copyWith({
+    ClientListStatus? status,
+    List<Client>? clients,
+    NameEntry? entry,
+    ClientAddition? addition,
+    Plan? Function()? limitPlan,
+  }) => ClientListState(
     status: status ?? this.status,
     clients: clients ?? this.clients,
     entry: entry ?? this.entry,
+    addition: addition ?? this.addition,
+    limitPlan: limitPlan == null ? this.limitPlan : limitPlan(),
   );
 
   @override
@@ -36,8 +68,10 @@ final class ClientListState {
       other is ClientListState &&
       other.status == status &&
       other.entry == entry &&
+      other.addition == addition &&
+      other.limitPlan == limitPlan &&
       sameElements(other.clients, clients);
 
   @override
-  int get hashCode => Object.hash(status, entry, Object.hashAll(clients));
+  int get hashCode => Object.hash(status, entry, addition, limitPlan, Object.hashAll(clients));
 }

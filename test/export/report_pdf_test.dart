@@ -35,13 +35,18 @@ void main() {
 
   /// Renders [document]. A photo whose name starts with `tall` is the tall photo, and each other photo is the wide
   /// one, unless [photos] is given.
-  Future<PdfSummary> render(ReportDocument document, {Map<PhotoRef, Uint8List>? photos}) async => PdfSummary.read(
+  Future<PdfSummary> render(
+    ReportDocument document, {
+    Map<PhotoRef, Uint8List>? photos,
+    bool showsFooterText = true,
+  }) async => PdfSummary.read(
     await renderReportPdf(
       document,
       labels: labels,
       font: font,
       photos:
           photos ?? {for (final photo in document.photos) photo: photo.path.contains('/tall') ? tallBytes : wideBytes},
+      showsFooterText: showsFooterText,
     ),
   );
 
@@ -111,6 +116,37 @@ void main() {
         expect(page.text, startsWith('꼼꼬미로 만든 보고서 ${index + 1} / ${summary.pageCount}'));
         expect(page.width, closeTo(PdfPageFormat.a4.width, 0.01));
       }
+    });
+
+    test('leaves the footer text out of every page and keeps the page number when the text is not shown', () async {
+      final longNote = List.generate(400, (line) => '$line번째 줄: 바닥을 닦고 유리를 닦았어요.').join('\n');
+
+      final summary = await render(
+        document([ReportZone(name: '로비', beforePhoto: photo('a'), afterPhoto: photo('b'), note: longNote)]),
+        showsFooterText: false,
+      );
+
+      expect(summary.pageCount, greaterThan(5));
+      for (final (index, page) in summary.pages.indexed) {
+        expect(page.text, startsWith('${index + 1} / ${summary.pageCount} '));
+      }
+      expect(summary.text, isNot(contains('꼼꼬미로 만든 보고서')));
+    });
+
+    test('keeps the page number at the right end of the footer row when the text is not shown', () async {
+      final zones = [ReportZone(name: '로비', beforePhoto: photo('a'), afterPhoto: photo('b'), note: '')];
+
+      /// Where the drawing of the page number of the first page starts, after the footer text when it is shown.
+      Future<double> pageNumberX({required bool showsFooterText}) async {
+        final page = (await render(document(zones), showsFooterText: showsFooterText)).pages.first;
+        return page.texts.firstWhere((text) => text.text == '1').x;
+      }
+
+      final withText = await pageNumberX(showsFooterText: true);
+      final withoutText = await pageNumberX(showsFooterText: false);
+
+      expect(withoutText, withText);
+      expect(withoutText, greaterThan(PdfPageFormat.a4.width / 2));
     });
 
     test('goes on to the next pages for a note that is longer than a page, and prints all of it', () async {

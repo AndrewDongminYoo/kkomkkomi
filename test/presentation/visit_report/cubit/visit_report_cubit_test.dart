@@ -63,6 +63,7 @@ void main() {
   late FakePhotoStore photoStore;
   late FakeReportShare reportShare;
   late ReportFont reportFont;
+  late FakeIdentity identity;
 
   VisitReportCubit build() => VisitReportCubit(
     visitId: visitId,
@@ -72,6 +73,7 @@ void main() {
     photoStore: photoStore,
     reportFont: reportFont,
     reportShare: reportShare,
+    identity: identity,
   );
 
   ReportDocument documentOf(Visit visit, {String? companyName = '깔끔클린'}) => ReportDocument.fromVisit(
@@ -85,11 +87,13 @@ void main() {
     Visit? of,
     String? companyName = '깔끔클린',
     List<ZoneRecord>? zonesLackingPhoto,
+    bool showsFooterText = true,
   }) => VisitReportState(
     status: status,
     document: documentOf(of ?? visit, companyName: companyName),
     zonesLackingPhoto: zonesLackingPhoto ?? [hall, pantry],
     photoDirectory: FakePhotoStore.directory,
+    showsFooterText: showsFooterText,
   );
 
   /// Gives the errors that the cubits report from now until the test ends.
@@ -108,6 +112,7 @@ void main() {
     photoStore = FakePhotoStore();
     reportShare = FakeReportShare();
     reportFont = const FileReportFont();
+    identity = FakeIdentity();
   });
 
   group('VisitReportState', () {
@@ -145,12 +150,21 @@ void main() {
     test('copyWith replaces the status and keeps the rest', () {
       expect(loaded().copyWith(status: VisitReportStatus.sharing), loaded(status: VisitReportStatus.sharing));
       expect(loaded(status: VisitReportStatus.shareFailed).copyWith(), loaded(status: VisitReportStatus.shareFailed));
+      expect(
+        loaded(showsFooterText: false).copyWith(status: VisitReportStatus.sharing),
+        loaded(status: VisitReportStatus.sharing, showsFooterText: false),
+      );
+      expect(
+        loaded(status: VisitReportStatus.sharing).copyWith(showsFooterText: false),
+        loaded(status: VisitReportStatus.sharing, showsFooterText: false),
+      );
     });
 
     test('differs from a state with another field value', () {
       expect(loaded(), isNot(loaded(status: VisitReportStatus.sharing)));
       expect(loaded(), isNot(loaded(companyName: null)));
       expect(loaded(), isNot(loaded(zonesLackingPhoto: [hall])));
+      expect(loaded(), isNot(loaded(showsFooterText: false)));
       expect(
         loaded(),
         isNot(
@@ -189,6 +203,100 @@ void main() {
         act: (cubit) => cubit.load(),
         expect: () => [loaded(companyName: null)],
       );
+
+      blocTest<VisitReportCubit, VisitReportState>(
+        'builds the report without the footer text for a user whose token holds a paid entitlement',
+        setUp: () => identity.paid = true,
+        build: build,
+        act: (cubit) => cubit.load(),
+        expect: () => [loaded(showsFooterText: false)],
+      );
+
+      test('asks for the paid entitlement once, also when it loads again', () async {
+        identity.paid = true;
+        final cubit = build();
+
+        await cubit.load();
+        await cubit.load();
+
+        expect(identity.paidChecks, 1);
+        expect(cubit.state, loaded(showsFooterText: false));
+        await cubit.close();
+      });
+
+      test('shows the report with the footer text before the check of the paid entitlement answers, and leaves the '
+          'text out when the check answers true', () async {
+        identity
+          ..paid = true
+          ..paidGate = Completer<void>();
+        final cubit = build();
+        final states = <VisitReportState>[];
+        final subscription = cubit.stream.listen(states.add);
+
+        await cubit.load();
+        expect(cubit.state, loaded());
+        identity.paidGate!.complete();
+        await Future<void>.delayed(Duration.zero);
+
+        expect(states, [loaded(), loaded(showsFooterText: false)]);
+        await subscription.cancel();
+        await cubit.close();
+      });
+
+      test(
+        'keeps the footer text when the check of the paid entitlement answers false after the report shows',
+        () async {
+          identity.paidGate = Completer<void>();
+          final cubit = build();
+          final states = <VisitReportState>[];
+          final subscription = cubit.stream.listen(states.add);
+
+          await cubit.load();
+          identity.paidGate!.complete();
+          await Future<void>.delayed(Duration.zero);
+
+          expect(states, [loaded()]);
+          await subscription.cancel();
+          await cubit.close();
+        },
+      );
+
+      test(
+        'leaves the footer text out when the report loads again after a check that answered true without a report',
+        () async {
+          identity
+            ..paid = true
+            ..paidGate = Completer<void>();
+          visits = FakeVisitRepository();
+          final cubit = build();
+
+          await cubit.load();
+          expect(cubit.state, const VisitReportState(status: VisitReportStatus.loadFailed));
+          identity.paidGate!.complete();
+          await Future<void>.delayed(Duration.zero);
+          expect(cubit.state, const VisitReportState(status: VisitReportStatus.loadFailed));
+
+          await visits.save(visit);
+          await cubit.load();
+          expect(cubit.state, loaded(showsFooterText: false));
+          expect(identity.paidChecks, 1);
+          await cubit.close();
+        },
+      );
+
+      test('emits nothing when the cubit closes before the check of the paid entitlement answers', () async {
+        identity
+          ..paid = true
+          ..paidGate = Completer<void>();
+        final cubit = build();
+        await cubit.load();
+        await cubit.close();
+
+        identity.paidGate!.complete();
+        await Future<void>.delayed(Duration.zero);
+
+        expect(cubit.state, loaded());
+      });
 
       blocTest<VisitReportCubit, VisitReportState>(
         'fails for a visit that storage does not have',
@@ -309,6 +417,39 @@ void main() {
           );
           expect(summary.text, isNot(contains('탕비실')));
           expect(photoStore.readPhotos, [lobbyBefore, lobbyAfter, hallBefore]);
+        },
+      );
+
+      blocTest<VisitReportCubit, VisitReportState>(
+        'prints the footer text and the page number in the PDF of a user without a paid entitlement',
+        build: build,
+        act: (cubit) async {
+          await cubit.load();
+          await cubit.share(labels);
+        },
+        verify: (_) => expect(
+          PdfSummary.read(reportShare.shared.single.bytes).pages.single.text,
+          startsWith('꼼꼬미로 만든 보고서 1 / 1 '),
+        ),
+      );
+
+      blocTest<VisitReportCubit, VisitReportState>(
+        'leaves the footer text out of the PDF of a user with a paid entitlement and keeps the page number',
+        setUp: () => identity.paid = true,
+        build: build,
+        act: (cubit) async {
+          await cubit.load();
+          await cubit.share(labels);
+        },
+        expect: () => [
+          loaded(showsFooterText: false),
+          loaded(status: VisitReportStatus.sharing, showsFooterText: false),
+          loaded(showsFooterText: false),
+        ],
+        verify: (_) {
+          final summary = PdfSummary.read(reportShare.shared.single.bytes);
+          expect(summary.pages.single.text, startsWith('1 / 1 '));
+          expect(summary.text, isNot(contains('꼼꼬미로 만든 보고서')));
         },
       );
 

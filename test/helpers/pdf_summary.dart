@@ -8,8 +8,13 @@ final _mediaBox = RegExp(r'/MediaBox\s*\[\s*0\s+0\s+([\d.]+)\s+([\d.]+)\s*\]');
 final _mapping = RegExp(r'<([0-9A-Fa-f]{4})>\s*<([0-9A-Fa-f]+)>');
 final _hexString = RegExp('<([0-9A-Fa-f]*)>');
 
-/// The operators of a page that the reader follows: a font choice, a text that is shown, and an image that is drawn.
-final _operator = RegExp(r'/(\w+)\s+[\d.]+\s+Tf|\[([^\]]*)\]\s*TJ|/(\w+)\s+Do\b');
+/// The operators of a page that the reader follows: a font choice, a text that is shown with the position that the
+/// `pdf` package moves to before it, an image that is drawn, a change of the coordinates, and a save or a restore of
+/// the graphics state.
+final _operator = RegExp(
+  r'/(\w+)\s+[\d.]+\s+Tf|(?:(-?[\d.]+\s+-?[\d.]+)\s+Td\s*)?\[([^\]]*)\]\s*TJ|/(\w+)\s+Do\b'
+  r'|((?:-?[\d.]+\s+){6})cm\b|\b([qQ])\b',
+);
 
 /// What a test reads of a PDF file that the `pdf` package wrote: its pages, with their size, text, and images.
 ///
@@ -35,7 +40,7 @@ final class PdfSummary {
 
 /// One page of a PDF file.
 final class PdfPage {
-  const new({required this.width, required this.height, required this.text, required this.images});
+  const new({required this.width, required this.height, required this.texts, required this.images});
 
   /// The width of the page in points.
   final double width;
@@ -46,7 +51,14 @@ final class PdfPage {
   /// The words that the page shows, in the order in which the file draws them, joined with a space.
   ///
   /// The `pdf` package draws the footer of a page before its content, so the text of the footer comes first.
-  final String text;
+  String get text => texts.map((text) => text.text).join(' ');
+
+  /// Each text that the page shows, in the order in which the file draws them, with the distance in points from the
+  /// left edge of the page to where its drawing starts.
+  ///
+  /// The `pdf` package draws each word of a text widget as a text of its own. The reader follows the changes of the
+  /// coordinates that the package writes around the text (`cm`, `q`, and `Q`), and the move to the text (`Td`).
+  final List<({String text, double x})> texts;
 
   /// The pixel size of each image that the page shows, in the order in which the file draws them.
   final List<({int width, int height})> images;
@@ -98,33 +110,61 @@ final class _PdfReader {
       throw FormatException('The page tree names object $number, which is no page');
     }
     final content = latin1.decode(_streamOf(_object(_referenceIn(page.source, 'Contents'))));
-    final words = <String>[];
+    final texts = <({String text, double x})>[];
     final images = <({int width, int height})>[];
     var characterMap = const <int, String>{};
+    // The current transformation matrix [a, b, c, d, e, f], which takes a point of the current coordinates to the
+    // page, and the matrices that each save of the graphics state keeps.
+    var matrix = const [1.0, 0.0, 0.0, 1.0, 0.0, 0.0];
+    final savedMatrices = <List<double>>[];
     for (final operator in _operator.allMatches(content)) {
       if (operator.group(1) case final font?) {
         characterMap = _characterMapOf(_referenceIn(page.source, font));
-      } else if (operator.group(2) case final shown?) {
+      } else if (operator.group(3) case final shown?) {
+        final position = operator.group(2);
+        if (position == null) throw FormatException('A text of page object $number has no position before it');
+        // A text object starts at the origin of the current coordinates, and the move goes from there.
+        final [x, y] = _numbers(position);
         final glyphs = _hexString.allMatches(shown).map((match) => match.group(1)!).join();
-        words.add(
-          [
+        texts.add((
+          text: [
             for (var index = 0; index + 4 <= glyphs.length; index += 4)
               characterMap[int.parse(glyphs.substring(index, index + 4), radix: 16)] ??
                   (throw FormatException('A text of page object $number shows a glyph that its font does not map')),
           ].join(),
-        );
-      } else {
-        final image = _object(_referenceIn(page.source, operator.group(3)!)).source;
+          x: x * matrix[0] + y * matrix[2] + matrix[4],
+        ));
+      } else if (operator.group(4) case final name?) {
+        final image = _object(_referenceIn(page.source, name)).source;
         images.add((width: _numberIn(image, 'Width'), height: _numberIn(image, 'Height')));
+      } else if (operator.group(5) case final change?) {
+        // The change applies before the current matrix: the product of the change and the current matrix.
+        final [a, b, c, d, e, f] = _numbers(change);
+        final [ca, cb, cc, cd, ce, cf] = matrix;
+        matrix = [
+          a * ca + b * cc,
+          a * cb + b * cd,
+          c * ca + d * cc,
+          c * cb + d * cd,
+          e * ca + f * cc + ce,
+          e * cb + f * cd + cf,
+        ];
+      } else if (operator.group(6) == 'q') {
+        savedMatrices.add(matrix);
+      } else {
+        matrix = savedMatrices.removeLast();
       }
     }
     return PdfPage(
       width: double.parse(mediaBox.group(1)!),
       height: double.parse(mediaBox.group(2)!),
-      text: words.join(' '),
+      texts: texts,
       images: images,
     );
   }
+
+  /// The numbers of the operands [source], separated by white space.
+  List<double> _numbers(String source) => source.trim().split(RegExp(r'\s+')).map(double.parse).toList();
 
   /// What each glyph number of the font in object [number] shows, from the character map of the font.
   Map<int, String> _characterMapOf(int number) => _characterMaps.putIfAbsent(number, () {

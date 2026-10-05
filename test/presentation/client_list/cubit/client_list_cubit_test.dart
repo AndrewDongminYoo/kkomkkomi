@@ -15,17 +15,40 @@ void main() {
   final failure = Exception('storage failed');
 
   late MockClientRepository clients;
+  late FakeEntitlements entitlements;
 
-  ClientListCubit build() =>
-      ClientListCubit(clients: clients, idGenerator: SequenceIdGenerator(), clock: FixedClock(now));
+  ClientListCubit build({Duration planTimeout = ClientListCubit.defaultPlanTimeout}) => ClientListCubit(
+    clients: clients,
+    entitlements: entitlements,
+    idGenerator: SequenceIdGenerator(),
+    clock: FixedClock(now),
+    planTimeout: planTimeout,
+  );
 
-  ClientListState ready({List<Client> clients = const [], NameEntry entry = NameEntry.editing}) =>
-      ClientListState(status: ClientListStatus.ready, clients: clients, entry: entry);
+  ClientListState ready({
+    List<Client> clients = const [],
+    NameEntry entry = NameEntry.editing,
+    ClientAddition addition = ClientAddition.idle,
+    Plan? limitPlan,
+  }) => ClientListState(
+    status: ClientListStatus.ready,
+    clients: clients,
+    entry: entry,
+    addition: addition,
+    limitPlan: limitPlan,
+  );
+
+  /// [count] active clients, oldest first.
+  List<Client> clientsOf(int count) => [
+    for (var index = 0; index < count; index++)
+      Client(id: 'client-$index', name: '거래처 $index', createdAt: DateTime.utc(2026, 9, 1 + index)),
+  ];
 
   setUpAll(() => registerFallbackValue(office));
 
   setUp(() {
     clients = MockClientRepository();
+    entitlements = FakeEntitlements();
     when(() => clients.save(any())).thenAnswer((_) async {});
   });
 
@@ -39,6 +62,16 @@ void main() {
       expect(ready(clients: [office]), isNot(ready(clients: [shop])));
       expect(ready(), isNot(ready(entry: NameEntry.saved)));
       expect(ready(), isNot(const ClientListState()));
+      expect(ready(), isNot(ready(addition: ClientAddition.checking)));
+      expect(ready(), isNot(ready(limitPlan: Plan.free)));
+    });
+
+    test('copyWith keeps the plan of the limit unless it is given, and forgets it for null', () {
+      expect(
+        ready(limitPlan: Plan.basic).copyWith(addition: ClientAddition.allowed),
+        ready(limitPlan: Plan.basic, addition: ClientAddition.allowed),
+      );
+      expect(ready(limitPlan: Plan.basic).copyWith(limitPlan: () => null), ready());
     });
   });
 
@@ -91,6 +124,17 @@ void main() {
         ],
       );
 
+      blocTest<ClientListCubit, ClientListState>(
+        'forgets the plan whose limit stopped the last addition',
+        setUp: () => when(clients.activeClients).thenAnswer((_) async => [office, shop]),
+        build: build,
+        seed: () => ready(clients: [office, shop], limitPlan: Plan.free),
+        act: (cubit) => cubit.load(),
+        expect: () => [
+          ready(clients: [office, shop]),
+        ],
+      );
+
       test('emits nothing when the cubit closes before storage answers', () async {
         final answer = Completer<List<Client>>();
         when(clients.activeClients).thenAnswer((_) => answer.future);
@@ -124,11 +168,147 @@ void main() {
       });
     });
 
+    group('requestNewClient', () {
+      for (final count in [0, 1]) {
+        blocTest<ClientListCubit, ClientListState>(
+          'allows a client with $count active clients without asking for the plan',
+          build: build,
+          seed: () => ready(clients: clientsOf(count)),
+          act: (cubit) => cubit.requestNewClient(),
+          expect: () => [
+            ready(clients: clientsOf(count), addition: ClientAddition.checking),
+            ready(clients: clientsOf(count), addition: ClientAddition.allowed),
+          ],
+          verify: (_) => expect(entitlements.touched, isEmpty),
+        );
+      }
+
+      blocTest<ClientListCubit, ClientListState>(
+        'stops a Free company with 2 active clients, and names the Free plan',
+        build: build,
+        seed: () => ready(clients: clientsOf(2)),
+        act: (cubit) => cubit.requestNewClient(),
+        expect: () => [
+          ready(clients: clientsOf(2), addition: ClientAddition.checking),
+          ready(clients: clientsOf(2), limitPlan: Plan.free),
+        ],
+        verify: (_) {
+          expect(entitlements.touched, ['currentPlan']);
+          verifyNever(() => clients.save(any()));
+        },
+      );
+
+      blocTest<ClientListCubit, ClientListState>(
+        'keeps every client of a company above the Free limit after a downgrade, and stops the next one',
+        build: build,
+        seed: () => ready(clients: clientsOf(3)),
+        act: (cubit) => cubit.requestNewClient(),
+        expect: () => [
+          ready(clients: clientsOf(3), addition: ClientAddition.checking),
+          ready(clients: clientsOf(3), limitPlan: Plan.free),
+        ],
+        verify: (_) => verifyNever(() => clients.save(any())),
+      );
+
+      test('lets a Basic company with 4 active clients add the fifth, and stops it at the sixth', () async {
+        entitlements.plan = Plan.basic;
+        final cubit = build()..emit(ready(clients: clientsOf(4)));
+
+        await cubit.requestNewClient();
+        expect(cubit.state.addition, ClientAddition.allowed);
+        cubit.startNameEntry();
+        await cubit.addClient('다섯째');
+        await cubit.requestNewClient();
+
+        final fifth = Client(id: 'id-1', name: '다섯째', createdAt: now);
+        expect(cubit.state, ready(clients: [...clientsOf(4), fifth], entry: NameEntry.saved, limitPlan: Plan.basic));
+        verify(() => clients.save(fifth)).called(1);
+        expect(entitlements.calls, 3);
+        await cubit.close();
+      });
+
+      test('lets a Pro company with 12 active clients add the thirteenth', () async {
+        entitlements.plan = Plan.pro;
+        final cubit = build()..emit(ready(clients: clientsOf(12)));
+
+        await cubit.requestNewClient();
+        expect(cubit.state.addition, ClientAddition.allowed);
+        cubit.startNameEntry();
+        await cubit.addClient('열셋째');
+
+        expect(
+          cubit.state,
+          ready(
+            clients: [
+              ...clientsOf(12),
+              Client(id: 'id-1', name: '열셋째', createdAt: now),
+            ],
+            entry: NameEntry.saved,
+          ),
+        );
+        await cubit.close();
+      });
+
+      blocTest<ClientListCubit, ClientListState>(
+        'forgets the plan of an earlier stop when the plan allows a client',
+        setUp: () => entitlements.plan = Plan.basic,
+        build: build,
+        seed: () => ready(clients: clientsOf(2), limitPlan: Plan.free),
+        act: (cubit) => cubit.requestNewClient(),
+        expect: () => [
+          ready(clients: clientsOf(2), addition: ClientAddition.checking, limitPlan: Plan.free),
+          ready(clients: clientsOf(2), addition: ClientAddition.allowed),
+        ],
+      );
+
+      test('waits for a late plan, past the timeout of a save, and allows the client that it allows', () async {
+        entitlements
+          ..plan = Plan.basic
+          ..planGate = Completer<void>();
+        final cubit = build(planTimeout: const Duration(milliseconds: 10))..emit(ready(clients: clientsOf(2)));
+
+        final check = cubit.requestNewClient();
+        await Future<void>.delayed(const Duration(milliseconds: 50));
+        expect(cubit.state, ready(clients: clientsOf(2), addition: ClientAddition.checking));
+        entitlements.planGate!.complete();
+        await check;
+
+        expect(cubit.state, ready(clients: clientsOf(2), addition: ClientAddition.allowed));
+        await cubit.close();
+      });
+
+      test('does nothing for a second call while the plan is on its way', () async {
+        entitlements.planGate = Completer<void>();
+        final cubit = build()..emit(ready(clients: clientsOf(2)));
+
+        final first = cubit.requestNewClient();
+        await cubit.requestNewClient();
+        entitlements.planGate!.complete();
+        await first;
+
+        expect(entitlements.calls, 1);
+        expect(cubit.state, ready(clients: clientsOf(2), limitPlan: Plan.free));
+        await cubit.close();
+      });
+
+      test('emits nothing more when the cubit closes before the plan answers', () async {
+        entitlements.planGate = Completer<void>();
+        final cubit = build()..emit(ready(clients: clientsOf(2)));
+
+        final check = cubit.requestNewClient();
+        await cubit.close();
+        entitlements.planGate!.complete();
+        await check;
+
+        expect(cubit.state, ready(clients: clientsOf(2), addition: ClientAddition.checking));
+      });
+    });
+
     group('startNameEntry', () {
       blocTest<ClientListCubit, ClientListState>(
-        'forgets the problem of the last submitted name',
+        'forgets the problem of the last submitted name and the allowed press that opened the dialog',
         build: build,
-        seed: () => ready(entry: NameEntry.empty),
+        seed: () => ready(entry: NameEntry.empty, addition: ClientAddition.allowed),
         act: (cubit) => cubit.startNameEntry(),
         expect: () => [ready()],
       );
@@ -148,6 +328,79 @@ void main() {
         ],
         verify: (_) => verify(() => clients.save(added)).called(1),
       );
+
+      blocTest<ClientListCubit, ClientListState>(
+        'saves a client of a Free company with 1 active client without asking for the plan',
+        build: build,
+        seed: () => ready(clients: [office]),
+        act: (cubit) => cubit.addClient('다온 카페'),
+        expect: () => [
+          ready(clients: [office], entry: NameEntry.saving),
+          ready(clients: [office, added], entry: NameEntry.saved),
+        ],
+        verify: (_) => expect(entitlements.touched, isEmpty),
+      );
+
+      blocTest<ClientListCubit, ClientListState>(
+        'refuses the client when the plan ended while the dialog was open, and saves nothing',
+        setUp: () => entitlements.plan = Plan.basic,
+        build: build,
+        seed: () => ready(clients: clientsOf(4)),
+        act: (cubit) async {
+          await cubit.requestNewClient();
+          cubit.startNameEntry();
+          entitlements.plan = Plan.free;
+          await cubit.addClient('다온 카페');
+        },
+        skip: 3,
+        expect: () => [
+          ready(clients: clientsOf(4), entry: NameEntry.saving),
+          ready(clients: clientsOf(4), entry: NameEntry.limitReached, limitPlan: Plan.free),
+        ],
+        verify: (_) {
+          expect(entitlements.calls, 2);
+          verifyNever(() => clients.save(any()));
+        },
+      );
+
+      test('fails the save without naming a plan, and saves nothing, when the plan does not answer in time', () async {
+        entitlements.plan = Plan.basic;
+        final cubit = build(planTimeout: const Duration(milliseconds: 10))..emit(ready(clients: clientsOf(4)));
+        entitlements.planGate = Completer<void>();
+
+        await cubit.addClient('다온 카페');
+
+        expect(cubit.state, ready(clients: clientsOf(4), entry: NameEntry.failed));
+        verifyNever(() => clients.save(any()));
+        entitlements.planGate!.complete();
+        await cubit.close();
+      });
+
+      test('emits nothing more when the cubit closes before the timeout of the plan', () async {
+        entitlements.planGate = Completer<void>();
+        final cubit = build(planTimeout: const Duration(milliseconds: 10))..emit(ready(clients: clientsOf(2)));
+
+        final add = cubit.addClient('다온 카페');
+        await cubit.close();
+        await add;
+
+        expect(cubit.state.entry, NameEntry.saving);
+        verifyNever(() => clients.save(any()));
+        entitlements.planGate!.complete();
+      });
+
+      test('emits nothing more and saves nothing when the cubit closes before the plan answers', () async {
+        entitlements.planGate = Completer<void>();
+        final cubit = build()..emit(ready(clients: clientsOf(2)));
+
+        final add = cubit.addClient('다온 카페');
+        await cubit.close();
+        entitlements.planGate!.complete();
+        await add;
+
+        expect(cubit.state.entry, NameEntry.saving);
+        verifyNever(() => clients.save(any()));
+      });
 
       blocTest<ClientListCubit, ClientListState>(
         'refuses an empty name and saves nothing',
@@ -195,6 +448,9 @@ void main() {
         final cubit = build();
 
         final add = cubit.addClient('다온 카페');
+        // The check of the limit comes first, so the save starts a turn later.
+        await Future<void>.delayed(Duration.zero);
+        verify(() => clients.save(any())).called(1);
         await cubit.close();
         answer.complete();
         await add;
@@ -208,6 +464,9 @@ void main() {
         final cubit = build();
 
         final add = cubit.addClient('다온 카페');
+        // The check of the limit comes first, so the save starts a turn later.
+        await Future<void>.delayed(Duration.zero);
+        verify(() => clients.save(any())).called(1);
         await cubit.close();
         answer.completeError(failure);
         await add;

@@ -77,6 +77,7 @@ void main() {
     Exception? loadFailure,
     bool keepScreen = false,
     FakePublisher? publisher,
+    Identity? identity,
   }) async {
     if (!keepScreen) useTallPhoneScreen(tester);
     visits = FakeVisitRepository(visits: [visit ?? current])..failure = loadFailure;
@@ -110,6 +111,7 @@ void main() {
       photoStore: photoStore,
       reportShare: reportShare,
       linkShare: linkShare,
+      identity: identity,
     );
     await tester.tap(find.text('host'));
     await tester.pumpAndSettle();
@@ -149,6 +151,24 @@ void main() {
       final tops = [for (final name in zoneNames) tester.getTopLeft(find.text(name)).dy];
       expect(tops, orderedEquals([...tops]..sort()));
       expect(tester.getTopLeft(find.text('깔끔클린')).dy, lessThan(tester.getTopLeft(find.text('Cleaning Report')).dy));
+    });
+
+    testWidgets('leaves the footer text out of the preview and of the PDF for a user with a paid entitlement', (
+      tester,
+    ) async {
+      final identity = FakeIdentity()..paid = true;
+      await pumpPage(tester, visit: complete, identity: identity);
+
+      expect(find.text('Cleaning Report'), findsOneWidget);
+      expect(find.text('Report made with Kkomkkomi'), findsNothing);
+
+      await tester.tap(shareButton());
+      await tester.pumpAndSettle();
+
+      final summary = PdfSummary.read(reportShare.shared.single.bytes);
+      expect(summary.pages.single.text, startsWith('1 / 1 '));
+      expect(summary.text, isNot(contains('Report made with Kkomkkomi')));
+      expect(identity.paidChecks, 1);
     });
 
     testWidgets('shows each photo in its slot, an empty slot for a photo that a zone lacks, and the notes', (
@@ -329,6 +349,7 @@ void main() {
         final summary = PdfSummary.read(shared.bytes);
         expect(summary.pageCount, 1);
         expect(summary.pages.single.images, hasLength(2));
+        expect(summary.pages.single.text, startsWith('Report made with Kkomkkomi 1 / 1 '));
         expect(
           summary.text,
           stringContainsInOrder(['Report made with Kkomkkomi', '깔끔클린', 'Cleaning Report', '행복빌딩', 'October 1, 2026']),
