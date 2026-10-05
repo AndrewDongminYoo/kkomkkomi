@@ -28,6 +28,13 @@ enum Plan {
     Plan.pro => null,
   };
 
+  /// Whether a company of the plan with [activeClients] active clients may add one more. A company at or above the
+  /// limit, for example after a downgrade, keeps its clients and may not add one.
+  bool allowsAnotherClient(int activeClients) => switch (clientLimit) {
+    final limit? => activeClients < limit,
+    null => true,
+  };
+
   /// Whether a report of the plan carries the footer text. Only the Free plan prints it.
   bool get showsFooter => this == Plan.free;
 }
