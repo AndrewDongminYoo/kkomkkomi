@@ -7,9 +7,11 @@ import 'package:kkomkkomi/l10n/l10n.dart';
 import 'package:kkomkkomi/presentation/client_detail/client_detail.dart';
 import 'package:kkomkkomi/presentation/client_list/cubit/client_list_cubit.dart';
 import 'package:kkomkkomi/presentation/company_profile/company_profile.dart';
+import 'package:kkomkkomi/presentation/plans/plans.dart';
 import 'package:kkomkkomi/presentation/shared/keep_all_text.dart';
 import 'package:kkomkkomi/presentation/shared/load_failure.dart';
 import 'package:kkomkkomi/presentation/shared/name_dialog.dart';
+import 'package:kkomkkomi/presentation/shared/notice.dart';
 import 'package:material_ui/material_ui.dart';
 
 /// The home screen: the active clients, a control that adds a client, and the way to the company profile.
@@ -22,6 +24,7 @@ class ClientListPage extends StatelessWidget {
       create: (context) {
         final cubit = ClientListCubit(
           clients: context.read<ClientRepository>(),
+          entitlements: context.read<Entitlements>(),
           idGenerator: context.read<IdGenerator>(),
           clock: context.read<Clock>(),
         );
@@ -56,14 +59,21 @@ class ClientListView extends StatelessWidget {
         ],
       ),
       body: SafeArea(
-        child: BlocBuilder<ClientListCubit, ClientListState>(
+        child: BlocConsumer<ClientListCubit, ClientListState>(
+          listenWhen: (previous, current) =>
+              previous.addition != ClientAddition.allowed && current.addition == ClientAddition.allowed,
+          listener: (context, _) {
+            // The plan can answer after a person left this screen for a client or the company profile, and the
+            // dialog must not open over that screen. The next press asks again.
+            if (ModalRoute.isCurrentOf(context) ?? true) _showAddDialog(context);
+          },
           builder: (context, state) => switch (state.status) {
             ClientListStatus.loading => const Center(child: CircularProgressIndicator()),
             ClientListStatus.loadFailed => LoadFailure(
               message: l10n.clientListLoadFailedMessage,
               onRetry: () => unawaited(context.read<ClientListCubit>().load()),
             ),
-            ClientListStatus.ready => _ClientList(clients: state.clients),
+            ClientListStatus.ready => _ClientList(state: state),
           },
         ),
       ),
@@ -72,47 +82,97 @@ class ClientListView extends StatelessWidget {
 }
 
 class _ClientList extends StatelessWidget {
-  const new({required this.clients});
+  const new({required this.state});
 
-  final List<Client> clients;
+  final ClientListState state;
 
   @override
   Widget build(BuildContext context) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: [
-        Expanded(
-          child: clients.isEmpty
-              ? const _EmptyClientList()
-              : ListView.builder(
-                  itemCount: clients.length,
-                  itemBuilder: (context, index) => _ClientTile(client: clients[index]),
-                ),
-        ),
-        Padding(
-          padding: const EdgeInsets.all(16),
-          child: FilledButton.icon(
-            onPressed: () => _showAddDialog(context),
-            icon: const Icon(Icons.add),
-            label: KeepAllText(context.l10n.clientListAddButton),
+    final clients = state.clients;
+    return LayoutBuilder(
+      builder: (context, constraints) => Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Expanded(
+            child: clients.isEmpty
+                ? const _EmptyClientList()
+                : ListView.builder(
+                    itemCount: clients.length,
+                    itemBuilder: (context, index) => _ClientTile(client: clients[index]),
+                  ),
           ),
-        ),
-      ],
+          if (state.limitPlan case final plan?)
+            ConstrainedBox(
+              // At most half of the height, so that the clients stay in reach at a large text size.
+              constraints: BoxConstraints(maxHeight: constraints.maxHeight / 2),
+              child: SingleChildScrollView(child: _LimitNotice(plan: plan)),
+            ),
+          Padding(
+            padding: const EdgeInsets.all(16),
+            child: FilledButton.icon(
+              // A second press while the plan is on its way would open a second dialog.
+              onPressed: state.addition == ClientAddition.checking
+                  ? null
+                  : () => unawaited(context.read<ClientListCubit>().requestNewClient()),
+              icon: const Icon(Icons.add),
+              label: KeepAllText(context.l10n.clientListAddButton),
+            ),
+          ),
+        ],
+      ),
     );
   }
+}
 
-  void _showAddDialog(BuildContext context) {
+/// Opens the dialog for a new client, which the plan of the company allows.
+void _showAddDialog(BuildContext context) {
+  final l10n = context.l10n;
+  final cubit = context.read<ClientListCubit>()..startNameEntry();
+  unawaited(
+    showNameDialog<ClientListCubit, ClientListState>(
+      context: context,
+      cubit: cubit,
+      entryOf: (state) => state.entry,
+      title: l10n.clientAddDialogTitle,
+      fieldLabel: l10n.clientNameFieldLabel,
+      submitLabel: l10n.nameAddButton,
+      onSubmit: cubit.addClient,
+    ),
+  );
+}
+
+/// Says that the active clients reached the limit of [plan], and opens the plans.
+class _LimitNotice extends StatelessWidget {
+  const new({required this.plan});
+
+  final Plan plan;
+
+  @override
+  Widget build(BuildContext context) {
     final l10n = context.l10n;
-    final cubit = context.read<ClientListCubit>()..startNameEntry();
-    unawaited(
-      showNameDialog<ClientListCubit, ClientListState>(
-        context: context,
-        cubit: cubit,
-        entryOf: (state) => state.entry,
-        title: l10n.clientAddDialogTitle,
-        fieldLabel: l10n.clientNameFieldLabel,
-        submitLabel: l10n.nameAddButton,
-        onSubmit: cubit.addClient,
+    return Semantics(
+      container: true,
+      liveRegion: true,
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(16, 12, 16, 0),
+        child: Notice(
+          children: [
+            // A plan at its limit has one, so the fallback of 0 never shows.
+            KeepAllText(l10n.clientLimitReachedMessage(plan.nameIn(l10n), plan.clientLimit ?? 0)),
+            Align(
+              alignment: AlignmentDirectional.centerEnd,
+              child: TextButton(
+                onPressed: () async {
+                  final cubit = context.read<ClientListCubit>();
+                  await Navigator.of(context).push(PlansPage.route());
+                  // The plans screen can change the plan, so the notice goes and the next press asks again.
+                  await cubit.load();
+                },
+                child: KeepAllText(l10n.companyProfilePlansButton),
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }

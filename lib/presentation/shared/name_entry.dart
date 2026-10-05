@@ -14,6 +14,9 @@ enum NameEntry {
   /// The domain refused the name, because an active zone of the client has it.
   duplicate,
 
+  /// The plan of the company holds no more active clients, so the client with the name is not saved.
+  limitReached,
+
   /// Storage did not take the name.
   failed,
 

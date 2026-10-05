@@ -48,6 +48,14 @@
     "@clientListAddButton": {
         "description": "거래처 목록에서 거래처 추가 대화상자를 여는 버튼의 라벨"
     },
+    "clientLimitReachedMessage": "{plan} 요금제는 거래처를 {count}곳까지 둘 수 있어요. 거래처를 추가하려면 요금제를 바꾸거나 거래처를 보관해 주세요.",
+    "@clientLimitReachedMessage": {
+        "description": "요금제의 거래처 수 한도에 닿았을 때 거래처 목록에 표시되는 안내. 보관한 거래처는 개수에 들어가지 않는다"
+    },
+    "clientLimitReachedError": "지금 요금제로는 거래처를 더 둘 수 없어요.",
+    "@clientLimitReachedError": {
+        "description": "대화상자가 열려 있는 동안 요금제가 바뀌어 거래처를 더 둘 수 없을 때 거래처 이름 입력란 아래에 표시되는 오류 문구"
+    },
     "clientListLoadFailedMessage": "거래처 목록을 불러오지 못했어요. 다시 시도해 주세요.",
     "@clientListLoadFailedMessage": {
         "description": "거래처 목록을 불러오지 못했을 때 목록 대신 표시되는 문구"
