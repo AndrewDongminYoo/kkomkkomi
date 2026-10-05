@@ -48,7 +48,8 @@ After `flutterfire configure`, run `dart format lib/firebase_options.dart`, beca
 The operator approved each deploy. The rules and Hosting were first deployed from `ab6d8d7` on 2026-10-02, and again from `34d5d23` on 2026-10-02, after the account deletion merged, which added the owner delete to `firestore.rules` and published the privacy pages under `web/privacy/`.
 Hosting alone was deployed a third time from `bc4d57c` on 2026-10-03, after the client link pull request merged, which changed section 5 and the effective date of the privacy pages.
 Hosting alone was deployed a fourth time from `d438781` on 2026-10-04, after the durable page deletion pull request (#32) merged, which changed the privacy pages; the same deploy carried a formatting-only change of `web/index.html` and `web/report/index.html`.
-The deployed rules equal the tracked ones at `34d5d23`, and the deployed Hosting files equal the tracked ones at `d438781`.
+The Firestore rules and Hosting were deployed from `135c67f` on 2026-10-05, after the M3 pull requests #42 to #45 and #47 to #49 merged: `firestore.rules` accepts `unbranded` from a paid writer (#42), the web report hides the footer text of an unbranded report (#42), and the privacy pages changed in #43, #44, #45, #48, and #49. `storage.rules` had not changed since `34d5d23`, so it was not deployed.
+The deployed Firestore rules and Hosting files equal the tracked ones at `135c67f`, and the deployed Storage rules equal the tracked ones at `34d5d23`.
 A deploy is the operator's decision each time: do not deploy rules or Hosting without that approval.
 
 `storage.rules` reads the client page through `firestore.get`, which needs the Firebase Storage service agent (`service-146496738802@gcp-sa-firebasestorage.iam.gserviceaccount.com`) to hold `roles/firebaserules.firestoreServiceAgent`.
