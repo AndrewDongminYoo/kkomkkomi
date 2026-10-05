@@ -22,7 +22,7 @@ void main() {
       expect(await entitlements.offers(), isEmpty);
       expect(await entitlements.purchase(offer), PurchaseOutcome.failed);
       expect(await entitlements.restore(), RestoreOutcome.failed);
-      expect(await entitlements.managementUrl(), isNull);
+      expect(await entitlements.managementUrl(), const ManagementLink(null));
     });
 
     test('drops nothing at an invalidation, and still gives the Free plan', () async {

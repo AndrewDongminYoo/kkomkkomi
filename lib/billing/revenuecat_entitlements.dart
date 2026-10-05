@@ -181,17 +181,19 @@ final class RevenueCatEntitlements implements Entitlements {
     }
   }
 
+  /// Without a user ID or an answer of RevenueCat, the answer is unknown. A URL that does not parse is an answer
+  /// without a page, because RevenueCat answered.
   @override
-  Future<Uri?> managementUrl() async {
+  Future<ManagementLink> managementUrl() async {
     try {
-      if (!await _ensureUser()) return null;
-      return switch (await _store.managementUrl()) {
+      if (!await _ensureUser()) return const ManagementLink.unknown();
+      return ManagementLink(switch (await _store.managementUrl()) {
         final url? => Uri.tryParse(url),
         null => null,
-      };
+      });
     } on Object catch (error, stackTrace) {
       log('RevenueCat did not give the management page: $error', stackTrace: stackTrace);
-      return null;
+      return const ManagementLink.unknown();
     }
   }
 
