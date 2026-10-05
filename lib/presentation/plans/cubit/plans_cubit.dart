@@ -166,17 +166,19 @@ class PlansCubit extends Cubit<PlansState> {
     // A read that started later holds a newer answer of the store, for example the one after a purchase, so this one
     // changes nothing.
     if (read != _reads) return null;
+    // The store gives no management page when no subscription is left, for example after an expiry, so the answer
+    // replaces the page from before also when it is null.
     emit(
       isLoad
           ? state.copyWith(
               offersStatus: offers.isEmpty ? OffersStatus.failed : OffersStatus.loaded,
               offers: offers,
-              managementUrl: managementUrl,
+              managementUrl: () => managementUrl,
             )
           : state.copyWith(
               offersStatus: offers.isEmpty ? null : OffersStatus.loaded,
               offers: offers.isEmpty ? null : offers,
-              managementUrl: managementUrl,
+              managementUrl: () => managementUrl,
             ),
     );
     return offers.isNotEmpty;

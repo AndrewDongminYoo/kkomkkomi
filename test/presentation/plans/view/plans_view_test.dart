@@ -217,7 +217,7 @@ void main() {
     testWidgets('opens the subscription management when the store knows its page', (tester) async {
       await pumpView(
         tester,
-        _loaded.copyWith(managementUrl: Uri.parse('https://apps.apple.com/account/subscriptions')),
+        _loaded.copyWith(managementUrl: () => Uri.parse('https://apps.apple.com/account/subscriptions')),
       );
 
       await tester.ensureVisible(find.widgetWithText(OutlinedButton, 'Manage Subscription'));

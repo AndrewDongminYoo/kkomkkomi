@@ -89,19 +89,20 @@ final class PlansState {
     return offer.isActive || !storeNamedOne;
   }
 
+  /// This state with the given values. [managementUrl] gives the new management page, so that null can remove it.
   PlansState copyWith({
     PlansStatus? status,
     Plan? plan,
     OffersStatus? offersStatus,
     List<PlanOffer>? offers,
-    Uri? managementUrl,
+    Uri? Function()? managementUrl,
   }) => PlansState(
     sellsPlans: sellsPlans,
     status: status ?? this.status,
     plan: plan ?? this.plan,
     offersStatus: offersStatus ?? this.offersStatus,
     offers: offers ?? this.offers,
-    managementUrl: managementUrl ?? this.managementUrl,
+    managementUrl: managementUrl == null ? this.managementUrl : managementUrl(),
     isBusy: isBusy,
     notice: notice,
   );

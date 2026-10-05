@@ -455,7 +455,7 @@ void main() {
         seed: () => loaded,
         act: (cubit) async {
           await cubit.openManagement();
-          cubit.emit(loaded.copyWith(managementUrl: _management));
+          cubit.emit(loaded.copyWith(managementUrl: () => _management));
           await cubit.openManagement();
         },
         verify: (_) => expect(links.opened, [_management]),
@@ -508,7 +508,7 @@ void main() {
       blocTest<PlansCubit, PlansState>(
         'reads nothing when the management page opens, because the person changes the subscription after that',
         build: build,
-        seed: () => loaded.copyWith(managementUrl: _management),
+        seed: () => loaded.copyWith(managementUrl: () => _management),
         act: (cubit) => cubit.openManagement(),
         expect: () => <PlansState>[],
         verify: (_) {
@@ -611,6 +611,20 @@ void main() {
       );
 
       blocTest<PlansCubit, PlansState>(
+        'stops showing the management page when the store no longer gives one',
+        build: build,
+        seed: () => loaded.copyWith(plan: Plan.basic, managementUrl: () => _management),
+        act: (cubit) async {
+          // The subscription expired outside the app.
+          entitlements
+            ..plan = Plan.free
+            ..management = null;
+          await cubit.refresh();
+        },
+        expect: () => [loaded.copyWith(plan: Plan.basic), loaded],
+      );
+
+      blocTest<PlansCubit, PlansState>(
         'stops saying that a purchase waits for approval when the read finds a new plan',
         build: build,
         seed: () => loaded.withAction(isBusy: false, notice: PlansNotice.purchasePending),
@@ -667,6 +681,23 @@ void main() {
         loaded.copyWith(plan: Plan.pro),
         loaded.copyWith(plan: Plan.pro, offers: [_activeOf(_proMonthly)]),
       ],
+    );
+
+    blocTest<PlansCubit, PlansState>(
+      'stops showing the management page when the store reports an expiry and gives no page',
+      setUp: () => entitlements
+        ..plan = Plan.basic
+        ..management = _management,
+      build: build,
+      act: (cubit) async {
+        await cubit.load();
+        entitlements
+          ..management = null
+          ..change(Plan.free);
+        await pumpEventQueue();
+      },
+      skip: 2,
+      expect: () => [loaded.copyWith(managementUrl: () => _management), loaded],
     );
 
     blocTest<PlansCubit, PlansState>(
@@ -851,7 +882,7 @@ void main() {
         loaded.copyWith(plan: Plan.pro),
         loaded.copyWith(offersStatus: OffersStatus.failed),
         loaded.copyWith(offers: [_basicMonthly]),
-        loaded.copyWith(managementUrl: _management),
+        loaded.copyWith(managementUrl: () => _management),
         loaded.withAction(isBusy: true),
         loaded.withAction(isBusy: false, notice: PlansNotice.restored),
         const PlansState(sellsPlans: false),
