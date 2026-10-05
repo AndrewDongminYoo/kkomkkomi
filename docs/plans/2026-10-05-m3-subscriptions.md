@@ -35,6 +35,13 @@ The operator split PR 4 on 2026-10-05, after the row of PR 4 above was written, 
 
 No release build is made between the merges of 4a and 4b: the plans screen of 4a describes the client limit and the footer of each plan, which only 4b ships, so a build of 4a alone would describe behavior that it does not have (App Store Review Guideline 3.1.2(c), "clearly describe what the user will get").
 
+### Reconciliation with 4b (2026-10-05)
+
+The brief of 4b, `2026-10-05-m3-04b-limits-and-pdf.md`, and its shipped code are the authority where they differ from the two points above.
+
+- The PDF footer does not come from the cached entitlements. `VisitReportCubit` reads `Identity.hasPaidEntitlement()` once when the visit report screen opens, the same token claim that decides the web report footer, so the PDF path never reaches RevenueCat, and a device that cannot get a newly issued token prints the footer. The tests are in `test/presentation/visit_report/cubit/visit_report_cubit_test.dart` and `test/export/report_pdf_test.dart`.
+- The constraint that no release build is made between 4a and 4b ends when 4b merges, because the app then has the client limit and the footer that the plans screen describes. A release build is allowed again after that merge, subject to the deploy order in "Operator steps outside the repository": the rules of PR 1 (#42) are deployed before a build that writes `unbranded` reaches a tester.
+
 ## Checks before PR 2
 
 - The RevenueCat public SDK keys stay out of the repository (operator, 2026-10-05): a file that git ignores holds them, and the production build reads them through `--dart-define`, as `google-services.json` stays out of the repository today.
