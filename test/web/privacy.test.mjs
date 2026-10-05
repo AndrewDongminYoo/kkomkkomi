@@ -66,7 +66,9 @@ const revenueCat = {
     googleWhen: "앱이 로그인할 때(2항, 6항)",
     processor:
       "운영자는 구독 확인, 판매, 복원에 필요한 처리를 RevenueCat에 맡깁니다.",
-    when: "정식 버전 앱에서 요금제 화면을 열 때와 구독을 사거나 복원할 때만 인터넷으로 전송",
+    when: "정식 버전 앱에서 요금제 화면을 열 때와 구독을 사거나 복원할 때 인터넷으로 전송.",
+    sync: "요금제 화면을 한 번 연 뒤에는 앱이 완전히 종료될 때까지 RevenueCat SDK가 주기적으로, 그리고 앱이 다시 화면에 나타날 때마다 구독 상태를 동기화하며 전송",
+    onlyWhen: /할 때만/,
     refuse: "요금제 화면을 열지 않고 구독을 사지 않으면 이전되지 않습니다.",
     deletion: "모든 데이터 지우기(6항)는 RevenueCat에 연결하지 않습니다.",
     noRefusal: /거부하는 방법은 지금 없습니다/,
@@ -79,7 +81,9 @@ const revenueCat = {
       "or, in the release version, opens the plans screen (section 2)",
     googleWhen: "when the app signs in (sections 2 and 6)",
     processor: "The operator entrusts RevenueCat with the processing",
-    when: "only when the release version of the app opens the plans screen, and when a subscription is bought or restored",
+    when: "when the release version of the app opens the plans screen, and when a subscription is bought or restored.",
+    sync: "After the plans screen has been opened once, the RevenueCat SDK also syncs the subscription state periodically and each time the app comes back to the foreground, until the app is closed completely.",
+    onlyWhen: /only when/,
     refuse:
       "Not opening the plans screen and not buying a subscription avoids this transfer.",
     deletion: "Delete All Data (section 6) does not contact RevenueCat.",
@@ -199,6 +203,10 @@ describe("the privacy policy pages", () => {
       assert.ok(start >= 0, "the section names no RevenueCat processing");
       const revenueCatPart = location.slice(start);
       assert.ok(revenueCatPart.includes(words.when));
+      // The SDK stays configured after the plans screen closes, and RevenueCat updates CustomerInfo periodically and
+      // when the app becomes active (https://www.revenuecat.com/docs/customers/customer-info, read on 2026-10-05).
+      assert.ok(revenueCatPart.includes(words.sync));
+      assert.doesNotMatch(revenueCatPart, words.onlyWhen);
       assert.ok(revenueCatPart.includes(words.refuse));
       assert.ok(revenueCatPart.includes(words.deletion));
       assert.doesNotMatch(revenueCatPart, words.noRefusal);
