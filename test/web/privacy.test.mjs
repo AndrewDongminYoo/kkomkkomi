@@ -69,6 +69,8 @@ const revenueCat = {
     googleWhen: "앱이 로그인할 때(2항, 6항)",
     googleToken:
       "앱이 방문 보고서 화면을 열어 유료 요금제인지 알려 주는 새 로그인 토큰을 요청할 때",
+    googlePublishToken:
+      "앱이 보고서를 링크로 공유하려고 올리면서(3항) 같은 이유로 새 로그인 토큰을 요청할 때",
     googleTokenData: "새 로그인 토큰을 요청할 때의 IP 주소",
     processor:
       "운영자는 구독 확인, 판매, 복원에 필요한 처리를 RevenueCat에 맡깁니다.",
@@ -89,6 +91,8 @@ const revenueCat = {
     googleWhen: "when the app signs in (sections 2 and 6)",
     googleToken:
       "when the app opens the screen of a visit report and asks for a new sign-in token, which tells whether the company has a paid plan",
+    googlePublishToken:
+      "when the app uploads a report to share it as a link (section 3) and asks for a new sign-in token for the same reason",
     googleTokenData: "the IP address of each request for a new sign-in token",
     processor: "The operator entrusts RevenueCat with the processing",
     when: 'when the release version of the app opens the plans screen, when "Add Client" is tapped while 2 or more clients are not archived, and when a subscription is bought or restored.',
@@ -212,6 +216,8 @@ describe("the privacy policy pages", () => {
       const google = sectionText(html, "location");
       const googlePart = google.slice(0, google.indexOf(words.processor));
       assert.ok(googlePart.includes(words.googleToken));
+      // The publish queue asks for the same token before it writes each report (lib/application/publish_queue.dart).
+      assert.ok(googlePart.includes(words.googlePublishToken));
       assert.ok(googlePart.includes(words.googleTokenData));
       // The company profile screen reads no plan, and the client list reads it only at 2 or more active clients, so a
       // person who never opens the plans screen and never asks for a client beyond the Free limit can refuse the
