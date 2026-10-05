@@ -318,7 +318,8 @@
           After the deletion, the links you shared no longer open, and the app
           is as it was when first installed. The app signs in with a new
           anonymous account the next time it starts, shares a report as a link,
-          or, in the release version, opens the plans screen (section 2).
+          or, in the release version, opens the plans screen or gets a tap on
+          "Add Client" while 2 or more clients are not archived (section 2).
         </p>
         <p>The following can remain after the deletion.</p>
         <ul>
@@ -428,7 +429,8 @@
           <dt>Data transferred</dt>
           <dd>
             The user ID of the anonymous account, the IP address and user agent
-            of each sign-in, and the IP address of each visitor of a web page
+            of each sign-in, the IP address of each request for a new sign-in
+            token, and the IP address of each visitor of a web page
           </dd>
           <dt>Countries</dt>
           <dd>
@@ -437,7 +439,9 @@
           </dd>
           <dt>When and how</dt>
           <dd>
-            Over the internet, when the app signs in (sections 2 and 6), and
+            Over the internet, when the app signs in (sections 2 and 6), when
+            the app opens the screen of a visit report and asks for a new
+            sign-in token, which tells whether the company has a paid plan, and
             when a web page is opened
           </dd>
           <dt>Recipient</dt>
@@ -473,10 +477,11 @@
           <dt>When and how</dt>
           <dd>
             Over the internet, when the release version of the app opens the
-            plans screen, and when a subscription is bought or restored. After
-            the plans screen has been opened once, the RevenueCat SDK also syncs
-            the subscription state periodically and each time the app comes back
-            to the foreground, until the app is closed completely.
+            plans screen, when "Add Client" is tapped while 2 or more clients
+            are not archived, and when a subscription is bought or restored.
+            After the first of these, the RevenueCat SDK also syncs the
+            subscription state periodically and each time the app comes back to
+            the foreground, until the app is closed completely.
           </dd>
           <dt>Recipient</dt>
           <dd>RevenueCat, Inc. Contact: compliance@revenuecat.com</dd>
@@ -487,7 +492,8 @@
           </dd>
           <dt>How to refuse, and the effect</dt>
           <dd>
-            Not opening the plans screen and not buying a subscription avoids
+            Not opening the plans screen, not tapping "Add Client" while 2 or
+            more clients are not archived, and not buying a subscription avoids
             this transfer. Delete All Data (section 6) does not contact
             RevenueCat. You can ask for the deletion of the transferred data at
             the contact in section 12.

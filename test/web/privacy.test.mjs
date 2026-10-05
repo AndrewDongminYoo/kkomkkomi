@@ -55,21 +55,28 @@ const sectionText = (html, id) => {
   return html.slice(start, end).replace(/\s+/g, " ");
 };
 
-/** What each page says about RevenueCat, which the plans screen of the app reaches from pull request 4a of M3. */
+/**
+ * What each page says about RevenueCat, which the plans screen of the app reaches from pull request 4a of M3, and the
+ * add control of the client list at 2 or more active clients from pull request 4b.
+ */
 const revenueCat = {
   ko: {
     contact: "RevenueCat, Inc. 연락처: compliance@revenuecat.com",
     linked: "구입 내역은 그 사용자 ID와 연결됩니다",
     remains: "RevenueCat의 고객 기록",
     newAccount:
-      "정식 버전 앱에서 요금제 화면을 열 때 새 익명 계정으로 로그인합니다",
+      '정식 버전 앱에서 요금제 화면을 열거나 보관하지 않은 거래처가 2곳 이상인 상태에서 "거래처 추가하기"를 누를 때 새 익명 계정으로 로그인합니다',
     googleWhen: "앱이 로그인할 때(2항, 6항)",
+    googleToken:
+      "앱이 방문 보고서 화면을 열어 유료 요금제인지 알려 주는 새 로그인 토큰을 요청할 때",
+    googleTokenData: "새 로그인 토큰을 요청할 때의 IP 주소",
     processor:
       "운영자는 구독 확인, 판매, 복원에 필요한 처리를 RevenueCat에 맡깁니다.",
-    when: "정식 버전 앱에서 요금제 화면을 열 때와 구독을 사거나 복원할 때 인터넷으로 전송.",
-    sync: "요금제 화면을 한 번 연 뒤에는 앱이 완전히 종료될 때까지 RevenueCat SDK가 주기적으로, 그리고 앱이 다시 화면에 나타날 때마다 구독 상태를 동기화하며 전송",
+    when: '정식 버전 앱에서 요금제 화면을 열 때, 보관하지 않은 거래처가 2곳 이상인 상태에서 "거래처 추가하기"를 누를 때, 구독을 사거나 복원할 때 인터넷으로 전송.',
+    sync: "이 중 하나로 RevenueCat에 한 번 연결한 뒤에는 앱이 완전히 종료될 때까지 RevenueCat SDK가 주기적으로, 그리고 앱이 다시 화면에 나타날 때마다 구독 상태를 동기화하며 전송",
     onlyWhen: /할 때만/,
-    refuse: "요금제 화면을 열지 않고 구독을 사지 않으면 이전되지 않습니다.",
+    refuse:
+      '요금제 화면을 열지 않고, 보관하지 않은 거래처가 2곳 이상인 상태에서 "거래처 추가하기"를 누르지 않고, 구독을 사지 않으면 이전되지 않습니다.',
     deletion: "모든 데이터 지우기(6항)는 RevenueCat에 연결하지 않습니다.",
     noRefusal: /거부하는 방법은 지금 없습니다/,
   },
@@ -78,14 +85,17 @@ const revenueCat = {
     linked: "the purchase history is linked to that user ID",
     remains: "The customer record at RevenueCat",
     newAccount:
-      "or, in the release version, opens the plans screen (section 2)",
+      'or, in the release version, opens the plans screen or gets a tap on "Add Client" while 2 or more clients are not archived (section 2)',
     googleWhen: "when the app signs in (sections 2 and 6)",
+    googleToken:
+      "when the app opens the screen of a visit report and asks for a new sign-in token, which tells whether the company has a paid plan",
+    googleTokenData: "the IP address of each request for a new sign-in token",
     processor: "The operator entrusts RevenueCat with the processing",
-    when: "when the release version of the app opens the plans screen, and when a subscription is bought or restored.",
-    sync: "After the plans screen has been opened once, the RevenueCat SDK also syncs the subscription state periodically and each time the app comes back to the foreground, until the app is closed completely.",
+    when: 'when the release version of the app opens the plans screen, when "Add Client" is tapped while 2 or more clients are not archived, and when a subscription is bought or restored.',
+    sync: "After the first of these, the RevenueCat SDK also syncs the subscription state periodically and each time the app comes back to the foreground, until the app is closed completely.",
     onlyWhen: /only when/,
     refuse:
-      "Not opening the plans screen and not buying a subscription avoids this transfer.",
+      'Not opening the plans screen, not tapping "Add Client" while 2 or more clients are not archived, and not buying a subscription avoids this transfer.',
     deletion: "Delete All Data (section 6) does not contact RevenueCat.",
     noRefusal: /no way to refuse/,
   },
@@ -193,17 +203,25 @@ describe("the privacy policy pages", () => {
       assert.ok(sectionText(html, "not-collected").includes(words.linked));
       assert.ok(sectionText(html, "delete").includes(words.remains));
       assert.ok(sectionText(html, "retention").includes(words.remains));
-      // Only the plans screen reads the plan, which signs in with a new anonymous account after Delete All Data.
+      // The plans screen and the add control at 2 or more active clients read the plan, which signs in with a new
+      // anonymous account after Delete All Data.
       assert.ok(sectionText(html, "delete").includes(words.newAccount));
       assert.ok(sectionText(html, "location").includes(words.googleWhen));
-      // The company profile screen reads no plan, so a person who never opens the plans screen can refuse the
+      // The visit report screen asks Firebase for a newly issued ID token, which carries the claim of a paid plan, each
+      // time it opens (lib/firebase/firebase_identity.dart), so the Google part names that request too.
+      const google = sectionText(html, "location");
+      const googlePart = google.slice(0, google.indexOf(words.processor));
+      assert.ok(googlePart.includes(words.googleToken));
+      assert.ok(googlePart.includes(words.googleTokenData));
+      // The company profile screen reads no plan, and the client list reads it only at 2 or more active clients, so a
+      // person who never opens the plans screen and never asks for a client beyond the Free limit can refuse the
       // transfer to RevenueCat. The Google part before it keeps its sentence that the sign-in cannot be refused.
       const location = sectionText(html, "location");
       const start = location.indexOf(words.processor);
       assert.ok(start >= 0, "the section names no RevenueCat processing");
       const revenueCatPart = location.slice(start);
       assert.ok(revenueCatPart.includes(words.when));
-      // The SDK stays configured after the plans screen closes, and RevenueCat updates CustomerInfo periodically and
+      // The SDK stays configured after its first use, and RevenueCat updates CustomerInfo periodically and
       // when the app becomes active (https://www.revenuecat.com/docs/customers/customer-info, read on 2026-10-05).
       assert.ok(revenueCatPart.includes(words.sync));
       assert.doesNotMatch(revenueCatPart, words.onlyWhen);
