@@ -62,16 +62,28 @@ const revenueCat = {
     linked: "구입 내역은 그 사용자 ID와 연결됩니다",
     remains: "RevenueCat의 고객 기록",
     newAccount:
-      "정식 버전 앱에서 회사 정보 화면이나 요금제 화면을 열 때 새 익명 계정으로 로그인합니다",
+      "정식 버전 앱에서 요금제 화면을 열 때 새 익명 계정으로 로그인합니다",
     googleWhen: "앱이 로그인할 때(2항, 6항)",
+    processor:
+      "운영자는 구독 확인, 판매, 복원에 필요한 처리를 RevenueCat에 맡깁니다.",
+    when: "정식 버전 앱에서 요금제 화면을 열 때와 구독을 사거나 복원할 때만 인터넷으로 전송",
+    refuse: "요금제 화면을 열지 않고 구독을 사지 않으면 이전되지 않습니다.",
+    deletion: "모든 데이터 지우기(6항)는 RevenueCat에 연결하지 않습니다.",
+    noRefusal: /거부하는 방법은 지금 없습니다/,
   },
   en: {
     contact: "RevenueCat, Inc. Contact: compliance@revenuecat.com",
     linked: "the purchase history is linked to that user ID",
     remains: "The customer record at RevenueCat",
     newAccount:
-      "or, in the release version, opens the company profile screen or the plans screen (section 2)",
+      "or, in the release version, opens the plans screen (section 2)",
     googleWhen: "when the app signs in (sections 2 and 6)",
+    processor: "The operator entrusts RevenueCat with the processing",
+    when: "only when the release version of the app opens the plans screen, and when a subscription is bought or restored",
+    refuse:
+      "Not opening the plans screen and not buying a subscription avoids this transfer.",
+    deletion: "Delete All Data (section 6) does not contact RevenueCat.",
+    noRefusal: /no way to refuse/,
   },
 };
 
@@ -177,9 +189,23 @@ describe("the privacy policy pages", () => {
       assert.ok(sectionText(html, "not-collected").includes(words.linked));
       assert.ok(sectionText(html, "delete").includes(words.remains));
       assert.ok(sectionText(html, "retention").includes(words.remains));
-      // Both screens read the plan, which signs in with a new anonymous account after Delete All Data.
+      // Only the plans screen reads the plan, which signs in with a new anonymous account after Delete All Data.
       assert.ok(sectionText(html, "delete").includes(words.newAccount));
       assert.ok(sectionText(html, "location").includes(words.googleWhen));
+      // The company profile screen reads no plan, so a person who never opens the plans screen can refuse the
+      // transfer to RevenueCat. The Google part before it keeps its sentence that the sign-in cannot be refused.
+      const location = sectionText(html, "location");
+      const start = location.indexOf(words.processor);
+      assert.ok(start >= 0, "the section names no RevenueCat processing");
+      const revenueCatPart = location.slice(start);
+      assert.ok(revenueCatPart.includes(words.when));
+      assert.ok(revenueCatPart.includes(words.refuse));
+      assert.ok(revenueCatPart.includes(words.deletion));
+      assert.doesNotMatch(revenueCatPart, words.noRefusal);
+      assert.doesNotMatch(
+        html.replace(/\s+/g, " "),
+        /회사 정보 화면이나 요금제 화면|company profile screen or the plans screen/,
+      );
       // The build of the plans screen sells subscriptions, so the sentence of pull request 2 is gone.
       assert.doesNotMatch(html, /구독을 판매하지 않으며|sells no subscription/);
     });

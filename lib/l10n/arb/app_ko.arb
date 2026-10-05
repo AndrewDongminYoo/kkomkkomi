@@ -488,10 +488,6 @@
     "@companyProfilePlanTitle": {
         "description": "회사 정보 화면의 요금제 영역 제목"
     },
-    "companyProfilePlanMessage": "지금은 {plan} 요금제를 쓰고 있어요.",
-    "@companyProfilePlanMessage": {
-        "description": "회사 정보 화면에 표시되는 지금 요금제"
-    },
     "companyProfilePlansButton": "요금제 보기",
     "@companyProfilePlansButton": {
         "description": "요금제 화면을 여는 버튼"

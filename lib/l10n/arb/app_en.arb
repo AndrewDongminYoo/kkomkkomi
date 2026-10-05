@@ -538,19 +538,9 @@
     "@clientLinkRequestFailedMessage": {
         "description": "Shown when storage does not take a close or a new link"
     },
-    "companyProfilePlanTitle": "Plan",
+    "companyProfilePlanTitle": "Plans",
     "@companyProfilePlanTitle": {
-        "description": "Title of the plan section of the company profile screen"
-    },
-    "companyProfilePlanMessage": "You're on the {plan} plan.",
-    "@companyProfilePlanMessage": {
-        "description": "The plan that the company has, on the company profile screen",
-        "placeholders": {
-            "plan": {
-                "type": "String",
-                "example": "Free"
-            }
-        }
+        "description": "Title of the plans section of the company profile screen"
     },
     "companyProfilePlansButton": "See Plans",
     "@companyProfilePlansButton": {

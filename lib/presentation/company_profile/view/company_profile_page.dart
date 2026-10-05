@@ -2,7 +2,6 @@ import 'dart:async';
 
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:kkomkkomi/application/application.dart';
-import 'package:kkomkkomi/domain/domain.dart';
 import 'package:kkomkkomi/l10n/l10n.dart';
 import 'package:kkomkkomi/presentation/company_profile/cubit/company_profile_cubit.dart';
 import 'package:kkomkkomi/presentation/plans/plans.dart';
@@ -148,42 +147,12 @@ class _CompanyProfileFormState extends State<_CompanyProfileForm> {
   }
 }
 
-/// The plan of the company, which follows what the store reports, and the control that opens the plans.
-class _PlanEntry extends StatefulWidget {
+/// The control that opens the plans.
+///
+/// It reads nothing from `Entitlements`: in the production flavor a read reaches RevenueCat with the user ID, and that
+/// must happen only when the person opens the plans screen, not when the person opens this screen to delete all data.
+class _PlanEntry extends StatelessWidget {
   const new();
-
-  @override
-  State<_PlanEntry> createState() => _PlanEntryState();
-}
-
-class _PlanEntryState extends State<_PlanEntry> {
-  late final Entitlements _entitlements = context.read<Entitlements>();
-  late final StreamSubscription<Plan> _changes;
-
-  /// The plan that the store gave, or null while it is on its way.
-  Plan? _plan;
-
-  @override
-  void initState() {
-    super.initState();
-    _changes = _entitlements.planChanges.listen(_show);
-    // A plan that the store reported while the read was on its way is newer than the answer of the read.
-    unawaited(
-      _entitlements.currentPlan().then((plan) {
-        if (_plan == null) _show(plan);
-      }),
-    );
-  }
-
-  void _show(Plan plan) {
-    if (mounted) setState(() => _plan = plan);
-  }
-
-  @override
-  void dispose() {
-    unawaited(_changes.cancel());
-    super.dispose();
-  }
 
   @override
   Widget build(BuildContext context) {
@@ -192,10 +161,6 @@ class _PlanEntryState extends State<_PlanEntry> {
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         KeepAllText(l10n.companyProfilePlanTitle, style: Theme.of(context).textTheme.titleMedium),
-        if (_plan case final plan?) ...[
-          const SizedBox(height: 8),
-          KeepAllText(l10n.companyProfilePlanMessage(plan.nameIn(l10n))),
-        ],
         const SizedBox(height: 16),
         OutlinedButton(
           onPressed: () => Navigator.of(context).push(PlansPage.route()),

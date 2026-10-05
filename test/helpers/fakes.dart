@@ -86,13 +86,23 @@ class FakeIdentity implements Identity {
 
 /// Gives the plan and the offers that a test sets, and reports the changes that a test makes with [change].
 class FakeEntitlements implements Entitlements {
-  new({this.plan = Plan.free, this.sellsPlans = true, List<PlanOffer>? offerList}) : offerList = offerList ?? [];
+  new({this.plan = Plan.free, this._sellsPlans = true, List<PlanOffer>? offerList}) : offerList = offerList ?? [];
+
+  /// The members of the port that the code under test used, in order, getters included.
+  final touched = <String>[];
 
   /// The plan that a call gives.
   Plan plan;
 
+  bool _sellsPlans;
+
   @override
-  bool sellsPlans;
+  bool get sellsPlans {
+    touched.add('sellsPlans');
+    return _sellsPlans;
+  }
+
+  set sellsPlans(bool value) => _sellsPlans = value;
 
   /// The offers that a call of [offers] gives.
   List<PlanOffer> offerList;
@@ -135,13 +145,17 @@ class FakeEntitlements implements Entitlements {
 
   @override
   Future<Plan> currentPlan() async {
+    touched.add('currentPlan');
     calls++;
     await planGate?.future;
     return plan;
   }
 
   @override
-  Stream<Plan> get planChanges => _changes.stream;
+  Stream<Plan> get planChanges {
+    touched.add('planChanges');
+    return _changes.stream;
+  }
 
   /// Sets the plan and reports it, as the store does after a renewal, an expiry, a purchase, or a restore.
   void change(Plan plan) {
@@ -151,6 +165,7 @@ class FakeEntitlements implements Entitlements {
 
   @override
   Future<List<PlanOffer>> offers() async {
+    touched.add('offers');
     offerCalls++;
     final answer = offerList;
     if (offerGates.isNotEmpty) await offerGates.removeAt(0).future;
@@ -159,6 +174,7 @@ class FakeEntitlements implements Entitlements {
 
   @override
   Future<PurchaseOutcome> purchase(PlanOffer offer) async {
+    touched.add('purchase');
     purchases.add(offer);
     await purchaseGate?.future;
     return purchaseOutcome;
@@ -166,13 +182,17 @@ class FakeEntitlements implements Entitlements {
 
   @override
   Future<RestoreOutcome> restore() async {
+    touched.add('restore');
     restores++;
     await restoreGate?.future;
     return restoreOutcome;
   }
 
   @override
-  Future<Uri?> managementUrl() async => management;
+  Future<Uri?> managementUrl() async {
+    touched.add('managementUrl');
+    return management;
+  }
 
   /// How many times the kept answers were dropped.
   int invalidations = 0;
@@ -182,6 +202,7 @@ class FakeEntitlements implements Entitlements {
 
   @override
   Future<void> invalidate() async {
+    touched.add('invalidate');
     invalidations++;
     await invalidateGate?.future;
   }
