@@ -14,7 +14,8 @@ The same page allows up to 100 internal testers per app, who are App Store Conne
 2. **Photo location (issue 20).** Closed by pull request 23: `withoutLocation` removes the location when a photo is stored, before an upload, and before the PDF, on every platform. No device ran it. An object that a build before pull request 23 uploaded keeps its location in Storage.
 3. **Anonymous account clean-up (issue 21).** Closed: the operator turned the automatic clean-up off on 2026-10-02, and the privacy pages no longer say that an account is deleted after 30 days. Firebase documents that an account that was already scheduled for deletion when the clean-up was turned off stays scheduled (https://firebase.google.com/docs/auth/android/anonymous-auth, "Automatic clean-up").
 4. **Support contact.** `support_url.txt` names the landing page `https://kkomkkomi.web.app/`, which has no working contact: its inquiry form is a preview that sends nothing. Guideline 1.5 says: "Make sure your app and its Support URL include an easy way to contact you". Add a contact to that page, or give another support URL.
-5. **Privacy policy.** The pages at `/privacy/` and `/privacy/en/` are live since the Hosting deploy from `34d5d23`, and no placeholder of pull request 19 is left in them. Four clauses are agent defaults that a qualified person should review: the legal basis of the transfer abroad (Article 28-8(1)3 of the Personal Information Protection Act), the cleaning company as the party responsible for the people in the photos, the Firebase support URL as the contact of Google, and the effective date, which is the merge date of the last change to the pages (2026-10-05, the pull request of `docs/plans/2026-10-05-m3-02-entitlements-port.md`, which adds the Purchase History of the RevenueCat manifest to section 10).
+5. **Privacy policy.** The pages at `/privacy/` and `/privacy/en/` are live since the Hosting deploy from `34d5d23`, and no placeholder of pull request 19 is left in them. Four clauses are agent defaults that a qualified person should review: the legal basis of the transfer abroad (Article 28-8(1)3 of the Personal Information Protection Act), the cleaning company as the party responsible for the people in the photos, the Firebase support URL as the contact of Google, and the effective date, which is the merge date of the last change to the pages (the pull request of `docs/plans/2026-10-05-m3-04a-plans-screen.md`, which adds RevenueCat as a processor and a recipient abroad to sections 6, 8, 9, and 10; the pages say 2026-10-05, and a later merge changes the date).
+   That pull request body lists each RevenueCat clause that the code does not show by itself.
 
 ## Values
 
@@ -83,6 +84,10 @@ en-US:
 ## Subscriptions (M3, issue 36)
 
 - **The RevenueCat keys.** Before a release build, create `config/revenuecat.json` from `config/revenuecat.example.json` and fill in the public SDK keys of the RevenueCat iOS and Android apps. The "Release" section of `CLAUDE.md` owns what the build and the release check do with the file.
+- **No release build between 4a and 4b.** The plans screen of `docs/plans/2026-10-05-m3-04a-plans-screen.md` describes the client limit and the footer of each plan, and 4b ships the client limit and the PDF footer, so a build of 4a alone describes behavior that it does not have (App Store Review Guideline 3.1.2(c), "clearly describe what the user will get"). Make no release build until 4b merges.
+- **RevenueCat dashboard.** In the RevenueCat project, create the entitlements `basic` and `pro`, and attach each Pro product to both. Put the four products in the default offering as the packages `basic_monthly`, `basic_annual`, `pro_monthly`, and `pro_annual`: the app shows a package only under one of these identifiers and ignores any other. Install the RevenueCat Firebase extension on the project `kkomkkomi`, as `docs/plans/2026-10-05-m3-subscriptions.md` lists.
+- **Store products.** Create the four products in App Store Connect (one subscription group, Pro ranked above Basic) and the subscriptions `basic` and `pro` with a monthly and an annual base plan in Play Console, as the "Products" section of `docs/specs/2026-10-04-m3-subscriptions-design.md` describes. The app shows the price that the store gives, so no price goes into the repository.
+- **Terms of use link.** The operator decided on 2026-10-05 that the terms of use are Apple's standard EULA, `https://www.apple.com/legal/internet-services/itunes/dev/stdeula/`, which the plans screen links. Apple's subscriptions page says: "Please note that your app and App Store metadata must include links to your Terms of Use and Privacy Policy" (https://developer.apple.com/app-store/subscriptions/, read on 2026-10-05). So also put that link into the App Store description, or set the standard license agreement in App Store Connect, before a build with the plans screen goes to review.
 - **Play Billing Library before the Play products.** Android's "Getting ready" page says: "Once you've set up a developer account, you must publish a version of your app that includes the Google Play Billing Library. This step is required to enable billing-related features in the Google Play Console, such as configuring the products you want to sell" (https://developer.android.com/google/play/billing/getting-ready, read on 2026-10-05). `purchases_flutter` brings that library into the Android build, so upload a bundle of a build with it before you create the subscriptions in Play Console. Assumption, not a fact: a release that is rolled out on the internal testing track counts as publishing for this step. The page does not say which tracks count, so check it in Play Console when the subscriptions are created.
 
 ## Draft answers for App Privacy (App Store Connect)
@@ -91,14 +96,14 @@ Sources: `lib/firebase/firebase_publisher.dart` (what a link share uploads), `li
 The app sends nothing before the person taps the link share, except the anonymous sign-in at start.
 No data is used for tracking, and no data goes to an ad network or a data broker.
 
-| Data type                          | Collected | Linked to the user | Purpose           | Why                                                                                                                                                     |
-| ---------------------------------- | --------- | ------------------ | ----------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Identifiers: User ID               | Yes       | Yes                | App Functionality | The anonymous Firebase user ID owns each client page (`ownerUid`).                                                                                      |
-| User Content: Photos or Videos     | Yes       | Yes                | App Functionality | A link share uploads the before and after photos of the visit.                                                                                          |
-| User Content: Other User Content   | Yes       | Yes                | App Functionality | A link share uploads the company name, the client name, the zone names, the notes, and the visit date.                                                  |
-| Location: Precise Location         | No        | -                  | -                 | The app removes the location of a photo before it stores or uploads the photo (issue 20, pull request 23), and it asks for no location permission.      |
-| Diagnostics: Other Diagnostic Data | Yes       | No                 | Analytics         | The Firebase Auth, Firestore, and Installations privacy manifests declare it as not linked, not tracking, for Analytics (see "Privacy manifest" below). |
-| Purchases: Purchase History        | Yes       | No                 | App Functionality | The RevenueCat privacy manifest declares it as not linked, not tracking, for App Functionality (see "Privacy manifest" below).                          |
+| Data type                          | Collected | Linked to the user | Purpose                      | Why                                                                                                                                                     |
+| ---------------------------------- | --------- | ------------------ | ---------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Identifiers: User ID               | Yes       | Yes                | App Functionality            | The anonymous Firebase user ID owns each client page (`ownerUid`).                                                                                      |
+| User Content: Photos or Videos     | Yes       | Yes                | App Functionality            | A link share uploads the before and after photos of the visit.                                                                                          |
+| User Content: Other User Content   | Yes       | Yes                | App Functionality            | A link share uploads the company name, the client name, the zone names, the notes, and the visit date.                                                  |
+| Location: Precise Location         | No        | -                  | -                            | The app removes the location of a photo before it stores or uploads the photo (issue 20, pull request 23), and it asks for no location permission.      |
+| Diagnostics: Other Diagnostic Data | Yes       | No                 | Analytics                    | The Firebase Auth, Firestore, and Installations privacy manifests declare it as not linked, not tracking, for Analytics (see "Privacy manifest" below). |
+| Purchases: Purchase History        | Yes       | Yes                | App Functionality, Analytics | RevenueCat collects it, and the app sets the Firebase user ID as the RevenueCat app user ID (see below). Review this row before you enter it.           |
 
 Firebase Authentication also processes the IP address and the user agent of each sign-in for security and abuse prevention.
 Apple's page says: "You need to identify all of the data you or your third-party partners collect …", and a third-party SDK is a third-party partner.
@@ -106,29 +111,38 @@ For the IP address it says: "Declare the relevant data types based on how you us
 The definitions are on https://developer.apple.com/app-store/app-privacy-details/ (read on 2026-10-02).
 
 The Diagnostics row is declared, as the Firebase manifests declare it (operator decision, 2026-10-02).
-The Purchase History row follows the RevenueCat manifest in the same way.
+The Purchase History row follows RevenueCat's own guidance, not only its manifest, because the plans screen of `docs/plans/2026-10-05-m3-04a-plans-screen.md` is the first code that reaches RevenueCat.
+RevenueCat's page (https://www.revenuecat.com/docs/platform-resources/apple-platform-resources/apple-app-privacy, read on 2026-10-05) says that "RevenueCat collects purchase history from users", and for the purposes: "All RevenueCat users must select these two options", which are Analytics and App Functionality.
+App Store Connect takes one answer for each data type, so this row replaces the manifest-only row of the pull request of `docs/plans/2026-10-05-m3-02-entitlements-port.md` (not linked, App Functionality only).
+For "Linked to the user" the page says: "If you are using an app user ID that can be tied to a user's email address or other contact information via your own server or other third-parties, you should select 'Yes'." The RevenueCat app user ID is the Firebase user ID, which the "Identifiers: User ID" row already declares as linked, and the client page of that user ID holds the company name, so the draft says Yes. Whether the company name counts as contact information is the operator's decision.
+The same page says that RevenueCat "does not inherently use purchase history to track users across different apps for advertising", so the row is not for tracking.
+The app uses no integration with an advertising identifier, so no Device ID row follows from RevenueCat.
 Section 10 of the privacy policy names that data as the manifests declare it (Other Diagnostic Data, not linked to the user, not for tracking, for Analytics, in the Auth, Firestore, and Installations manifests of firebase-ios-sdk 12.19.0), and gives the example that Google's list names for Auth and Firestore: the Firebase user agent (device, OS version, SDK versions).
-It also names the Purchase History that the manifest of the RevenueCat iOS SDK 5.92.0 declares (not linked to the user, not for tracking, for App Functionality), and says that the app version sells no subscription and sends nothing to RevenueCat.
+Section 10 also states the answer of the Purchase History row: RevenueCat collects it, linked to the user ID, for app functionality and analytics, and not for tracking. Section 9 names RevenueCat, Inc. as a recipient abroad, with the data that its privacy policy names for the end users of an app (https://www.revenuecat.com/privacy, read on 2026-10-05).
 
 ## Draft answers for Data safety (Play Console)
 
 The same sources apply.
-Data is encrypted in transit (HTTPS to Firebase).
+Data is encrypted in transit (HTTPS to Firebase; RevenueCat's Data safety page says: "RevenueCat encrypts data in transit").
 Deletion: the company profile screen deletes the account and all its data in the app, and the tracked privacy policy names the email of the privacy officer as the way to ask outside the app.
 The privacy policy is deployed, so the store answer is pending on one step: the operator's confirmation of the deletion path outside the app in Play Console.
 Until it is done, Google's account deletion requirement stays open; pull request 19 leaves it unresolved for an account that the app makes without an action of the person.
 
-| Data type                                  | Collected              | Shared    | Optional                      | Purpose           |
-| ------------------------------------------ | ---------------------- | --------- | ----------------------------- | ----------------- |
-| Personal info: User IDs                    | Yes                    | See below | No: the app signs in at start | App functionality |
-| Photos and videos: Photos                  | Yes                    | See below | Yes: only on a link share     | App functionality |
-| App activity: Other user-generated content | Yes                    | See below | Yes: only on a link share     | App functionality |
-| Location: Precise location                 | No (issue 20 is fixed) | -         | -                             | -                 |
+| Data type                                  | Collected              | Shared    | Optional                      | Purpose                      |
+| ------------------------------------------ | ---------------------- | --------- | ----------------------------- | ---------------------------- |
+| Personal info: User IDs                    | Yes                    | See below | No: the app signs in at start | App functionality            |
+| Photos and videos: Photos                  | Yes                    | See below | Yes: only on a link share     | App functionality            |
+| App activity: Other user-generated content | Yes                    | See below | Yes: only on a link share     | App functionality            |
+| Location: Precise location                 | No (issue 20 is fixed) | -         | -                             | -                            |
+| Financial info: Purchase history           | Yes                    | See below | No: required for a purchase   | App functionality, Analytics |
 
 Google's guidance (https://support.google.com/googleplay/android-developer/answer/10787469, read on 2026-10-02) exempts from "sharing" a transfer "to a 'service provider' that processes it on behalf of the developer", which covers Firebase, and a transfer "based on a specific user-initiated action, where the user reasonably expects the data to be shared".
 A report link is sent by the person, and the app tells the person at the first link of a client that anyone with the link can open the reports.
 Anyone with the link can also read the user ID, because the page document holds it as `ownerUid` (`firestore.rules`).
-So "Shared: No" is defensible for the three rows that are collected, and the decision is yours.
+So "Shared: No" is defensible for the rows that are collected, and the decision is yours. RevenueCat processes the purchase history as a service provider of the app.
+The Financial info row is from RevenueCat's page (https://www.revenuecat.com/docs/platform-resources/google-platform-resources/google-plays-data-safety, read on 2026-10-05): "RevenueCat collects purchase history from users", "Select the 'App functionality' and 'Analytics' checkboxes", and "This data collection is required and cannot be turned off".
+The same page names Personal info only for customer attributes with contact information and Device or other IDs only for integrations with an advertising identifier, and the app uses neither.
+Delete All Data does not delete the RevenueCat customer record; the page says "ensure your customers have a way to contact your support team to request a data deletion. You will be able to delete the customer directly from the RevenueCat dashboard or via REST API.", and the privacy pages tell the person to ask the operator.
 The same page says to declare IP addresses by their use, "where developers use IP addresses as a means to determine location", which the app does not do.
 
 ## What the release builds checked

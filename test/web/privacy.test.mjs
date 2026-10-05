@@ -44,6 +44,37 @@ const deletionSection = (html) => {
   return html.slice(start, end);
 };
 
+/** The text of the section with [id], with the line breaks of the formatter folded into spaces. */
+const sectionText = (html, id) => {
+  const start = html.indexOf(`<h2 id="${id}">`);
+  const end = html.indexOf("<h2", start + 1);
+  assert.ok(
+    start >= 0 && end > start,
+    `the page has no <h2 id="${id}"> section`,
+  );
+  return html.slice(start, end).replace(/\s+/g, " ");
+};
+
+/** What each page says about RevenueCat, which the plans screen of the app reaches from pull request 4a of M3. */
+const revenueCat = {
+  ko: {
+    contact: "RevenueCat, Inc. 연락처: compliance@revenuecat.com",
+    linked: "구입 내역은 그 사용자 ID와 연결됩니다",
+    remains: "RevenueCat의 고객 기록",
+    newAccount:
+      "정식 버전 앱에서 회사 정보 화면이나 요금제 화면을 열 때 새 익명 계정으로 로그인합니다",
+    googleWhen: "앱이 로그인할 때(2항, 6항)",
+  },
+  en: {
+    contact: "RevenueCat, Inc. Contact: compliance@revenuecat.com",
+    linked: "the purchase history is linked to that user ID",
+    remains: "The customer record at RevenueCat",
+    newAccount:
+      "or, in the release version, opens the company profile screen or the plans screen (section 2)",
+    googleWhen: "when the app signs in (sections 2 and 6)",
+  },
+};
+
 /** The IDs of the sections of a page, in order. */
 const sectionIds = (html) =>
   [...html.matchAll(/<h2 id="([^"]+)"/g)].map((match) => match[1]);
@@ -136,6 +167,21 @@ describe("the privacy policy pages", () => {
         /<meta\s+name="viewport"\s+content="width=device-width,initial-scale=1,viewport-fit=cover"\s*\/>/,
       );
       assert.doesNotMatch(html, /<table|<pre|<img|<video|<iframe|\swidth=/i);
+    });
+
+    test(`the ${lang} page names RevenueCat as a recipient, the purchase history as linked, and what deletion leaves`, () => {
+      const html = read(page.file);
+      const words = revenueCat[lang];
+
+      assert.ok(sectionText(html, "location").includes(words.contact));
+      assert.ok(sectionText(html, "not-collected").includes(words.linked));
+      assert.ok(sectionText(html, "delete").includes(words.remains));
+      assert.ok(sectionText(html, "retention").includes(words.remains));
+      // Both screens read the plan, which signs in with a new anonymous account after Delete All Data.
+      assert.ok(sectionText(html, "delete").includes(words.newAccount));
+      assert.ok(sectionText(html, "location").includes(words.googleWhen));
+      // The build of the plans screen sells subscriptions, so the sentence of pull request 2 is gone.
+      assert.doesNotMatch(html, /구독을 판매하지 않으며|sells no subscription/);
     });
   }
 
