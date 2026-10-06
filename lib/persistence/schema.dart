@@ -1,7 +1,7 @@
 import 'package:sqflite/sqflite.dart';
 
 /// The version of the schema that [createSchema] creates.
-const schemaVersion = 4;
+const schemaVersion = 5;
 
 // No row of `clients`, `zones`, or `visits` is deleted alone, so the foreign keys declare no delete action. The erase of
 // all data deletes the rows of every table at once, children first.
@@ -102,8 +102,15 @@ const _version4 = [
   'ALTER TABLE client_pages ADD COLUMN server_deleted_at INTEGER',
 ];
 
+// Version 5 adds the status of a zone record and the reason of an exception. A record that an earlier version stored
+// reads as done with no reason.
+const _version5 = [
+  "ALTER TABLE zone_records ADD COLUMN status TEXT NOT NULL DEFAULT 'done'",
+  "ALTER TABLE zone_records ADD COLUMN reason TEXT NOT NULL DEFAULT ''",
+];
+
 /// The statements that take the schema from each version to the next, in order: the first item makes version 1.
-const List<List<String>> _migrations = [_version1, _version2, _version3, _version4];
+const List<List<String>> _migrations = [_version1, _version2, _version3, _version4, _version5];
 
 /// Creates the schema of [schemaVersion]: one table for each of the company profile, clients, zones, visits, and
 /// zone records, the tables of publishing, and the table of the capture that has the camera open.
