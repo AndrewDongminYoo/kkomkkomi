@@ -405,17 +405,22 @@ class _PreviewSlot extends StatelessWidget {
                     )
                   // A photo sits on white inside an edge, as in the PDF, so that the space beside it never looks like
                   // a slot without a photo.
-                  : DecoratedBox(
-                      decoration: BoxDecoration(
-                        color: theme.colorScheme.surfaceContainerLowest,
-                        border: Border.all(color: theme.colorScheme.outlineVariant),
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                      // The whole photo shows, as in the PDF, so that the person sees every part that the share
-                      // sends.
-                      child: Semantics(
-                        image: true,
-                        child: PhotoThumbnail(path: pathOf(photo), fit: BoxFit.contain),
+                  : ColoredBox(
+                      color: theme.colorScheme.surfaceContainerLowest,
+                      // The edge is painted over the photo, which reaches two sides of the square slot and would
+                      // hide the edge there.
+                      child: DecoratedBox(
+                        position: DecorationPosition.foreground,
+                        decoration: BoxDecoration(
+                          border: Border.all(color: theme.colorScheme.outlineVariant),
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        // The whole photo shows, as in the PDF, so that the person sees every part that the share
+                        // sends.
+                        child: Semantics(
+                          image: true,
+                          child: PhotoThumbnail(path: pathOf(photo), fit: BoxFit.contain),
+                        ),
                       ),
                     ),
             ),

@@ -251,10 +251,10 @@ pw.Widget _slot(String label, pw.ImageProvider? image, ReportLabels labels) => p
             ? pw.BoxDecoration(
                 border: pw.Border.all(color: _emptySlotEdge, width: 0.75, style: pw.BorderStyle.dashed),
               )
-            : pw.BoxDecoration(
-                color: PdfColors.white,
-                border: pw.Border.all(color: _rule, width: 0.5),
-              ),
+            : const pw.BoxDecoration(color: PdfColors.white),
+        // The edge of a photo is painted over the photo, which reaches two sides of the square slot and would hide
+        // the edge there.
+        foregroundDecoration: image == null ? null : pw.BoxDecoration(border: pw.Border.all(color: _rule, width: 0.5)),
         child: image == null
             ? pw.Text(labels.noPhoto, style: const pw.TextStyle(fontSize: 10, color: _secondaryText))
             // The default fit shows the whole photo, because a report must not cut what the photo proves.

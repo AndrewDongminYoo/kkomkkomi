@@ -219,17 +219,21 @@ void main() {
       );
 
       final colorScheme = Theme.of(tester.element(find.byType(PhotoThumbnail))).colorScheme;
-      final photoSlot = tester.widget<DecoratedBox>(
+      final ground = tester.widget<ColoredBox>(
+        find.ancestor(of: find.byType(PhotoThumbnail), matching: find.byType(ColoredBox)).first,
+      );
+      expect(ground.color, colorScheme.surfaceContainerLowest);
+      final edge = tester.widget<DecoratedBox>(
         find.ancestor(of: find.byType(PhotoThumbnail), matching: find.byType(DecoratedBox)).first,
       );
-      final decoration = photoSlot.decoration as BoxDecoration;
-      expect(decoration.color, colorScheme.surfaceContainerLowest);
-      expect(decoration.border, Border.all(color: colorScheme.outlineVariant));
+      expect((edge.decoration as BoxDecoration).border, Border.all(color: colorScheme.outlineVariant));
+      // The edge is painted over the photo, which reaches two sides of the square slot and would hide them.
+      expect(edge.position, DecorationPosition.foreground);
       final emptySlot = tester.widget<ColoredBox>(
         find.ancestor(of: find.byIcon(Icons.no_photography_outlined), matching: find.byType(ColoredBox)).first,
       );
       expect(emptySlot.color, colorScheme.surfaceContainerHighest);
-      expect(emptySlot.color, isNot(decoration.color));
+      expect(emptySlot.color, isNot(ground.color));
     });
 
     testWidgets('gives a screen reader each slot with its label, and each note with its label, as one node', (
