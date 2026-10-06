@@ -210,6 +210,28 @@ void main() {
       expect(empty, photo);
     });
 
+    testWidgets('puts a photo on white inside an edge, and keeps the grey of a slot without a photo apart from it', (
+      tester,
+    ) async {
+      await pumpPage(
+        tester,
+        visit: visitWith([ZoneRecord(zoneId: 'zone-1', zoneName: '로비', beforePhoto: beforePhoto)]),
+      );
+
+      final colorScheme = Theme.of(tester.element(find.byType(PhotoThumbnail))).colorScheme;
+      final photoSlot = tester.widget<DecoratedBox>(
+        find.ancestor(of: find.byType(PhotoThumbnail), matching: find.byType(DecoratedBox)).first,
+      );
+      final decoration = photoSlot.decoration as BoxDecoration;
+      expect(decoration.color, colorScheme.surfaceContainerLowest);
+      expect(decoration.border, Border.all(color: colorScheme.outlineVariant));
+      final emptySlot = tester.widget<ColoredBox>(
+        find.ancestor(of: find.byIcon(Icons.no_photography_outlined), matching: find.byType(ColoredBox)).first,
+      );
+      expect(emptySlot.color, colorScheme.surfaceContainerHighest);
+      expect(emptySlot.color, isNot(decoration.color));
+    });
+
     testWidgets('gives a screen reader each slot with its label, and each note with its label, as one node', (
       tester,
     ) async {
