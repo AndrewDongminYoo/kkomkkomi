@@ -12,3 +12,4 @@ export 'visit.dart';
 export 'visit_date.dart';
 export 'zone.dart';
 export 'zone_record.dart';
+export 'zone_status.dart';

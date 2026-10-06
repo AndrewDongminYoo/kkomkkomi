@@ -8,12 +8,16 @@ void main() {
     String? before = 'photos/visit-1/before.jpg',
     String? after = 'photos/visit-1/after.jpg',
     String note = '바닥 왁스',
+    ZoneStatus status = ZoneStatus.done,
+    String reason = '',
   }) => ZoneRecord(
     zoneId: zoneId,
     zoneName: zoneName,
     beforePhoto: before == null ? null : PhotoRef(before),
     afterPhoto: after == null ? null : PhotoRef(after),
     note: note,
+    status: status,
+    reason: reason,
   );
 
   group('ZoneRecord', () {
@@ -23,6 +27,8 @@ void main() {
       expect(empty.beforePhoto, isNull);
       expect(empty.afterPhoto, isNull);
       expect(empty.note, isEmpty);
+      expect(empty.status, ZoneStatus.done);
+      expect(empty.reason, isEmpty);
     });
 
     test('trims the zone name and refuses an empty one', () {
@@ -41,6 +47,8 @@ void main() {
       expect(record(), isNot(record(before: null)));
       expect(record(), isNot(record(after: 'photos/visit-1/other.jpg')));
       expect(record(), isNot(record(note: '')));
+      expect(record(), isNot(record(status: ZoneStatus.partlyDone)));
+      expect(record(), isNot(record(reason: '다음 방문에')));
     });
 
     test('photoIn gives the photo of the slot, or null when the record has none', () {
@@ -73,17 +81,50 @@ void main() {
       expect(record(before: null, after: null, note: ' \n').hasContent, isFalse);
     });
 
+    test('hasContent is also true for a record with an exception, without a photo and without a note', () {
+      final empty = record(before: null, after: null, note: '');
+
+      expect(empty.withStatus(ZoneStatus.partlyDone).hasContent, isTrue);
+      expect(empty.withStatus(ZoneStatus.notDone).hasContent, isTrue);
+      expect(empty.withStatus(ZoneStatus.done).hasContent, isFalse);
+      // A reason alone is no content: a done record ignores its reason.
+      expect(empty.withReason('공사 중').hasContent, isFalse);
+    });
+
     test('withPhoto replaces the photo of one slot and keeps the rest', () {
       final retaken = PhotoRef('photos/visit-1/retaken.jpg');
 
       expect(record().withPhoto(PhotoSlot.before, retaken), record(before: 'photos/visit-1/retaken.jpg'));
       expect(record().withPhoto(PhotoSlot.after, retaken), record(after: 'photos/visit-1/retaken.jpg'));
       expect(record(after: null).withPhoto(PhotoSlot.after, retaken), record(after: 'photos/visit-1/retaken.jpg'));
+      expect(
+        record(status: ZoneStatus.partlyDone, reason: '다음 방문에').withPhoto(PhotoSlot.before, retaken),
+        record(before: 'photos/visit-1/retaken.jpg', status: ZoneStatus.partlyDone, reason: '다음 방문에'),
+      );
     });
 
     test('withNote replaces the note as it is written and keeps the rest', () {
       expect(record().withNote(' 유리 닦음\n'), record(note: ' 유리 닦음\n'));
       expect(record().withNote(''), record(note: ''));
+      expect(
+        record(status: ZoneStatus.notDone, reason: '공사 중').withNote('잠김'),
+        record(note: '잠김', status: ZoneStatus.notDone, reason: '공사 중'),
+      );
+    });
+
+    test('withStatus replaces the status and keeps the reason, also when the status goes back to done', () {
+      final partly = record().withReason('전자레인지는 다음 방문에').withStatus(ZoneStatus.partlyDone);
+
+      expect(partly, record(status: ZoneStatus.partlyDone, reason: '전자레인지는 다음 방문에'));
+      expect(partly.withStatus(ZoneStatus.done), record(reason: '전자레인지는 다음 방문에'));
+      expect(partly.withStatus(ZoneStatus.done).withStatus(ZoneStatus.partlyDone), partly);
+    });
+
+    test('withReason replaces the reason as it is written and keeps the rest', () {
+      expect(
+        record(status: ZoneStatus.notDone).withReason(' 공사 중\n'),
+        record(status: ZoneStatus.notDone, reason: ' 공사 중\n'),
+      );
     });
   });
 }
