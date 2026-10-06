@@ -17,6 +17,7 @@ Until then, keep pricing, validation criteria, sales channels, and unit economic
 ### Current state
 
 The operator directed implementation to start on 2026-10-01, and M1 and M3 are both milestones in progress (operator, 2026-10-05).
+The operator started M2 work on 2026-10-06 with the report layout of #54 and the zone status of #60, which follows `docs/plans/2026-10-06-zone-status.md`.
 M1 waits for the first test distribution (#40), and M3 follows `docs/plans/2026-10-05-m3-subscriptions.md`.
 The data layer of the M1 build exists: the domain model, the repository interfaces and use cases, and the SQLite repositories.
 The client list, the client detail, the visit capture, the company profile, and the plans screens use it, and the client list is the home screen.
@@ -66,7 +67,7 @@ The operator granted it on 2026-10-02, after the deploy. A `firebase deploy --on
 
 ### Milestones
 
-Keep the work inside the milestones in progress, M1 and M3.
+Keep the work inside the milestones in progress, M1, M2, and M3.
 
 | Milestone | Scope                                                                                                                                        |
 | --------- | -------------------------------------------------------------------------------------------------------------------------------------------- |
