@@ -4,6 +4,9 @@
 final class ReportLabels {
   const new({
     required this.title,
+    required this.clientHeading,
+    required this.visitDateHeading,
+    required this.zoneCountHeading,
     required this.visitDate,
     required this.beforePhoto,
     required this.afterPhoto,
@@ -14,6 +17,15 @@ final class ReportLabels {
 
   /// The heading of the report, which also starts the file name.
   final String title;
+
+  /// The text in front of the client name in the table under the heading.
+  final String clientHeading;
+
+  /// The text in front of the visit date in the table under the heading.
+  final String visitDateHeading;
+
+  /// The text in front of the number of zones in the table under the heading.
+  final String zoneCountHeading;
 
   /// The date of the visit, written as the language of the app writes a date.
   final String visitDate;

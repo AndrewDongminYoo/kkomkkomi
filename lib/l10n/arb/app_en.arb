@@ -428,6 +428,18 @@
     "@reportDocumentTitle": {
         "description": "Heading of the report in the preview and in the PDF, and the first part of the PDF file name"
     },
+    "reportClientHeading": "Client",
+    "@reportClientHeading": {
+        "description": "Text in front of the client name in the table under the heading of the PDF report"
+    },
+    "reportVisitDateHeading": "Visit date",
+    "@reportVisitDateHeading": {
+        "description": "Text in front of the visit date in the table under the heading of the PDF report"
+    },
+    "reportZoneCountHeading": "Zones",
+    "@reportZoneCountHeading": {
+        "description": "Text in front of the number of zones in the table under the heading of the PDF report"
+    },
     "reportBeforePhotoLabel": "Before",
     "@reportBeforePhotoLabel": {
         "description": "Label above the photo before cleaning of a zone, in the preview and in the PDF"

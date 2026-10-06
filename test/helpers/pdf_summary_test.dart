@@ -3,6 +3,7 @@ import 'dart:io';
 import 'dart:typed_data';
 
 import 'package:flutter_test/flutter_test.dart';
+import 'package:kkomkkomi/gen/assets.gen.dart';
 import 'package:pdf/pdf.dart';
 import 'package:pdf/widgets.dart' as pw;
 
@@ -11,7 +12,7 @@ import 'helpers.dart';
 void main() {
   /// A file of the `pdf` package with [pages] pages in the A5 size, each with two texts and the fixture photo.
   Future<Uint8List> pdf({int pages = 2}) {
-    final font = pw.Font.ttf(ByteData.sublistView(File(FileReportFont.path).readAsBytesSync()));
+    final font = pw.Font.ttf(ByteData.sublistView(File(Assets.fonts.notoSansKRRegular).readAsBytesSync()));
     final document = pw.Document(theme: pw.ThemeData.withFont(base: font));
     for (var page = 1; page <= pages; page++) {
       document.addPage(
@@ -62,7 +63,7 @@ void main() {
     });
 
     test('reads where the drawing of each text starts', () async {
-      final font = pw.Font.ttf(ByteData.sublistView(File(FileReportFont.path).readAsBytesSync()));
+      final font = pw.Font.ttf(ByteData.sublistView(File(Assets.fonts.notoSansKRRegular).readAsBytesSync()));
       final document = pw.Document(theme: pw.ThemeData.withFont(base: font))
         ..addPage(
           pw.Page(

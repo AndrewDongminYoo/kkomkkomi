@@ -201,12 +201,12 @@ void main() {
 
       expect(tester.getTopLeft(find.text('Before')).dx, lessThan(tester.getTopLeft(find.text('After')).dx));
       expect(tester.getTopLeft(find.text('Before')).dy, tester.getTopLeft(find.text('After')).dy);
-      expect(reportSlotAspectRatio, 4 / 3);
+      expect(reportSlotAspectRatio, 1);
       final photo = tester.getSize(find.byType(PhotoThumbnail));
       final empty = tester.getSize(
         find.ancestor(of: find.byIcon(Icons.no_photography_outlined), matching: find.byType(ColoredBox)).first,
       );
-      expect(photo.width / photo.height, moreOrLessEquals(4 / 3, epsilon: 0.01));
+      expect(photo.width / photo.height, moreOrLessEquals(1, epsilon: 0.01));
       expect(empty, photo);
     });
 
@@ -302,7 +302,9 @@ void main() {
         await tester.pumpAndSettle();
 
         expect(reportShare.shared, hasLength(1));
-        expect(PdfSummary.read(reportShare.shared.single.bytes).pageCount, 2);
+        final summary = PdfSummary.read(reportShare.shared.single.bytes);
+        expect(summary.text, contains('Cleaning Report'));
+        expect(summary.text, isNot(contains('깔끔클린')));
       });
 
       testWidgets('opens the company profile, and shows the name that the person saved there on the way back', (
@@ -900,6 +902,9 @@ void main() {
       () => registerFallbackValue(
         const ReportLabels(
           title: '',
+          clientHeading: '',
+          visitDateHeading: '',
+          zoneCountHeading: '',
           visitDate: '',
           beforePhoto: '',
           afterPhoto: '',

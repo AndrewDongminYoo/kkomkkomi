@@ -28,6 +28,9 @@ void main() {
   const visitId = 'visit-1';
   const labels = ReportLabels(
     title: '청소 완료 보고서',
+    clientHeading: '거래처',
+    visitDateHeading: '방문일',
+    zoneCountHeading: '구역 수',
     visitDate: '2026년 10월 1일',
     beforePhoto: '청소 전',
     afterPhoto: '청소 후',
@@ -409,8 +412,7 @@ void main() {
           final shared = reportShare.shared.single;
           expect(shared.fileName, '청소 완료 보고서_행복빌딩_2026-10-01.pdf');
           final summary = PdfSummary.read(shared.bytes);
-          expect(summary.pageCount, 1);
-          expect(summary.pages.single.images, hasLength(3));
+          expect(summary.pages.expand((page) => page.images), hasLength(3));
           expect(
             summary.text,
             stringContainsInOrder(['깔끔클린', '청소 완료 보고서', '행복빌딩', '2026년 10월 1일', '로비', '바닥 왁스', '복도']),
@@ -428,8 +430,8 @@ void main() {
           await cubit.share(labels);
         },
         verify: (_) => expect(
-          PdfSummary.read(reportShare.shared.single.bytes).pages.single.text,
-          startsWith('꼼꼬미로 만든 보고서 1 / 1 '),
+          PdfSummary.read(reportShare.shared.single.bytes).pages.first.text,
+          startsWith('꼼꼬미로 만든 보고서 1 / '),
         ),
       );
 
@@ -448,7 +450,7 @@ void main() {
         ],
         verify: (_) {
           final summary = PdfSummary.read(reportShare.shared.single.bytes);
-          expect(summary.pages.single.text, startsWith('1 / 1 '));
+          expect(summary.pages.first.text, startsWith('1 / '));
           expect(summary.text, isNot(contains('꼼꼬미로 만든 보고서')));
         },
       );

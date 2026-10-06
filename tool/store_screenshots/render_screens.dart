@@ -12,6 +12,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:kkomkkomi/application/application.dart';
 import 'package:kkomkkomi/domain/domain.dart';
+import 'package:kkomkkomi/gen/assets.gen.dart';
 import 'package:kkomkkomi/presentation/presentation.dart';
 import 'package:material_ui/material_ui.dart';
 import 'package:path/path.dart' as p;
@@ -54,7 +55,7 @@ class _FixturePhotoStore extends FakePhotoStore {
 
 void main() {
   setUpAll(() async {
-    final notoSans = rootBundle.load('assets/fonts/NotoSansKR-Regular.ttf');
+    final notoSans = rootBundle.load(Assets.fonts.notoSansKRRegular);
     for (final family in _textFamilies) {
       await (FontLoader(family)..addFont(notoSans)).load();
     }

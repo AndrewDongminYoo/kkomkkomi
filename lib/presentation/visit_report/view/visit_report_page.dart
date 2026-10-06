@@ -19,6 +19,9 @@ import 'package:material_ui/material_ui.dart';
 /// The texts of the report of a visit on [visitDate], in the language of [l10n].
 ReportLabels reportLabelsOf(AppLocalizations l10n, VisitDate visitDate) => ReportLabels(
   title: l10n.reportDocumentTitle,
+  clientHeading: l10n.reportClientHeading,
+  visitDateHeading: l10n.reportVisitDateHeading,
+  zoneCountHeading: l10n.reportZoneCountHeading,
   visitDate: l10n.visitDateLabel(DateTime(visitDate.year, visitDate.month, visitDate.day)),
   beforePhoto: l10n.reportBeforePhotoLabel,
   afterPhoto: l10n.reportAfterPhotoLabel,

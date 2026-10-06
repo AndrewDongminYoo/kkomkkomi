@@ -94,6 +94,7 @@ class VisitReportCubit extends Cubit<VisitReportState> {
         document,
         labels: labels,
         font: await _reportFont.load(),
+        boldFont: await _reportFont.loadBold(),
         photos: photos,
         showsFooterText: state.showsFooterText,
       );

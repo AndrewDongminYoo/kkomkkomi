@@ -4,6 +4,7 @@ import 'dart:typed_data';
 
 import 'package:kkomkkomi/application/application.dart';
 import 'package:kkomkkomi/domain/domain.dart';
+import 'package:kkomkkomi/gen/assets.gen.dart';
 
 /// Makes the identifiers `id-1`, `id-2`, and so on.
 class SequenceIdGenerator implements IdGenerator {
@@ -536,16 +537,17 @@ bool holdsText(List<int> bytes, String text) {
 /// Whether [bytes] hold any of [metadataTexts].
 bool holdsMetadataText(List<int> bytes) => metadataTexts.any((text) => holdsText(bytes, text));
 
-/// Gives the font file of the app from the source tree, without the asset bundle.
+/// Gives the font files of the app from the source tree, without the asset bundle.
 ///
 /// The read is synchronous, so that it also completes inside the fake time of a widget test.
 class FileReportFont implements ReportFont {
   const new();
 
-  static const path = 'assets/fonts/NotoSansKR-Regular.ttf';
+  @override
+  Future<ByteData> load() async => ByteData.sublistView(File(Assets.fonts.notoSansKRRegular).readAsBytesSync());
 
   @override
-  Future<ByteData> load() async => ByteData.sublistView(File(path).readAsBytesSync());
+  Future<ByteData> loadBold() async => ByteData.sublistView(File(Assets.fonts.notoSansKRBold).readAsBytesSync());
 }
 
 /// A font source that fails, for a test of a share without a font.
@@ -554,6 +556,9 @@ class FailingReportFont implements ReportFont {
 
   @override
   Future<ByteData> load() async => throw const FileSystemException('The font did not load');
+
+  @override
+  Future<ByteData> loadBold() async => throw const FileSystemException('The font did not load');
 }
 
 /// A share sheet that opens nothing. It remembers the files that it was given.
