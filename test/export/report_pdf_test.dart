@@ -5,6 +5,7 @@ import 'dart:typed_data';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:kkomkkomi/domain/domain.dart';
 import 'package:kkomkkomi/export/export.dart';
+import 'package:kkomkkomi/gen/assets.gen.dart';
 import 'package:pdf/pdf.dart';
 
 import '../helpers/helpers.dart';
@@ -12,6 +13,9 @@ import '../helpers/helpers.dart';
 void main() {
   const labels = ReportLabels(
     title: '청소 완료 보고서',
+    clientHeading: '거래처',
+    visitDateHeading: '방문일',
+    zoneCountHeading: '구역 수',
     visitDate: '2026년 10월 1일',
     beforePhoto: '청소 전',
     afterPhoto: '청소 후',
@@ -20,7 +24,8 @@ void main() {
     footer: '꼼꼬미로 만든 보고서',
   );
 
-  final font = ByteData.sublistView(File(FileReportFont.path).readAsBytesSync());
+  final font = ByteData.sublistView(File(Assets.fonts.notoSansKRRegular).readAsBytesSync());
+  final boldFont = ByteData.sublistView(File(Assets.fonts.notoSansKRBold).readAsBytesSync());
 
   /// A photo that is wider than it is high, and a photo that is higher than it is wide.
   const wide = (width: 8, height: 6);
@@ -44,6 +49,7 @@ void main() {
       document,
       labels: labels,
       font: font,
+      boldFont: boldFont,
       photos:
           photos ?? {for (final photo in document.photos) photo: photo.path.contains('/tall') ? tallBytes : wideBytes},
       showsFooterText: showsFooterText,
@@ -70,7 +76,7 @@ void main() {
   int countOf(String part, String text) => part.allMatches(text).length;
 
   group('renderReportPdf', () {
-    test('renders a full visit as one A4 page that parses, with the names, the date, and each zone in order', () async {
+    test('renders a full visit as A4 pages that parse, with the header table and each zone in order', () async {
       final summary = await render(
         document([
           ReportZone(name: '로비', beforePhoto: photo('wide-1'), afterPhoto: photo('tall-1'), note: '바닥 왁스'),
@@ -78,16 +84,21 @@ void main() {
         ]),
       );
 
-      expect(summary.pageCount, greaterThanOrEqualTo(1));
-      expect(summary.pageCount, 1);
-      final page = summary.pages.single;
-      expect(page.width, closeTo(PdfPageFormat.a4.width, 0.01));
-      expect(page.height, closeTo(PdfPageFormat.a4.height, 0.01));
-      expectInOrder(page.text, [
+      for (final page in summary.pages) {
+        expect(page.width, closeTo(PdfPageFormat.a4.width, 0.01));
+        expect(page.height, closeTo(PdfPageFormat.a4.height, 0.01));
+      }
+      expectInOrder(summary.pages.first.text, [
         '깔끔클린',
         '청소 완료 보고서',
+        '거래처',
         '행복빌딩',
+        '방문일',
         '2026년 10월 1일',
+        '구역 수',
+        '2',
+      ]);
+      expectInOrder(summary.text, [
         '로비',
         '청소 전',
         '청소 후',
@@ -100,8 +111,40 @@ void main() {
         '세면대 물때 제거',
       ]);
       // The before photo of each zone is drawn before its after photo, which is the slot on its right.
-      expect(page.images, [wide, tall, tall, wide]);
-      expect(countOf('사진 없음', page.text), 0);
+      expect(summary.pages.expand((page) => page.images), [wide, tall, tall, wide]);
+      expect(countOf('사진 없음', summary.text), 0);
+    });
+
+    test('numbers the zones from one, left of the name of each zone', () async {
+      final summary = await render(
+        document([
+          for (final name in ['로비', '화장실', '복도'])
+            ReportZone(name: name, beforePhoto: null, afterPhoto: null, note: '메모 있음'),
+        ]),
+      );
+
+      final texts = summary.pages.expand((page) => page.texts).toList();
+      for (final (index, name) in ['로비', '화장실', '복도'].indexed) {
+        final nameAt = texts.indexWhere((text) => text.text == name);
+        expect(nameAt, isPositive, reason: '$name is missing');
+        expect(texts[nameAt - 1].text, '${index + 1}', reason: 'the number of $name');
+        expect(texts[nameAt - 1].x, lessThan(texts[nameAt].x));
+      }
+    });
+
+    test('repeats the client name and the visit date at the head of every page after the first', () async {
+      final longNote = List.generate(400, (line) => '$line번째 줄: 바닥을 닦고 유리를 닦았어요.').join('\n');
+
+      final summary = await render(
+        document([ReportZone(name: '로비', beforePhoto: photo('a'), afterPhoto: photo('b'), note: longNote)]),
+      );
+
+      expect(summary.pageCount, greaterThan(5));
+      expect(countOf('행복빌딩', summary.pages.first.text), 1);
+      expect(countOf('청소 완료 보고서', summary.text), 1);
+      for (final page in summary.pages.skip(1)) {
+        expectInOrder(page.text, ['행복빌딩', '2026년 10월 1일']);
+      }
     });
 
     test('prints the footer and the page number on every page', () async {
@@ -113,7 +156,7 @@ void main() {
 
       expect(summary.pageCount, greaterThan(5));
       for (final (index, page) in summary.pages.indexed) {
-        expect(page.text, startsWith('꼼꼬미로 만든 보고서 ${index + 1} / ${summary.pageCount}'));
+        expect(page.text, contains('꼼꼬미로 만든 보고서 ${index + 1} / ${summary.pageCount}'));
         expect(page.width, closeTo(PdfPageFormat.a4.width, 0.01));
       }
     });
@@ -128,7 +171,7 @@ void main() {
 
       expect(summary.pageCount, greaterThan(5));
       for (final (index, page) in summary.pages.indexed) {
-        expect(page.text, startsWith('${index + 1} / ${summary.pageCount} '));
+        expect(page.text, contains('${index + 1} / ${summary.pageCount} '));
       }
       expect(summary.text, isNot(contains('꼼꼬미로 만든 보고서')));
     });
@@ -206,25 +249,39 @@ void main() {
       final summary = await render(document([], companyName: null));
 
       expect(summary.pageCount, 1);
-      expect(summary.pages.single.text, '꼼꼬미로 만든 보고서 1 / 1 청소 완료 보고서 행복빌딩 2026년 10월 1일');
+      expect(summary.pages.single.text, '꼼꼬미로 만든 보고서 1 / 1 청소 완료 보고서 거래처 행복빌딩 방문일 2026년 10월 1일 구역 수 0');
       expect(summary.pages.single.images, isEmpty);
     });
 
     test('keeps the name of a zone on the page of its photos', () async {
-      // The first page has room for the header, two zones, and the name of the third zone, but not for its photos.
+      const names = ['첫째', '둘째', '셋째', '넷째', '다섯째', '여섯째', '일곱째'];
+
       final summary = await render(
         document([
-          for (final name in ['첫째', '둘째', '셋째'])
-            ReportZone(name: name, beforePhoto: photo('a'), afterPhoto: photo('b'), note: ''),
+          for (final name in names) ReportZone(name: name, beforePhoto: photo('a'), afterPhoto: photo('b'), note: ''),
         ]),
       );
 
-      expect(summary.pageCount, 2);
-      expectInOrder(summary.pages[0].text, ['첫째', '둘째']);
-      expect(summary.pages[0].text, isNot(contains('셋째')));
-      expect(summary.pages[0].images, hasLength(4));
-      expectInOrder(summary.pages[1].text, ['셋째', '청소 전', '청소 후']);
-      expect(summary.pages[1].images, hasLength(2));
+      // Some page breaks between two zones, so a name that went to the foot of a page would show there.
+      expect(summary.pageCount, greaterThan(1));
+      for (final page in summary.pages) {
+        final namesOnPage = page.texts.where((text) => names.contains(text.text)).length;
+        expect(page.images, hasLength(2 * namesOnPage));
+      }
+      expect(summary.pages.expand((page) => page.texts).where((text) => names.contains(text.text)), hasLength(7));
+    });
+
+    test('lays out two zones without a note on each page, the first page with the heading included', () async {
+      final summary = await render(
+        document([
+          for (var index = 0; index < 7; index++)
+            ReportZone(name: '구역$index', beforePhoto: photo('a'), afterPhoto: photo('b'), note: ''),
+        ]),
+      );
+
+      // Seven zones fill three pages with two each, and the last page holds the zone that is left.
+      expect(summary.pageCount, 4);
+      expect([for (final page in summary.pages) page.images.length], [4, 4, 4, 2]);
     });
 
     test('renders names that are longer than a page holds, cut to a few lines', () async {

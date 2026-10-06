@@ -1,16 +1,17 @@
 import 'package:flutter/services.dart';
 import 'package:kkomkkomi/application/application.dart';
+import 'package:kkomkkomi/gen/assets.gen.dart';
 
-/// Reads the font of the report from the assets of the app.
+/// Reads the fonts of the report from the assets of the app, which `pubspec.yaml` lists with their license file.
 final class AssetReportFont implements ReportFont {
   /// The `bundle` argument replaces the asset bundle of the app in a test.
   const new({this._bundle});
 
-  /// The asset key of the font file, which `pubspec.yaml` lists with its license file.
-  static const assetKey = 'assets/fonts/NotoSansKR-Regular.ttf';
-
   final AssetBundle? _bundle;
 
   @override
-  Future<ByteData> load() => (_bundle ?? rootBundle).load(assetKey);
+  Future<ByteData> load() => (_bundle ?? rootBundle).load(Assets.fonts.notoSansKRRegular);
+
+  @override
+  Future<ByteData> loadBold() => (_bundle ?? rootBundle).load(Assets.fonts.notoSansKRBold);
 }

@@ -364,6 +364,18 @@
     "@reportDocumentTitle": {
         "description": "미리보기와 PDF에 나오는 보고서의 제목이자, PDF 파일 이름의 첫 부분"
     },
+    "reportClientHeading": "거래처",
+    "@reportClientHeading": {
+        "description": "PDF 보고서 제목 아래 표에서 거래처 이름 앞에 붙는 항목명"
+    },
+    "reportVisitDateHeading": "방문일",
+    "@reportVisitDateHeading": {
+        "description": "PDF 보고서 제목 아래 표에서 방문 날짜 앞에 붙는 항목명"
+    },
+    "reportZoneCountHeading": "구역 수",
+    "@reportZoneCountHeading": {
+        "description": "PDF 보고서 제목 아래 표에서 구역 개수 앞에 붙는 항목명"
+    },
     "reportBeforePhotoLabel": "청소 전",
     "@reportBeforePhotoLabel": {
         "description": "미리보기와 PDF에서 구역의 청소 전 사진 위에 나오는 라벨"
