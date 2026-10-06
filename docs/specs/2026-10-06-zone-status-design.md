@@ -65,7 +65,7 @@ Rejected options, for the record:
 
 ## Report document, PDF, and preview
 
-- `ReportZone` gets `status` and `reason`. `ReportZone.fromRecord` copies the status, and copies the reason without the space around it only for an exception.
+- `ReportZone` gets `status` and `reason`. `ReportZone.fromRecord` copies the status, and copies the reason only for an exception, in the form of the note: each line ends with a line feed alone, because the font has no glyph for a carriage return that pasted text can hold, and the reason has no space around it.
 - `ReportDocument` gets a summary: the number of zones, the number of done zones, and the exceptions in the order of the zones. The PDF, the preview, and the web report read it, so they count the same zones.
 - The header table keeps the client and the visit date. The row of the number of zones gives way to a summary block under the table:
   - one line, for example `5곳 중 4곳 완료`;
@@ -74,7 +74,8 @@ Rejected options, for the record:
 - An empty slot of a done zone says `촬영하지 않음` in place of `사진 없음`. An empty slot of a zone that is not done says `못 함`. An empty slot of a partly done zone says `촬영하지 않음`.
 - The warning of the visit report screen about zones without photos (`reportMissingPhotosTitle`) leaves out a zone that is not done, because its photos are missing on purpose. It keeps a partly done zone.
 - The text of a status never depends on color alone. A badge has a text and an edge, so that a black-and-white print keeps it.
-- The summary block makes the first page taller. With an exception, the first page can hold one zone and not two. The implementation checks it with sample renders, as #63 did.
+- The number of exceptions and the length of a reason have no limit, and the header of the PDF is one `pw.Column` that cannot go on to the next page. So the PDF puts the line of the count in the header, and each exception line after the header as a direct child of the page that spans as a note does (`pw.TextOverflow.span`). A long list or a long reason then goes on to the next page, and the share does not fail. A test renders more exceptions and a longer reason than one page holds, and reads every line in the PDF.
+- The summary makes the first page taller. With an exception, the first page can hold one zone and not two. The implementation checks it with sample renders, as #63 did.
 
 ## Web report and publishing
 
@@ -101,7 +102,7 @@ Rejected options, for the record:
 - Domain: the default, `withStatus`, `withReason`, `hasContent` for each status, and equality.
 - Persistence: the round trip of both columns, the upgrade from version 4 with records that read as done, and an unknown stored status that reads as not done.
 - Capture: the Cubit actions, the save path and its failure, the control, the reason field, and the narrow screen with the largest text.
-- Report: `ReportZone.fromRecord`, the summary of `ReportDocument`, the PDF text (summary lines, badge text, empty slot texts), the preview, and sample renders.
+- Report: `ReportZone.fromRecord` with a reason that holds `\r\n` and `\r`, the summary of `ReportDocument`, the PDF text (summary lines, badge text, empty slot texts), a summary longer than a page, the preview, and sample renders.
 - Publishing: the publisher map for each status, the web report tests in Node, the rules test, and `test/web/privacy.test.mjs` for both pages.
 
 ## Open items for the implementation
