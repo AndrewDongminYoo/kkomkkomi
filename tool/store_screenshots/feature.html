@@ -87,11 +87,12 @@
         border: 2px solid var(--paper-edge);
         aspect-ratio: 4 / 3;
       }
-      .shot img {
+      /* The room comes from photos.html itself, in the 4:3 of the card, because the fixture JPEGs are portrait. */
+      .shot iframe {
         display: block;
         width: 100%;
         height: 100%;
-        object-fit: cover;
+        border: 0;
       }
       .lbl {
         position: absolute;
@@ -132,11 +133,17 @@
     </div>
     <div class="sheet">
       <div class="shot">
-        <img src="photos/entrance-before.jpg" alt="" />
+        <iframe
+          src="photos.html?scene=entrance&amp;state=before"
+          title=""
+          tabindex="-1"></iframe>
         <span class="lbl" id="before"></span>
       </div>
       <div class="shot">
-        <img src="photos/entrance-after.jpg" alt="" />
+        <iframe
+          src="photos.html?scene=entrance&amp;state=after"
+          title=""
+          tabindex="-1"></iframe>
         <span class="lbl after" id="after"></span>
       </div>
     </div>

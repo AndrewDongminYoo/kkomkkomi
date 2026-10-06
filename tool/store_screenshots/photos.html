@@ -5,7 +5,9 @@
     <style>
       /*
        * The source of the fixture photos under photos/: one illustrated room per zone, before and after cleaning.
-       * render.sh opens it as photos.html?scene=<scene>&state=<before|after> at 1200x900 and converts the image to JPEG.
+       * render.sh opens it as photos.html?scene=<scene>&state=<before|after> at 900x1200 and converts the image to JPEG.
+       * The photos are portrait, as a phone camera takes them by default, so the slice of the SVG crops the sides of
+       * the 400x300 room and keeps its middle.
        * The rooms hold no person, no screen, and no document. The colors are the illustration tokens of web/index.html.
        */
       html,

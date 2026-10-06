@@ -397,17 +397,32 @@ class _PreviewSlot extends StatelessWidget {
             aspectRatio: reportSlotAspectRatio,
             child: ClipRRect(
               borderRadius: BorderRadius.circular(8),
-              child: ColoredBox(
-                color: theme.colorScheme.surfaceContainerHighest,
-                child: photo == null
-                    // The PDF prints the text of the label here. An icon keeps its size at a large text size.
-                    ? Center(child: Icon(Icons.no_photography_outlined, semanticLabel: labels.noPhoto))
-                    // The whole photo shows, as in the PDF, so that the person sees every part that the share sends.
-                    : Semantics(
-                        image: true,
-                        child: PhotoThumbnail(path: pathOf(photo), fit: BoxFit.contain),
+              child: photo == null
+                  ? ColoredBox(
+                      color: theme.colorScheme.surfaceContainerHighest,
+                      // The PDF prints the text of the label here. An icon keeps its size at a large text size.
+                      child: Center(child: Icon(Icons.no_photography_outlined, semanticLabel: labels.noPhoto)),
+                    )
+                  // A photo sits on white inside an edge, as in the PDF, so that the space beside it never looks like
+                  // a slot without a photo.
+                  : ColoredBox(
+                      color: theme.colorScheme.surfaceContainerLowest,
+                      // The edge is painted over the photo, which reaches two sides of the square slot and would
+                      // hide the edge there.
+                      child: DecoratedBox(
+                        position: DecorationPosition.foreground,
+                        decoration: BoxDecoration(
+                          border: Border.all(color: theme.colorScheme.outlineVariant),
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        // The whole photo shows, as in the PDF, so that the person sees every part that the share
+                        // sends.
+                        child: Semantics(
+                          image: true,
+                          child: PhotoThumbnail(path: pathOf(photo), fit: BoxFit.contain),
+                        ),
                       ),
-              ),
+                    ),
             ),
           ),
         ],

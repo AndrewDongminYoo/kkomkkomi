@@ -45,7 +45,7 @@ opaque() {
 echo "Fixture photos"
 for scene in entrance pantry restroom; do
   for state in before after; do
-    shoot "photos.html?scene=${scene}&state=${state}" "${work}/photo.png" 1200 900
+    shoot "photos.html?scene=${scene}&state=${state}" "${work}/photo.png" 900 1200
     magick "${work}/photo.png" -strip -quality 85 "${here}/photos/${scene}-${state}.jpg"
     rm "${work}/photo.png"
   done
