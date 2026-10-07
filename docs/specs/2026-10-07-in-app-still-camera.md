@@ -1,6 +1,6 @@
 # In-app still camera for capture time (#61)
 
-Date: 2026-10-07. Status: draft for written review; no camera code is implemented by this document.
+Date: 2026-10-07. Status: written camera contract approved by the operator in the all-issues session; implementation continuation authorized. Approval covers the camera-only worker flow and shutter-request device-clock observation below. Device acceptance remains separate.
 
 ## Purpose and existing contracts
 
@@ -12,9 +12,9 @@ The [M1 design](2026-10-01-m1-local-first-design.md), especially Units, Photos a
 
 - Base this work on the final metadata foundation in PR #78, `103d7f979dace3a5e069b880a70651448da91b50`, which includes the phone and gallery work of PRs #76 and #77. PR #74 is independent billing work. All four PRs stay separate; this document authorizes no merge.
 - Keep SQLite version 8 and the existing `PhotoCapture`, `InAppPhotoCapture`, `ObservedCameraPhoto`, `Clock`, `PhotoStore` and report contracts. No timestamp backfill or new recovery table is needed.
-- M2 and the time semantics have existing operator approval. Exact preview controls, the observation event and interrupted-session behavior below are this draft's proposed implementation contract; no prior written camera implementation spec was found.
+- M2 and the time semantics have existing operator approval. The operator also approved this written camera contract, including the preview controls, observation event and interrupted-session behavior, and requested implementation continuation.
 - `CLAUDE.md` specifies the document locations and release approvals, but does not itself require a new written-spec approval for each feature. The applied `superpowers:brainstorming` workflow requires written-spec review before implementation of a new subsystem. Its gate is separate from the existing product decisions.
-- The current delegation requests a reviewable spec only. A reviewed spec permits the implementation-plan handoff; the implementation plan and its execution choice follow before code under that workflow. Hosting, app distribution and other live changes retain their separate approvals.
+- The follow-up delegation authorizes a practical execution plan and native implementation by the single coordinator without repeating the same contract confirmation. Hosting, app distribution and other live changes retain their separate approvals.
 
 ## Recommended implementation
 
@@ -78,8 +78,8 @@ The visit writes a new photo reference, source and UTC time together only after 
 
 Controlled tests, CI builds and emulators do not satisfy the real-device gate. An implementation PR may be draft-ready before that gate passes; it must identify remaining device checks. #61 remains open until the producer is integrated and the relevant device/output acceptance is recorded. Existing #39 gallery device gaps remain explicit and cannot be declared satisfied by this spec. Code acceptance does not authorize a Hosting deploy, signed store upload or release.
 
-## Smallest next decision
+## Approved execution handoff
 
-Review and approve this written spec as one camera-only contract: rear-camera preview, one still per existing slot, immediate return/save without a second confirmation screen, device-clock observation at shutter-request dispatch, and the permission/interruption behavior above. The approved storage, source and output choices need no repeat decision. This is not approval for sensor-exposure evidence or wider M2 features.
+The operator approved this camera-only contract: rear-camera preview, one still per existing slot, immediate return/save without a second confirmation screen, device-clock observation at shutter-request dispatch, and the permission/interruption behavior above. The approved storage, source and output choices need no repeat decision. This is not approval for sensor-exposure evidence or wider M2 features.
 
-After written-spec approval, write the small implementation plan under `docs/plans/` and have its execution selected before coding. Preserve the four existing PRs and create the camera implementation in its own worktree/PR linked to #61; rebase on the accepted foundation and verify the final head. No implementation or live action follows merely from preparing this draft.
+Follow `docs/plans/2026-10-07-in-app-still-camera.md` in native execution. Preserve the four existing PRs and create the camera implementation in its own worktree/PR linked to #61; rebase on the accepted foundation and verify the final head. Real-device evidence and live release actions remain separate gates.
