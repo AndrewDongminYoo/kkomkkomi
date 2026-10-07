@@ -8,6 +8,14 @@ final class StillCameraState {
   final ObservedCameraPhoto? photo;
   final PhotoCaptureException? failure;
 
+  /// Null or omitted arguments keep their existing values, as with the other Cubit states.
+  StillCameraState copyWith({StillCameraStatus? status, ObservedCameraPhoto? photo, PhotoCaptureException? failure}) =>
+      StillCameraState(
+        status: status ?? this.status,
+        photo: photo ?? this.photo,
+        failure: failure ?? this.failure,
+      );
+
   @override
   bool operator ==(Object other) =>
       other is StillCameraState && other.status == status && other.photo == photo && other.failure == failure;
