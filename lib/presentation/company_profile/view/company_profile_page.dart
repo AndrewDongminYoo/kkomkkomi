@@ -77,6 +77,7 @@ class CompanyProfileView extends StatelessWidget {
               ),
               CompanyProfileStatus.ready => _CompanyProfileForm(
                 initialName: state.name,
+                initialPhone: state.phone,
                 entry: state.entry,
                 deletion: state.deletion,
                 deletionFailure: state.deletionFailure,
@@ -93,6 +94,7 @@ class CompanyProfileView extends StatelessWidget {
 class _CompanyProfileForm extends StatefulWidget {
   const new({
     required this.initialName,
+    required this.initialPhone,
     required this.entry,
     required this.deletion,
     required this.deletionFailure,
@@ -101,6 +103,7 @@ class _CompanyProfileForm extends StatefulWidget {
 
   /// The name that the field holds when the form opens. A later value does not replace what the person typed.
   final String initialName;
+  final String initialPhone;
   final NameEntry entry;
   final DataDeletion deletion;
   final DeletionStep? deletionFailure;
@@ -112,10 +115,12 @@ class _CompanyProfileForm extends StatefulWidget {
 
 class _CompanyProfileFormState extends State<_CompanyProfileForm> {
   late final _controller = TextEditingController(text: widget.initialName);
+  late final _phoneController = TextEditingController(text: widget.initialPhone);
 
   @override
   void dispose() {
     _controller.dispose();
+    _phoneController.dispose();
     super.dispose();
   }
 
@@ -125,7 +130,9 @@ class _CompanyProfileFormState extends State<_CompanyProfileForm> {
     // The keyboard can still submit while the screen takes no touch, so a deletion also stops the save here.
     final isSaving = widget.entry == NameEntry.saving || widget.deletion != DataDeletion.idle;
     void save() {
-      if (!isSaving) unawaited(context.read<CompanyProfileCubit>().save(_controller.text));
+      if (!isSaving) {
+        unawaited(context.read<CompanyProfileCubit>().save(_controller.text, phone: _phoneController.text));
+      }
     }
 
     return SingleChildScrollView(
@@ -139,6 +146,33 @@ class _CompanyProfileFormState extends State<_CompanyProfileForm> {
             helper: l10n.companyNameHelper,
             entry: widget.entry,
             onSubmitted: save,
+          ),
+          const SizedBox(height: 16),
+          MergeSemantics(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                KeepAllText(l10n.companyPhoneFieldLabel, style: Theme.of(context).textTheme.labelLarge),
+                TextField(
+                  key: const Key('company-phone'),
+                  controller: _phoneController,
+                  readOnly: isSaving,
+                  keyboardType: TextInputType.phone,
+                  textInputAction: TextInputAction.done,
+                  decoration: InputDecoration(
+                    helper: KeepAllText(
+                      l10n.companyPhoneHelper,
+                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                        color: Theme.of(context).colorScheme.onSurfaceVariant,
+                      ),
+                      maxLines: 10,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ),
+                  onSubmitted: (_) => save(),
+                ),
+              ],
+            ),
           ),
           const SizedBox(height: 16),
           FilledButton(onPressed: isSaving ? null : save, child: KeepAllText(l10n.nameSaveButton)),

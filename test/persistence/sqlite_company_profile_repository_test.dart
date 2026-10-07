@@ -17,6 +17,14 @@ void main() {
   tearDown(() => database.close());
 
   group('SqliteCompanyProfileRepository', () {
+    test('round-trips and clears the optional phone without another profile row', () async {
+      final profile = CompanyProfile(name: '반짝 클린', phone: '02-1234-5678');
+      await repository.save(profile);
+      expect(await repository.load(), profile);
+      await repository.save(CompanyProfile(name: profile.name));
+      expect((await repository.load())!.phone, isEmpty);
+      expect(await database.query('company_profile'), hasLength(1));
+    });
     test('loads null before a profile is saved', () async {
       expect(await repository.load(), isNull);
     });

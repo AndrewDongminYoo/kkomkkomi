@@ -38,9 +38,26 @@ void main() {
     await tester.pumpAndSettle();
   }
 
-  TextField field(WidgetTester tester) => tester.widget<TextField>(find.byType(TextField));
+  TextField field(WidgetTester tester) => tester.widget<TextField>(find.byType(TextField).first);
 
   group('CompanyProfilePage', () {
+    testWidgets('loads, edits and clears the optional business phone with the name', (tester) async {
+      await pumpPage(
+        tester,
+        saved: CompanyProfile(name: '반짝 클린', phone: '02-1234-5678'),
+      );
+      final phone = find.byKey(const Key('company-phone'));
+      expect(tester.widget<TextField>(phone).controller!.text, '02-1234-5678');
+      expect(find.text('Shown in PDFs and the preview. Not included in public web reports.'), findsOneWidget);
+      await tester.enterText(phone, ' 010-1234-5678 ');
+      await tester.tap(find.widgetWithText(FilledButton, 'Save'));
+      await tester.pumpAndSettle();
+      expect(companyProfile.profile, CompanyProfile(name: '반짝 클린', phone: '010-1234-5678'));
+      await tester.enterText(phone, '');
+      await tester.testTextInput.receiveAction(TextInputAction.done);
+      await tester.pumpAndSettle();
+      expect(companyProfile.profile, CompanyProfile(name: '반짝 클린'));
+    });
     testWidgets('renders CompanyProfileView with an empty name field when no profile was saved', (tester) async {
       await pumpPage(tester);
 
@@ -60,12 +77,12 @@ void main() {
     testWidgets('saves the name from the button and says so', (tester) async {
       await pumpPage(tester);
 
-      await tester.enterText(find.byType(TextField), ' 반짝 클린 ');
+      await tester.enterText(find.byType(TextField).first, ' 반짝 클린 ');
       await tester.tap(find.widgetWithText(FilledButton, 'Save'));
       await tester.pump();
 
       expect(companyProfile.profile, CompanyProfile(name: '반짝 클린'));
-      expect(find.widgetWithText(SnackBar, 'Company name saved.'), findsOneWidget);
+      expect(find.widgetWithText(SnackBar, 'Company profile saved.'), findsOneWidget);
       expect(field(tester).decoration!.errorMessage, isNull);
       expect(field(tester).controller!.text, ' 반짝 클린 ');
     });
@@ -73,7 +90,7 @@ void main() {
     testWidgets('saves the name from the keyboard, and says so again after each save', (tester) async {
       await pumpPage(tester, saved: CompanyProfile(name: '반짝 클린'));
 
-      await tester.enterText(find.byType(TextField), '반짝 클린 2호점');
+      await tester.enterText(find.byType(TextField).first, '반짝 클린 2호점');
       await tester.testTextInput.receiveAction(TextInputAction.done);
       await tester.pumpAndSettle();
       expect(find.byType(SnackBar), findsOneWidget);
@@ -86,13 +103,13 @@ void main() {
       await tester.pump();
 
       expect(companyProfile.profile, CompanyProfile(name: '반짝 클린 2호점'));
-      expect(find.widgetWithText(SnackBar, 'Company name saved.'), findsOneWidget);
+      expect(find.widgetWithText(SnackBar, 'Company profile saved.'), findsOneWidget);
     });
 
     testWidgets('shows the validation message under the name field and keeps the saved name', (tester) async {
       await pumpPage(tester, saved: CompanyProfile(name: '반짝 클린'));
 
-      await tester.enterText(find.byType(TextField), '  ');
+      await tester.enterText(find.byType(TextField).first, '  ');
       await tester.tap(find.widgetWithText(FilledButton, 'Save'));
       await tester.pump();
 
@@ -105,7 +122,7 @@ void main() {
       await pumpPage(tester);
       companyProfile.failure = failure;
 
-      await tester.enterText(find.byType(TextField), '반짝 클린');
+      await tester.enterText(find.byType(TextField).first, '반짝 클린');
       await tester.tap(find.widgetWithText(FilledButton, 'Save'));
       await tester.pump();
 
@@ -139,7 +156,7 @@ void main() {
       await tester.pumpAndSettle();
       companyProfile.gate = Completer<void>();
 
-      await tester.enterText(find.byType(TextField), '반짝 클린');
+      await tester.enterText(find.byType(TextField).first, '반짝 클린');
       await tester.tap(find.widgetWithText(FilledButton, 'Save'));
       await tester.pump();
       await tester.binding.handlePopRoute();
@@ -188,10 +205,10 @@ void main() {
       await tester.pump();
       expect(field(tester).decoration!.errorMessage, '이름을 입력해 주세요.');
 
-      await tester.enterText(find.byType(TextField), '반짝 클린');
+      await tester.enterText(find.byType(TextField).first, '반짝 클린');
       await tester.tap(find.widgetWithText(FilledButton, '저장하기'));
       await tester.pump();
-      expect(find.widgetWithText(SnackBar, '회사 이름을 저장했어요.'), findsOneWidget);
+      expect(find.widgetWithText(SnackBar, '회사 정보를 저장했어요.'), findsOneWidget);
     });
 
     testWidgets('shows the load failure in Korean', (tester) async {
@@ -210,7 +227,7 @@ void main() {
           'Save',
           'Enter a name.',
           "Can't save right now. Try again.",
-          'Company name saved.',
+          'Company profile saved.',
         ),
         (
           const Locale('ko'),
@@ -219,7 +236,7 @@ void main() {
           '저장하기',
           '이름을 입력해 주세요.',
           '저장하지 못했어요. 다시 시도해 주세요.',
-          '회사 이름을 저장했어요.',
+          '회사 정보를 저장했어요.',
         ),
       ]) {
         testWidgets('fits the form and cuts none of its text in ${locale.languageCode}', (tester) async {
@@ -232,6 +249,7 @@ void main() {
 
           // The form is taller than the screen at this text size, so the button is brought into view first.
           Future<void> tapSave() async {
+            await tester.pumpAndSettle();
             await tester.ensureVisible(find.widgetWithText(FilledButton, save));
             await tester.pumpAndSettle();
             await tester.tap(find.widgetWithText(FilledButton, save));
@@ -242,7 +260,7 @@ void main() {
           tester.expectWholeText(emptyProblem);
 
           companyProfile.failure = failure;
-          await tester.enterText(find.byType(TextField), '반짝 클린');
+          await tester.enterText(find.byType(TextField).first, '반짝 클린');
           await tapSave();
           tester.expectWholeText(failedProblem);
 
@@ -452,10 +470,10 @@ void main() {
       await tester.tap(find.widgetWithText(TextButton, 'Cancel'));
       await tester.pumpAndSettle();
 
-      await tester.enterText(find.byType(TextField), '반짝 클린 2호점');
+      await tester.enterText(find.byType(TextField).first, '반짝 클린 2호점');
       await tester.tap(find.widgetWithText(FilledButton, 'Save'));
       await tester.pumpAndSettle();
-      expect(find.widgetWithText(SnackBar, 'Company name saved.'), findsOneWidget);
+      expect(find.widgetWithText(SnackBar, 'Company profile saved.'), findsOneWidget);
       // The message covers the bottom of the screen until its time on the screen is over.
       await tester.pump(const Duration(seconds: 5));
       await tester.pumpAndSettle();
@@ -721,7 +739,7 @@ void main() {
       );
 
       await tester.tap(find.widgetWithText(FilledButton, 'Save'), warnIfMissed: false);
-      await tester.enterText(find.byType(TextField), '다른 이름');
+      await tester.enterText(find.byType(TextField).first, '다른 이름');
       await tester.testTextInput.receiveAction(TextInputAction.done);
 
       expect(tester.widget<FilledButton>(find.byType(FilledButton)).onPressed, isNull);
@@ -743,7 +761,7 @@ void main() {
 
       // The screen takes no touch, and the keyboard that was open before the deletion can still submit.
       tester.testTextInput.register();
-      await tester.showKeyboard(find.byType(TextField));
+      await tester.showKeyboard(find.byType(TextField).first);
       await tester.testTextInput.receiveAction(TextInputAction.done);
 
       expect(tester.widget<FilledButton>(find.byType(FilledButton)).onPressed, isNull);
@@ -759,7 +777,7 @@ void main() {
         BlocProvider.value(value: cubit, child: const CompanyProfileView()),
       );
 
-      await tester.enterText(find.byType(TextField), '반짝 클린 2호');
+      await tester.enterText(find.byType(TextField).first, '반짝 클린 2호');
       states.add(ready.copyWith(name: '반짝 클린 2', entry: NameEntry.saved));
       await tester.pump();
 

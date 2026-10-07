@@ -14,7 +14,9 @@ final class SqliteCompanyProfileRepository implements CompanyProfileRepository {
   @override
   Future<CompanyProfile?> load() async {
     final rows = await _database.query('company_profile', where: 'id = ?', whereArgs: [_rowId]);
-    return rows.isEmpty ? null : CompanyProfile(name: rows.single['name']! as String);
+    return rows.isEmpty
+        ? null
+        : CompanyProfile(name: rows.single['name']! as String, phone: rows.single['phone']! as String);
   }
 
   @override
@@ -23,7 +25,7 @@ final class SqliteCompanyProfileRepository implements CompanyProfileRepository {
       transaction,
       'company_profile',
       key: {'id': _rowId},
-      values: {'name': profile.name},
+      values: {'name': profile.name, 'phone': profile.phone},
       where: 'id = ?',
       whereArgs: [_rowId],
     ),

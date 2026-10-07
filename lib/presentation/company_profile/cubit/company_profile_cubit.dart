@@ -37,7 +37,9 @@ class CompanyProfileCubit extends Cubit<CompanyProfileState> {
     try {
       final profile = await _companyProfile.load();
       if (isClosed) return;
-      emit(CompanyProfileState(status: CompanyProfileStatus.ready, name: profile?.name ?? ''));
+      emit(
+        CompanyProfileState(status: CompanyProfileStatus.ready, name: profile?.name ?? '', phone: profile?.phone ?? ''),
+      );
     } on Exception catch (error, stackTrace) {
       if (isClosed) return;
       addError(error, stackTrace);
@@ -50,11 +52,11 @@ class CompanyProfileCubit extends Cubit<CompanyProfileState> {
   /// [CompanyProfileState.entry] tells what became of [name]. A call while a name is on its way to storage, while a
   /// deletion of all data is on its way, or after it completed does nothing, so that no name is stored again after the
   /// erase.
-  Future<void> save(String name) async {
+  Future<void> save(String name, {String phone = ''}) async {
     if (state.entry == NameEntry.saving || state.deletion != DataDeletion.idle) return;
     final CompanyProfile profile;
     try {
-      profile = CompanyProfile(name: name);
+      profile = CompanyProfile(name: name, phone: phone);
     } on DomainException catch (exception) {
       emit(state.copyWith(entry: NameEntry.refusedBy(exception)));
       return;
@@ -63,7 +65,7 @@ class CompanyProfileCubit extends Cubit<CompanyProfileState> {
     try {
       await _companyProfile.save(profile);
       if (isClosed) return;
-      emit(state.copyWith(name: profile.name, entry: NameEntry.saved));
+      emit(state.copyWith(name: profile.name, phone: profile.phone, entry: NameEntry.saved));
     } on Exception catch (error, stackTrace) {
       if (isClosed) return;
       addError(error, stackTrace);

@@ -157,6 +157,15 @@ void main() {
   });
 
   group('ReportDocument', () {
+    test('copies the optional phone to the device report and includes it in document equality', () {
+      final withPhone = documentOf(
+        [],
+        companyProfile: CompanyProfile(name: '깔끔클린', phone: '02-1234-5678'),
+      );
+      expect(withPhone.companyPhone, '02-1234-5678');
+      expect(withPhone, isNot(documentOf([], companyProfile: CompanyProfile(name: '깔끔클린'))));
+      expect(documentOf([]).companyPhone, isEmpty);
+    });
     ReportDocument document({
       String? companyName = '깔끔클린',
       String clientName = '행복빌딩',

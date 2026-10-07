@@ -6,6 +6,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 ## [Unreleased]
 
+- An optional business phone in the company profile, report preview and PDF, kept out of public web reports.
+
 ## [1.1.0] - 2026-10-07
 
 The second test distribution: TestFlight and the Google Play internal testing track, build 3.

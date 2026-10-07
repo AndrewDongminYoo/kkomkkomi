@@ -114,6 +114,10 @@ pw.Widget _header(ReportDocument document, ReportLabels labels) => pw.Column(
       ),
       pw.SizedBox(height: 2),
     ],
+    if (document.companyPhone.isNotEmpty) ...[
+      pw.Text(document.companyPhone, style: const pw.TextStyle(fontSize: 10, color: _secondaryText), maxLines: 2),
+      pw.SizedBox(height: 2),
+    ],
     pw.Text(
       labels.title,
       style: const pw.TextStyle(fontSize: 22, color: _ink, fontWeight: pw.FontWeight.bold),

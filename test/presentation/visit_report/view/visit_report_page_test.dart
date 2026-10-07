@@ -73,6 +73,7 @@ void main() {
     WidgetTester tester, {
     Visit? visit,
     String? companyName = '깔끔클린',
+    String companyPhone = '',
     Locale? locale,
     Exception? loadFailure,
     bool keepScreen = false,
@@ -82,7 +83,7 @@ void main() {
     if (!keepScreen) useTallPhoneScreen(tester);
     visits = FakeVisitRepository(visits: [visit ?? current])..failure = loadFailure;
     companyProfile = FakeCompanyProfileRepository(
-      profile: companyName == null ? null : CompanyProfile(name: companyName),
+      profile: companyName == null ? null : CompanyProfile(name: companyName, phone: companyPhone),
     );
     photoStore = FakePhotoStore();
     reportShare = FakeReportShare();
@@ -131,6 +132,14 @@ void main() {
   );
 
   group('VisitReportPage', () {
+    testWidgets('shows the optional phone in the preview and PDF', (tester) async {
+      await pumpPage(tester, visit: complete, companyPhone: '02-1234-5678');
+      expect(find.text('02-1234-5678'), findsOneWidget);
+      await tester.tap(shareButton());
+      await tester.pumpAndSettle();
+      expect(PdfSummary.read(reportShare.shared.single.bytes).text, contains('02-1234-5678'));
+    });
+
     testWidgets('renders VisitReportView with a preview of the report: the names, the date, and each zone', (
       tester,
     ) async {
@@ -380,7 +389,7 @@ void main() {
         await tester.pumpAndSettle();
         expect(find.byType(CompanyProfilePage), findsOneWidget);
 
-        await tester.enterText(find.byType(TextField), '새로클린');
+        await tester.enterText(find.byType(TextField).first, '새로클린');
         await tester.tap(find.widgetWithText(FilledButton, 'Save'));
         await tester.pumpAndSettle();
         await tester.pageBack();

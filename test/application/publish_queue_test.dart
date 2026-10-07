@@ -248,7 +248,7 @@ void main() {
     );
     await repositories.visits.save(visit1);
     await repositories.visits.save(visit2);
-    await repositories.companyProfile.save(CompanyProfile(name: '꼼꼬미 청소'));
+    await repositories.companyProfile.save(CompanyProfile(name: '꼼꼬미 청소', phone: '02-1234-5678'));
     publisher = FakePublisher();
     photoStore = FakePhotoStore();
     identity = FakeIdentity(userId: 'owner-1');
