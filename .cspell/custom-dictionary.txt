@@ -48,6 +48,7 @@ IPTC
 jamo
 JFIF
 jvmargs
+keycap
 keytool
 leveldb
 lldbinit
@@ -91,8 +92,8 @@ winres
 Wmissing
 WNDCLASS
 Wnullable
-Woverlength
 worktree
+Woverlength
 xcfilelist
 xcprivacy
 xhdpi

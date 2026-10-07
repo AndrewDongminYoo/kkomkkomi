@@ -1,3 +1,4 @@
+# cspell:words Cehi, Hzre, Tczkc, magick
 """Makes the JPEG fixtures of the location tests (issue 20) in test/fixtures/.
 
 Usage: python3 tool/photo_fixtures/make.py

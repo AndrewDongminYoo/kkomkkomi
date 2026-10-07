@@ -35,8 +35,8 @@
   "allowCompoundWords": false,
   "enableGlobDot": true,
   "useGitignore": true,
-  "ignoreWords": ["meta-data", "plaintext"],
-  "ignorePaths": [".git", ".gitignore", ".metadata"],
+  "ignoreWords": ["meta-data", "plaintext", "white-space"],
+  "ignorePaths": [".git", ".gitignore", ".metadata", "web/google*.html"],
   "overrides": [
     {
       "filename": ["**/*.html", "cspell.json"],
