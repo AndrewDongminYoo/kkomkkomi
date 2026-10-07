@@ -1,7 +1,10 @@
+// 🎯 Dart imports:
 import 'dart:io';
 
+// 📦 Package imports:
 import 'package:flutter_test/flutter_test.dart';
 
+// 🌎 Project imports:
 import '../helpers/helpers.dart';
 
 /// The one directory under `lib/` that may import a Firebase package.

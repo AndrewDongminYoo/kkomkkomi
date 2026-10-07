@@ -1,3 +1,4 @@
+// 🎯 Dart imports:
 import 'dart:typed_data';
 
 /// Returns the JPEG file [jpeg] without the metadata that can hold the place where the photo was taken.

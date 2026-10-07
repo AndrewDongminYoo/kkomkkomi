@@ -2,6 +2,7 @@
 // field of the class is final.
 // ignore_for_file: avoid_equals_and_hash_code_on_mutable_classes
 
+// 🌎 Project imports:
 import 'package:kkomkkomi/domain/domain.dart';
 
 /// The capture that has the camera open: the visit, the zone, and the slot that its photo is for.

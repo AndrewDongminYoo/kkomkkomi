@@ -1,4 +1,7 @@
+// 📦 Package imports:
 import 'package:bloc/bloc.dart';
+
+// 🌎 Project imports:
 import 'package:kkomkkomi/application/application.dart';
 import 'package:kkomkkomi/domain/domain.dart';
 

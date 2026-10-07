@@ -1,4 +1,7 @@
+// 📦 Package imports:
 import 'package:bloc/bloc.dart';
+
+// 🌎 Project imports:
 import 'package:kkomkkomi/presentation/presentation.dart';
 
 /// A cubit whose state is a name entry, for a test that drives a name dialog.

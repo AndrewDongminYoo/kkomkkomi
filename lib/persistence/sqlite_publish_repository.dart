@@ -1,6 +1,9 @@
+// 📦 Package imports:
+import 'package:sqflite/sqflite.dart';
+
+// 🌎 Project imports:
 import 'package:kkomkkomi/application/application.dart';
 import 'package:kkomkkomi/persistence/upsert.dart';
-import 'package:sqflite/sqflite.dart';
 
 /// Stores the client pages, the publish jobs, and the uploaded photos in the `client_pages`, `publish_jobs`, and
 /// `published_photos` tables.

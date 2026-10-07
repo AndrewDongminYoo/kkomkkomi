@@ -1,7 +1,10 @@
+// 📦 Package imports:
 import 'package:flutter_test/flutter_test.dart';
+import 'package:material_ui/material_ui.dart';
+
+// 🌎 Project imports:
 import 'package:kkomkkomi/presentation/shared/name_dialog.dart';
 import 'package:kkomkkomi/presentation/shared/name_entry.dart';
-import 'package:material_ui/material_ui.dart';
 
 import '../../helpers/helpers.dart';
 

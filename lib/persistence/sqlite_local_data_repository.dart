@@ -1,5 +1,8 @@
-import 'package:kkomkkomi/application/application.dart';
+// 📦 Package imports:
 import 'package:sqflite/sqflite.dart';
+
+// 🌎 Project imports:
+import 'package:kkomkkomi/application/application.dart';
 
 /// Erases every table of the database of the app.
 final class SqliteLocalDataRepository implements LocalDataRepository {

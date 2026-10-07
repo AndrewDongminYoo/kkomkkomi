@@ -1,7 +1,12 @@
+// 🎯 Dart imports:
 import 'dart:async';
 import 'dart:math' as math;
 
+// 📦 Package imports:
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:material_ui/material_ui.dart';
+
+// 🌎 Project imports:
 import 'package:kkomkkomi/application/application.dart';
 import 'package:kkomkkomi/domain/domain.dart';
 import 'package:kkomkkomi/l10n/l10n.dart';
@@ -14,7 +19,6 @@ import 'package:kkomkkomi/presentation/shared/photo_thumbnail.dart';
 import 'package:kkomkkomi/presentation/shared/save_guard.dart';
 import 'package:kkomkkomi/presentation/visit_capture/cubit/visit_capture_cubit.dart';
 import 'package:kkomkkomi/presentation/visit_report/visit_report.dart';
-import 'package:material_ui/material_ui.dart';
 
 /// The width of a photo over its height, in a photo control and in a previous photo.
 const double _photoAspectRatio = 4 / 3;

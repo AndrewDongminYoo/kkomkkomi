@@ -1,13 +1,17 @@
+// 🎯 Dart imports:
 import 'dart:async';
 
+// 📦 Package imports:
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:material_ui/material_ui.dart';
+
+// 🌎 Project imports:
 import 'package:kkomkkomi/application/application.dart';
 import 'package:kkomkkomi/l10n/l10n.dart';
 import 'package:kkomkkomi/presentation/shared/keep_all_text.dart';
 import 'package:kkomkkomi/presentation/still_camera/camera_photo_files.dart';
 import 'package:kkomkkomi/presentation/still_camera/cubit/still_camera_cubit.dart';
 import 'package:kkomkkomi/presentation/still_camera/still_camera_driver.dart';
-import 'package:material_ui/material_ui.dart';
 
 class StillCameraPage extends StatelessWidget {
   const new({required this.driverFactory, required this.files, required this.clock, super.key});

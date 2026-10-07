@@ -1,7 +1,10 @@
+// 📦 Package imports:
+import 'package:sqflite/sqflite.dart';
+
+// 🌎 Project imports:
 import 'package:kkomkkomi/application/application.dart';
 import 'package:kkomkkomi/domain/domain.dart';
 import 'package:kkomkkomi/persistence/upsert.dart';
-import 'package:sqflite/sqflite.dart';
 
 /// Stores the visits and their zone records in the `visits` and `zone_records` tables.
 final class SqliteVisitRepository implements VisitRepository {

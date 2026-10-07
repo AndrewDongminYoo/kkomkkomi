@@ -2,6 +2,7 @@
 // here. Every field of each class is final.
 // ignore_for_file: avoid_equals_and_hash_code_on_mutable_classes
 
+// 🌎 Project imports:
 import 'package:kkomkkomi/domain/domain.dart';
 
 /// What the completion report of one visit prints, before any layout.

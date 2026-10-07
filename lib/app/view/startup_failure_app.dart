@@ -1,7 +1,10 @@
+// 📦 Package imports:
+import 'package:material_ui/material_ui.dart';
+
+// 🌎 Project imports:
 import 'package:kkomkkomi/app/view/app_theme.dart';
 import 'package:kkomkkomi/l10n/l10n.dart';
 import 'package:kkomkkomi/presentation/shared/keep_all_text.dart';
-import 'package:material_ui/material_ui.dart';
 
 /// The app that `bootstrap` shows while the database does not open: a message and a retry control.
 class StartupFailureApp extends StatelessWidget {

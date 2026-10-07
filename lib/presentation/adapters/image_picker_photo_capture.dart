@@ -1,6 +1,11 @@
+// 🐦 Flutter imports:
 import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
+
+// 📦 Package imports:
 import 'package:image_picker/image_picker.dart';
+
+// 🌎 Project imports:
 import 'package:kkomkkomi/application/application.dart';
 
 /// Takes a photo with the camera app of the device through `image_picker`.

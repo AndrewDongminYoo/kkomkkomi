@@ -1,6 +1,9 @@
+// 📦 Package imports:
 import 'package:flutter_test/flutter_test.dart';
-import 'package:kkomkkomi/app/app.dart';
 import 'package:material_ui/material_ui.dart';
+
+// 🌎 Project imports:
+import 'package:kkomkkomi/app/app.dart';
 
 void main() {
   group('StartupFailureApp', () {

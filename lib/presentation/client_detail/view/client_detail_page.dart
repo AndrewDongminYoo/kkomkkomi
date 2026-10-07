@@ -1,6 +1,11 @@
+// 🎯 Dart imports:
 import 'dart:async';
 
+// 📦 Package imports:
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:material_ui/material_ui.dart';
+
+// 🌎 Project imports:
 import 'package:kkomkkomi/application/application.dart';
 import 'package:kkomkkomi/domain/domain.dart';
 import 'package:kkomkkomi/l10n/l10n.dart';
@@ -13,7 +18,6 @@ import 'package:kkomkkomi/presentation/shared/name_dialog.dart';
 import 'package:kkomkkomi/presentation/shared/notice.dart';
 import 'package:kkomkkomi/presentation/shared/save_guard.dart';
 import 'package:kkomkkomi/presentation/visit_capture/visit_capture.dart';
-import 'package:material_ui/material_ui.dart';
 
 /// The largest text scale inside the date picker of a visit.
 ///

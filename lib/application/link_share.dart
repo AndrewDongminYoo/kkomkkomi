@@ -1,3 +1,4 @@
+// 🌎 Project imports:
 import 'package:kkomkkomi/application/report_share.dart';
 
 /// Hands a report link to the share sheet of the device, so that tests never open one.

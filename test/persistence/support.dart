@@ -1,5 +1,8 @@
-import 'package:kkomkkomi/persistence/persistence.dart';
+// 📦 Package imports:
 import 'package:sqflite_common_ffi/sqflite_ffi.dart';
+
+// 🌎 Project imports:
+import 'package:kkomkkomi/persistence/persistence.dart';
 
 /// The factory that the persistence tests use: SQLite through FFI, on the isolate of the test.
 DatabaseFactory get testDatabaseFactory => databaseFactoryFfiNoIsolate;

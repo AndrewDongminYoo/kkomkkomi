@@ -1,4 +1,7 @@
+// 🐦 Flutter imports:
 import 'package:flutter/services.dart';
+
+// 🌎 Project imports:
 import 'package:kkomkkomi/application/application.dart';
 import 'package:kkomkkomi/gen/assets.gen.dart';
 

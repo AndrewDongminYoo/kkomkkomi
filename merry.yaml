@@ -36,11 +36,15 @@ format:
     (description): Applies automated fixes and formats the Dart sources.
     (scripts):
       - dart fix --apply
+      - dart run tool/check_imports.dart --fix
       - dart format lib test
 
   check:
     (description): Fails when sources are not formatted, without writing anything.
-    (scripts): dart format --output=none --set-exit-if-changed lib test
+    (execution): once
+    (scripts):
+      - dart run tool/check_imports.dart
+      - dart format --output=none --set-exit-if-changed lib test
 
 pretest:
   (description): Clears the previous coverage report.

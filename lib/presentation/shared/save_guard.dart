@@ -1,3 +1,4 @@
+// 📦 Package imports:
 import 'package:material_ui/material_ui.dart';
 
 /// Keeps [child] on the screen and away from touches while a change is on its way to storage.

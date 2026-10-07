@@ -1,7 +1,10 @@
+// 🎯 Dart imports:
 import 'dart:io';
 
+// 📦 Package imports:
 import 'package:flutter_test/flutter_test.dart';
 
+// 🌎 Project imports:
 import '../../tool/release_check.dart';
 
 void main() {

@@ -1,5 +1,7 @@
+// 🎯 Dart imports:
 import 'dart:io';
 
+// 📦 Package imports:
 import 'package:material_ui/material_ui.dart';
 
 /// Shows the photo file at [path] in the box that the parent gives, cut to fill it unless [fit] says another way.

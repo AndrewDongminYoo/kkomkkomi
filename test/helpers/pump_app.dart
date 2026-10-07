@@ -1,10 +1,15 @@
+// 🐦 Flutter imports:
 import 'package:flutter/rendering.dart';
+
+// 📦 Package imports:
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:material_ui/material_ui.dart';
+
+// 🌎 Project imports:
 import 'package:kkomkkomi/app/app.dart';
 import 'package:kkomkkomi/application/application.dart';
 import 'package:kkomkkomi/l10n/l10n.dart';
-import 'package:material_ui/material_ui.dart';
 
 import 'fakes.dart';
 

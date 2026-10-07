@@ -1,4 +1,7 @@
+// 🐦 Flutter imports:
 import 'package:flutter/foundation.dart';
+
+// 🌎 Project imports:
 import 'package:kkomkkomi/app/app.dart';
 import 'package:kkomkkomi/billing/billing.dart';
 import 'package:kkomkkomi/bootstrap.dart';

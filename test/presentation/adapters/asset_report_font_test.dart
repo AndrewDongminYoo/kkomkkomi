@@ -1,7 +1,13 @@
+// 🎯 Dart imports:
 import 'dart:io';
 
+// 🐦 Flutter imports:
 import 'package:flutter/services.dart';
+
+// 📦 Package imports:
 import 'package:flutter_test/flutter_test.dart';
+
+// 🌎 Project imports:
 import 'package:kkomkkomi/gen/assets.gen.dart';
 import 'package:kkomkkomi/presentation/presentation.dart';
 

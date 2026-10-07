@@ -1,9 +1,13 @@
+// 🎯 Dart imports:
 import 'dart:async';
 
+// 📦 Package imports:
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:kkomkkomi/firebase/firebase.dart';
 import 'package:mocktail/mocktail.dart';
+
+// 🌎 Project imports:
+import 'package:kkomkkomi/firebase/firebase.dart';
 
 class _MockFirebaseAuth extends Mock implements FirebaseAuth;
 

@@ -1,4 +1,7 @@
+// 📦 Package imports:
 import 'package:flutter_test/flutter_test.dart';
+
+// 🌎 Project imports:
 import 'package:kkomkkomi/domain/domain.dart';
 
 void main() {

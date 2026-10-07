@@ -1,3 +1,4 @@
+// 🌎 Project imports:
 import 'package:kkomkkomi/domain/domain.dart';
 
 /// Stores the visits and their zone records.

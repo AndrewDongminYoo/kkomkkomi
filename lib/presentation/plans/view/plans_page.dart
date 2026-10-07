@@ -1,10 +1,14 @@
+// 🎯 Dart imports:
 import 'dart:async';
 
+// 📦 Package imports:
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:material_ui/material_ui.dart';
+
+// 🌎 Project imports:
 import 'package:kkomkkomi/application/application.dart';
 import 'package:kkomkkomi/presentation/plans/cubit/plans_cubit.dart';
 import 'package:kkomkkomi/presentation/plans/view/plans_view.dart';
-import 'package:material_ui/material_ui.dart';
 
 /// The screen that shows the plan of the company and sells the paid plans.
 class PlansPage extends StatelessWidget {

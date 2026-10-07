@@ -1,5 +1,8 @@
-import 'package:kkomkkomi/l10n/gen/app_localizations.dart';
+// 📦 Package imports:
 import 'package:material_ui/material_ui.dart';
+
+// 🌎 Project imports:
+import 'package:kkomkkomi/l10n/gen/app_localizations.dart';
 
 export 'package:kkomkkomi/l10n/gen/app_localizations.dart';
 

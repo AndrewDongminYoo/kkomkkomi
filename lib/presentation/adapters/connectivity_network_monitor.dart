@@ -1,4 +1,7 @@
+// 📦 Package imports:
 import 'package:connectivity_plus/connectivity_plus.dart';
+
+// 🌎 Project imports:
 import 'package:kkomkkomi/application/application.dart';
 
 /// Tells when the device gets a network again, from the network state that `connectivity_plus` reports.

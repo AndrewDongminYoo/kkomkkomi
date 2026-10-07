@@ -1,3 +1,4 @@
+// 🌎 Project imports:
 import 'package:kkomkkomi/application/application.dart';
 
 final class InAppCameraPhotoCapture implements OwnedCameraPhotoCapture {

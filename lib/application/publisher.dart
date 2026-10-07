@@ -2,8 +2,10 @@
 // field of each class is final.
 // ignore_for_file: avoid_equals_and_hash_code_on_mutable_classes
 
+// 🎯 Dart imports:
 import 'dart:typed_data';
 
+// 🌎 Project imports:
 import 'package:kkomkkomi/domain/domain.dart';
 
 /// Writes published reports to the backend, so that tests never reach one.

@@ -49,6 +49,9 @@ jobs:
       - name: Install Flutter dependencies
         run: flutter pub get
 
+      - name: Check import sorting
+        run: dart run tool/check_imports.dart
+
       - name: Build the development debug APK
         run: flutter build apk --debug --flavor development --target lib/main_development.dart
 

@@ -1,7 +1,11 @@
+// 🎯 Dart imports:
 import 'dart:developer';
 
+// 📦 Package imports:
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_core/firebase_core.dart';
+
+// 🌎 Project imports:
 import 'package:kkomkkomi/application/application.dart';
 
 /// Starts Firebase, signs in anonymously, and gives the ID of that account.

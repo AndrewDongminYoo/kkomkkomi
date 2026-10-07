@@ -1,7 +1,11 @@
+// 🎯 Dart imports:
 import 'dart:typed_data';
 
-import 'package:kkomkkomi/application/application.dart';
+// 📦 Package imports:
 import 'package:printing/printing.dart';
+
+// 🌎 Project imports:
+import 'package:kkomkkomi/application/application.dart';
 
 /// What the adapter calls of `Printing.sharePdf`: the two arguments that it gives, and the answer.
 typedef SharePdf = Future<bool> Function({required Uint8List bytes, String filename});

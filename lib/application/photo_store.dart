@@ -1,5 +1,7 @@
+// 🎯 Dart imports:
 import 'dart:typed_data';
 
+// 🌎 Project imports:
 import 'package:kkomkkomi/domain/domain.dart';
 
 /// Keeps the photo files of the visits under the application documents directory.

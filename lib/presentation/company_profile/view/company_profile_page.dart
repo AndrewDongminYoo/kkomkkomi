@@ -1,6 +1,11 @@
+// 🎯 Dart imports:
 import 'dart:async';
 
+// 📦 Package imports:
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:material_ui/material_ui.dart';
+
+// 🌎 Project imports:
 import 'package:kkomkkomi/application/application.dart';
 import 'package:kkomkkomi/l10n/l10n.dart';
 import 'package:kkomkkomi/presentation/company_profile/cubit/company_profile_cubit.dart';
@@ -12,7 +17,6 @@ import 'package:kkomkkomi/presentation/shared/name_entry.dart';
 import 'package:kkomkkomi/presentation/shared/name_field.dart';
 import 'package:kkomkkomi/presentation/shared/notice.dart';
 import 'package:kkomkkomi/presentation/shared/save_guard.dart';
-import 'package:material_ui/material_ui.dart';
 
 /// The screen that edits the company name, which the report prints, that opens the plans, and that deletes all data.
 class CompanyProfilePage extends StatelessWidget {
