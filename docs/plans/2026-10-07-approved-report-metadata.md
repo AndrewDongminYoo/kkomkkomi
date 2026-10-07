@@ -17,7 +17,7 @@ Keep each PR reviewable; do not merge or deploy. Never insert the operator's pri
 SQLite version 8 stores nullable UTC microseconds beside each photo. `InAppPhotoCapture.takeObservedPhoto`
 returns an `ObservedCameraPhoto` from a directly observed shutter event; the capture cubit consumes that optional
 capability only for a camera source. The existing `ImagePickerPhotoCapture` does not implement it and remains
-untimed. Replacement clears an old time unless the new camera photo supplies its own observation. Lost-picker
+without a capture time. Replacement clears an old time unless the new camera photo supplies its own observation. Lost-picker
 recovery never supplies a time. Preview/PDF captions display the supplied instant as HH:mm in the current device
 local time. Publishing deliberately has no capture-time fields.
 

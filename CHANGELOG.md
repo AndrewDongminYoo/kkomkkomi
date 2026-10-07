@@ -6,7 +6,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 ## [Unreleased]
 
-- Nullable observed in-app camera times for PDF/preview captions; picker, gallery and old photos stay untimed.
+- Nullable observed in-app camera times for PDF/preview captions; picker, gallery and old photos have no capture time.
 
 - Gallery selection for before/after photos, with gallery captions in the preview, PDF and web report.
 
