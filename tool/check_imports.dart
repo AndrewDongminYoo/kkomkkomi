@@ -48,8 +48,8 @@ List<String> importProblems(Directory root, {bool fix = false}) {
         false,
         !(config?['comments'] as bool? ?? true),
       ).sortedFile;
-      final sorted =
-          '${const LineSplitter().convert(sortedLines).map((line) => directives[line] ?? line).join('\n')}\n';
+      final restored = const LineSplitter().convert(sortedLines).map((line) => directives[line] ?? line).join('\n');
+      final sorted = restored.endsWith('\n') ? restored : '$restored\n';
       if (_withoutBlankLines(source) != _withoutBlankLines(sorted)) {
         problems.add(relative);
         if (fix) changes[file] = sorted;
@@ -64,9 +64,25 @@ List<String> importProblems(Directory root, {bool fix = false}) {
 
 List<String> _directiveLines(String source, String file, Map<String, String> directives) {
   final unit = parseString(content: source, path: file).unit;
-  _checkExports(unit, file);
+  _checkNamespaceOrder(unit.directives.whereType<ExportDirective>(), file, 'exports');
+  for (final directive in unit.directives) {
+    final docImports = directive.documentationComment?.docImports;
+    if (docImports != null) {
+      _checkNamespaceOrder(docImports.map((item) => item.import), file, 'documentation imports');
+    }
+  }
   final lines = <String>[];
   var offset = 0;
+  final library = unit.directives.whereType<LibraryDirective>().firstOrNull;
+  if (library != null) {
+    lines.add(_opaqueKey(source, directives, source.substring(0, library.end)));
+    offset = library.end;
+    if (source.startsWith('\r\n', offset)) {
+      offset += 2;
+    } else if (source.startsWith('\n', offset)) {
+      offset++;
+    }
+  }
   for (final directive in unit.directives.whereType<ImportDirective>()) {
     final prefix = const LineSplitter().convert(source.substring(offset, directive.offset));
     final fileIgnore = RegExp(r'^\s*//\s*ignore_for_file:');
@@ -79,6 +95,10 @@ List<String> _directiveLines(String source, String file, Map<String, String> dir
     });
     if (hasUnsupportedTrivia) {
       throw FormatException('Cannot preserve import-leading trivia in $file');
+    }
+    if (preambleEnd >= 0) {
+      final preamble = prefix.take(preambleEnd + 1).join('\n');
+      prefix.replaceRange(0, preambleEnd + 1, [_opaqueKey(source, directives, preamble)]);
     }
     final newline = source.indexOf('\n', directive.end);
     final remainder = source.substring(directive.end, newline < 0 ? source.length : newline);
@@ -100,37 +120,47 @@ List<String> _directiveLines(String source, String file, Map<String, String> dir
       ..add(key);
     offset = directive.end;
   }
-  lines.addAll(const LineSplitter().convert(source.substring(offset)));
+  lines.add(_opaqueKey(source, directives, source.substring(offset)));
   return lines;
 }
 
-// Keep the export ordering that directives_ordering enforced. Exports are
-// checked without rewriting their comments or conditional configurations.
-void _checkExports(CompilationUnit unit, String file) {
+// The upstream sorter must only inspect real imports, never body text or docs.
+String _opaqueKey(String source, Map<String, String> blocks, String text) {
+  var suffix = 0;
+  late String key;
+  do {
+    key = '// _sort_text_${blocks.length}_${suffix++}';
+  } while (source.contains(key));
+  blocks[key] = text;
+  return key;
+}
+
+// Keep the namespace ordering from directives_ordering without rewriting it.
+void _checkNamespaceOrder(Iterable<NamespaceDirective> directives, String file, String kind) {
   var seenNonDart = false;
   var seenRelative = false;
   final previous = <int, String>{};
-  for (final directive in unit.directives.whereType<ExportDirective>()) {
+  for (final directive in directives) {
     final uri = directive.uri.stringValue;
     if (uri == null) continue;
     final isDart = uri.startsWith('dart:');
     final isPackage = uri.startsWith('package:');
     final isRelative = !uri.contains(':');
     if ((isDart && seenNonDart) || (isPackage && seenRelative)) {
-      throw FormatException('Unsorted exports in $file; order exports before applying import fixes');
+      throw FormatException('Unsorted $kind in $file; order them before applying import fixes');
     }
     seenNonDart |= !isDart;
     seenRelative |= isRelative;
     final group = isDart ? 0 : (isPackage ? 1 : (isRelative ? 2 : 3));
     final prior = previous[group];
-    if (group < 3 && prior != null && _compareExportUris(prior, uri) > 0) {
-      throw FormatException('Unsorted exports in $file; order exports before applying import fixes');
+    if (group < 3 && prior != null && _compareDirectiveUris(prior, uri) > 0) {
+      throw FormatException('Unsorted $kind in $file; order them before applying import fixes');
     }
     previous[group] = uri;
   }
 }
 
-int _compareExportUris(String a, String b) {
+int _compareDirectiveUris(String a, String b) {
   if (a.startsWith('package:') && b.startsWith('package:')) {
     final slashA = a.indexOf('/');
     final slashB = b.indexOf('/');

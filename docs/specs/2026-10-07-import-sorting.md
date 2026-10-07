@@ -17,7 +17,9 @@ The existing locked `yaml` package becomes a direct development dependency so th
 The existing locked `analyzer` package parses complete import directives, including multiline conditional imports, before sorting.
 Unsupported annotations or comments outside a directive stop the operation before any source is written, except group headers and a comment-only preamble ending in an initial file-level lint directive.
 The checker also retains export URI group and alphabetical ordering from [Dart directives_ordering](https://github.com/dart-lang/sdk/blob/main/pkg/linter/lib/src/rules/directives_ordering.dart).
-Unsorted exports stop both lanes before writes; export comments and conditional directives are not rewritten.
+Unsorted exports or documentation imports stop both lanes before writes; their comments and conditional directives are not rewritten.
+Explicit library declarations, including documentation and metadata, stay before ordinary imports.
+Library preambles and file bodies are opaque to the upstream line sorter, so import-like comment text or string delimiters cannot affect sorting.
 Do not change app behavior, store artifacts, security rules, or release metadata.
 
 ## Acceptance

@@ -232,4 +232,78 @@ void main() {
       expect(() => importProblems(root), throwsFormatException);
     }
   });
+  test('preserves an explicit library declaration while fixing imports', () {
+    const declaration = '/// Library documentation.\nlibrary example;\n';
+    write('lib/example.dart', "$declaration\nimport 'package:z/z.dart';\nimport 'dart:io';\n");
+    expect(importProblems(root, fix: true), ['lib/example.dart']);
+    expect(
+      File('${root.path}/lib/example.dart').readAsStringSync().trimRight(),
+      "$declaration\n// 🎯 Dart imports:\nimport 'dart:io';\n\n"
+      "// 📦 Package imports:\nimport 'package:z/z.dart';",
+    );
+    expect(importProblems(root), isEmpty);
+    expect(importProblems(root, fix: true), isEmpty);
+  });
+
+  test('preserves an unnamed library and metadata before sorted imports', () {
+    const source =
+        "/// Documentation.\n@Deprecated('example')\nlibrary;\n\n"
+        "// 🎯 Dart imports:\nimport 'dart:io';\n";
+    write('lib/example.dart', source);
+    expect(importProblems(root), isEmpty);
+    expect(importProblems(root, fix: true), isEmpty);
+    expect(File('${root.path}/lib/example.dart').readAsStringSync(), source);
+  });
+
+  test('rejects unsorted documentation imports before writing any source', () {
+    const source = "/// @docImport 'z.dart';\n/// @docImport 'alpha.dart';\nlibrary;\n";
+    const other = "import 'package:z/z.dart';\nimport 'dart:io';\n";
+    write('lib/example.dart', source);
+    write('lib/other.dart', other);
+    expect(() => importProblems(root), throwsFormatException);
+    expect(() => importProblems(root, fix: true), throwsFormatException);
+    expect(File('${root.path}/lib/example.dart').readAsStringSync(), source);
+    expect(File('${root.path}/lib/other.dart').readAsStringSync(), other);
+  });
+
+  test('keeps documentation import URI sections ordered', () {
+    for (final source in [
+      "/// @docImport 'package:alpha/alpha.dart';\n/// @docImport 'dart:io';\nlibrary;\n",
+      "/// @docImport 'alpha.dart';\n/// @docImport 'package:alpha/alpha.dart';\nlibrary;\n",
+      "/// @docImport 'package:a_extra/a.dart';\n/// @docImport 'package:a/z.dart';\nlibrary;\n",
+    ]) {
+      write('lib/example.dart', source);
+      expect(() => importProblems(root), throwsFormatException);
+    }
+  });
+
+  test('preserves ordered documentation imports while fixing ordinary imports', () {
+    const declaration =
+        "/// @docImport 'dart:io';\n/// @docImport 'package:a/z.dart';\n"
+        "/// @docImport 'package:a_extra/a.dart';\n/// @docImport 'alpha.dart';\nlibrary;\n";
+    write('lib/example.dart', "$declaration\nimport 'package:z/z.dart';\nimport 'dart:io';\n");
+    expect(importProblems(root, fix: true), ['lib/example.dart']);
+    expect(File('${root.path}/lib/example.dart').readAsStringSync(), startsWith(declaration));
+    expect(importProblems(root), isEmpty);
+  });
+
+  test('checks documentation imports attached to a part declaration', () {
+    write('lib/example.dart', "/// @docImport 'z.dart';\n/// @docImport 'alpha.dart';\npart of 'parent.dart';\n");
+    expect(() => importProblems(root), throwsFormatException);
+  });
+  test('preserves library documentation containing multiline string delimiters', () {
+    const declaration = "/// Examples use triple quotes: '''.\nlibrary;\n";
+    write('lib/example.dart', "$declaration\nimport 'package:z/z.dart';\nimport 'dart:io';\n");
+    expect(importProblems(root, fix: true), ['lib/example.dart']);
+    expect(File('${root.path}/lib/example.dart').readAsStringSync(), startsWith(declaration));
+    expect(importProblems(root), isEmpty);
+  });
+
+  test('preserves import-like text in body comments when fixing imports', () {
+    const body = "/*\nimport 'package:fake/fake.dart';\n*/\nvoid example() {}\n";
+    write('lib/example.dart', "import 'package:z/z.dart';\nimport 'dart:io';\n\n$body");
+    expect(importProblems(root, fix: true), ['lib/example.dart']);
+    expect(File('${root.path}/lib/example.dart').readAsStringSync(), endsWith(body));
+    expect(importProblems(root), isEmpty);
+  });
 }
