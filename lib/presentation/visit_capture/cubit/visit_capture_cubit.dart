@@ -101,6 +101,7 @@ class VisitCaptureCubit extends Cubit<VisitCaptureState> {
 
     final PhotoRef photo;
     final DateTime? capturedAt;
+    String? temporaryCameraPhoto;
     try {
       final picked = await _takePhoto(source);
       if (picked == null) {
@@ -108,12 +109,18 @@ class VisitCaptureCubit extends Cubit<VisitCaptureState> {
         return;
       }
       capturedAt = picked.capturedAt;
+      if (source == PhotoSource.camera && _photoCapture is OwnedCameraPhotoCapture) {
+        temporaryCameraPhoto = picked.path;
+      }
       photo = await _photoStore.save(sourcePath: picked.path, visitId: visit.id, photoId: _idGenerator.newId());
     } on Exception catch (error, stackTrace) {
       _report(error, stackTrace);
       final isDenied = error is PhotoCaptureException && error.isAccessDenied;
       _show(after(isDenied ? VisitCaptureStatus.captureDenied : VisitCaptureStatus.captureFailed));
       return;
+    } finally {
+      // The store has finished copying (or failed); only this camera's owned source may now be released.
+      if (temporaryCameraPhoto case final path?) await _discardCameraPhoto(path);
     }
 
     final changed = visit.withRecord(record.withPhoto(slot, photo, source: source, capturedAt: capturedAt));
@@ -129,14 +136,29 @@ class VisitCaptureCubit extends Cubit<VisitCaptureState> {
     }
   }
 
-  /// Stores [capture] before the camera opens, and completes with true when storage took it.
+  Future<void> _discardCameraPhoto(String path) async {
+    try {
+      await (_photoCapture as OwnedCameraPhotoCapture).discardCameraPhoto(path);
+    } on Object catch (error, stackTrace) {
+      // Cache cleanup never replaces the photo/save outcome or touches borrowed gallery/report files.
+      _report(error, stackTrace);
+    }
+  }
+
+  /// Prepares the external picker intent before capture, and completes with true when storage took the change.
   ///
   /// The system can end the app while the camera app is open, and the next start of the app then reads the stored
   /// capture to put the photo into its slot. Storage can still hold the capture of an earlier camera whose photo did
   /// not come, so the camera must not open while storage names another capture: a lost photo would go to that one.
   Future<bool> _storeOpenCapture(OpenCapture capture) async {
     try {
-      await _openCaptures.save(capture);
+      // An in-app camera has no external picker answer to recover. Clear an older intent so that a stale picker
+      // result cannot be attached to this session after process death. Gallery still needs its external intent.
+      if (_photoCapture is InAppPhotoCapture && capture.source == PhotoSource.camera) {
+        await _openCaptures.clear();
+      } else {
+        await _openCaptures.save(capture);
+      }
       return true;
     } on Exception catch (error, stackTrace) {
       _report(error, stackTrace);

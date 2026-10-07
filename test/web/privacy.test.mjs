@@ -120,12 +120,73 @@ const sectionIds = (html) =>
 
 describe("the privacy policy pages", () => {
   for (const [lang, page] of Object.entries(pages)) {
+    test(`the ${lang} page distinguishes camera cleanup from gallery temporary-file retention`, () => {
+      const device = sectionText(read(page.file), "device");
+      const paragraphs = [...device.matchAll(/<p>(.*?)<\/p>/g)].map(
+        (match) => match[1],
+      );
+      const words =
+        lang === "ko"
+          ? {
+              camera: "Android와 iOS의 앱 내부 카메라",
+              cleanup: [
+                "3항에서 설명한 정보를 지운",
+                "정규화 처리가 끝나면 원본 카메라 파일",
+                "저장용 사본의 복사가 끝나면 정규화한 임시 파일",
+                "실패한 경우에도 삭제를 시도합니다",
+                "앱이 중단되거나 파일 삭제에 실패하면",
+              ],
+              gallery: "갤러리에서 고른 사진은 사진 선택 도구",
+              retention: [
+                "이 정보가 남을 수 있고",
+                "운영체제가 정리하거나 앱을 삭제할 때",
+              ],
+              obsolete: "카메라로 찍거나 갤러리에서 고른 사진",
+            }
+          : {
+              camera: "For Android and iOS in-app capture",
+              cleanup: [
+                "without the information described in section 3",
+                "attempts to delete the raw camera file when normalization finishes, including on failure",
+                "normalized temporary file when copying into the saved photo folder finishes, including on failure",
+                "If the app stops or deletion fails",
+              ],
+              gallery: "A photo selected from the gallery",
+              retention: [
+                "can keep that information",
+                "until the system clears it or the app is uninstalled",
+              ],
+              obsolete:
+                "A photo taken with the camera or selected from the gallery",
+            };
+      const camera = paragraphs.find((text) => text.includes(words.camera));
+      const gallery = paragraphs.find((text) => text.includes(words.gallery));
+      assert.ok(camera, "the camera has its own cleanup disclosure");
+      assert.ok(gallery, "the gallery has its own retention disclosure");
+      assert.notEqual(camera, gallery);
+      for (const text of words.cleanup) assert.ok(camera.includes(text), text);
+      for (const text of words.retention)
+        assert.ok(gallery.includes(text), text);
+      assert.ok(!device.includes(words.obsolete));
+    });
+    test(`the ${lang} page describes the shutter request observation and camera-only permission`, () => {
+      const device = sectionText(read(page.file), "device");
+      const expected =
+        lang === "ko"
+          ? ["셔터 요청 직전", "센서 노출 시각", "마이크를 사용하지 않습니다"]
+          : [
+              "immediately before the shutter request",
+              "sensor exposure time",
+              "does not use the microphone",
+            ];
+      for (const text of expected) assert.ok(device.includes(text));
+    });
     test(`the ${lang} page describes capture time as optional device-only observation`, () => {
       const device = sectionText(read(page.file), "device");
       const expected =
         lang === "ko"
           ? [
-              "앱 내부 카메라가 직접 관찰한 촬영 시각",
+              "앱 내부 카메라로 촬영하면",
               "UTC",
               "공유한 PDF",
               "현지 시각",
@@ -134,7 +195,7 @@ describe("the privacy policy pages", () => {
               "추정하지 않습니다",
             ]
           : [
-              "in-app camera supplies a directly observed capture time",
+              "in-app camera reads the device clock",
               "UTC",
               "shared PDF",
               "device local time",

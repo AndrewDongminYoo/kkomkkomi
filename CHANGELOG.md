@@ -6,6 +6,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 ## [Unreleased]
 
+- In-app rear-camera preview for one still photo, with camera-only access, lifecycle/cancellation handling and request-observed UTC time for PDF/preview captions.
+
 ## [1.1.0] - 2026-10-07
 
 The second test distribution: TestFlight and the Google Play internal testing track, build 3.

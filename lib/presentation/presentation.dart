@@ -1,8 +1,10 @@
 export 'adapters/asset_report_font.dart';
+export 'adapters/camera_driver.dart';
 export 'adapters/connectivity_network_monitor.dart';
 export 'adapters/documents_photo_store.dart';
 export 'adapters/free_entitlements.dart';
 export 'adapters/image_picker_photo_capture.dart';
+export 'adapters/in_app_camera_photo_capture.dart';
 export 'adapters/printing_report_share.dart';
 export 'adapters/random_id_generator.dart';
 export 'adapters/share_plus_link_share.dart';
@@ -17,5 +19,6 @@ export 'plans/plans.dart';
 export 'shared/corner_radius.dart';
 export 'shared/name_entry.dart';
 export 'shared/photo_thumbnail.dart';
+export 'still_camera/still_camera.dart';
 export 'visit_capture/visit_capture.dart';
 export 'visit_report/visit_report.dart';

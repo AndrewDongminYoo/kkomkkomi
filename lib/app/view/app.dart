@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:kkomkkomi/app/view/app_theme.dart';
 import 'package:kkomkkomi/application/application.dart';
@@ -8,7 +9,7 @@ import 'package:material_ui/material_ui.dart';
 /// The name of the initial route that opens the visit of [App.recovery] over the client list.
 const _recoveredVisitRouteName = '/recovered-visit';
 
-class App extends StatelessWidget {
+class App extends StatefulWidget {
   const new({
     required this.repositories,
     required this.identity,
@@ -17,7 +18,10 @@ class App extends StatelessWidget {
     this.recovery,
     this.idGenerator = const RandomIdGenerator(),
     this.clock = const SystemClock(),
-    this.photoCapture = const ImagePickerPhotoCapture(),
+    this.photoCapture,
+    this.cameraDriverFactory = CameraDriver.new,
+    this.cameraPhotoFiles = const TemporaryCameraPhotoFiles(),
+    this.externalPhotoCapture = const ImagePickerPhotoCapture(),
     this.photoStore = const DocumentsPhotoStore(),
     this.reportFont = const AssetReportFont(),
     this.reportShare = const PrintingReportShare(),
@@ -56,7 +60,11 @@ class App extends StatelessWidget {
   final Clock clock;
 
   /// The camera, which the widgets below read through `RepositoryProvider`.
-  final PhotoCapture photoCapture;
+  final PhotoCapture? photoCapture;
+
+  final StillCameraDriver Function() cameraDriverFactory;
+  final CameraPhotoFiles cameraPhotoFiles;
+  final PhotoCapture externalPhotoCapture;
 
   /// The keeper of the photo files, which the widgets below read through `RepositoryProvider`.
   final PhotoStore photoStore;
@@ -74,7 +82,9 @@ class App extends StatelessWidget {
   final ExternalLinks externalLinks;
 
   @override
-  Widget build(BuildContext context) {
+  State<App> createState() => _AppState();
+
+  Widget _build(BuildContext context, PhotoCapture capture, GlobalKey<NavigatorState> navigatorKey) {
     return MultiRepositoryProvider(
       providers: [
         RepositoryProvider<ClientRepository>.value(value: repositories.clients),
@@ -86,7 +96,7 @@ class App extends StatelessWidget {
         RepositoryProvider<PublishQueue>.value(value: publishQueue),
         RepositoryProvider<IdGenerator>.value(value: idGenerator),
         RepositoryProvider<Clock>.value(value: clock),
-        RepositoryProvider<PhotoCapture>.value(value: photoCapture),
+        RepositoryProvider<PhotoCapture>.value(value: capture),
         RepositoryProvider<PhotoStore>.value(value: photoStore),
         RepositoryProvider<ReportFont>.value(value: reportFont),
         RepositoryProvider<ReportShare>.value(value: reportShare),
@@ -103,6 +113,7 @@ class App extends StatelessWidget {
         ),
       ],
       child: MaterialApp(
+        navigatorKey: navigatorKey,
         theme: appTheme(),
         localizationsDelegates: appLocalizationsDelegates,
         supportedLocales: AppLocalizations.supportedLocales,
@@ -117,4 +128,46 @@ class App extends StatelessWidget {
       ),
     );
   }
+}
+
+class _AppState extends State<App> {
+  final _navigatorKey = GlobalKey<NavigatorState>();
+  late PhotoCapture _capture;
+
+  @override
+  void initState() {
+    super.initState();
+    _capture = _configuredCapture();
+  }
+
+  @override
+  void didUpdateWidget(App oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.photoCapture != widget.photoCapture ||
+        oldWidget.externalPhotoCapture != widget.externalPhotoCapture) {
+      _capture = _configuredCapture();
+    }
+  }
+
+  PhotoCapture _configuredCapture() {
+    if (widget.photoCapture case final capture?) return capture;
+    final picker = widget.externalPhotoCapture;
+    if (kIsWeb || (defaultTargetPlatform != TargetPlatform.android && defaultTargetPlatform != TargetPlatform.iOS)) {
+      return picker;
+    }
+    return InAppCameraPhotoCapture(
+      picker: picker,
+      discardPhoto: (path) => widget.cameraPhotoFiles.discard(path),
+      openCamera: () => _navigatorKey.currentState!.push(
+        StillCameraPage.route(
+          driverFactory: widget.cameraDriverFactory,
+          files: widget.cameraPhotoFiles,
+          clock: widget.clock,
+        ),
+      ),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) => widget._build(context, _capture, _navigatorKey);
 }

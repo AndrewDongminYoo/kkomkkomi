@@ -24,6 +24,27 @@ class _InAppCapture extends FakePhotoCapture implements InAppPhotoCapture {
   }
 }
 
+class _OwnedCapture extends _InAppCapture implements OwnedCameraPhotoCapture {
+  final discarded = <String>[];
+  Object? cleanupFailure;
+  @override
+  Future<void> discardCameraPhoto(String path) async {
+    discarded.add(path);
+    if (cleanupFailure case final error?) Error.throwWithStackTrace(error, StackTrace.current);
+  }
+}
+
+class _CopyingPhotoStore extends FakePhotoStore {
+  final started = Completer<void>();
+  final finished = Completer<void>();
+  @override
+  Future<PhotoRef> save({required String sourcePath, required String visitId, required String photoId}) async {
+    started.complete();
+    await finished.future;
+    return await super.save(sourcePath: sourcePath, visitId: visitId, photoId: photoId);
+  }
+}
+
 void main() {
   const clientId = 'client-a';
   const visitId = 'visit-2';
@@ -324,6 +345,137 @@ void main() {
     });
 
     group('capturePhoto', () {
+      for (final outcome in ['success', 'copy failure', 'visit failure']) {
+        test('releases only the owned camera temporary source after $outcome', () async {
+          final camera = _OwnedCapture()
+            ..observations.add(ObservedCameraPhoto(path: picked, capturedAt: DateTime.utc(2026, 10, 7)));
+          photoCapture = camera;
+          if (outcome == 'copy failure') photoStore.saveFailure = failure;
+          if (outcome == 'visit failure') when(() => visits.save(any())).thenThrow(failure);
+          final cubit = build();
+          await cubit.load();
+          await cubit.capturePhoto('zone-2', PhotoSlot.before);
+          expect(camera.discarded, [picked]);
+          expect(camera.discarded, isNot(contains(oldPhoto.path)));
+          if (outcome != 'success') {
+            expect(cubit.state.visit, visit);
+          } else {
+            expect(cubit.state.visit!.recordFor('zone-2')!.beforePhoto, newPhoto);
+          }
+          await cubit.close();
+        });
+      }
+
+      test('does not discard the owned source before its document copy completes', () async {
+        final camera = _OwnedCapture()
+          ..observations.add(ObservedCameraPhoto(path: picked, capturedAt: DateTime.utc(2026, 10, 7)));
+        photoCapture = camera;
+        final copying = _CopyingPhotoStore();
+        photoStore = copying;
+        final cubit = build();
+        await cubit.load();
+        final capturing = cubit.capturePhoto('zone-1', PhotoSlot.before);
+        await copying.started.future;
+        expect(camera.discarded, isEmpty);
+        copying.finished.complete();
+        await capturing;
+        expect(camera.discarded, [picked]);
+        expect(copying.sources, {newPhoto: picked});
+        await cubit.close();
+      });
+
+      test('a temporary cleanup error does not change a successfully saved observation', () async {
+        final camera = _OwnedCapture()
+          ..cleanupFailure = StateError('cache cleanup failed')
+          ..observations.add(ObservedCameraPhoto(path: picked, capturedAt: DateTime.utc(2026, 10, 7)));
+        photoCapture = camera;
+        final cubit = build();
+        await cubit.load();
+        await cubit.capturePhoto('zone-1', PhotoSlot.before);
+        expect(camera.discarded, [picked]);
+        expect(cubit.state.status, VisitCaptureStatus.ready);
+        expect(cubit.state.visit!.recordFor('zone-1')!.beforeCapturedAt, DateTime.utc(2026, 10, 7));
+        await cubit.close();
+      });
+
+      test('gallery selection does not release a borrowed picker file through owned-camera cleanup', () async {
+        final camera = _OwnedCapture()..results.add('/cache/gallery.jpg');
+        photoCapture = camera;
+        final cubit = build();
+        await cubit.load();
+        await cubit.capturePhoto('zone-1', PhotoSlot.before, source: PhotoSource.gallery);
+        expect(camera.discarded, isEmpty);
+        expect(cubit.state.visit!.recordFor('zone-1')!.beforePhotoSource, PhotoSource.gallery);
+        await cubit.close();
+      });
+
+      test('clears the picker intent before an in-app capture and writes no replacement intent', () async {
+        final camera = _InAppCapture()
+          ..gate = Completer<void>()
+          ..observations.add(ObservedCameraPhoto(path: picked, capturedAt: DateTime.utc(2026, 10, 7, 9, 12)));
+        photoCapture = camera;
+        openCaptures.capture = const OpenCapture(
+          visitId: 'previous-visit',
+          zoneId: 'old-zone',
+          slot: PhotoSlot.after,
+          source: PhotoSource.gallery,
+        );
+        final cubit = build();
+        await cubit.load();
+        final capturing = cubit.capturePhoto('zone-1', PhotoSlot.before);
+        await pumpEventQueue();
+        expect(camera.observedCalls, 1);
+        expect(openCaptures.capture, isNull);
+        expect(openCaptures.saved, isEmpty);
+        camera.gate!.complete();
+        await capturing;
+        expect(cubit.state.visit!.recordFor('zone-1')!.beforeCapturedAt, DateTime.utc(2026, 10, 7, 9, 12));
+        await cubit.close();
+      });
+
+      test('does not open the in-app camera when the old picker intent cannot be cleared', () async {
+        final camera = _InAppCapture()
+          ..observations.add(ObservedCameraPhoto(path: picked, capturedAt: DateTime.utc(2026, 10, 7, 9, 12)));
+        photoCapture = camera;
+        openCaptures.clearFailure = failure;
+        final cubit = build();
+        await cubit.load();
+        await cubit.capturePhoto('zone-2', PhotoSlot.before);
+        expect(camera.observedCalls, 0);
+        expect(cubit.state.status, VisitCaptureStatus.saveFailed);
+        expect(cubit.state.visit, visit);
+        expect(photoStore.sources, isEmpty);
+        verifyNever(() => visits.save(any()));
+        await cubit.close();
+      });
+
+      test('keeps an external gallery intent while the composite adapter waits for the picker', () async {
+        final camera = _InAppCapture()
+          ..gate = Completer<void>()
+          ..results.add('/cache/gallery.jpg');
+        photoCapture = camera;
+        final cubit = build();
+        await cubit.load();
+        final picking = cubit.capturePhoto('zone-1', PhotoSlot.before, source: PhotoSource.gallery);
+        await pumpEventQueue();
+        expect(
+          openCaptures.capture,
+          const OpenCapture(
+            visitId: visitId,
+            zoneId: 'zone-1',
+            slot: PhotoSlot.before,
+            source: PhotoSource.gallery,
+          ),
+        );
+        expect(camera.observedCalls, 0);
+        camera.gate!.complete();
+        await picking;
+        final record = cubit.state.visit!.recordFor('zone-1')!;
+        expect(record.beforePhotoSource, PhotoSource.gallery);
+        expect(record.beforeCapturedAt, isNull);
+        await cubit.close();
+      });
+
       test('stores only an in-app observation and clears it when a gallery photo replaces it', () async {
         final camera = _InAppCapture();
         photoCapture = camera;
