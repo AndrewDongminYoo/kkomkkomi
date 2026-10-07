@@ -6,6 +6,10 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 ## [Unreleased]
 
+### Fixed
+
+- A delayed plan read no longer replaces a newer purchase, restore, or subscription update, or brings back the plan of a previous user.
+
 ## [1.1.0] - 2026-10-07
 
 The second test distribution: TestFlight and the Google Play internal testing track, build 3.
