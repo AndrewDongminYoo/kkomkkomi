@@ -31,6 +31,9 @@
     "provenance": {
       "type": "commit_hash",
       "record": "build/ios/ipa/build-record.txt"
+    },
+    "asset_preparation": {
+      "project": "kkomkkomi"
     }
   },
   "google": {

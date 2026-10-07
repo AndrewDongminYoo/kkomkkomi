@@ -188,7 +188,7 @@ iOS signs automatically with the `DEVELOPMENT_TEAM` of the Xcode project, withou
 
 A lane without its variables, or with a path that names no file, stops before any network call and names the variable.
 Every script but `release check` publishes to a store, which is an external action: the operator runs it or approves each run.
-`./store-upload` with `store-upload.json` is a second entrypoint to the same lanes and checks, which `docs/notes/store-upload.md` describes, and the same approval holds for each run. Its binary plan stops unless `build-record.txt` names HEAD and the hash of the file. `store-upload.json` repeats the lane names, the file paths, and the track of `fastlane/Fastfile`, so a change of one changes the other.
+`./store-upload` with `store-upload.json` is a second entrypoint to the same lanes and checks, with a screenshot route of its own that replaces the screenshot sets of each locale after an authenticated preflight, which `docs/notes/store-upload.md` describes, and the same approval holds for each run. Its binary plan stops unless `build-record.txt` names HEAD and the hash of the file. `store-upload.json` repeats the lane names, the file paths, and the track of `fastlane/Fastfile`, so a change of one changes the other.
 `docs/notes/2026-10-02-first-test-distribution.md` lists the console steps that stay with the operator.
 
 ## Architecture
