@@ -186,4 +186,50 @@ void main() {
     );
     expect(importProblems(root), isEmpty);
   });
+  test('rejects unsorted exports before writing any source', () {
+    const source = "export 'z.dart';\nexport 'alpha.dart';\n";
+    const other = "import 'package:z/z.dart';\nimport 'dart:io';\n";
+    write('lib/other.dart', other);
+    write('lib/domain.dart', source);
+    expect(() => importProblems(root), throwsFormatException);
+    expect(() => importProblems(root, fix: true), throwsFormatException);
+    expect(File('${root.path}/lib/domain.dart').readAsStringSync(), source);
+    expect(File('${root.path}/lib/other.dart').readAsStringSync(), other);
+  });
+
+  test('accepts ordered conditional exports and preserves their comments', () {
+    const source =
+        "export 'alpha.dart'\n    // Keep the fallback.\n"
+        "    if (dart.library.io) 'z.dart';\nexport 'beta.dart';\n";
+    write('lib/domain.dart', source);
+    expect(importProblems(root), isEmpty);
+    expect(importProblems(root, fix: true), isEmpty);
+    expect(File('${root.path}/lib/domain.dart').readAsStringSync(), source);
+  });
+
+  test('requires Dart then package then relative export sections', () {
+    for (final source in [
+      "export 'package:alpha/alpha.dart';\nexport 'dart:io';\n",
+      "export 'alpha.dart';\nexport 'package:alpha/alpha.dart';\n",
+    ]) {
+      write('lib/domain.dart', source);
+      expect(() => importProblems(root), throwsFormatException);
+    }
+  });
+
+  test('orders package exports by package before path', () {
+    write('lib/domain.dart', "export 'package:a/z.dart';\nexport 'package:a_extra/a.dart';\n");
+    expect(importProblems(root), isEmpty);
+    write('lib/domain.dart', "export 'package:a_extra/a.dart';\nexport 'package:a/z.dart';\n");
+    expect(() => importProblems(root), throwsFormatException);
+  });
+
+  test('requires exports after imports', () {
+    for (final source in [
+      "export 'alpha.dart';\n// 🎯 Dart imports:\nimport 'dart:io';\n",
+    ]) {
+      write('lib/domain.dart', source);
+      expect(() => importProblems(root), throwsFormatException);
+    }
+  });
 }

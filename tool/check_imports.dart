@@ -64,6 +64,7 @@ List<String> importProblems(Directory root, {bool fix = false}) {
 
 List<String> _directiveLines(String source, String file, Map<String, String> directives) {
   final unit = parseString(content: source, path: file).unit;
+  _checkExports(unit, file);
   final lines = <String>[];
   var offset = 0;
   for (final directive in unit.directives.whereType<ImportDirective>()) {
@@ -101,6 +102,45 @@ List<String> _directiveLines(String source, String file, Map<String, String> dir
   }
   lines.addAll(const LineSplitter().convert(source.substring(offset)));
   return lines;
+}
+
+// Keep the export ordering that directives_ordering enforced. Exports are
+// checked without rewriting their comments or conditional configurations.
+void _checkExports(CompilationUnit unit, String file) {
+  var seenNonDart = false;
+  var seenRelative = false;
+  final previous = <int, String>{};
+  for (final directive in unit.directives.whereType<ExportDirective>()) {
+    final uri = directive.uri.stringValue;
+    if (uri == null) continue;
+    final isDart = uri.startsWith('dart:');
+    final isPackage = uri.startsWith('package:');
+    final isRelative = !uri.contains(':');
+    if ((isDart && seenNonDart) || (isPackage && seenRelative)) {
+      throw FormatException('Unsorted exports in $file; order exports before applying import fixes');
+    }
+    seenNonDart |= !isDart;
+    seenRelative |= isRelative;
+    final group = isDart ? 0 : (isPackage ? 1 : (isRelative ? 2 : 3));
+    final prior = previous[group];
+    if (group < 3 && prior != null && _compareExportUris(prior, uri) > 0) {
+      throw FormatException('Unsorted exports in $file; order exports before applying import fixes');
+    }
+    previous[group] = uri;
+  }
+}
+
+int _compareExportUris(String a, String b) {
+  if (a.startsWith('package:') && b.startsWith('package:')) {
+    final slashA = a.indexOf('/');
+    final slashB = b.indexOf('/');
+    if (slashA >= 0 && slashB >= 0) {
+      final packageOrder = a.substring(0, slashA).compareTo(b.substring(0, slashB));
+      if (packageOrder != 0) return packageOrder;
+      return a.substring(slashA + 1).compareTo(b.substring(slashB + 1));
+    }
+  }
+  return a.compareTo(b);
 }
 
 const _importGroupHeaders = {
