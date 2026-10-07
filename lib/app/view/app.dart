@@ -157,6 +157,7 @@ class _AppState extends State<App> {
     }
     return InAppCameraPhotoCapture(
       picker: picker,
+      discardPhoto: (path) => widget.cameraPhotoFiles.discard(path),
       openCamera: () => _navigatorKey.currentState!.push(
         StillCameraPage.route(
           driverFactory: widget.cameraDriverFactory,

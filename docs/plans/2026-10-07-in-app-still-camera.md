@@ -87,7 +87,7 @@
 ## Local implementation evidence
 
 - Tasks 1–4 are implemented in the isolated camera branch, based on #78. Recovery, image, driver/session, UI and App adapter changes were exercised with behavioral RED/GREEN tests.
-- Final Flutter suite: 1,741 tests. Web suite: 81 tests. Imported-library coverage: 100%, 4,009 of 4,009 lines. Format, analysis and Bloc lint pass.
+- Final Flutter suite: 1,748 tests. Web suite: 81 tests. Imported-library coverage: 100%, 4,019 of 4,019 lines. Format, analysis and Bloc lint pass.
 - Development debug Android APK and unsigned development iOS app build. Merged Android manifest has CAMERA, no microphone/read/write storage permission, optional camera hardware and minSdk 24. Built iOS app retains target 15.0 and localized camera/gallery purpose strings with no microphone-purpose key.
 - Initial merged-manifest checks exposed implied storage permission and required camera hardware; both were corrected and rebuilt. Session regressions also prevent obsolete initialization disposal failures from opening another controller and prevent a permission denial from triggering an automatic retry after lifecycle transitions.
 - Real iOS/Android permission, capture, interruption, orientation and output acceptance remains pending. Task 5 delivery/review/CI results are recorded on the Draft PR and in the coordinator's local progress ledger; no merge or deployment is authorized here.
@@ -95,3 +95,7 @@
 ### Review repair 1
 
 The independent review identified two camera-scope issues. Android CAMERA permission still implied a required rear camera despite the optional camera.any feature; explicit optional camera and autofocus features now remove that filter, verified in the rebuilt APK and merged manifest. An obsolete non-permission initialization error also terminated the resumed session; it now yields to queued resume after releasing the old driver. Access denial and release failure remain terminal, and cancellation ignores late initialization failure. Both findings were reproduced before repair. Full checks, 100% coverage and both development native builds passed after the repair.
+
+### Review repair 2
+
+Successful camera results now expose an optional owned-file cleanup capability without changing the existing observed-capture port. The composite tracks returned camera paths; visit capture releases only that owned source after its document copy settles, including failed copies. A later visit-save failure also retains no camera cache file. Cleanup errors preserve the capture/save outcome, and borrowed gallery or saved report files are never removed by this capability. Seven behavioral assertions first failed; 112 affected tests then passed. Final checks pass 1,748 Flutter and 81 web tests, with 100% coverage (4,019 lines) and both development native builds.

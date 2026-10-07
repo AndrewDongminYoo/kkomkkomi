@@ -68,6 +68,7 @@ void main() {
     expect(saved, isNot(before));
     expect(store.sources.values, ['/cache/normalized.jpg']);
     expect(driver.disposals, 1);
+    expect(files.discarded, ['/cache/normalized.jpg']);
     // Re-read actual SQLite, separately from widget fake time, with the result of the real UI/adapter/Cubit path.
     await tester.runAsync(() async {
       final database = await openMemoryDatabase();
@@ -94,5 +95,6 @@ void main() {
     expect(driver.captures, 1);
     expect(picker.galleryCalls, 1);
     expect(open.saved.single.source, PhotoSource.gallery);
+    expect(files.discarded, ['/cache/normalized.jpg']);
   });
 }

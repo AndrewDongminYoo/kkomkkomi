@@ -39,12 +39,20 @@ final class PhotoCaptureException implements Exception {
   String toString() => 'PhotoCaptureException(isAccessDenied: $isAccessDenied, cause: $cause)';
 }
 
-/// Optional capability of a future camera preview inside the app.
+/// Optional capability of a camera preview inside the app.
 ///
 /// The adapter observes the shutter time directly. A picker, a gallery image and a recovered picker result must
 /// never implement this capability by using their return time, file time or Exif.
 abstract interface class InAppPhotoCapture implements PhotoCapture {
   Future<ObservedCameraPhoto?> takeObservedPhoto();
+}
+
+/// An in-app camera that owns its returned temporary files.
+///
+/// After copying an observed photo (or a failed copy), the caller releases only that camera result. Borrowed picker
+/// and saved report files are never passed to this capability.
+abstract interface class OwnedCameraPhotoCapture implements InAppPhotoCapture {
+  Future<void> discardCameraPhoto(String path);
 }
 
 /// A temporary photo and the device-clock time observed by the in-app camera at capture.
