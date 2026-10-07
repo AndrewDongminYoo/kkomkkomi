@@ -32,6 +32,15 @@ const officer = {
   en: "Dongmin Yu (유동민), ydm2790@gmail.com",
 };
 
+/**
+ * The words with which each page names the status of a zone and its reason, which the phone keeps for each zone and
+ * which a report carries for a zone that is partly done or not done.
+ */
+const zoneStatus = {
+  ko: { reason: "사유", labels: ["일부 완료", "못 함"] },
+  en: { reason: "reason", labels: ["partly done", "not done"] },
+};
+
 /** The section that describes the deletion of all data in the app. */
 const deletionSection = (html) => {
   const startHeading = '<h2 id="delete">';
@@ -187,6 +196,28 @@ describe("the privacy policy pages", () => {
         section.includes(`"${texts.footer}"`),
         `section 3 does not name "${texts.footer}"`,
       );
+    });
+
+    test(`the ${lang} page names the status and the reason of a zone wherever it lists the notes`, () => {
+      const html = read(page.file);
+      const words = zoneStatus[lang];
+
+      // The phone database, a link share, the documents that stay after a revoke, and the deletion.
+      for (const id of ["device", "publish", "revoke", "delete"]) {
+        assert.ok(
+          sectionText(html, id).includes(words.reason),
+          `section ${id} does not name the reason`,
+        );
+      }
+      // `FirebasePublisher` writes the status and the reason only for these two statuses.
+      for (const id of ["device", "publish", "revoke"]) {
+        for (const label of words.labels) {
+          assert.ok(
+            sectionText(html, id).includes(label),
+            `section ${id} does not name "${label}"`,
+          );
+        }
+      }
     });
 
     test(`the ${lang} page holds nothing that is wider than a 320 px screen`, () => {
