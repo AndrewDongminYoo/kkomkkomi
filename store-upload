@@ -1,0 +1,10 @@
+#!/usr/bin/env bash
+set -euo pipefail
+repo_root="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
+upload_tool="${STORE_UPLOAD_TOOL:-${CODEX_HOME:-$HOME/.codex}/skills/store-upload/scripts/upload.py}"
+if [[ ! -f "$upload_tool" ]]; then
+  printf 'store-upload: shared tool missing: %s; set STORE_UPLOAD_TOOL to scripts/upload.py
+' "$upload_tool" >&2
+  exit 1
+fi
+exec python3 -B "$upload_tool" --repo "$repo_root" --account personal "$@"
