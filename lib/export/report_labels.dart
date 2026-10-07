@@ -18,6 +18,7 @@ final class ReportLabels {
     required this.summaryOf,
     required this.note,
     required this.footer,
+    required this.galleryPhoto,
   });
 
   /// The heading of the report, which also starts the file name.
@@ -55,6 +56,7 @@ final class ReportLabels {
 
   /// The text at the foot of every page.
   final String footer;
+  final String galleryPhoto;
 
   /// The status of [status] as the report writes it, or an empty text for [ZoneStatus.done], which the report does
   /// not write.

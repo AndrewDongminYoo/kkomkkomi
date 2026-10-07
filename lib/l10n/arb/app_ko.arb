@@ -396,8 +396,12 @@
     "@reportSummary": {
         "description": "보고서 제목 아래의 요약: 보고서에 들어간 구역 가운데 약속대로 청소한 구역의 수",
         "placeholders": {
-            "done": {"type": "int"},
-            "total": {"type": "int"}
+            "done": {
+                "type": "int"
+            },
+            "total": {
+                "type": "int"
+            }
         }
     },
     "reportPartlyDoneLabel": "일부 완료",
@@ -671,5 +675,17 @@
     "companyPhoneHelper": "PDF와 미리보기에 표시해요. 공개 웹 보고서에는 포함하지 않아요.",
     "@companyPhoneHelper": {
         "description": "Where the business phone is shown"
+    },
+    "photoGalleryBeforeButton": "청소 전 사진 갤러리에서 선택",
+    "@photoGalleryBeforeButton": {
+        "description": "Select one gallery photo for the before slot"
+    },
+    "photoGalleryAfterButton": "청소 후 사진 갤러리에서 선택",
+    "@photoGalleryAfterButton": {
+        "description": "Select one gallery photo for the after slot"
+    },
+    "photoGallerySourceLabel": "갤러리에서 선택한 사진",
+    "@photoGallerySourceLabel": {
+        "description": "Report caption for a photo selected from the gallery"
     }
 }

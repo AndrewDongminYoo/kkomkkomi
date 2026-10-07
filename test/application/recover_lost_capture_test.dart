@@ -37,7 +37,7 @@ void main() {
   );
 
   Visit withAfterPhoto(Visit of, PhotoRef photo) =>
-      of.withRecord(of.recordFor('zone-2')!.withPhoto(PhotoSlot.after, photo));
+      of.withRecord(of.recordFor('zone-2')!.withPhoto(PhotoSlot.after, photo, source: PhotoSource.camera));
 
   setUp(() {
     openCaptures = FakeOpenCaptureRepository(capture: lost);
@@ -54,6 +54,16 @@ void main() {
   });
 
   group('RecoverLostCapture', () {
+    test('keeps the gallery source of an Android lost pick', () async {
+      openCaptures.capture = const OpenCapture(
+        visitId: 'visit-1',
+        zoneId: 'zone-2',
+        slot: PhotoSlot.after,
+        source: PhotoSource.gallery,
+      );
+      await recover()();
+      expect((await visits.visitById('visit-1'))!.recordFor('zone-2')!.afterPhotoSource, PhotoSource.gallery);
+    });
     test(
       'keeps the lost photo, saves the visit with it in its slot, removes the capture, and names the visit',
       () async {

@@ -460,8 +460,12 @@
     "@reportSummary": {
         "description": "Summary of the report under its heading: how many of the zones of the report the visit cleaned as agreed",
         "placeholders": {
-            "done": {"type": "int"},
-            "total": {"type": "int"}
+            "done": {
+                "type": "int"
+            },
+            "total": {
+                "type": "int"
+            }
         }
     },
     "reportPartlyDoneLabel": "Partly done",
@@ -777,5 +781,17 @@
     "companyPhoneHelper": "Shown in PDFs and the preview. Not included in public web reports.",
     "@companyPhoneHelper": {
         "description": "Where the business phone is shown"
+    },
+    "photoGalleryBeforeButton": "Select before photo from gallery",
+    "@photoGalleryBeforeButton": {
+        "description": "Select one gallery photo for the before slot"
+    },
+    "photoGalleryAfterButton": "Select after photo from gallery",
+    "@photoGalleryAfterButton": {
+        "description": "Select one gallery photo for the after slot"
+    },
+    "photoGallerySourceLabel": "Selected from gallery",
+    "@photoGallerySourceLabel": {
+        "description": "Report caption for a photo selected from the gallery"
     }
 }

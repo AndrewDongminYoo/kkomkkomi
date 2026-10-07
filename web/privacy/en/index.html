@@ -65,8 +65,8 @@
           <li>Client names, and the names and order of their zones</li>
           <li>
             Visit dates, and for each zone the before and after photos, the
-            note, and the cleaning status (done, partly done, or not done) with
-            its reason
+            note, the source of each photo, and the cleaning status (done,
+            partly done, or not done) with its reason
           </li>
           <li>
             The IDs of the pages it published, the state of its publish jobs,
@@ -92,12 +92,12 @@
           it. Public web reports do not include the business phone.
         </p>
         <p>
-          A photo taken with the camera is first written as a file by the photo
-          picker, into the app's cache folder on Android and into its temporary
-          folder on iPhone, and the app keeps a copy of that file without the
-          information that section 3 describes. The file in the cache or
-          temporary folder can keep that information, and it stays until the
-          system clears it or the app is uninstalled.
+          A photo taken with the camera or selected from the gallery is first
+          written as a file by the photo picker, into the app's cache folder on
+          Android and into its temporary folder on iPhone, and the app keeps a
+          copy of that file without the information that section 3 describes.
+          The file in the cache or temporary folder can keep that information,
+          and it stays until the system clears it or the app is uninstalled.
         </p>
         <p>
           Uninstalling the app deletes the data on the phone. A copy in a backup
@@ -105,6 +105,11 @@
           inside the app.
         </p>
 
+        <p>
+          Gallery photos are labeled in the preview, PDF and web report. The app
+          does not infer when a gallery photo was taken. Supported PNG input is
+          converted to JPEG before it is saved; unsupported input is not saved.
+        </p>
         <h2 id="sign-in">2. Anonymous sign-in and the user ID</h2>
         <p>
           When the app starts, it signs in to Firebase Authentication
@@ -142,11 +147,12 @@
           <li>
             Visit report: the visit date, the time the share was requested, and
             for each zone its name, its note, and the storage paths of its
-            before and after photos, and for a zone marked partly done or not
-            done, that status and its reason. When the account holds a paid
-            entitlement, the upload also holds a mark that the report goes
-            without the line "꼼꼬미로 작성됨" (Made with Kkomkkomi), and anyone
-            with the link can read that mark with the report.
+            before and after photos, a mark for each photo selected from the
+            gallery, and for a zone marked partly done or not done, that status
+            and its reason. When the account holds a paid entitlement, the
+            upload also holds a mark that the report goes without the line
+            "꼼꼬미로 작성됨" (Made with Kkomkkomi), and anyone with the link
+            can read that mark with the report.
           </li>
           <li>
             Photos: JPEG files, at most 1,600 pixels on each side, at quality 80

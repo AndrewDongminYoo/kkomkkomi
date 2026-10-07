@@ -123,6 +123,27 @@ describe("parseRoute", () => {
 });
 
 describe("decoding", () => {
+  test("marks only gallery photos that have a photo path", () => {
+    const doc = structuredClone(reportDocument);
+    const zone = doc.fields.zones.arrayValue.values[0].mapValue.fields;
+    zone.beforePhotoSource = { stringValue: "gallery" };
+    zone.afterPhotoSource = { stringValue: "invented" };
+    const report = decodeReport(doc);
+    assert.equal(report.zones[0].beforePhotoSource, "gallery");
+    assert.equal(report.zones[0].afterPhotoSource, undefined);
+    const dom = new FakeDocument();
+    const view = renderReport(dom, {
+      pageId,
+      page: decodePage(pageDocument),
+      report,
+      photoUrl: (path) => path,
+    });
+    assert.ok(view.textContent.includes(texts.galleryPhoto));
+    delete zone.beforePhoto;
+    assert.equal(decodeReport(doc).zones[0].beforePhotoSource, undefined);
+    zone.beforePhoto = { integerValue: "1" };
+    assert.equal(decodeReport(doc).zones[0].beforePhotoSource, undefined);
+  });
   test("reads a client page, with a company name of null when none is saved", () => {
     assert.deepEqual(decodePage(pageDocument), {
       companyName: "깔끔클린",

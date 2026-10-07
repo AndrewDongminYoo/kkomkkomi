@@ -463,6 +463,8 @@ final class PublishQueue {
           note: record.note.trim(),
           beforePhoto: await _upload(page.id, visit.id, record, PhotoSlot.before),
           afterPhoto: await _upload(page.id, visit.id, record, PhotoSlot.after),
+          beforePhotoSource: record.beforePhotoSource,
+          afterPhotoSource: record.afterPhotoSource,
           status: record.status,
           // A done record can keep the reason of a status that was set back, which no reader of a done record shows.
           reason: record.status == ZoneStatus.done ? '' : record.reason.trim(),

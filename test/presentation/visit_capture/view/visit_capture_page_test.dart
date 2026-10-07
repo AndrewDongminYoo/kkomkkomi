@@ -65,7 +65,7 @@ void main() {
   /// leaves out.
   void useTallPhoneScreen(WidgetTester tester) {
     tester.view
-      ..physicalSize = const Size(400, 1600)
+      ..physicalSize = const Size(400, 2000)
       ..devicePixelRatio = 1;
     addTearDown(tester.view.reset);
   }
@@ -137,11 +137,21 @@ void main() {
     finder,
     100,
     scrollable: find.descendant(of: find.byType(ListView), matching: find.byType(Scrollable)).first,
+    maxScrolls: 100,
   );
 
   Future<ZoneRecord> savedRecord(String zoneId) async => (await visits.visitById(visitId))!.recordFor(zoneId)!;
 
   group('VisitCapturePage', () {
+    testWidgets('selects a before photo from the gallery without opening the camera', (tester) async {
+      await pumpPage(tester);
+      photoCapture.results.add('/cache/gallery.png');
+      await tester.tap(find.widgetWithText(TextButton, 'Select before photo from gallery').first);
+      await tester.pumpAndSettle();
+      expect(photoCapture.galleryCalls, 1);
+      expect(photoCapture.calls, 0);
+      expect((await visits.visitById(visitId))!.recordFor('zone-1')!.beforePhotoSource, PhotoSource.gallery);
+    });
     testWidgets('renders VisitCaptureView with the visit date as the title and one row for each zone record', (
       tester,
     ) async {
@@ -1146,7 +1156,9 @@ void main() {
           [
             longZoneName,
             'Take Before Photo',
+            'Select before photo from gallery',
             'Take After Photo',
+            'Select after photo from gallery',
             'Photos from the visit on September 16, 2026',
             'Note',
           ],
@@ -1154,7 +1166,15 @@ void main() {
         ),
         (
           const Locale('ko'),
-          [longZoneName, '청소 전 사진 찍기', '청소 후 사진 찍기', '2026년 9월 16일 방문 사진', '메모'],
+          [
+            longZoneName,
+            '청소 전 사진 찍기',
+            '청소 전 사진 갤러리에서 선택',
+            '청소 후 사진 찍기',
+            '청소 후 사진 갤러리에서 선택',
+            '2026년 9월 16일 방문 사진',
+            '메모',
+          ],
           ['화장실', '청소 전 사진 다시 찍기', '청소 후 사진 다시 찍기', '메모'],
         ),
       ]) {

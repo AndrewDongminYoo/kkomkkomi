@@ -38,28 +38,34 @@ final class FirebasePublisher implements Publisher {
   });
 
   @override
-  Future<void> writeReport({required String pageId, required String visitId, required PublishedReport report}) =>
-      _guard(
-        () => _database.doc('clientPages/$pageId/reports/$visitId').set({
-          'visitDate': report.visitDate.toString(),
-          'publishedAt': Timestamp.fromDate(report.publishedAt),
-          'zones': [
-            for (final zone in report.zones)
-              {
-                'name': zone.name,
-                'note': zone.note,
-                'beforePhoto': zone.beforePhoto,
-                'afterPhoto': zone.afterPhoto,
-                // A done zone leaves both keys out, so it has the shape of a zone that an earlier version published,
-                // and the report page reads a missing status as done.
-                if (zone.status != ZoneStatus.done) ...{'status': zone.status.name, 'reason': zone.reason},
-              },
-          ],
-          // The rules take only the value true, and only from a paid writer, so a report with the footer leaves the
-          // key out.
-          if (report.unbranded) 'unbranded': true,
-        }),
-      );
+  Future<void> writeReport({
+    required String pageId,
+    required String visitId,
+    required PublishedReport report,
+  }) => _guard(
+    () => _database.doc('clientPages/$pageId/reports/$visitId').set({
+      'visitDate': report.visitDate.toString(),
+      'publishedAt': Timestamp.fromDate(report.publishedAt),
+      'zones': [
+        for (final zone in report.zones)
+          {
+            'name': zone.name,
+            'note': zone.note,
+            'beforePhoto': zone.beforePhoto,
+            'afterPhoto': zone.afterPhoto,
+            if (zone.beforePhoto != null && zone.beforePhotoSource == PhotoSource.gallery)
+              'beforePhotoSource': 'gallery',
+            if (zone.afterPhoto != null && zone.afterPhotoSource == PhotoSource.gallery) 'afterPhotoSource': 'gallery',
+            // A done zone leaves both keys out, so it has the shape of a zone that an earlier version published,
+            // and the report page reads a missing status as done.
+            if (zone.status != ZoneStatus.done) ...{'status': zone.status.name, 'reason': zone.reason},
+          },
+      ],
+      // The rules take only the value true, and only from a paid writer, so a report with the footer leaves the
+      // key out.
+      if (report.unbranded) 'unbranded': true,
+    }),
+  );
 
   @override
   Future<void> revokePage(String pageId, PublishedPage page, {required DateTime revokedAt}) => _guard(

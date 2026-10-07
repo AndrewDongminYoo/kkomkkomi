@@ -46,6 +46,25 @@ void main() {
   tearDown(() => database.close());
 
   group('SqliteVisitRepository', () {
+    test('round-trips provenance and reads a future source conservatively', () async {
+      final recorded = visit(
+        'source-test',
+        records: [
+          ZoneRecord(
+            zoneId: 'zone-1',
+            zoneName: 'Lobby',
+            beforePhoto: PhotoRef('photos/source-test/b.jpg'),
+            beforePhotoSource: PhotoSource.gallery,
+            afterPhoto: PhotoRef('photos/source-test/a.jpg'),
+            afterPhotoSource: PhotoSource.camera,
+          ),
+        ],
+      );
+      await repository.save(recorded);
+      expect(await repository.visitById(recorded.id), recorded);
+      await database.update('zone_records', {'before_photo_source': 'future'});
+      expect((await repository.visitById(recorded.id))!.zoneRecords.single.beforePhotoSource, PhotoSource.unknown);
+    });
     test('returns null for a visit that does not exist', () async {
       expect(await repository.visitById('visit-1'), isNull);
     });

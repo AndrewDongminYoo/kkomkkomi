@@ -30,6 +30,7 @@ ReportLabels reportLabelsOf(AppLocalizations l10n, VisitDate visitDate) => Repor
   summaryOf: (done, total) => l10n.reportSummary(done, total),
   note: l10n.reportNoteLabel,
   footer: l10n.reportFooter,
+  galleryPhoto: l10n.photoGallerySourceLabel,
 );
 
 /// The screen of the report of one visit: what the report lacks, a preview, and the controls that share the link
@@ -376,6 +377,7 @@ class _PreviewZone extends StatelessWidget {
               child: _PreviewSlot(
                 label: labels.beforePhoto,
                 photo: zone.beforePhoto,
+                caption: zone.beforePhotoSource == PhotoSource.gallery ? labels.galleryPhoto : '',
                 emptyText: labels.emptySlotOf(zone.status),
                 pathOf: pathOf,
               ),
@@ -385,6 +387,7 @@ class _PreviewZone extends StatelessWidget {
               child: _PreviewSlot(
                 label: labels.afterPhoto,
                 photo: zone.afterPhoto,
+                caption: zone.afterPhotoSource == PhotoSource.gallery ? labels.galleryPhoto : '',
                 emptyText: labels.emptySlotOf(zone.status),
                 pathOf: pathOf,
               ),
@@ -432,9 +435,16 @@ class _StatusBadge extends StatelessWidget {
 
 /// One photo slot of the preview: [label] over the photo, or over an empty box for a photo that the zone lacks.
 class _PreviewSlot extends StatelessWidget {
-  const new({required this.label, required this.photo, required this.emptyText, required this.pathOf});
+  const new({
+    required this.label,
+    required this.photo,
+    required this.emptyText,
+    required this.pathOf,
+    this.caption = '',
+  });
 
   final String label;
+  final String caption;
   final PhotoRef? photo;
 
   /// What the PDF prints in the slot when it holds no photo, which a screen reader reads for the empty slot.
@@ -485,6 +495,10 @@ class _PreviewSlot extends StatelessWidget {
                     ),
             ),
           ),
+          if (photo != null && caption.isNotEmpty) ...[
+            const SizedBox(height: 4),
+            KeepAllText(caption, style: theme.textTheme.bodySmall),
+          ],
         ],
       ),
     );

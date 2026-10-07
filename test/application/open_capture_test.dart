@@ -21,7 +21,7 @@ void main() {
     });
 
     test('names its visit, zone, and slot in its description', () {
-      expect(lobbyBefore.toString(), 'OpenCapture(visit-1, zone-1, before)');
+      expect(lobbyBefore.toString(), 'OpenCapture(visit-1, zone-1, before, camera)');
     });
   });
 }

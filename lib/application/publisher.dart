@@ -139,6 +139,8 @@ final class PublishedZone {
     required this.note,
     required this.beforePhoto,
     required this.afterPhoto,
+    this.beforePhotoSource = PhotoSource.unknown,
+    this.afterPhotoSource = PhotoSource.unknown,
     this.status = ZoneStatus.done,
     this.reason = '',
   });
@@ -147,6 +149,8 @@ final class PublishedZone {
   final String note;
   final String? beforePhoto;
   final String? afterPhoto;
+  final PhotoSource beforePhotoSource;
+  final PhotoSource afterPhotoSource;
 
   /// Whether the visit cleaned the zone as agreed.
   final ZoneStatus status;
@@ -161,11 +165,14 @@ final class PublishedZone {
       other.note == note &&
       other.beforePhoto == beforePhoto &&
       other.afterPhoto == afterPhoto &&
+      other.beforePhotoSource == beforePhotoSource &&
+      other.afterPhotoSource == afterPhotoSource &&
       other.status == status &&
       other.reason == reason;
 
   @override
-  int get hashCode => Object.hash(name, note, beforePhoto, afterPhoto, status, reason);
+  int get hashCode =>
+      Object.hash(name, note, beforePhoto, afterPhoto, beforePhotoSource, afterPhotoSource, status, reason);
 
   @override
   String toString() => 'PublishedZone($name, $note, $beforePhoto, $afterPhoto, ${status.name}, $reason)';

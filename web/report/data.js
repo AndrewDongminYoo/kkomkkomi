@@ -209,6 +209,13 @@ export function decodeReport(document) {
           note: textOrNull(zone.note) ?? "",
           beforePhoto: textOrNull(zone.beforePhoto),
           afterPhoto: textOrNull(zone.afterPhoto),
+          ...(textOrNull(zone.beforePhoto) &&
+          zone.beforePhotoSource === "gallery"
+            ? { beforePhotoSource: "gallery" }
+            : {}),
+          ...(textOrNull(zone.afterPhoto) && zone.afterPhotoSource === "gallery"
+            ? { afterPhotoSource: "gallery" }
+            : {}),
           status,
           reason: status === "done" ? "" : (textOrNull(zone.reason) ?? ""),
         };

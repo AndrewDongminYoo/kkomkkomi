@@ -1,6 +1,7 @@
 import 'dart:io';
 
 import 'package:flutter_test/flutter_test.dart';
+import 'package:image/image.dart' as image;
 import 'package:kkomkkomi/application/application.dart';
 import 'package:kkomkkomi/domain/domain.dart';
 import 'package:kkomkkomi/presentation/presentation.dart';
@@ -33,6 +34,39 @@ void main() {
 
   group('DocumentsPhotoStore', () {
     group('save', () {
+      for (final (width, height) in [(1601, 8), (8, 1601)]) {
+        test('limits a converted PNG edge for $width x $height pixels', () async {
+          final png = image.Image(width: width, height: height);
+          final photo = await store().save(
+            sourcePath: pickedFile('big.png', image.encodePng(png)).path,
+            visitId: 'visit-1',
+            photoId: 'big',
+          );
+          final decoded = image.decodeJpg(stored(photo.path).readAsBytesSync())!;
+          expect(decoded.width, lessThanOrEqualTo(1600));
+          expect(decoded.height, lessThanOrEqualTo(1600));
+        });
+      }
+      test('normalizes a transparent PNG to a white-backed JPEG before storing it', () async {
+        final png = image.Image(width: 8, height: 6, numChannels: 4);
+        final picked = pickedFile('gallery.png', image.encodePng(png));
+        final photo = await store().save(sourcePath: picked.path, visitId: 'visit-1', photoId: 'png');
+        expect(photo.path, 'photos/visit-1/png.jpg');
+        final bytes = stored(photo.path).readAsBytesSync();
+        final decoded = image.decodeJpg(bytes)!;
+        expect((decoded.width, decoded.height), (8, 6));
+        expect(decoded.getPixel(0, 0).r, greaterThan(250));
+        expect(bytes, withoutLocation(bytes));
+      });
+
+      test('refuses a malformed PNG before creating a photo file', () async {
+        final picked = pickedFile('bad.png', [0x89, 0x50, 0x4e, 0x47, 0, 0, 0, 0]);
+        await expectLater(
+          store().save(sourcePath: picked.path, visitId: 'visit-1', photoId: 'bad'),
+          throwsFormatException,
+        );
+        expect(Directory('${documents.path}/photos').existsSync(), isFalse);
+      });
       test('copies the picked file into photos/<visitId>/ under the documents directory', () async {
         final picked = pickedFile('scaled_camera.jpg');
 

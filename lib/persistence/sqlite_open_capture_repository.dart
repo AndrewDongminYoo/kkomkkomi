@@ -23,6 +23,7 @@ final class SqliteOpenCaptureRepository implements OpenCaptureRepository {
       visitId: row['visit_id']! as String,
       zoneId: row['zone_id']! as String,
       slot: PhotoSlot.values.byName(row['slot']! as String),
+      source: PhotoSource.values.asNameMap()[row['source']] ?? PhotoSource.unknown,
     );
   }
 
@@ -32,7 +33,12 @@ final class SqliteOpenCaptureRepository implements OpenCaptureRepository {
       transaction,
       _table,
       key: {'id': _rowId},
-      values: {'visit_id': capture.visitId, 'zone_id': capture.zoneId, 'slot': capture.slot.name},
+      values: {
+        'visit_id': capture.visitId,
+        'zone_id': capture.zoneId,
+        'slot': capture.slot.name,
+        'source': capture.source.name,
+      },
       where: 'id = ?',
       whereArgs: [_rowId],
     ),

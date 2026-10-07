@@ -6,6 +6,9 @@ abstract interface class PhotoCapture {
   /// Throws a [PhotoCaptureException] when the camera gave no photo for another reason.
   Future<String?> takePhoto();
 
+  /// Selects one gallery image, or null after cancellation. Its capture time is unknown.
+  Future<String?> selectGalleryPhoto();
+
   /// Whether the camera of this platform can keep the photo of a capture whose answer the app lost.
   ///
   /// The answer is lost when the system ends the app while the camera app is open, which only a platform that opens
