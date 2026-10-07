@@ -333,6 +333,45 @@ describe("firestore: writers", () => {
     );
   });
 
+  for (const [label, sources] of [
+    ["before", { beforePhotoSource: "gallery" }],
+    ["after", { afterPhotoSource: "gallery" }],
+    ["both", { beforePhotoSource: "gallery", afterPhotoSource: "gallery" }],
+  ]) {
+    test(`gallery sources survive an owner write and anonymous read (${label}) without weakening ownership`, async () => {
+      const path = `clientPages/${openPage}/reports/visit-gallery`;
+      const marked = {
+        ...report(),
+        zones: [
+          {
+            name: "입구",
+            note: "",
+            beforePhoto: photoPath(openPage),
+            afterPhoto: photoPath(openPage, "zone-1-after-photo-1.jpg"),
+            ...sources,
+          },
+        ],
+      };
+      await assertSucceeds(signedIn(owner).firestore().doc(path).set(marked));
+      const saved = await assertSucceeds(reader().firestore().doc(path).get());
+      assert.deepEqual(saved.data().zones[0], {
+        name: "입구",
+        note: "",
+        beforePhoto: photoPath(openPage),
+        afterPhoto: photoPath(openPage, "zone-1-after-photo-1.jpg"),
+        ...sources,
+      });
+      await assertFails(signedIn(stranger).firestore().doc(path).set(marked));
+      await assertFails(reader().firestore().doc(path).set(marked));
+      await assertFails(
+        signedIn(owner)
+          .firestore()
+          .doc(`clientPages/${revokedPage}/reports/visit-gallery`)
+          .set(marked),
+      );
+    });
+  }
+
   test("a report with an unknown field is refused", async () => {
     await assertFails(
       signedIn(owner)
