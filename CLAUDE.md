@@ -52,7 +52,8 @@ Hosting alone was deployed a fourth time from `d438781` on 2026-10-04, after the
 The Firestore rules and Hosting were deployed from `135c67f` on 2026-10-05, after the M3 pull requests #42 to #45 and #47 to #49 merged: `firestore.rules` accepts `unbranded` from a paid writer (#42), the web report hides the footer text of an unbranded report (#42), and the privacy pages changed in #43, #44, #45, #48, and #49. `storage.rules` had not changed since `34d5d23`, so it was not deployed.
 Hosting alone was deployed from `0da9ccf` on 2026-10-06, after #55 merged, which added the Google Search Console verification file under `web/` (issue #53). No other file under `web/` had changed since `135c67f`.
 Hosting alone was deployed again from `6bae5df` on 2026-10-06, after #57 merged, which added `web/sitemap.xml` and `web/robots.txt`.
-The deployed Firestore rules equal the tracked ones at `135c67f`, the deployed Hosting files equal the tracked ones at `6bae5df`, and the deployed Storage rules equal the tracked ones at `34d5d23`.
+Hosting alone was deployed from `300add7` on 2026-10-07, after #69 merged, which changed the web report and both privacy pages for the zone status. No other file under `web/` had changed since `6bae5df`.
+The deployed Firestore rules equal the tracked ones at `135c67f`, the deployed Hosting files equal the tracked ones at `300add7`, and the deployed Storage rules equal the tracked ones at `34d5d23`.
 A deploy is the operator's decision each time: do not deploy rules or Hosting without that approval.
 
 The operator installed the RevenueCat Firebase extension from the Firebase console on 2026-10-05, as the instance `firestore-revenuecat-purchases`.
