@@ -217,9 +217,23 @@ List<pw.Widget> _zone(int number, ReportZone zone, ReportLabels labels, Map<Phot
         pw.Row(
           crossAxisAlignment: pw.CrossAxisAlignment.start,
           children: [
-            pw.Expanded(child: _slot(labels.beforePhoto, images[zone.beforePhoto], labels.emptySlotOf(zone.status))),
+            pw.Expanded(
+              child: _slot(
+                labels.beforePhoto,
+                images[zone.beforePhoto],
+                labels.emptySlotOf(zone.status),
+                caption: zone.beforePhotoSource == PhotoSource.gallery ? labels.galleryPhoto : '',
+              ),
+            ),
             pw.SizedBox(width: _slotGap),
-            pw.Expanded(child: _slot(labels.afterPhoto, images[zone.afterPhoto], labels.emptySlotOf(zone.status))),
+            pw.Expanded(
+              child: _slot(
+                labels.afterPhoto,
+                images[zone.afterPhoto],
+                labels.emptySlotOf(zone.status),
+                caption: zone.afterPhotoSource == PhotoSource.gallery ? labels.galleryPhoto : '',
+              ),
+            ),
           ],
         ),
       ],
@@ -268,7 +282,7 @@ pw.Widget _statusBadge(String status) => pw.Container(
 ///
 /// The photo sits on white inside a solid edge, and a slot without a photo has a dashed edge, so that the space
 /// beside a photo never looks like a missing photo.
-pw.Widget _slot(String label, pw.ImageProvider? image, String emptyText) => pw.Column(
+pw.Widget _slot(String label, pw.ImageProvider? image, String emptyText, {String caption = ''}) => pw.Column(
   crossAxisAlignment: pw.CrossAxisAlignment.start,
   children: [
     pw.Text(label, style: const pw.TextStyle(fontSize: 9, color: _secondaryText)),
@@ -291,6 +305,10 @@ pw.Widget _slot(String label, pw.ImageProvider? image, String emptyText) => pw.C
             : pw.Image(image),
       ),
     ),
+    if (image != null && caption.isNotEmpty) ...[
+      pw.SizedBox(height: 3),
+      pw.Text(caption, style: const pw.TextStyle(fontSize: 9, color: _secondaryText)),
+    ],
   ],
 );
 

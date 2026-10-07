@@ -21,6 +21,28 @@ void main() {
   tearDown(() => database.close());
 
   group('SqliteOpenCaptureRepository', () {
+    test('preserves gallery provenance and treats an unknown future source as unknown', () async {
+      const capture = OpenCapture(
+        visitId: 'visit-1',
+        zoneId: 'zone-1',
+        slot: PhotoSlot.before,
+        source: PhotoSource.gallery,
+      );
+      await repository.save(capture);
+      expect(await repository.load(), capture);
+      await database.update('open_capture', {'source': 'future'});
+      expect((await repository.load())!.source, PhotoSource.unknown);
+      expect(capture, isNot(lobbyBefore));
+      expect(
+        capture.hashCode,
+        const OpenCapture(
+          visitId: 'visit-1',
+          zoneId: 'zone-1',
+          slot: PhotoSlot.before,
+          source: PhotoSource.gallery,
+        ).hashCode,
+      );
+    });
     test('loads null before a capture is stored', () async {
       expect(await repository.load(), isNull);
     });
@@ -38,7 +60,7 @@ void main() {
       await repository.save(hallAfter);
 
       expect(await database.query('open_capture'), [
-        {'id': 1, 'visit_id': 'visit-2', 'zone_id': 'zone-2', 'slot': 'after'},
+        {'id': 1, 'visit_id': 'visit-2', 'zone_id': 'zone-2', 'slot': 'after', 'source': 'camera'},
       ]);
     });
 

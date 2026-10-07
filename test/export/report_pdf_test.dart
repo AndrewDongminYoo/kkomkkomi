@@ -24,6 +24,7 @@ void main() {
     summaryOf: (done, total) => '$total곳 중 $done곳 완료',
     note: '메모',
     footer: '꼼꼬미로 만든 보고서',
+    galleryPhoto: '갤러리에서 선택한 사진',
   );
 
   final font = ByteData.sublistView(File(Assets.fonts.notoSansKRRegular).readAsBytesSync());
@@ -78,6 +79,21 @@ void main() {
   int countOf(String part, String text) => part.allMatches(text).length;
 
   group('renderReportPdf', () {
+    test('marks a gallery image and never labels an empty slot as a gallery image', () async {
+      final summary = await render(
+        document([
+          ReportZone(
+            name: '로비',
+            beforePhoto: photo('a'),
+            afterPhoto: null,
+            note: '',
+            beforePhotoSource: PhotoSource.gallery,
+            afterPhotoSource: PhotoSource.gallery,
+          ),
+        ]),
+      );
+      expect(countOf(labels.galleryPhoto, summary.text), 1);
+    });
     test('prints the business phone between the company name and title', () async {
       final summary = await render(
         ReportDocument(

@@ -46,6 +46,22 @@ final class ImagePickerPhotoCapture implements PhotoCapture {
     }
   }
 
+  @override
+  Future<String?> selectGalleryPhoto() async {
+    try {
+      final photo = await (_picker ?? ImagePicker()).pickImage(
+        source: ImageSource.gallery,
+        maxWidth: maxEdge,
+        maxHeight: maxEdge,
+        imageQuality: quality,
+        requestFullMetadata: false,
+      );
+      return photo?.path;
+    } on Object catch (error, stackTrace) {
+      Error.throwWithStackTrace(PhotoCaptureException(cause: error), stackTrace);
+    }
+  }
+
   /// True on Android only.
   ///
   /// Only Android opens the camera as another app, so only Android can end the app while the camera is open, and

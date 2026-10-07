@@ -132,6 +132,23 @@ void main() {
   );
 
   group('VisitReportPage', () {
+    testWidgets('marks gallery provenance in preview and shared PDF', (tester) async {
+      final visit = visitWith([
+        ZoneRecord(
+          zoneId: 'zone-1',
+          zoneName: 'Lobby',
+          beforePhoto: beforePhoto,
+          afterPhoto: afterPhoto,
+          beforePhotoSource: PhotoSource.gallery,
+          afterPhotoSource: PhotoSource.gallery,
+        ),
+      ]);
+      await pumpPage(tester, visit: visit);
+      expect(find.text('Selected from gallery'), findsNWidgets(2));
+      await tester.tap(shareButton());
+      await tester.pumpAndSettle();
+      expect(PdfSummary.read(reportShare.shared.single.bytes).text, contains('Selected from gallery'));
+    });
     testWidgets('shows the optional phone in the preview and PDF', (tester) async {
       await pumpPage(tester, visit: complete, companyPhone: '02-1234-5678');
       expect(find.text('02-1234-5678'), findsOneWidget);
@@ -989,6 +1006,7 @@ void main() {
           summaryOf: (_, _) => '',
           note: '',
           footer: '',
+          galleryPhoto: '',
         ),
       ),
     );

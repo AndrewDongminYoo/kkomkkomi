@@ -168,13 +168,13 @@
     "@visitCaptureEmptyMessage": {
         "description": "방문에 구역이 하나도 없을 때 방문 화면에서 구역 대신 표시되는 문구"
     },
-    "visitCaptureRecoveredPhotoMessage": "카메라를 쓰는 동안 앱이 다시 시작됐어요. 찍은 사진은 이 방문에 넣었어요.",
+    "visitCaptureRecoveredPhotoMessage": "사진을 받는 동안 앱이 다시 시작됐어요. 받은 사진은 이 방문에 저장했어요.",
     "@visitCaptureRecoveredPhotoMessage": {
-        "description": "시스템이 카메라를 쓰는 동안 앱을 닫은 뒤, 앱이 시작되며 찍은 사진을 방문에 넣었을 때 표시되는 문구"
+        "description": "시스템이 사진을 받는 동안 앱을 닫은 뒤, 앱이 시작되며 받은 사진을 방문에 넣었을 때 표시되는 문구"
     },
-    "visitCaptureRecoveryFailedMessage": "카메라를 쓰는 동안 앱이 다시 시작됐는데, 찍은 사진을 넣지 못했어요. 다시 찍어 주세요.",
+    "visitCaptureRecoveryFailedMessage": "사진을 받는 동안 앱이 다시 시작됐는데, 사진을 저장하지 못했어요. 다시 찍거나 선택해 주세요.",
     "@visitCaptureRecoveryFailedMessage": {
-        "description": "시스템이 카메라를 쓰는 동안 앱을 닫은 뒤, 앱이 시작되며 찍은 사진을 방문에 넣지 못했을 때 표시되는 문구"
+        "description": "시스템이 사진을 받는 동안 앱을 닫은 뒤, 앱이 시작되며 받은 사진을 방문에 넣지 못했을 때 표시되는 문구"
     },
     "photoTakeBeforeButton": "청소 전 사진 찍기",
     "@photoTakeBeforeButton": {
@@ -192,7 +192,7 @@
     "@photoRetakeAfterButton": {
         "description": "구역의 청소 후 사진을 바꾸려고 카메라를 여는 버튼의 라벨"
     },
-    "photoCaptureFailedMessage": "사진을 찍지 못했어요. 다시 시도해 주세요.",
+    "photoCaptureFailedMessage": "사진을 가져오지 못했어요. 다시 시도해 주세요.",
     "@photoCaptureFailedMessage": {
         "description": "카메라가 사진을 주지 않았거나 사진을 보관하지 못했을 때 표시되는 문구"
     },
@@ -396,8 +396,12 @@
     "@reportSummary": {
         "description": "보고서 제목 아래의 요약: 보고서에 들어간 구역 가운데 약속대로 청소한 구역의 수",
         "placeholders": {
-            "done": {"type": "int"},
-            "total": {"type": "int"}
+            "done": {
+                "type": "int"
+            },
+            "total": {
+                "type": "int"
+            }
         }
     },
     "reportPartlyDoneLabel": "일부 완료",
@@ -671,5 +675,17 @@
     "companyPhoneHelper": "PDF와 미리보기에 표시해요. 공개 웹 보고서에는 포함하지 않아요.",
     "@companyPhoneHelper": {
         "description": "Where the business phone is shown"
+    },
+    "photoGalleryBeforeButton": "청소 전 사진 갤러리에서 선택",
+    "@photoGalleryBeforeButton": {
+        "description": "Select one gallery photo for the before slot"
+    },
+    "photoGalleryAfterButton": "청소 후 사진 갤러리에서 선택",
+    "@photoGalleryAfterButton": {
+        "description": "Select one gallery photo for the after slot"
+    },
+    "photoGallerySourceLabel": "갤러리에서 선택한 사진",
+    "@photoGallerySourceLabel": {
+        "description": "Report caption for a photo selected from the gallery"
     }
 }

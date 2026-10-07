@@ -593,6 +593,26 @@ void main() {
   });
 
   group('publishVisit', () {
+    test('publishes gallery provenance from the saved visit beside each uploaded photo', () async {
+      final original = visit1.zoneRecords.first;
+      await repositories.visits.save(
+        visit1.withRecord(
+          original
+              .withPhoto(PhotoSlot.before, beforePhoto, source: PhotoSource.gallery)
+              .withPhoto(PhotoSlot.after, afterPhoto, source: PhotoSource.camera),
+        ),
+      );
+      final queue = newQueue();
+      final job = await queue.publishVisit('visit-1');
+      await settle();
+      final zone = publisher.reports['${job.pageId}/visit-1']!.zones.first;
+      expect(zone.beforePhotoSource, PhotoSource.gallery);
+      expect(zone.afterPhotoSource, PhotoSource.camera);
+      expect(zone.beforePhoto, endsWith('/zone-1-before-before.jpg'));
+      expect(zone.afterPhoto, endsWith('/zone-1-after-after.jpg'));
+      expect(await jobOf(job), job.succeed());
+    });
+
     test('writes the page, uploads the photos, and then writes the report, and the job is done', () async {
       final queue = newQueue();
       final updates = <PublishJob>[];

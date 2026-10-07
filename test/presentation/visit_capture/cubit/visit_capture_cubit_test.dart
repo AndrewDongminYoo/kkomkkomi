@@ -98,7 +98,7 @@ void main() {
   }
 
   Visit withPhoto(String zoneId, PhotoSlot slot, PhotoRef photo) =>
-      visit.withRecord(visit.recordFor(zoneId)!.withPhoto(slot, photo));
+      visit.withRecord(visit.recordFor(zoneId)!.withPhoto(slot, photo, source: PhotoSource.camera));
 
   /// Makes each save wait for the completer that the returned list holds for it, in the order of the calls.
   List<Completer<void>> holdSaves() {
@@ -310,6 +310,20 @@ void main() {
     });
 
     group('capturePhoto', () {
+      test('gallery selection keeps provenance and cancellation keeps the old photo', () async {
+        final cubit = build();
+        await cubit.load();
+        photoCapture.results.add('/cache/gallery.png');
+        await cubit.capturePhoto('zone-1', PhotoSlot.before, source: PhotoSource.gallery);
+        final record = cubit.state.visit!.recordFor('zone-1')!;
+        expect(record.beforePhotoSource, PhotoSource.gallery);
+        expect(photoCapture.galleryCalls, 1);
+        expect(photoCapture.calls, 0);
+        photoCapture.results.add(null);
+        await cubit.capturePhoto('zone-1', PhotoSlot.before, source: PhotoSource.gallery);
+        expect(cubit.state.visit!.recordFor('zone-1'), record);
+        await cubit.close();
+      });
       blocTest<VisitCaptureCubit, VisitCaptureState>(
         'takes a photo, keeps its file under the visit, and saves the visit with it',
         setUp: () => photoCapture.results.add(picked),
@@ -1189,7 +1203,9 @@ void main() {
         saves.last.complete();
         await Future.wait([edit, capture]);
 
-        final withBoth = noted.withRecord(noted.recordFor('zone-1')!.withPhoto(PhotoSlot.before, newPhoto));
+        final withBoth = noted.withRecord(
+          noted.recordFor('zone-1')!.withPhoto(PhotoSlot.before, newPhoto, source: PhotoSource.camera),
+        );
         expect(cubit.state, loaded(shown: withBoth));
         verify(() => visits.save(withBoth)).called(1);
       });

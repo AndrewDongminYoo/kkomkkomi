@@ -60,7 +60,7 @@ void main() {
       await repository.save(CompanyProfile(name: '반짝 클린', phone: '02-1234-5678'));
       expect((await repository.load())!.phone, '02-1234-5678');
     });
-    test('creates the version 6 schema with one table for each entity, the tables of publishing, and the open '
+    test('creates the version 7 schema with one table for each entity, the tables of publishing, and the open '
         'capture', () async {
       final database = await openMemoryDatabase();
       addTearDown(database.close);
@@ -79,7 +79,7 @@ void main() {
         'zones',
       ]);
       expect(await database.getVersion(), schemaVersion);
-      expect(schemaVersion, 6);
+      expect(schemaVersion, 7);
       final columns = await database.rawQuery('PRAGMA table_info(client_pages)');
       for (final name in ['server_delete_requested_at', 'server_deleted_at']) {
         final column = columns.singleWhere((row) => row['name'] == name);
@@ -230,7 +230,7 @@ void main() {
       ]);
       expect(
         await repositories.openCaptures.load(),
-        const OpenCapture(visitId: 'visit-1', zoneId: 'zone-1', slot: PhotoSlot.before),
+        const OpenCapture(visitId: 'visit-1', zoneId: 'zone-1', slot: PhotoSlot.before, source: PhotoSource.unknown),
       );
     });
 

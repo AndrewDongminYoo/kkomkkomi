@@ -272,3 +272,9 @@ button:focus-visible {
     padding: 2rem;
   }
 }
+
+.photo-source {
+  margin: 4px 0 0;
+  color: var(--ink-2);
+  font-size: 12px;
+}

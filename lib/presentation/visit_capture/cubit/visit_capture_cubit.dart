@@ -83,7 +83,7 @@ class VisitCaptureCubit extends Cubit<VisitCaptureState> {
   /// The photos of the visit stay as they were when the person closes the camera without a photo, and when the
   /// camera, the photo store, or storage fails. The camera does not open when storage does not take the capture that
   /// it opens for. A call does nothing while the visit takes no change.
-  Future<void> capturePhoto(String zoneId, PhotoSlot slot) async {
+  Future<void> capturePhoto(String zoneId, PhotoSlot slot, {PhotoSource source = PhotoSource.camera}) async {
     final visit = state.visit;
     final record = visit?.recordFor(zoneId);
     if (visit == null || record == null || !state.status.takesChange) return;
@@ -94,14 +94,14 @@ class VisitCaptureCubit extends Cubit<VisitCaptureState> {
     VisitCaptureState after(VisitCaptureStatus status) =>
         state.copyWith(status: status, isStored: areNotesStored, isSavingNote: false);
 
-    if (!await _storeOpenCapture(OpenCapture(visitId: visit.id, zoneId: zoneId, slot: slot))) {
+    if (!await _storeOpenCapture(OpenCapture(visitId: visit.id, zoneId: zoneId, slot: slot, source: source))) {
       _show(after(VisitCaptureStatus.saveFailed));
       return;
     }
 
     final PhotoRef photo;
     try {
-      final picked = await _takePhoto();
+      final picked = await _takePhoto(source);
       if (picked == null) {
         _show(after(VisitCaptureStatus.ready));
         return;
@@ -114,7 +114,7 @@ class VisitCaptureCubit extends Cubit<VisitCaptureState> {
       return;
     }
 
-    final changed = visit.withRecord(record.withPhoto(slot, photo));
+    final changed = visit.withRecord(record.withPhoto(slot, photo, source: source));
     if (await _save(changed)) {
       _show(state.copyWith(status: VisitCaptureStatus.ready, visit: changed, isStored: true, isSavingNote: false));
       // The old file goes only now, so that a failed save leaves the slot with the photo that storage names.
@@ -146,9 +146,9 @@ class VisitCaptureCubit extends Cubit<VisitCaptureState> {
   ///
   /// A failed removal is reported and does not change the answer: the camera gave its answer to this call, so the
   /// next start finds no photo for the capture, and the next capture replaces it.
-  Future<String?> _takePhoto() async {
+  Future<String?> _takePhoto(PhotoSource source) async {
     try {
-      return await _photoCapture.takePhoto();
+      return source == PhotoSource.gallery ? await _photoCapture.selectGalleryPhoto() : await _photoCapture.takePhoto();
     } finally {
       try {
         await _openCaptures.clear();

@@ -87,7 +87,7 @@ final class RecoverLostCapture {
       picked = await _photoCapture.retrieveLostPhoto();
     }
     if (picked == null) return null;
-    final recovery = await _keep(picked, visit, record, capture.slot);
+    final recovery = await _keep(picked, visit, record, capture.slot, capture.source);
     try {
       await _openCaptures.clear();
     } on Exception {
@@ -97,7 +97,13 @@ final class RecoverLostCapture {
     return recovery;
   }
 
-  Future<LostCaptureRecovery> _keep(String picked, Visit visit, ZoneRecord record, PhotoSlot slot) async {
+  Future<LostCaptureRecovery> _keep(
+    String picked,
+    Visit visit,
+    ZoneRecord record,
+    PhotoSlot slot,
+    PhotoSource source,
+  ) async {
     final PhotoRef photo;
     try {
       photo = await _photoStore.save(sourcePath: picked, visitId: visit.id, photoId: _idGenerator.newId());
@@ -105,7 +111,7 @@ final class RecoverLostCapture {
       return LostCaptureRecovery(visitId: visit.id, failure: error);
     }
     try {
-      await _visits.save(visit.withRecord(record.withPhoto(slot, photo)));
+      await _visits.save(visit.withRecord(record.withPhoto(slot, photo, source: source)));
     } on Exception catch (error) {
       await _deleteFile(photo);
       return LostCaptureRecovery(visitId: visit.id, failure: error);

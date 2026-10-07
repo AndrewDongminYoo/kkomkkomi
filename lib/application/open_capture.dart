@@ -9,21 +9,26 @@ import 'package:kkomkkomi/domain/domain.dart';
 /// The app stores it before the camera opens and removes it when the capture ends. When the system ends the app
 /// while the camera app is open, the stored capture tells the next start where the photo of that capture belongs.
 final class OpenCapture {
-  const new({required this.visitId, required this.zoneId, required this.slot});
+  const new({required this.visitId, required this.zoneId, required this.slot, this.source = PhotoSource.camera});
 
   final String visitId;
   final String zoneId;
   final PhotoSlot slot;
+  final PhotoSource source;
 
   @override
   bool operator ==(Object other) =>
-      other is OpenCapture && other.visitId == visitId && other.zoneId == zoneId && other.slot == slot;
+      other is OpenCapture &&
+      other.visitId == visitId &&
+      other.zoneId == zoneId &&
+      other.slot == slot &&
+      other.source == source;
 
   @override
-  int get hashCode => Object.hash(visitId, zoneId, slot);
+  int get hashCode => Object.hash(visitId, zoneId, slot, source);
 
   @override
-  String toString() => 'OpenCapture($visitId, $zoneId, ${slot.name})';
+  String toString() => 'OpenCapture($visitId, $zoneId, ${slot.name}, ${source.name})';
 }
 
 /// Stores the one [OpenCapture] of the app, so that it outlives the end of the app.

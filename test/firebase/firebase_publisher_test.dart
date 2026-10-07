@@ -77,6 +77,39 @@ void main() {
       verify(() => documents[path]!.set(captureAny())).captured.single as Map<String, dynamic>;
 
   group('FirebasePublisher', () {
+    test('publishes gallery source only for an existing gallery photo', () async {
+      await publisher.writeReport(
+        pageId: 'page-1',
+        visitId: 'visit-1',
+        report: PublishedReport(
+          visitDate: VisitDate(2026, 10, 1),
+          publishedAt: DateTime.utc(2026),
+          zones: [
+            const PublishedZone(
+              name: 'Lobby',
+              note: '',
+              beforePhoto: 'b.jpg',
+              afterPhoto: 'a.jpg',
+              beforePhotoSource: PhotoSource.gallery,
+              afterPhotoSource: PhotoSource.gallery,
+            ),
+            const PublishedZone(
+              name: 'Empty',
+              note: '',
+              beforePhoto: null,
+              afterPhoto: null,
+              beforePhotoSource: PhotoSource.gallery,
+              afterPhotoSource: PhotoSource.gallery,
+            ),
+          ],
+        ),
+      );
+      final zones = written('clientPages/page-1/reports/visit-1')['zones'] as List<Object?>;
+      expect(zones.first, containsPair('beforePhotoSource', 'gallery'));
+      expect(zones.first, containsPair('afterPhotoSource', 'gallery'));
+      expect(zones.last, isNot(contains('beforePhotoSource')));
+      expect(zones.last, isNot(contains('afterPhotoSource')));
+    });
     test('is available', () {
       expect(publisher.isAvailable, isTrue);
     });

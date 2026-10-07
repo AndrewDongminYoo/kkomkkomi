@@ -8,6 +8,7 @@
 export const texts = {
   reportTitle: "청소 완료 보고서",
   historyTitle: "청소 보고서",
+  galleryPhoto: "갤러리에서 선택한 사진",
   beforePhoto: "청소 전",
   afterPhoto: "청소 후",
   notPhotographed: "촬영하지 않음",
@@ -114,7 +115,15 @@ function sheetHead(doc, page, title, extra = []) {
 }
 
 /** One photo slot: its label over the photo, or over an empty box that says `emptyText`. */
-function photoSlot(doc, label, objectPath, photoUrl, zoneName, emptyText) {
+function photoSlot(
+  doc,
+  label,
+  objectPath,
+  photoUrl,
+  zoneName,
+  emptyText,
+  source,
+) {
   const frame = element(doc, "div", { className: "frame" });
   if (objectPath) {
     const image = element(doc, "img", {
@@ -140,6 +149,14 @@ function photoSlot(doc, label, objectPath, photoUrl, zoneName, emptyText) {
   return element(doc, "figure", { className: "slot" }, [
     element(doc, "figcaption", { text: label }),
     frame,
+    ...(objectPath && source === "gallery"
+      ? [
+          element(doc, "p", {
+            className: "photo-source",
+            text: texts.galleryPhoto,
+          }),
+        ]
+      : []),
   ]);
 }
 
@@ -188,6 +205,7 @@ function zoneSection(doc, zone, photoUrl) {
         photoUrl,
         zone.name,
         emptyText,
+        zone.beforePhotoSource,
       ),
       photoSlot(
         doc,
@@ -196,6 +214,7 @@ function zoneSection(doc, zone, photoUrl) {
         photoUrl,
         zone.name,
         emptyText,
+        zone.afterPhotoSource,
       ),
     ]),
     ...(zone.note

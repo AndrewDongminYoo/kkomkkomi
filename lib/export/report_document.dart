@@ -85,6 +85,8 @@ final class ReportZone {
     required this.beforePhoto,
     required this.afterPhoto,
     required this.note,
+    this.beforePhotoSource = PhotoSource.unknown,
+    this.afterPhotoSource = PhotoSource.unknown,
     this.status = ZoneStatus.done,
     this.reason = '',
   });
@@ -98,6 +100,8 @@ final class ReportZone {
     name: record.zoneName,
     beforePhoto: record.beforePhoto,
     afterPhoto: record.afterPhoto,
+    beforePhotoSource: record.beforePhotoSource,
+    afterPhotoSource: record.afterPhotoSource,
     note: _printable(record.note),
     status: record.status,
     reason: record.status == ZoneStatus.done ? '' : _printable(record.reason),
@@ -115,6 +119,8 @@ final class ReportZone {
 
   /// The photo after cleaning, or null for a slot that the report prints empty.
   final PhotoRef? afterPhoto;
+  final PhotoSource beforePhotoSource;
+  final PhotoSource afterPhotoSource;
 
   /// The note, or an empty text when the zone has none. A report prints no note block for an empty text.
   final String note;
@@ -131,12 +137,15 @@ final class ReportZone {
       other.name == name &&
       other.beforePhoto == beforePhoto &&
       other.afterPhoto == afterPhoto &&
+      other.beforePhotoSource == beforePhotoSource &&
+      other.afterPhotoSource == afterPhotoSource &&
       other.note == note &&
       other.status == status &&
       other.reason == reason;
 
   @override
-  int get hashCode => Object.hash(name, beforePhoto, afterPhoto, note, status, reason);
+  int get hashCode =>
+      Object.hash(name, beforePhoto, afterPhoto, beforePhotoSource, afterPhotoSource, note, status, reason);
 
   @override
   String toString() => 'ReportZone($name, ${beforePhoto?.path}, ${afterPhoto?.path}, $note, ${status.name}, $reason)';

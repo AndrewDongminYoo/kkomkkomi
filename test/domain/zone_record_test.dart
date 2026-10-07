@@ -21,6 +21,21 @@ void main() {
   );
 
   group('ZoneRecord', () {
+    test('replaces provenance with the photo and keeps it through other edits', () {
+      final photo = PhotoRef('photos/visit/a.jpg');
+      final record = ZoneRecord(
+        zoneId: 'zone',
+        zoneName: 'Lobby',
+      ).withPhoto(PhotoSlot.before, photo, source: PhotoSource.gallery);
+      expect(record.sourceIn(PhotoSlot.before), PhotoSource.gallery);
+      expect(record.sourceIn(PhotoSlot.after), PhotoSource.unknown);
+      expect(
+        record.withNote('note').withStatus(ZoneStatus.partlyDone).withReason('reason').beforePhotoSource,
+        PhotoSource.gallery,
+      );
+      expect(record, isNot(record.withPhoto(PhotoSlot.before, photo, source: PhotoSource.camera)));
+      expect(record.hashCode, record.withNote('').hashCode);
+    });
     test('starts without photos and with an empty note', () {
       final empty = ZoneRecord(zoneId: 'zone-1', zoneName: '로비');
 

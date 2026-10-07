@@ -369,6 +369,17 @@ class FakePhotoCapture implements PhotoCapture {
     return result as String?;
   }
 
+  int galleryCalls = 0;
+
+  @override
+  Future<String?> selectGalleryPhoto() async {
+    galleryCalls++;
+    await gate?.future;
+    final result = results.removeAt(0);
+    if (result is Exception) throw result;
+    return result as String?;
+  }
+
   /// Whether the camera keeps the photo of a capture whose answer the app lost, as the camera of Android does.
   @override
   bool keepsLostPhotos = true;

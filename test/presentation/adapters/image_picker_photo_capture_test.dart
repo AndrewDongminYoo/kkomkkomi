@@ -35,6 +35,42 @@ void main() {
   setUp(() => picker = _MockImagePicker());
 
   group('ImagePickerPhotoCapture', () {
+    test('selects a single gallery photo without requesting full metadata', () async {
+      when(
+        () => picker.pickImage(
+          source: ImageSource.gallery,
+          maxWidth: 1600,
+          maxHeight: 1600,
+          imageQuality: 80,
+          requestFullMetadata: false,
+        ),
+      ).thenAnswer((_) async => XFile('/cache/gallery.png'));
+      expect(await ImagePickerPhotoCapture(picker: picker).selectGalleryPhoto(), '/cache/gallery.png');
+    });
+
+    test('gallery cancellation gives no photo and a picker failure is reported', () async {
+      when(
+        () => picker.pickImage(
+          source: ImageSource.gallery,
+          maxWidth: 1600,
+          maxHeight: 1600,
+          imageQuality: 80,
+          requestFullMetadata: false,
+        ),
+      ).thenAnswer((_) async => null);
+      final capture = ImagePickerPhotoCapture(picker: picker);
+      expect(await capture.selectGalleryPhoto(), isNull);
+      when(
+        () => picker.pickImage(
+          source: ImageSource.gallery,
+          maxWidth: 1600,
+          maxHeight: 1600,
+          imageQuality: 80,
+          requestFullMetadata: false,
+        ),
+      ).thenThrow(PlatformException(code: 'photo_access_denied'));
+      await expectLater(capture.selectGalleryPhoto(), throwsA(isA<PhotoCaptureException>()));
+    });
     test('limits each edge of a photo to 1600 pixels and sets the JPEG quality to 80', () {
       expect(ImagePickerPhotoCapture.maxEdge, 1600);
       expect(ImagePickerPhotoCapture.quality, 80);

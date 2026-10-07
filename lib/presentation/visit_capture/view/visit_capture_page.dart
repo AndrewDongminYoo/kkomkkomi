@@ -451,35 +451,47 @@ class _PhotoControl extends StatelessWidget {
       (PhotoSlot.after, true) => l10n.photoTakeAfterButton,
       (PhotoSlot.after, false) => l10n.photoRetakeAfterButton,
     };
-    return OutlinedButton(
-      style: OutlinedButton.styleFrom(
-        padding: EdgeInsets.zero,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(cornerRadius)),
-      ),
-      clipBehavior: Clip.antiAlias,
-      onPressed: () {
-        // The keyboard would cover the screen when the camera closes, and the note takes no text during a capture.
-        FocusManager.instance.primaryFocus?.unfocus();
-        unawaited(context.read<VisitCaptureCubit>().capturePhoto(zoneId, slot));
-      },
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          AspectRatio(
-            aspectRatio: _photoAspectRatio,
-            child: photo == null
-                ? ColoredBox(
-                    color: Theme.of(context).colorScheme.surfaceContainerHighest,
-                    child: const Center(child: Icon(Icons.photo_camera_outlined, size: 32)),
-                  )
-                : PhotoThumbnail(path: pathOf(photo)),
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        OutlinedButton(
+          style: OutlinedButton.styleFrom(
+            padding: EdgeInsets.zero,
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(cornerRadius)),
           ),
-          Padding(
-            padding: const EdgeInsets.all(8),
-            child: KeepAllText(label, textAlign: TextAlign.center),
+          clipBehavior: Clip.antiAlias,
+          onPressed: () {
+            // The keyboard would cover the screen when the camera closes, and the note takes no text during a capture.
+            FocusManager.instance.primaryFocus?.unfocus();
+            unawaited(context.read<VisitCaptureCubit>().capturePhoto(zoneId, slot));
+          },
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              AspectRatio(
+                aspectRatio: _photoAspectRatio,
+                child: photo == null
+                    ? ColoredBox(
+                        color: Theme.of(context).colorScheme.surfaceContainerHighest,
+                        child: const Center(child: Icon(Icons.photo_camera_outlined, size: 32)),
+                      )
+                    : PhotoThumbnail(path: pathOf(photo)),
+              ),
+              Padding(
+                padding: const EdgeInsets.all(8),
+                child: KeepAllText(label, textAlign: TextAlign.center),
+              ),
+            ],
           ),
-        ],
-      ),
+        ),
+        TextButton(
+          onPressed: () {
+            FocusManager.instance.primaryFocus?.unfocus();
+            unawaited(context.read<VisitCaptureCubit>().capturePhoto(zoneId, slot, source: PhotoSource.gallery));
+          },
+          child: KeepAllText(slot == PhotoSlot.before ? l10n.photoGalleryBeforeButton : l10n.photoGalleryAfterButton),
+        ),
+      ],
     );
   }
 }

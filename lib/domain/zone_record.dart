@@ -5,6 +5,7 @@
 import 'package:kkomkkomi/domain/name.dart';
 import 'package:kkomkkomi/domain/photo_ref.dart';
 import 'package:kkomkkomi/domain/photo_slot.dart';
+import 'package:kkomkkomi/domain/photo_source.dart';
 import 'package:kkomkkomi/domain/zone_status.dart';
 
 /// What one visit recorded for one zone.
@@ -16,6 +17,8 @@ final class ZoneRecord {
     required String zoneName,
     this.beforePhoto,
     this.afterPhoto,
+    this.beforePhotoSource = PhotoSource.unknown,
+    this.afterPhotoSource = PhotoSource.unknown,
     this.note = '',
     this.status = ZoneStatus.done,
     this.reason = '',
@@ -25,6 +28,8 @@ final class ZoneRecord {
   final String zoneName;
   final PhotoRef? beforePhoto;
   final PhotoRef? afterPhoto;
+  final PhotoSource beforePhotoSource;
+  final PhotoSource afterPhotoSource;
   final String note;
 
   /// Whether the visit cleaned the zone as agreed. A record is done unless the person sets an exception.
@@ -38,6 +43,12 @@ final class ZoneRecord {
   PhotoRef? photoIn(PhotoSlot slot) => switch (slot) {
     PhotoSlot.before => beforePhoto,
     PhotoSlot.after => afterPhoto,
+  };
+
+  /// The observed source of the photo in [slot], or unknown for old records.
+  PhotoSource sourceIn(PhotoSlot slot) => switch (slot) {
+    PhotoSlot.before => beforePhotoSource,
+    PhotoSlot.after => afterPhotoSource,
   };
 
   /// The slots that hold no photo, in the order of [PhotoSlot.values].
@@ -56,11 +67,13 @@ final class ZoneRecord {
   bool get hasContent => beforePhoto != null || afterPhoto != null || hasNote || status != ZoneStatus.done;
 
   /// This record with [photo] in [slot], in place of the photo that it holds there.
-  ZoneRecord withPhoto(PhotoSlot slot, PhotoRef photo) => ZoneRecord(
+  ZoneRecord withPhoto(PhotoSlot slot, PhotoRef photo, {PhotoSource source = PhotoSource.unknown}) => ZoneRecord(
     zoneId: zoneId,
     zoneName: zoneName,
     beforePhoto: slot == PhotoSlot.before ? photo : beforePhoto,
     afterPhoto: slot == PhotoSlot.after ? photo : afterPhoto,
+    beforePhotoSource: slot == PhotoSlot.before ? source : beforePhotoSource,
+    afterPhotoSource: slot == PhotoSlot.after ? source : afterPhotoSource,
     note: note,
     status: status,
     reason: reason,
@@ -80,6 +93,8 @@ final class ZoneRecord {
     zoneName: zoneName,
     beforePhoto: beforePhoto,
     afterPhoto: afterPhoto,
+    beforePhotoSource: beforePhotoSource,
+    afterPhotoSource: afterPhotoSource,
     note: note ?? this.note,
     status: status ?? this.status,
     reason: reason ?? this.reason,
@@ -92,10 +107,13 @@ final class ZoneRecord {
       other.zoneName == zoneName &&
       other.beforePhoto == beforePhoto &&
       other.afterPhoto == afterPhoto &&
+      other.beforePhotoSource == beforePhotoSource &&
+      other.afterPhotoSource == afterPhotoSource &&
       other.note == note &&
       other.status == status &&
       other.reason == reason;
 
   @override
-  int get hashCode => Object.hash(zoneId, zoneName, beforePhoto, afterPhoto, note, status, reason);
+  int get hashCode =>
+      Object.hash(zoneId, zoneName, beforePhoto, afterPhoto, beforePhotoSource, afterPhotoSource, note, status, reason);
 }

@@ -65,7 +65,7 @@ void main() {
   /// leaves out.
   void useTallPhoneScreen(WidgetTester tester) {
     tester.view
-      ..physicalSize = const Size(400, 1600)
+      ..physicalSize = const Size(400, 2000)
       ..devicePixelRatio = 1;
     addTearDown(tester.view.reset);
   }
@@ -137,11 +137,38 @@ void main() {
     finder,
     100,
     scrollable: find.descendant(of: find.byType(ListView), matching: find.byType(Scrollable)).first,
+    maxScrolls: 100,
   );
 
   Future<ZoneRecord> savedRecord(String zoneId) async => (await visits.visitById(visitId))!.recordFor(zoneId)!;
 
   group('VisitCapturePage', () {
+    testWidgets('reports a rejected gallery file with neutral copy and preserves the old photo', (tester) async {
+      await pumpPage(tester);
+      photoCapture.results.add('/cache/unsupported.heic');
+      photoStore.saveFailure = const FormatException('unsupported image');
+      final old = await savedRecord('zone-2');
+      final gallery = find.descendant(
+        of: zone('zone-2'),
+        matching: find.widgetWithText(TextButton, 'Select before photo from gallery'),
+      );
+      await tester.tap(gallery);
+      await tester.pumpAndSettle();
+      expect(find.widgetWithText(SnackBar, "Can't get the photo right now. Try again."), findsOneWidget);
+      expect(await savedRecord('zone-2'), old);
+      expect(tester.photoPathsIn(zone('zone-2')), [beforeFile]);
+      expect(photoCapture.calls, 0);
+    });
+
+    testWidgets('selects a before photo from the gallery without opening the camera', (tester) async {
+      await pumpPage(tester);
+      photoCapture.results.add('/cache/gallery.png');
+      await tester.tap(find.widgetWithText(TextButton, 'Select before photo from gallery').first);
+      await tester.pumpAndSettle();
+      expect(photoCapture.galleryCalls, 1);
+      expect(photoCapture.calls, 0);
+      expect((await visits.visitById(visitId))!.recordFor('zone-1')!.beforePhotoSource, PhotoSource.gallery);
+    });
     testWidgets('renders VisitCaptureView with the visit date as the title and one row for each zone record', (
       tester,
     ) async {
@@ -311,7 +338,7 @@ void main() {
 
         await tester.tap(control('zone-1', 'Take After Photo'));
         await tester.pumpAndSettle();
-        expect(find.widgetWithText(SnackBar, "Can't take the photo right now. Try again."), findsOneWidget);
+        expect(find.widgetWithText(SnackBar, "Can't get the photo right now. Try again."), findsOneWidget);
         expect(await visits.visitById(visitId), current);
 
         await tester.tap(control('zone-1', 'Take After Photo'));
@@ -500,7 +527,7 @@ void main() {
         await tester.tap(control('zone-1', 'Take Before Photo'));
         await tester.pumpAndSettle();
 
-        expect(find.widgetWithText(SnackBar, "Can't take the photo right now. Try again."), findsOneWidget);
+        expect(find.widgetWithText(SnackBar, "Can't get the photo right now. Try again."), findsOneWidget);
         expect(find.text("Can't save your changes right now."), findsOneWidget);
       });
 
@@ -1059,6 +1086,23 @@ void main() {
     });
 
     group('after the start of the app recovered a capture of the visit', () {
+      testWidgets('uses source-neutral wording for a recovered gallery photo', (tester) async {
+        final gallery = current.withRecord(
+          current.zoneRecords.first.withPhoto(PhotoSlot.before, beforePhoto, source: PhotoSource.gallery),
+        );
+        await pumpPage(
+          tester,
+          visit: gallery,
+          recovery: const LostCaptureRecovery(visitId: visitId),
+        );
+        expect(
+          find.text('The app restarted while receiving a photo. The photo is saved in this visit.'),
+          findsOneWidget,
+        );
+        expect(tester.photoPathsIn(zone('zone-1')), [beforeFile]);
+        expect((await savedRecord('zone-1')).beforePhotoSource, PhotoSource.gallery);
+      });
+
       const recovered = LostCaptureRecovery(visitId: visitId);
       final lost = LostCaptureRecovery(visitId: visitId, failure: Exception('disk full'));
 
@@ -1066,15 +1110,15 @@ void main() {
         (
           const Locale('en'),
           recovered,
-          'The app restarted while the camera was open. The photo you took is in this visit.',
+          'The app restarted while receiving a photo. The photo is saved in this visit.',
         ),
-        (const Locale('ko'), recovered, '카메라를 쓰는 동안 앱이 다시 시작됐어요. 찍은 사진은 이 방문에 넣었어요.'),
+        (const Locale('ko'), recovered, '사진을 받는 동안 앱이 다시 시작됐어요. 받은 사진은 이 방문에 저장했어요.'),
         (
           const Locale('en'),
           lost,
-          "The app restarted while the camera was open, and the photo you took couldn't be added. Take it again.",
+          "The app restarted while receiving a photo, and the photo couldn't be saved. Take or select it again.",
         ),
-        (const Locale('ko'), lost, '카메라를 쓰는 동안 앱이 다시 시작됐는데, 찍은 사진을 넣지 못했어요. 다시 찍어 주세요.'),
+        (const Locale('ko'), lost, '사진을 받는 동안 앱이 다시 시작됐는데, 사진을 저장하지 못했어요. 다시 찍거나 선택해 주세요.'),
       ]) {
         testWidgets(
           'says what became of the photo once the visit shows, in ${locale.languageCode}, when '
@@ -1146,7 +1190,9 @@ void main() {
           [
             longZoneName,
             'Take Before Photo',
+            'Select before photo from gallery',
             'Take After Photo',
+            'Select after photo from gallery',
             'Photos from the visit on September 16, 2026',
             'Note',
           ],
@@ -1154,7 +1200,15 @@ void main() {
         ),
         (
           const Locale('ko'),
-          [longZoneName, '청소 전 사진 찍기', '청소 후 사진 찍기', '2026년 9월 16일 방문 사진', '메모'],
+          [
+            longZoneName,
+            '청소 전 사진 찍기',
+            '청소 전 사진 갤러리에서 선택',
+            '청소 후 사진 찍기',
+            '청소 후 사진 갤러리에서 선택',
+            '2026년 9월 16일 방문 사진',
+            '메모',
+          ],
           ['화장실', '청소 전 사진 다시 찍기', '청소 후 사진 다시 찍기', '메모'],
         ),
       ]) {
@@ -1230,22 +1284,22 @@ void main() {
         (
           const Locale('en'),
           const LostCaptureRecovery(visitId: visitId),
-          'The app restarted while the camera was open. The photo you took is in this visit.',
+          'The app restarted while receiving a photo. The photo is saved in this visit.',
         ),
         (
           const Locale('ko'),
           const LostCaptureRecovery(visitId: visitId),
-          '카메라를 쓰는 동안 앱이 다시 시작됐어요. 찍은 사진은 이 방문에 넣었어요.',
+          '사진을 받는 동안 앱이 다시 시작됐어요. 받은 사진은 이 방문에 저장했어요.',
         ),
         (
           const Locale('en'),
           LostCaptureRecovery(visitId: visitId, failure: failure),
-          "The app restarted while the camera was open, and the photo you took couldn't be added. Take it again.",
+          "The app restarted while receiving a photo, and the photo couldn't be saved. Take or select it again.",
         ),
         (
           const Locale('ko'),
           LostCaptureRecovery(visitId: visitId, failure: failure),
-          '카메라를 쓰는 동안 앱이 다시 시작됐는데, 찍은 사진을 넣지 못했어요. 다시 찍어 주세요.',
+          '사진을 받는 동안 앱이 다시 시작됐는데, 사진을 저장하지 못했어요. 다시 찍거나 선택해 주세요.',
         ),
       ]) {
         testWidgets(
@@ -1265,7 +1319,7 @@ void main() {
           const Locale('en'),
           'Take Before Photo',
           [
-            "Can't take the photo right now. Try again.",
+            "Can't get the photo right now. Try again.",
             'Camera access is off. To take photos, turn it on in Settings.',
             "Can't save right now. Try again.",
           ],
@@ -1274,7 +1328,7 @@ void main() {
           const Locale('ko'),
           '청소 전 사진 찍기',
           [
-            '사진을 찍지 못했어요. 다시 시도해 주세요.',
+            '사진을 가져오지 못했어요. 다시 시도해 주세요.',
             '카메라를 쓸 수 없어요. 설정에서 카메라를 허용하면 사진을 찍을 수 있어요.',
             '저장하지 못했어요. 다시 시도해 주세요.',
           ],
@@ -1565,7 +1619,7 @@ void main() {
 
       states.add(shown(VisitCaptureStatus.captureFailed));
       await tester.pumpAndSettle();
-      expect(find.widgetWithText(SnackBar, "Can't take the photo right now. Try again."), findsOneWidget);
+      expect(find.widgetWithText(SnackBar, "Can't get the photo right now. Try again."), findsOneWidget);
       // The message leaves after its time on the screen, which starts when it has come in.
       await tester.pump(const Duration(seconds: 5));
       await tester.pumpAndSettle();

@@ -428,7 +428,9 @@ void main() {
           expect(photoStore.sources.values, ['/cache/lost.jpg']);
           expect(
             await visits.visitById('visit-1'),
-            visit.withRecord(visit.zoneRecords.single.withPhoto(PhotoSlot.after, recoveredPhoto)),
+            visit.withRecord(
+              visit.zoneRecords.single.withPhoto(PhotoSlot.after, recoveredPhoto, source: PhotoSource.camera),
+            ),
           );
           expect(openCaptures.capture, isNull);
           expect(tester.takeException(), isNull);
