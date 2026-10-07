@@ -176,9 +176,22 @@ export function decodePage(document) {
   };
 }
 
+/** The statuses of a zone, by the names that `FirebasePublisher` writes. */
+const zoneStatuses = new Set(["done", "partlyDone", "notDone"]);
+
+/**
+ * The status of a zone from its `status` value. A zone without the key is done, as every zone that an earlier version
+ * published, and a value that the page does not know is not done, so that the page never claims a completion that it
+ * cannot read.
+ */
+export function decodeStatus(value) {
+  if (value === undefined) return "done";
+  return zoneStatuses.has(value) ? value : "notDone";
+}
+
 /**
  * A report from its Firestore REST document. `unbranded` is true only for the boolean true, so a report without the
- * key, or with any other value, shows the footer text.
+ * key, or with any other value, shows the footer text. A zone has a reason only when it is not done.
  */
 export function decodeReport(document) {
   const fields = decodeFields(document.fields ?? {});
@@ -189,12 +202,17 @@ export function decodeReport(document) {
     publishedAt: textOrNull(fields.publishedAt) ?? "",
     zones: zones
       .filter((zone) => zone !== null && typeof zone === "object")
-      .map((zone) => ({
-        name: textOrNull(zone.name) ?? "",
-        note: textOrNull(zone.note) ?? "",
-        beforePhoto: textOrNull(zone.beforePhoto),
-        afterPhoto: textOrNull(zone.afterPhoto),
-      })),
+      .map((zone) => {
+        const status = decodeStatus(zone.status);
+        return {
+          name: textOrNull(zone.name) ?? "",
+          note: textOrNull(zone.note) ?? "",
+          beforePhoto: textOrNull(zone.beforePhoto),
+          afterPhoto: textOrNull(zone.afterPhoto),
+          status,
+          reason: status === "done" ? "" : (textOrNull(zone.reason) ?? ""),
+        };
+      }),
     unbranded: fields.unbranded === true,
   };
 }

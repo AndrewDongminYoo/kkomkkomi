@@ -96,6 +96,15 @@ beforeEach(async () => {
             beforePhoto: photoPath(pageId),
             afterPhoto: null,
           },
+          // The keys that `FirebasePublisher` writes only for a zone that is not done.
+          {
+            name: "창고",
+            note: "",
+            beforePhoto: null,
+            afterPhoto: null,
+            status: "notDone",
+            reason: "공사 중",
+          },
         ],
       });
       await context
@@ -124,6 +133,16 @@ describe("web report page: reads without sign-in", () => {
           note: "바닥 왁스",
           beforePhoto: photoPath(openPage),
           afterPhoto: null,
+          status: "done",
+          reason: "",
+        },
+        {
+          name: "창고",
+          note: "",
+          beforePhoto: null,
+          afterPhoto: null,
+          status: "notDone",
+          reason: "공사 중",
         },
       ],
       unbranded: false,

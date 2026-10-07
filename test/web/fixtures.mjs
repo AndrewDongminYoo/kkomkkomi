@@ -26,7 +26,8 @@ export const pageDocument = {
   },
 };
 
-function zone(name, note, beforePhoto, afterPhoto) {
+// A zone of an exception carries `status` and `reason`, and a done zone has neither key.
+function zone(name, note, beforePhoto, afterPhoto, exception = null) {
   return {
     mapValue: {
       fields: {
@@ -36,6 +37,12 @@ function zone(name, note, beforePhoto, afterPhoto) {
           beforePhoto === null ? { nullValue: null } : string(beforePhoto),
         afterPhoto:
           afterPhoto === null ? { nullValue: null } : string(afterPhoto),
+        ...(exception === null
+          ? {}
+          : {
+              status: string(exception.status),
+              reason: string(exception.reason),
+            }),
       },
     },
   };
@@ -44,6 +51,7 @@ function zone(name, note, beforePhoto, afterPhoto) {
 export const lobbyBefore = `clientPages/${pageId}/${visitId}/zone-1-before-a.jpg`;
 export const lobbyAfter = `clientPages/${pageId}/${visitId}/zone-1-after-b.jpg`;
 export const hallBefore = `clientPages/${pageId}/${visitId}/zone-2-before-c.jpg`;
+export const restroomBefore = `clientPages/${pageId}/${visitId}/zone-4-before-d.jpg`;
 
 export const reportDocument = {
   name: `${documents}/clientPages/${pageId}/reports/${visitId}`,
@@ -56,6 +64,11 @@ export const reportDocument = {
           zone("로비", "바닥 왁스\n유리문 닦음", lobbyBefore, lobbyAfter),
           zone("복도", "", hallBefore, null),
           zone("탕비실", "공사 중이라 사진을 못 찍었어요", null, null),
+          zone("화장실", "", restroomBefore, null, {
+            status: "partlyDone",
+            reason: "세면대 아래는\n다음 방문에",
+          }),
+          zone("창고", "", null, null, { status: "notDone", reason: "" }),
         ],
       },
     },
