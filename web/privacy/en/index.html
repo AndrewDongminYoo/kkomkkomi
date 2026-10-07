@@ -42,7 +42,7 @@
       <article class="sheet">
         <header class="sheet-head">
           <h1>Kkomkkomi Privacy Policy</h1>
-          <p>Effective date: October 7, 2026</p>
+          <p>Effective date: October 8, 2026</p>
           <p>
             Privacy officer and contact: Dongmin Yu (유동민), ydm2790@gmail.com
           </p>
@@ -65,9 +65,9 @@
           <li>Client names, and the names and order of their zones</li>
           <li>
             Visit dates, and for each zone the before and after photos, the
-            note, the source of each photo, any directly observed capture time,
-            and the cleaning status (done, partly done, or not done) with its
-            reason
+            note, the source of each photo, any directly observed capture time
+            (planned for the in-app camera feature), and the cleaning status
+            (done, partly done, or not done) with its reason
           </li>
           <li>
             The IDs of the pages it published, the state of its publish jobs,
@@ -102,13 +102,14 @@
           until the system clears it or the app is uninstalled.
         </p>
         <p>
-          For Android and iOS in-app capture, the app creates a normalized
-          temporary JPEG without the information described in section 3. It
-          attempts to delete the raw camera file when normalization finishes,
-          including on failure, and the normalized temporary file when copying
-          into the saved photo folder finishes, including on failure. If the app
-          stops or deletion fails, temporary files may remain until the system
-          clears them or the app is uninstalled.
+          For Android and iOS in-app capture (planned for a future release), the
+          app creates a normalized temporary JPEG without the information
+          described in section 3. It attempts to delete the raw camera file when
+          normalization finishes, including on failure, and the normalized
+          temporary file when copying into the saved photo folder finishes,
+          including on failure. If the app stops or deletion fails, temporary
+          files may remain until the system clears them or the app is
+          uninstalled.
         </p>
         <p>
           Uninstalling the app deletes the data on the phone. A copy in a backup
@@ -122,8 +123,9 @@
           converted to JPEG before it is saved; unsupported input is not saved.
         </p>
         <p>
-          The in-app camera reads the device clock immediately before the
-          shutter request. For a successful capture, the app stores this
+          The in-app camera feature is planned for a future release. When
+          available, the in-app camera reads the device clock immediately before
+          the shutter request. For a successful capture, the app stores this
           observation locally in UTC and shows it in the current device local
           time in the preview and shared PDF. It does not guarantee the sensor
           exposure time and is not sent to the operator's servers. On Android
@@ -308,9 +310,10 @@
           </li>
           <li>The anonymous account (Firebase Authentication)</li>
           <li>
-            The database on the phone (the company name, the clients, the zones,
-            the visits, the notes, the cleaning statuses and their reasons, and
-            the publish records) and the photo files in the app's folder
+            The database on the phone (the company name and optional business
+            phone, the clients, the zones, the visits, the notes, the cleaning
+            statuses and their reasons, and the publish records) and the photo
+            files in the app's folder
           </li>
         </ol>
         <p>

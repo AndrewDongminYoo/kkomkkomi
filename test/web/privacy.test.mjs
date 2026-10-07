@@ -120,6 +120,46 @@ const sectionIds = (html) =>
 
 describe("the privacy policy pages", () => {
   for (const [lang, page] of Object.entries(pages)) {
+    test(`the ${lang} page includes the business phone in local data deletion`, () => {
+      const deletion = sectionText(read(page.file), "delete");
+      assert.match(
+        deletion,
+        lang === "ko" ? /사업자 전화번호/ : /business phone/,
+      );
+    });
+    test(`the ${lang} page marks in-app camera disclosures as planned`, () => {
+      const device = sectionText(read(page.file), "device");
+      const paragraphs = [...device.matchAll(/<p>(.*?)<\/p>/g)]
+        .map((match) => match[1])
+        .filter((text) =>
+          /앱 내부 카메라|in-app captur|in-app camera/.test(text),
+        );
+      assert.equal(
+        paragraphs.length,
+        2,
+        "both camera disclosures are inspected",
+      );
+      for (const paragraph of paragraphs) {
+        assert.match(paragraph, lang === "ko" ? /예정/ : /planned/);
+      }
+      const items = [...device.matchAll(/<li>(.*?)<\/li>/g)].map(
+        (match) => match[1],
+      );
+      const captureItem = items.find((text) =>
+        /촬영 시각|capture time/.test(text),
+      );
+      assert.ok(captureItem, "the capture-time data item is inspected");
+      assert.match(captureItem, lang === "ko" ? /예정/ : /planned/);
+    });
+    test(`the ${lang} page discloses the gallery mark among link-share data`, () => {
+      const publish = sectionText(read(page.file), "publish");
+      assert.match(
+        publish,
+        lang === "ko"
+          ? /갤러리에서 고른 사진이라는 표시/
+          : /a mark for each photo selected from the gallery/,
+      );
+    });
     test(`the ${lang} page distinguishes camera cleanup from gallery temporary-file retention`, () => {
       const device = sectionText(read(page.file), "device");
       const paragraphs = [...device.matchAll(/<p>(.*?)<\/p>/g)].map(
