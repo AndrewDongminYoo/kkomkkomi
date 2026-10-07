@@ -94,12 +94,21 @@
           it. Public web reports do not include the business phone.
         </p>
         <p>
-          A photo taken with the camera or selected from the gallery is first
-          written as a file by the photo picker, into the app's cache folder on
-          Android and into its temporary folder on iPhone, and the app keeps a
-          copy of that file without the information that section 3 describes.
-          The file in the cache or temporary folder can keep that information,
-          and it stays until the system clears it or the app is uninstalled.
+          A photo selected from the gallery is first written as a file by the
+          photo picker, into the app's cache folder on Android and into its
+          temporary folder on iPhone, and the app keeps a copy of that file
+          without the information that section 3 describes. The file in the
+          cache or temporary folder can keep that information, and it stays
+          until the system clears it or the app is uninstalled.
+        </p>
+        <p>
+          For Android and iOS in-app capture, the app creates a normalized
+          temporary JPEG without the information described in section 3. It
+          attempts to delete the raw camera file when normalization finishes,
+          including on failure, and the normalized temporary file when copying
+          into the saved photo folder finishes, including on failure. If the app
+          stops or deletion fails, temporary files may remain until the system
+          clears them or the app is uninstalled.
         </p>
         <p>
           Uninstalling the app deletes the data on the phone. A copy in a backup
