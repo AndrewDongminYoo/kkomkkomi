@@ -1,0 +1,67 @@
+{
+  "account": "personal",
+  "remote": "https://github.com/AndrewDongminYoo/kkomkkomi.git",
+  "apple": {
+    "identifier": "kr.donminzzi.kkomkkomi",
+    "version_source": {
+      "file": "pubspec.yaml"
+    },
+    "artifact_glob": "build/ios/ipa/*.ipa",
+    "metadata": "fastlane/metadata/ios",
+    "screenshots": "fastlane/screenshots/ios",
+    "backend": "native",
+    "upload_command": ["bundle", "exec", "fastlane", "ios", "beta"],
+    "guards": [
+      {
+        "operations": ["binary"],
+        "command": ["dart", "run", "tool/release_check.dart"]
+      },
+      {
+        "operations": ["metadata"],
+        "command": ["dart", "run", "tool/release_check.dart", "--metadata"]
+      },
+      {
+        "operations": ["screenshots", "images"],
+        "command": ["bash", "tool/store_screenshots/check.sh"]
+      }
+    ],
+    "extra_effects": [
+      "Existing TestFlight group settings govern internal distribution."
+    ],
+    "provenance": {
+      "type": "commit_hash",
+      "record": "build/ios/ipa/build-record.txt"
+    }
+  },
+  "google": {
+    "identifier": "kr.donminzzi.kkomkkomi",
+    "version_source": {
+      "file": "pubspec.yaml"
+    },
+    "artifact": "build/app/outputs/bundle/productionRelease/app-production-release.aab",
+    "metadata": "fastlane/metadata/android",
+    "track": "internal",
+    "release_status": "draft",
+    "backend": "native",
+    "upload_command": ["bundle", "exec", "fastlane", "android", "internal"],
+    "guards": [
+      {
+        "operations": ["binary"],
+        "command": ["dart", "run", "tool/release_check.dart"]
+      },
+      {
+        "operations": ["metadata"],
+        "command": ["dart", "run", "tool/release_check.dart", "--metadata"]
+      },
+      {
+        "operations": ["screenshots", "images"],
+        "command": ["bash", "tool/store_screenshots/check.sh"]
+      }
+    ],
+    "provenance": {
+      "type": "commit_hash",
+      "record": "build/app/outputs/bundle/productionRelease/build-record.txt"
+    }
+  },
+  "gemfile": "Gemfile"
+}

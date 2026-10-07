@@ -128,18 +128,30 @@ reinstall:
 # its two keys. Empty keys build an app without subscriptions. The metadata
 # lanes build nothing, so they run the check with `--metadata`, which leaves
 # out the keys file.
+# The App Bundle and the IPA scripts delete the file of the last build first
+# and then write build-record.txt beside the new file (tool/build_record.sh),
+# which ./store-upload checks against HEAD and the hash of the file. A build
+# that fails leaves no file and no record, so no upload takes an old file.
 build:
   apk:
     (description): Builds the production release APK.
     (scripts): flutter build apk --release --flavor production --target lib/main_production.dart --tree-shake-icons --dart-define-from-file=config/revenuecat.json
 
   aab:
-    (description): Builds the production release Android App Bundle.
-    (scripts): flutter build appbundle --release --flavor production --target lib/main_production.dart --tree-shake-icons --dart-define-from-file=config/revenuecat.json
+    (description): Builds the production release Android App Bundle and its build record.
+    (execution): once
+    (scripts):
+      - rm -f build/app/outputs/bundle/productionRelease/app-production-release.aab build/app/outputs/bundle/productionRelease/build-record.txt
+      - flutter build appbundle --release --flavor production --target lib/main_production.dart --tree-shake-icons --dart-define-from-file=config/revenuecat.json
+      - bash tool/build_record.sh 'build/app/outputs/bundle/productionRelease/app-production-release.aab' build/app/outputs/bundle/productionRelease/build-record.txt
 
   ipa:
-    (description): Builds the production release iOS archive and IPA.
-    (scripts): flutter build ipa --release --flavor production --target lib/main_production.dart --tree-shake-icons --dart-define-from-file=config/revenuecat.json
+    (description): Builds the production release iOS archive, the IPA, and its build record.
+    (execution): once
+    (scripts):
+      - rm -rf build/ios/ipa
+      - flutter build ipa --release --flavor production --target lib/main_production.dart --tree-shake-icons --dart-define-from-file=config/revenuecat.json
+      - bash tool/build_record.sh 'build/ios/ipa/*.ipa' build/ios/ipa/build-record.txt
 
 # --- Store release ----------------------------------------------------------
 # CLAUDE.md, section "Release", owns the environment variables. Every script
@@ -151,8 +163,9 @@ build:
 # keeps fastlane from asking RubyGems for a new version before the lane runs,
 # so a lane without its credentials stops before any network call.
 # `flutter build ipa` exits 0 when the IPA export fails after the archive, so
-# `release ios` deletes build/ios/ipa first, and the `beta` lane stops for an
-# IPA whose version is not the one of pubspec.yaml.
+# `build ipa` deletes build/ios/ipa first, the build record fails for a missing
+# IPA, and the `beta` lane stops for an IPA whose version is not the one of
+# pubspec.yaml.
 release:
   check:
     (description): Offline checks before a release — a clean tree, the CHANGELOG.md entry and the Play changelogs of the pubspec.yaml version, the store text limits, and the RevenueCat keys file.
@@ -164,7 +177,6 @@ release:
     (scripts):
       - $release:check
       - FASTLANE_SKIP_UPDATE_CHECK=1 bundle exec fastlane ios credentials
-      - rm -rf build/ios/ipa
       - $build:ipa
       - FASTLANE_SKIP_UPDATE_CHECK=1 bundle exec fastlane ios beta
 
@@ -179,7 +191,7 @@ release:
 
   metadata:
     ios:
-      (description): 🚨 Checks, then uploads fastlane/metadata/ios and fastlane/screenshots/ios to App Store Connect, without a binary and without a review submission.
+      (description): 🚨 Checks, then uploads fastlane/metadata/ios and a validated copy of fastlane/screenshots/ios to App Store Connect, which replaces every screenshot set of each locale, without a binary and without a review submission.
       (execution): once
       (scripts):
         - dart run tool/release_check.dart --metadata
