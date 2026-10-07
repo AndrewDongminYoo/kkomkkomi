@@ -60,9 +60,10 @@ class VisitReportCubit extends Cubit<VisitReportState> {
         VisitReportState(
           status: VisitReportStatus.ready,
           document: ReportDocument.fromVisit(visit: visit, client: client, companyProfile: companyProfile),
+          // A zone that is not done lacks its photos on purpose, so the warning leaves it out.
           zonesLackingPhoto: [
             for (final record in visit.zoneRecords)
-              if (record.emptySlots.isNotEmpty) record,
+              if (record.emptySlots.isNotEmpty && record.status != ZoneStatus.notDone) record,
           ],
           photoDirectory: photoDirectory,
           showsFooterText: _paid != true,

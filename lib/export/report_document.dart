@@ -48,6 +48,17 @@ final class ReportDocument {
     for (final zone in zones) ...[?zone.beforePhoto, ?zone.afterPhoto],
   ];
 
+  /// The number of zones that the visit cleaned as agreed. The summary of a report counts it against the number of
+  /// [zones].
+  int get doneCount => zones.where((zone) => zone.status == ZoneStatus.done).length;
+
+  /// The zones that the visit did not clean as agreed, in the order of the zones. The summary of a report lists each
+  /// with its reason, which is the follow-up.
+  List<ReportZone> get exceptions => [
+    for (final zone in zones)
+      if (zone.status != ZoneStatus.done) zone,
+  ];
+
   @override
   bool operator ==(Object other) =>
       other is ReportDocument &&
@@ -63,20 +74,32 @@ final class ReportDocument {
   String toString() => 'ReportDocument($companyName, $clientName, $visitDate, $zones)';
 }
 
-/// What a report prints for one zone: its name, the two photo slots, and the note.
+/// What a report prints for one zone: its name, its status, the two photo slots, and the note.
 final class ReportZone {
-  const new({required this.name, required this.beforePhoto, required this.afterPhoto, required this.note});
+  const new({
+    required this.name,
+    required this.beforePhoto,
+    required this.afterPhoto,
+    required this.note,
+    this.status = ZoneStatus.done,
+    this.reason = '',
+  });
 
-  /// The zone of [record], with the note without the space around it.
+  /// The zone of [record], with the note without the space around it, and the reason in the same form for an
+  /// exception. A done zone has no reason, because every reader of a done record ignores the reason that it keeps.
   ///
-  /// A line of the note ends with a line feed alone, because a font has no glyph for a carriage return, which pasted
-  /// text can hold.
+  /// A line of the note and of the reason ends with a line feed alone, because a font has no glyph for a carriage
+  /// return, which pasted text can hold.
   factory fromRecord(ZoneRecord record) => ReportZone(
     name: record.zoneName,
     beforePhoto: record.beforePhoto,
     afterPhoto: record.afterPhoto,
-    note: record.note.replaceAll(_carriageReturn, '\n').trim(),
+    note: _printable(record.note),
+    status: record.status,
+    reason: record.status == ZoneStatus.done ? '' : _printable(record.reason),
   );
+
+  static String _printable(String text) => text.replaceAll(_carriageReturn, '\n').trim();
 
   /// A carriage return with the line feed after it, when it has one.
   static final _carriageReturn = RegExp(r'\r\n?');
@@ -92,17 +115,25 @@ final class ReportZone {
   /// The note, or an empty text when the zone has none. A report prints no note block for an empty text.
   final String note;
 
+  /// Whether the visit cleaned the zone as agreed.
+  final ZoneStatus status;
+
+  /// What is left or why, for an exception, or an empty text.
+  final String reason;
+
   @override
   bool operator ==(Object other) =>
       other is ReportZone &&
       other.name == name &&
       other.beforePhoto == beforePhoto &&
       other.afterPhoto == afterPhoto &&
-      other.note == note;
+      other.note == note &&
+      other.status == status &&
+      other.reason == reason;
 
   @override
-  int get hashCode => Object.hash(name, beforePhoto, afterPhoto, note);
+  int get hashCode => Object.hash(name, beforePhoto, afterPhoto, note, status, reason);
 
   @override
-  String toString() => 'ReportZone($name, ${beforePhoto?.path}, ${afterPhoto?.path}, $note)';
+  String toString() => 'ReportZone($name, ${beforePhoto?.path}, ${afterPhoto?.path}, $note, ${status.name}, $reason)';
 }

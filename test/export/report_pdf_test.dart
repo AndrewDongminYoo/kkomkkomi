@@ -11,15 +11,17 @@ import 'package:pdf/pdf.dart';
 import '../helpers/helpers.dart';
 
 void main() {
-  const labels = ReportLabels(
+  final labels = ReportLabels(
     title: '청소 완료 보고서',
     clientHeading: '거래처',
     visitDateHeading: '방문일',
-    zoneCountHeading: '구역 수',
     visitDate: '2026년 10월 1일',
     beforePhoto: '청소 전',
     afterPhoto: '청소 후',
-    noPhoto: '사진 없음',
+    notPhotographed: '촬영하지 않음',
+    partlyDone: '일부 완료',
+    notDone: '못 함',
+    summaryOf: (done, total) => '$total곳 중 $done곳 완료',
     note: '메모',
     footer: '꼼꼬미로 만든 보고서',
   );
@@ -95,8 +97,7 @@ void main() {
         '행복빌딩',
         '방문일',
         '2026년 10월 1일',
-        '구역 수',
-        '2',
+        '2곳 중 2곳 완료',
       ]);
       expectInOrder(summary.text, [
         '로비',
@@ -112,7 +113,7 @@ void main() {
       ]);
       // The before photo of each zone is drawn before its after photo, which is the slot on its right.
       expect(summary.pages.expand((page) => page.images), [wide, tall, tall, wide]);
-      expect(countOf('사진 없음', summary.text), 0);
+      expect(countOf('촬영하지 않음', summary.text), 0);
     });
 
     test('numbers the zones from one, left of the name of each zone', () async {
@@ -230,11 +231,72 @@ void main() {
       );
 
       final text = summary.text;
-      expectInOrder(text, ['로비', '청소 전', '청소 후', '사진 없음', '화장실', '청소 전', '사진 없음', '청소 후', '복도']);
-      expectInOrder(text, ['복도', '청소 전', '사진 없음', '청소 후', '사진 없음', '메모', '공사 중이라 청소하지 못함']);
-      expect(countOf('사진 없음', text), 4);
+      expectInOrder(text, ['로비', '청소 전', '청소 후', '촬영하지 않음', '화장실', '청소 전', '촬영하지 않음', '청소 후', '복도']);
+      expectInOrder(text, ['복도', '청소 전', '촬영하지 않음', '청소 후', '촬영하지 않음', '메모', '공사 중이라 청소하지 못함']);
+      expect(countOf('촬영하지 않음', text), 4);
       expect(countOf('메모', text), 1);
       expect(summary.pages.expand((page) => page.images), [wide, tall]);
+    });
+
+    test('prints the summary, then each exception with its status and reason, before the zones', () async {
+      final summary = await render(
+        document([
+          ReportZone(name: '로비', beforePhoto: photo('a'), afterPhoto: photo('b'), note: ''),
+          ReportZone(
+            name: '탕비실',
+            beforePhoto: photo('c'),
+            afterPhoto: null,
+            note: '',
+            status: ZoneStatus.partlyDone,
+            reason: '전자레인지는 다음 방문에',
+          ),
+          const ReportZone(name: '창고', beforePhoto: null, afterPhoto: null, note: '', status: ZoneStatus.notDone),
+        ]),
+      );
+
+      expectInOrder(summary.text, [
+        '3곳 중 1곳 완료',
+        '탕비실 · 일부 완료: 전자레인지는 다음 방문에',
+        '창고 · 못 함',
+        '로비',
+        '탕비실',
+        '일부 완료',
+        '촬영하지 않음',
+        '창고',
+        '못 함',
+        '못 함',
+        '못 함',
+      ]);
+      // The exception line of a zone without a reason ends at its status.
+      expect(summary.text, isNot(contains('창고 · 못 함:')));
+      // Each status shows in the exception line and the badge of its zone, and a done zone shows none. The two empty
+      // slots of the zone that is not done say so too.
+      expect(countOf('일부 완료', summary.text), 2);
+      expect(countOf('못 함', summary.text), 4);
+    });
+
+    test('goes on to the next pages for a summary of more exceptions and a longer reason than a page holds', () async {
+      final reason = List.generate(60, (line) => '$line번째 줄: 다음 방문에 처리할 일').join('\n');
+      final zones = [
+        for (var index = 0; index < 40; index++)
+          ReportZone(
+            name: '구역$index',
+            beforePhoto: null,
+            afterPhoto: null,
+            note: '',
+            status: ZoneStatus.notDone,
+            reason: index == 0 ? reason : '잠김',
+          ),
+      ];
+
+      final summary = await render(document(zones));
+
+      expect(summary.pageCount, greaterThan(2));
+      expectInOrder(summary.text, [
+        '40곳 중 0곳 완료',
+        for (final line in reason.split('\n')) line,
+        for (var index = 1; index < 40; index++) '구역$index · 못 함: 잠김',
+      ]);
     });
 
     test('prints the same photo in two slots', () async {
@@ -249,7 +311,8 @@ void main() {
       final summary = await render(document([], companyName: null));
 
       expect(summary.pageCount, 1);
-      expect(summary.pages.single.text, '꼼꼬미로 만든 보고서 1 / 1 청소 완료 보고서 거래처 행복빌딩 방문일 2026년 10월 1일 구역 수 0');
+      // A report without a zone has no summary line.
+      expect(summary.pages.single.text, '꼼꼬미로 만든 보고서 1 / 1 청소 완료 보고서 거래처 행복빌딩 방문일 2026년 10월 1일');
       expect(summary.pages.single.images, isEmpty);
     });
 

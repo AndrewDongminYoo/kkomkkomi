@@ -97,6 +97,43 @@ void main() {
       expect(document.zones.single.note, '첫 줄\n둘째 줄\n셋째 줄\n넷째 줄');
     });
 
+    test('keeps the status of each zone, and the reason only for an exception, in the form of a note', () {
+      final document = documentOf([
+        ZoneRecord(zoneId: 'zone-1', zoneName: '로비', note: '왁스', reason: '남은 사유'),
+        ZoneRecord(
+          zoneId: 'zone-2',
+          zoneName: '탕비실',
+          beforePhoto: photo('pantry'),
+          status: ZoneStatus.partlyDone,
+          reason: ' 전자레인지는\r\n다음 방문에\r ',
+        ),
+        ZoneRecord(zoneId: 'zone-3', zoneName: '창고', status: ZoneStatus.notDone),
+      ]);
+
+      expect(document.zones.map((zone) => (zone.name, zone.status, zone.reason)), [
+        ('로비', ZoneStatus.done, ''),
+        ('탕비실', ZoneStatus.partlyDone, '전자레인지는\n다음 방문에'),
+        ('창고', ZoneStatus.notDone, ''),
+      ]);
+    });
+
+    test('counts the done zones and lists the exceptions in zone order', () {
+      final document = documentOf([
+        ZoneRecord(zoneId: 'zone-1', zoneName: '로비', note: '왁스'),
+        ZoneRecord(zoneId: 'zone-2', zoneName: '창고', status: ZoneStatus.notDone, reason: '잠김'),
+        ZoneRecord(zoneId: 'zone-3', zoneName: '복도', beforePhoto: photo('hall')),
+        ZoneRecord(zoneId: 'zone-4', zoneName: '탕비실', status: ZoneStatus.partlyDone),
+        // A done zone without a photo and a note was not part of the visit, so the summary does not count it.
+        ZoneRecord(zoneId: 'zone-5', zoneName: '계단'),
+      ]);
+
+      expect(document.zones, hasLength(4));
+      expect(document.doneCount, 2);
+      expect(document.exceptions.map((zone) => zone.name), ['창고', '탕비실']);
+      expect(documentOf([]).doneCount, 0);
+      expect(documentOf([]).exceptions, isEmpty);
+    });
+
     test('has no company name when no company profile is saved', () {
       final document = documentOf([ZoneRecord(zoneId: 'zone-1', zoneName: '로비', note: '바닥 왁스')]);
 
@@ -168,12 +205,27 @@ void main() {
   });
 
   group('ReportZone', () {
-    ReportZone zone({String name = '로비', String? before = 'a', String? after = 'b', String note = '메모'}) => ReportZone(
+    ReportZone zone({
+      String name = '로비',
+      String? before = 'a',
+      String? after = 'b',
+      String note = '메모',
+      ZoneStatus status = ZoneStatus.partlyDone,
+      String reason = '사유',
+    }) => ReportZone(
       name: name,
       beforePhoto: before == null ? null : photo(before),
       afterPhoto: after == null ? null : photo(after),
       note: note,
+      status: status,
+      reason: reason,
     );
+
+    test('is done with no reason unless it is given a status', () {
+      const plain = ReportZone(name: '로비', beforePhoto: null, afterPhoto: null, note: '');
+
+      expect((plain.status, plain.reason), (ZoneStatus.done, ''));
+    });
 
     test('is equal to a zone with the same fields', () {
       expect(zone(), zone());
@@ -185,6 +237,8 @@ void main() {
       expect(zone(), isNot(zone(before: null)));
       expect(zone(), isNot(zone(after: 'c')));
       expect(zone(), isNot(zone(note: '')));
+      expect(zone(), isNot(zone(status: ZoneStatus.notDone)));
+      expect(zone(), isNot(zone(reason: '')));
     });
   });
 }

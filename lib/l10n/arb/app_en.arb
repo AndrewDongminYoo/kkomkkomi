@@ -436,9 +436,21 @@
     "@reportVisitDateHeading": {
         "description": "Text in front of the visit date in the table under the heading of the PDF report"
     },
-    "reportZoneCountHeading": "Zones",
-    "@reportZoneCountHeading": {
-        "description": "Text in front of the number of zones in the table under the heading of the PDF report"
+    "reportSummary": "{done} of {total} zones done",
+    "@reportSummary": {
+        "description": "Summary of the report under its heading: how many of the zones of the report the visit cleaned as agreed",
+        "placeholders": {
+            "done": {"type": "int"},
+            "total": {"type": "int"}
+        }
+    },
+    "reportPartlyDoneLabel": "Partly done",
+    "@reportPartlyDoneLabel": {
+        "description": "Status of a zone that the visit cleaned in part, next to its name and in the summary of the report"
+    },
+    "reportNotDoneLabel": "Not done",
+    "@reportNotDoneLabel": {
+        "description": "Status of a zone that the visit did not clean, next to its name, in the summary, and in its empty photo slots"
     },
     "reportBeforePhotoLabel": "Before",
     "@reportBeforePhotoLabel": {
@@ -448,9 +460,9 @@
     "@reportAfterPhotoLabel": {
         "description": "Label above the photo after cleaning of a zone, in the preview and in the PDF"
     },
-    "reportNoPhotoLabel": "No photo",
-    "@reportNoPhotoLabel": {
-        "description": "Text in an empty photo slot of the PDF, and what a screen reader says for an empty photo slot of the preview"
+    "reportNotPhotographedLabel": "Not photographed",
+    "@reportNotPhotographedLabel": {
+        "description": "Text in an empty photo slot of a zone that the visit cleaned, in the PDF, and what a screen reader says for it in the preview"
     },
     "reportNoteLabel": "Note",
     "@reportNoteLabel": {

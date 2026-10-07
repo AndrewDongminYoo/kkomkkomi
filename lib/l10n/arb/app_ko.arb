@@ -372,9 +372,21 @@
     "@reportVisitDateHeading": {
         "description": "PDF 보고서 제목 아래 표에서 방문 날짜 앞에 붙는 항목명"
     },
-    "reportZoneCountHeading": "구역 수",
-    "@reportZoneCountHeading": {
-        "description": "PDF 보고서 제목 아래 표에서 구역 개수 앞에 붙는 항목명"
+    "reportSummary": "{total}곳 중 {done}곳 완료",
+    "@reportSummary": {
+        "description": "보고서 제목 아래의 요약: 보고서에 들어간 구역 가운데 약속대로 청소한 구역의 수",
+        "placeholders": {
+            "done": {"type": "int"},
+            "total": {"type": "int"}
+        }
+    },
+    "reportPartlyDoneLabel": "일부 완료",
+    "@reportPartlyDoneLabel": {
+        "description": "일부만 청소한 구역의 상태. 보고서의 구역 이름 옆과 요약에 나온다"
+    },
+    "reportNotDoneLabel": "못 함",
+    "@reportNotDoneLabel": {
+        "description": "청소하지 못한 구역의 상태. 보고서의 구역 이름 옆, 요약, 빈 사진 칸에 나온다"
     },
     "reportBeforePhotoLabel": "청소 전",
     "@reportBeforePhotoLabel": {
@@ -384,9 +396,9 @@
     "@reportAfterPhotoLabel": {
         "description": "미리보기와 PDF에서 구역의 청소 후 사진 위에 나오는 라벨"
     },
-    "reportNoPhotoLabel": "사진 없음",
-    "@reportNoPhotoLabel": {
-        "description": "PDF의 빈 사진 칸에 나오는 문구이자, 미리보기의 빈 사진 칸을 화면 낭독기가 읽는 문구"
+    "reportNotPhotographedLabel": "촬영하지 않음",
+    "@reportNotPhotographedLabel": {
+        "description": "청소한 구역의 빈 사진 칸에 PDF가 쓰는 문구이자, 미리보기에서 화면 낭독기가 읽는 문구"
     },
     "reportNoteLabel": "메모",
     "@reportNoteLabel": {
