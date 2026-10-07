@@ -25,6 +25,7 @@ void main() {
     note: '메모',
     footer: '꼼꼬미로 만든 보고서',
     galleryPhoto: '갤러리에서 선택한 사진',
+    captureTimeOf: (time) => '촬영 ${time.hour.toString().padLeft(2, '0')}:${time.minute.toString().padLeft(2, '0')}',
   );
 
   final font = ByteData.sublistView(File(Assets.fonts.notoSansKRRegular).readAsBytesSync());
@@ -79,6 +80,52 @@ void main() {
   int countOf(String part, String text) => part.allMatches(text).length;
 
   group('renderReportPdf', () {
+    test('prints directly observed before and after times under their camera photos', () async {
+      final summary = await render(
+        document([
+          ReportZone(
+            name: 'Lobby',
+            beforePhoto: photo('b'),
+            afterPhoto: photo('a'),
+            note: '',
+            beforePhotoSource: PhotoSource.camera,
+            afterPhotoSource: PhotoSource.camera,
+            beforeCapturedAt: DateTime.utc(2026, 10, 7, 9, 12),
+            afterCapturedAt: DateTime.utc(2026, 10, 7, 9, 41),
+          ),
+        ]),
+      );
+      expectInOrder(summary.text, ['청소 전', '촬영 09:12', '청소 후', '촬영 09:41']);
+      expect(summary.pageCount, 1);
+    });
+
+    test('ignores a time on gallery, unknown and empty photo slots', () async {
+      final time = DateTime.utc(2026, 10, 7, 9, 12);
+      final summary = await render(
+        document([
+          ReportZone(
+            name: 'Gallery',
+            beforePhoto: photo('b'),
+            afterPhoto: photo('a'),
+            note: '',
+            beforePhotoSource: PhotoSource.gallery,
+            beforeCapturedAt: time,
+            afterCapturedAt: time,
+          ),
+          ReportZone(
+            name: 'Empty',
+            beforePhoto: null,
+            afterPhoto: null,
+            note: '',
+            beforePhotoSource: PhotoSource.camera,
+            beforeCapturedAt: time,
+          ),
+        ]),
+      );
+      expect(summary.text, contains(labels.galleryPhoto));
+      expect(summary.text, isNot(contains('촬영 09:12')));
+    });
+
     test('marks a gallery image and never labels an empty slot as a gallery image', () async {
       final summary = await render(
         document([

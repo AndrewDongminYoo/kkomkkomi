@@ -87,6 +87,8 @@ final class ReportZone {
     required this.note,
     this.beforePhotoSource = PhotoSource.unknown,
     this.afterPhotoSource = PhotoSource.unknown,
+    this.beforeCapturedAt,
+    this.afterCapturedAt,
     this.status = ZoneStatus.done,
     this.reason = '',
   });
@@ -102,6 +104,8 @@ final class ReportZone {
     afterPhoto: record.afterPhoto,
     beforePhotoSource: record.beforePhotoSource,
     afterPhotoSource: record.afterPhotoSource,
+    beforeCapturedAt: record.beforeCapturedAt,
+    afterCapturedAt: record.afterCapturedAt,
     note: _printable(record.note),
     status: record.status,
     reason: record.status == ZoneStatus.done ? '' : _printable(record.reason),
@@ -121,6 +125,8 @@ final class ReportZone {
   final PhotoRef? afterPhoto;
   final PhotoSource beforePhotoSource;
   final PhotoSource afterPhotoSource;
+  final DateTime? beforeCapturedAt;
+  final DateTime? afterCapturedAt;
 
   /// The note, or an empty text when the zone has none. A report prints no note block for an empty text.
   final String note;
@@ -139,13 +145,25 @@ final class ReportZone {
       other.afterPhoto == afterPhoto &&
       other.beforePhotoSource == beforePhotoSource &&
       other.afterPhotoSource == afterPhotoSource &&
+      other.beforeCapturedAt == beforeCapturedAt &&
+      other.afterCapturedAt == afterCapturedAt &&
       other.note == note &&
       other.status == status &&
       other.reason == reason;
 
   @override
-  int get hashCode =>
-      Object.hash(name, beforePhoto, afterPhoto, beforePhotoSource, afterPhotoSource, note, status, reason);
+  int get hashCode => Object.hash(
+    name,
+    beforePhoto,
+    afterPhoto,
+    beforePhotoSource,
+    afterPhotoSource,
+    beforeCapturedAt,
+    afterCapturedAt,
+    note,
+    status,
+    reason,
+  );
 
   @override
   String toString() => 'ReportZone($name, ${beforePhoto?.path}, ${afterPhoto?.path}, $note, ${status.name}, $reason)';

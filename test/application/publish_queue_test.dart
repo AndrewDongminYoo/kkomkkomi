@@ -599,7 +599,12 @@ void main() {
         visit1.withRecord(
           original
               .withPhoto(PhotoSlot.before, beforePhoto, source: PhotoSource.gallery)
-              .withPhoto(PhotoSlot.after, afterPhoto, source: PhotoSource.camera),
+              .withPhoto(
+                PhotoSlot.after,
+                afterPhoto,
+                source: PhotoSource.camera,
+                capturedAt: DateTime.utc(2026, 10, 7, 9, 41),
+              ),
         ),
       );
       final queue = newQueue();
@@ -608,6 +613,17 @@ void main() {
       final zone = publisher.reports['${job.pageId}/visit-1']!.zones.first;
       expect(zone.beforePhotoSource, PhotoSource.gallery);
       expect(zone.afterPhotoSource, PhotoSource.camera);
+      expect(
+        zone,
+        PublishedZone(
+          name: '입구',
+          note: '바닥',
+          beforePhoto: zone.beforePhoto,
+          afterPhoto: zone.afterPhoto,
+          beforePhotoSource: PhotoSource.gallery,
+          afterPhotoSource: PhotoSource.camera,
+        ),
+      );
       expect(zone.beforePhoto, endsWith('/zone-1-before-before.jpg'));
       expect(zone.afterPhoto, endsWith('/zone-1-after-after.jpg'));
       expect(await jobOf(job), job.succeed());

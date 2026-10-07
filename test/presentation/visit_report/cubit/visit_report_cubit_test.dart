@@ -40,6 +40,7 @@ void main() {
     note: '메모',
     footer: '꼼꼬미로 만든 보고서',
     galleryPhoto: '갤러리에서 선택한 사진',
+    captureTimeOf: (time) => '촬영 ${time.hour.toString().padLeft(2, '0')}:${time.minute.toString().padLeft(2, '0')}',
   );
   final client = Client(id: 'client-1', name: '행복빌딩', createdAt: DateTime.utc(2026, 9));
   final lobbyBefore = PhotoRef('photos/visit-1/lobby-before.jpg');

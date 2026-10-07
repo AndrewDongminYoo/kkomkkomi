@@ -10,6 +10,20 @@ import 'package:mocktail/mocktail.dart';
 
 import '../../../helpers/helpers.dart';
 
+class _InAppCapture extends FakePhotoCapture implements InAppPhotoCapture {
+  final observations = <Object?>[];
+  int observedCalls = 0;
+
+  @override
+  Future<ObservedCameraPhoto?> takeObservedPhoto() async {
+    observedCalls++;
+    await gate?.future;
+    final result = observations.removeAt(0);
+    if (result is Exception) throw result;
+    return result as ObservedCameraPhoto?;
+  }
+}
+
 void main() {
   const clientId = 'client-a';
   const visitId = 'visit-2';
@@ -310,6 +324,81 @@ void main() {
     });
 
     group('capturePhoto', () {
+      test('stores only an in-app observation and clears it when a gallery photo replaces it', () async {
+        final camera = _InAppCapture();
+        photoCapture = camera;
+        final time = DateTime.utc(2026, 10, 7, 9, 12, 30, 123, 456);
+        camera.observations.add(ObservedCameraPhoto(path: picked, capturedAt: time.toLocal()));
+        final cubit = build();
+        await cubit.load();
+        await cubit.capturePhoto('zone-1', PhotoSlot.before);
+        final recorded = cubit.state.visit!.recordFor('zone-1')!;
+        expect(recorded.beforeCapturedAt, time);
+        expect(recorded.beforeCapturedAt!.isUtc, isTrue);
+        expect(camera.observedCalls, 1);
+        expect(camera.calls, 0);
+        verify(() => visits.save(cubit.state.visit!)).called(1);
+
+        camera.results.add('/cache/gallery.jpg');
+        await cubit.capturePhoto('zone-1', PhotoSlot.before, source: PhotoSource.gallery);
+        final replaced = cubit.state.visit!.recordFor('zone-1')!;
+        expect(replaced.beforePhotoSource, PhotoSource.gallery);
+        expect(replaced.beforeCapturedAt, isNull);
+        expect(camera.galleryCalls, 1);
+        expect(camera.observedCalls, 1);
+        await cubit.close();
+      });
+
+      for (final answer in [null, const PhotoCaptureException()]) {
+        test('preserves the old observation after an in-app cancellation or failure: $answer', () async {
+          final time = DateTime.utc(2026, 10, 7, 9, 12);
+          final old = visit.withRecord(
+            hall.withPhoto(PhotoSlot.before, oldPhoto, source: PhotoSource.camera, capturedAt: time),
+          );
+          when(() => visits.visitById(visitId)).thenAnswer((_) async => old);
+          final camera = _InAppCapture()..observations.add(answer);
+          photoCapture = camera;
+          final cubit = build();
+          await cubit.load();
+          await cubit.capturePhoto('zone-2', PhotoSlot.before);
+          expect(cubit.state.visit, old);
+          expect(openCaptures.capture, isNull);
+          expect(photoStore.sources, isEmpty);
+          verifyNever(() => visits.save(any()));
+          await cubit.close();
+        });
+      }
+
+      test('preserves the old time when storing the newly observed photo fails', () async {
+        final time = DateTime.utc(2026, 10, 7, 9, 12);
+        final old = visit.withRecord(
+          hall.withPhoto(PhotoSlot.before, oldPhoto, source: PhotoSource.camera, capturedAt: time),
+        );
+        when(() => visits.visitById(visitId)).thenAnswer((_) async => old);
+        final camera = _InAppCapture()
+          ..observations.add(ObservedCameraPhoto(path: picked, capturedAt: time.add(const Duration(minutes: 5))));
+        photoCapture = camera;
+        when(() => visits.save(any())).thenThrow(failure);
+        final cubit = build();
+        await cubit.load();
+        await cubit.capturePhoto('zone-2', PhotoSlot.before);
+        expect(cubit.state.visit, old);
+        expect(cubit.state.status, VisitCaptureStatus.saveFailed);
+        expect(photoStore.deleted, [newPhoto]);
+        await cubit.close();
+      });
+
+      test('keeps the existing picker result untimed even for a camera source', () async {
+        photoCapture.results.add(picked);
+        final cubit = build();
+        await cubit.load();
+        await cubit.capturePhoto('zone-1', PhotoSlot.after);
+        final record = cubit.state.visit!.recordFor('zone-1')!;
+        expect(record.afterPhotoSource, PhotoSource.camera);
+        expect(record.afterCapturedAt, isNull);
+        expect(photoCapture.calls, 1);
+        await cubit.close();
+      });
       test('gallery selection keeps provenance and cancellation keeps the old photo', () async {
         final cubit = build();
         await cubit.load();

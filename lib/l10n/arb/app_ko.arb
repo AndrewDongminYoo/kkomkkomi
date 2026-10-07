@@ -687,5 +687,16 @@
     "photoGallerySourceLabel": "갤러리에서 선택한 사진",
     "@photoGallerySourceLabel": {
         "description": "Report caption for a photo selected from the gallery"
+    },
+    "reportCameraTimeLabel": "촬영 {time}",
+    "@reportCameraTimeLabel": {
+        "description": "Caption for a directly observed in-app camera capture time",
+        "placeholders": {
+            "time": {
+                "type": "DateTime",
+                "format": "HH:mm",
+                "isCustomDateFormat": true
+            }
+        }
     }
 }

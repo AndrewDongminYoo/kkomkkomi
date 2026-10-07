@@ -20,6 +20,34 @@ void main() {
       ReportDocument.fromVisit(visit: visit(records), client: client, companyProfile: companyProfile);
 
   group('ReportDocument.fromVisit', () {
+    test('copies nullable observation times with the camera photo and includes them in equality', () {
+      final time = DateTime.utc(2026, 10, 7, 9, 12);
+      final record = ZoneRecord(
+        zoneId: 'zone-1',
+        zoneName: 'Lobby',
+        beforePhoto: photo('b'),
+        afterPhoto: photo('a'),
+        beforePhotoSource: PhotoSource.camera,
+        afterPhotoSource: PhotoSource.camera,
+        beforeCapturedAt: time,
+        afterCapturedAt: time.add(const Duration(minutes: 29)),
+      );
+      final zone = documentOf([record]).zones.single;
+      final same = ReportZone.fromRecord(record);
+      expect(zone.beforeCapturedAt, time);
+      expect(zone.afterCapturedAt, time.add(const Duration(minutes: 29)));
+      expect(zone, same);
+      expect(zone.hashCode, same.hashCode);
+      expect(
+        zone,
+        isNot(ReportZone.fromRecord(record.withPhoto(PhotoSlot.before, photo('b'), source: PhotoSource.camera))),
+      );
+      expect(
+        zone,
+        isNot(ReportZone.fromRecord(record.withPhoto(PhotoSlot.after, photo('a'), source: PhotoSource.camera))),
+      );
+    });
+
     test('holds the company name, the client name, the visit date, and each zone of a full visit in zone order', () {
       final document = documentOf([
         ZoneRecord(

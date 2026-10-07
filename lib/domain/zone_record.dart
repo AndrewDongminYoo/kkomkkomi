@@ -19,10 +19,16 @@ final class ZoneRecord {
     this.afterPhoto,
     this.beforePhotoSource = PhotoSource.unknown,
     this.afterPhotoSource = PhotoSource.unknown,
+    DateTime? beforeCapturedAt,
+    DateTime? afterCapturedAt,
     this.note = '',
     this.status = ZoneStatus.done,
     this.reason = '',
-  }) : zoneName = normalizeName(zoneName);
+  }) : zoneName = normalizeName(zoneName),
+       beforeCapturedAt = beforePhoto != null && beforePhotoSource == PhotoSource.camera
+           ? beforeCapturedAt?.toUtc()
+           : null,
+       afterCapturedAt = afterPhoto != null && afterPhotoSource == PhotoSource.camera ? afterCapturedAt?.toUtc() : null;
 
   final String zoneId;
   final String zoneName;
@@ -30,6 +36,10 @@ final class ZoneRecord {
   final PhotoRef? afterPhoto;
   final PhotoSource beforePhotoSource;
   final PhotoSource afterPhotoSource;
+
+  /// UTC device-clock observations supplied only by an in-app camera. Unknown, gallery and empty slots have none.
+  final DateTime? beforeCapturedAt;
+  final DateTime? afterCapturedAt;
   final String note;
 
   /// Whether the visit cleaned the zone as agreed. A record is done unless the person sets an exception.
@@ -51,6 +61,11 @@ final class ZoneRecord {
     PhotoSlot.after => afterPhotoSource,
   };
 
+  DateTime? capturedAtIn(PhotoSlot slot) => switch (slot) {
+    PhotoSlot.before => beforeCapturedAt,
+    PhotoSlot.after => afterCapturedAt,
+  };
+
   /// The slots that hold no photo, in the order of [PhotoSlot.values].
   List<PhotoSlot> get emptySlots => [
     for (final slot in PhotoSlot.values)
@@ -67,13 +82,20 @@ final class ZoneRecord {
   bool get hasContent => beforePhoto != null || afterPhoto != null || hasNote || status != ZoneStatus.done;
 
   /// This record with [photo] in [slot], in place of the photo that it holds there.
-  ZoneRecord withPhoto(PhotoSlot slot, PhotoRef photo, {PhotoSource source = PhotoSource.unknown}) => ZoneRecord(
+  ZoneRecord withPhoto(
+    PhotoSlot slot,
+    PhotoRef photo, {
+    PhotoSource source = PhotoSource.unknown,
+    DateTime? capturedAt,
+  }) => ZoneRecord(
     zoneId: zoneId,
     zoneName: zoneName,
     beforePhoto: slot == PhotoSlot.before ? photo : beforePhoto,
     afterPhoto: slot == PhotoSlot.after ? photo : afterPhoto,
     beforePhotoSource: slot == PhotoSlot.before ? source : beforePhotoSource,
     afterPhotoSource: slot == PhotoSlot.after ? source : afterPhotoSource,
+    beforeCapturedAt: slot == PhotoSlot.before ? capturedAt : beforeCapturedAt,
+    afterCapturedAt: slot == PhotoSlot.after ? capturedAt : afterCapturedAt,
     note: note,
     status: status,
     reason: reason,
@@ -95,6 +117,8 @@ final class ZoneRecord {
     afterPhoto: afterPhoto,
     beforePhotoSource: beforePhotoSource,
     afterPhotoSource: afterPhotoSource,
+    beforeCapturedAt: beforeCapturedAt,
+    afterCapturedAt: afterCapturedAt,
     note: note ?? this.note,
     status: status ?? this.status,
     reason: reason ?? this.reason,
@@ -109,11 +133,24 @@ final class ZoneRecord {
       other.afterPhoto == afterPhoto &&
       other.beforePhotoSource == beforePhotoSource &&
       other.afterPhotoSource == afterPhotoSource &&
+      other.beforeCapturedAt == beforeCapturedAt &&
+      other.afterCapturedAt == afterCapturedAt &&
       other.note == note &&
       other.status == status &&
       other.reason == reason;
 
   @override
-  int get hashCode =>
-      Object.hash(zoneId, zoneName, beforePhoto, afterPhoto, beforePhotoSource, afterPhotoSource, note, status, reason);
+  int get hashCode => Object.hash(
+    zoneId,
+    zoneName,
+    beforePhoto,
+    afterPhoto,
+    beforePhotoSource,
+    afterPhotoSource,
+    beforeCapturedAt,
+    afterCapturedAt,
+    note,
+    status,
+    reason,
+  );
 }

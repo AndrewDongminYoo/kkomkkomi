@@ -46,6 +46,8 @@ final class SqliteVisitRepository implements VisitRepository {
           'after_photo': record.afterPhoto?.path,
           'before_photo_source': record.beforePhotoSource.name,
           'after_photo_source': record.afterPhotoSource.name,
+          'before_captured_at': record.beforeCapturedAt?.microsecondsSinceEpoch,
+          'after_captured_at': record.afterCapturedAt?.microsecondsSinceEpoch,
           'note': record.note,
           'status': record.status.name,
           'reason': record.reason,
@@ -92,12 +94,17 @@ final class SqliteVisitRepository implements VisitRepository {
     afterPhoto: _photoFrom(row['after_photo']),
     beforePhotoSource: PhotoSource.values.asNameMap()[row['before_photo_source']] ?? PhotoSource.unknown,
     afterPhotoSource: PhotoSource.values.asNameMap()[row['after_photo_source']] ?? PhotoSource.unknown,
+    beforeCapturedAt: _captureTimeFrom(row['before_captured_at']),
+    afterCapturedAt: _captureTimeFrom(row['after_captured_at']),
     note: row['note']! as String,
     // A status that a later version stored reads as not done, so that a report never claims a completion that this
     // version cannot read.
     status: _statuses[row['status']! as String] ?? ZoneStatus.notDone,
     reason: row['reason']! as String,
   );
+
+  static DateTime? _captureTimeFrom(Object? value) =>
+      value == null ? null : DateTime.fromMicrosecondsSinceEpoch(value as int, isUtc: true);
 
   static final Map<String, ZoneStatus> _statuses = ZoneStatus.values.asNameMap();
 

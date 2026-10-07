@@ -21,6 +21,36 @@ void main() {
   );
 
   group('ZoneRecord', () {
+    test('normalizes observed camera times and replaces them with their photos', () {
+      final time = DateTime.utc(2026, 10, 7, 9, 12, 30, 123, 456);
+      final before = PhotoRef('photos/visit/b.jpg');
+      final after = PhotoRef('photos/visit/a.jpg');
+      final timed = ZoneRecord(zoneId: 'zone-1', zoneName: 'Lobby')
+          .withPhoto(PhotoSlot.before, before, source: PhotoSource.camera, capturedAt: time.toLocal())
+          .withPhoto(
+            PhotoSlot.after,
+            after,
+            source: PhotoSource.camera,
+            capturedAt: time.add(const Duration(minutes: 29)),
+          );
+      expect(timed.capturedAtIn(PhotoSlot.before), time);
+      expect(timed.capturedAtIn(PhotoSlot.after), time.add(const Duration(minutes: 29)));
+      expect(timed.beforeCapturedAt!.isUtc, isTrue);
+      expect(timed.withNote('note').withStatus(ZoneStatus.partlyDone).withReason('reason').beforeCapturedAt, time);
+      expect(timed, isNot(timed.withPhoto(PhotoSlot.before, before, source: PhotoSource.camera)));
+      expect(timed.hashCode, timed.withNote('').hashCode);
+      final gallery = timed.withPhoto(PhotoSlot.before, before, source: PhotoSource.gallery, capturedAt: time);
+      expect(gallery.beforeCapturedAt, isNull);
+      expect(gallery.afterCapturedAt, timed.afterCapturedAt);
+      expect(timed.withPhoto(PhotoSlot.after, after).afterCapturedAt, isNull);
+      final empty = ZoneRecord(
+        zoneId: 'zone-1',
+        zoneName: 'Lobby',
+        beforePhotoSource: PhotoSource.camera,
+        beforeCapturedAt: time,
+      );
+      expect(empty.beforeCapturedAt, isNull);
+    });
     test('replaces provenance with the photo and keeps it through other edits', () {
       final photo = PhotoRef('photos/visit/a.jpg');
       final record = ZoneRecord(
