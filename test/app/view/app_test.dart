@@ -341,7 +341,7 @@ void main() {
         expect(find.descendant(of: find.byType(AppBar), matching: find.text('한빛빌딩')), findsOneWidget);
         expect(find.descendant(of: find.byType(AppBar), matching: find.text('October 2, 2026')), findsOneWidget);
         expect(
-          find.text('The app restarted while the camera was open. The photo you took is in this visit.'),
+          find.text('The app restarted while receiving a photo. The photo is saved in this visit.'),
           findsOneWidget,
         );
 
@@ -361,7 +361,7 @@ void main() {
         expect(find.byType(VisitCapturePage), findsOneWidget);
         expect(
           find.text(
-            "The app restarted while the camera was open, and the photo you took couldn't be added. Take it again.",
+            "The app restarted while receiving a photo, and the photo couldn't be saved. Take or select it again.",
           ),
           findsOneWidget,
         );

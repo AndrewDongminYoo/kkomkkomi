@@ -1069,6 +1069,23 @@ void main() {
     });
 
     group('after the start of the app recovered a capture of the visit', () {
+      testWidgets('uses source-neutral wording for a recovered gallery photo', (tester) async {
+        final gallery = current.withRecord(
+          current.zoneRecords.first.withPhoto(PhotoSlot.before, beforePhoto, source: PhotoSource.gallery),
+        );
+        await pumpPage(
+          tester,
+          visit: gallery,
+          recovery: const LostCaptureRecovery(visitId: visitId),
+        );
+        expect(
+          find.text('The app restarted while receiving a photo. The photo is saved in this visit.'),
+          findsOneWidget,
+        );
+        expect(tester.photoPathsIn(zone('zone-1')), [beforeFile]);
+        expect((await savedRecord('zone-1')).beforePhotoSource, PhotoSource.gallery);
+      });
+
       const recovered = LostCaptureRecovery(visitId: visitId);
       final lost = LostCaptureRecovery(visitId: visitId, failure: Exception('disk full'));
 
@@ -1076,15 +1093,15 @@ void main() {
         (
           const Locale('en'),
           recovered,
-          'The app restarted while the camera was open. The photo you took is in this visit.',
+          'The app restarted while receiving a photo. The photo is saved in this visit.',
         ),
-        (const Locale('ko'), recovered, '카메라를 쓰는 동안 앱이 다시 시작됐어요. 찍은 사진은 이 방문에 넣었어요.'),
+        (const Locale('ko'), recovered, '사진을 받는 동안 앱이 다시 시작됐어요. 받은 사진은 이 방문에 저장했어요.'),
         (
           const Locale('en'),
           lost,
-          "The app restarted while the camera was open, and the photo you took couldn't be added. Take it again.",
+          "The app restarted while receiving a photo, and the photo couldn't be saved. Take or select it again.",
         ),
-        (const Locale('ko'), lost, '카메라를 쓰는 동안 앱이 다시 시작됐는데, 찍은 사진을 넣지 못했어요. 다시 찍어 주세요.'),
+        (const Locale('ko'), lost, '사진을 받는 동안 앱이 다시 시작됐는데, 사진을 저장하지 못했어요. 다시 찍거나 선택해 주세요.'),
       ]) {
         testWidgets(
           'says what became of the photo once the visit shows, in ${locale.languageCode}, when '
@@ -1250,22 +1267,22 @@ void main() {
         (
           const Locale('en'),
           const LostCaptureRecovery(visitId: visitId),
-          'The app restarted while the camera was open. The photo you took is in this visit.',
+          'The app restarted while receiving a photo. The photo is saved in this visit.',
         ),
         (
           const Locale('ko'),
           const LostCaptureRecovery(visitId: visitId),
-          '카메라를 쓰는 동안 앱이 다시 시작됐어요. 찍은 사진은 이 방문에 넣었어요.',
+          '사진을 받는 동안 앱이 다시 시작됐어요. 받은 사진은 이 방문에 저장했어요.',
         ),
         (
           const Locale('en'),
           LostCaptureRecovery(visitId: visitId, failure: failure),
-          "The app restarted while the camera was open, and the photo you took couldn't be added. Take it again.",
+          "The app restarted while receiving a photo, and the photo couldn't be saved. Take or select it again.",
         ),
         (
           const Locale('ko'),
           LostCaptureRecovery(visitId: visitId, failure: failure),
-          '카메라를 쓰는 동안 앱이 다시 시작됐는데, 찍은 사진을 넣지 못했어요. 다시 찍어 주세요.',
+          '사진을 받는 동안 앱이 다시 시작됐는데, 사진을 저장하지 못했어요. 다시 찍거나 선택해 주세요.',
         ),
       ]) {
         testWidgets(
