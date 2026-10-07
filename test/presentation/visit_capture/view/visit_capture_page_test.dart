@@ -117,7 +117,19 @@ void main() {
   Finder control(String zoneId, String label) =>
       find.descendant(of: zone(zoneId), matching: find.widgetWithText(OutlinedButton, label));
 
-  Finder noteField(String zoneId) => find.descendant(of: zone(zoneId), matching: find.byType(TextField));
+  Finder noteField(String zoneId) => find.descendant(
+    of: find.descendant(of: zone(zoneId), matching: find.byKey(const ValueKey('note'))),
+    matching: find.byType(TextField),
+  );
+
+  /// The field of what is left or why, which a zone shows only while it is not done.
+  Finder reasonField(String zoneId) => find.descendant(
+    of: find.descendant(of: zone(zoneId), matching: find.byKey(const ValueKey('reason'))),
+    matching: find.byType(TextField),
+  );
+
+  Finder statusChip(String zoneId, String label) =>
+      find.descendant(of: zone(zoneId), matching: find.widgetWithText(ChoiceChip, label));
 
   /// Scrolls the list of zones until [finder] is on the screen. A note field is a scrollable too, so the list is
   /// named.
@@ -418,7 +430,7 @@ void main() {
 
         await tester.enterText(noteField('zone-1'), '유');
         await tester.pumpAndSettle();
-        expect(find.text("Can't save your notes right now."), findsOneWidget);
+        expect(find.text("Can't save your changes right now."), findsOneWidget);
         expect(find.byType(SnackBar), findsNothing);
 
         // The notice does not leave after a time, and a later edit that storage does not take keeps it.
@@ -426,8 +438,8 @@ void main() {
         await tester.enterText(noteField('zone-1'), '유리');
         await tester.pumpAndSettle();
 
-        expect(find.text("Can't save your notes right now."), findsOneWidget);
-        expect(tester.noticeToneOf("Can't save your notes right now."), NoticeTone.error);
+        expect(find.text("Can't save your changes right now."), findsOneWidget);
+        expect(tester.noticeToneOf("Can't save your changes right now."), NoticeTone.error);
         expect(find.widgetWithText(TextButton, 'Save Again'), findsOneWidget);
         expect(tester.widget<TextField>(noteField('zone-1')).controller!.text, '유리');
         visits.failure = null;
@@ -444,7 +456,7 @@ void main() {
         await tester.tap(find.widgetWithText(TextButton, 'Save Again'));
         await tester.pumpAndSettle();
 
-        expect(find.text("Can't save your notes right now."), findsNothing);
+        expect(find.text("Can't save your changes right now."), findsNothing);
         expect((await savedRecord('zone-1')).note, '유리');
       });
 
@@ -458,7 +470,7 @@ void main() {
         await tester.enterText(noteField('zone-1'), '유리 닦음');
         await tester.pumpAndSettle();
 
-        expect(find.text("Can't save your notes right now."), findsNothing);
+        expect(find.text("Can't save your changes right now."), findsNothing);
         expect((await savedRecord('zone-1')).note, '유리 닦음');
       });
 
@@ -471,7 +483,7 @@ void main() {
         tester.testTextInput.enterText('왁스 두 번');
         await tester.pumpAndSettle();
 
-        expect(find.text("Can't save your notes right now."), findsOneWidget);
+        expect(find.text("Can't save your changes right now."), findsOneWidget);
         expect(tester.testTextInput.isVisible, isTrue);
         final editable = find.descendant(of: zone('zone-2'), matching: find.byType(EditableText));
         expect(tester.widget<EditableText>(editable).focusNode.hasFocus, isTrue);
@@ -489,7 +501,7 @@ void main() {
         await tester.pumpAndSettle();
 
         expect(find.widgetWithText(SnackBar, "Can't take the photo right now. Try again."), findsOneWidget);
-        expect(find.text("Can't save your notes right now."), findsOneWidget);
+        expect(find.text("Can't save your changes right now."), findsOneWidget);
       });
 
       testWidgets('announces the notice to a screen reader and names it in Korean', (tester) async {
@@ -502,8 +514,8 @@ void main() {
 
         expect(find.widgetWithText(TextButton, '다시 저장하기'), findsOneWidget);
         expect(
-          tester.getSemantics(find.text('메모를 저장하지 못했어요.')),
-          isSemantics(label: '메모를 저장하지 못했어요.', isLiveRegion: true),
+          tester.getSemantics(find.text('바꾼 내용을 저장하지 못했어요.')),
+          isSemantics(label: '바꾼 내용을 저장하지 못했어요.', isLiveRegion: true),
         );
         semantics.dispose();
       });
@@ -545,7 +557,7 @@ void main() {
         await tester.pumpAndSettle();
 
         expect(find.widgetWithText(AlertDialog, 'Leave without saving?'), findsOneWidget);
-        expect(find.text('Your unsaved notes will be lost.'), findsOneWidget);
+        expect(find.text('Your unsaved changes will be lost.'), findsOneWidget);
         expect(tester.filledButtonColor('Leave'), appTheme().colorScheme.error);
         await tester.tap(find.widgetWithText(TextButton, 'Cancel'));
         await tester.pumpAndSettle();
@@ -616,7 +628,7 @@ void main() {
         await tester.pumpAndSettle();
 
         expect(find.widgetWithText(AlertDialog, '저장하지 않고 나갈까요?'), findsOneWidget);
-        expect(find.text('저장하지 못한 메모가 사라져요.'), findsOneWidget);
+        expect(find.text('저장하지 못한 내용이 사라져요.'), findsOneWidget);
         expect(find.widgetWithText(TextButton, '닫기'), findsOneWidget);
         expect(find.widgetWithText(FilledButton, '나가기'), findsOneWidget);
       });
@@ -639,6 +651,117 @@ void main() {
           isSemantics(label: 'Note', value: '왁스', isTextField: true),
         );
         semantics.dispose();
+      });
+    });
+
+    group('status', () {
+      ChoiceChip chip(WidgetTester tester, String zoneId, String label) =>
+          tester.widget<ChoiceChip>(statusChip(zoneId, label));
+
+      testWidgets('opens with done selected under the status label, and without a reason field', (tester) async {
+        await pumpPage(tester);
+
+        expect(find.descendant(of: zone('zone-1'), matching: find.text('Cleaning status')), findsOneWidget);
+        expect(chip(tester, 'zone-1', 'Done').selected, isTrue);
+        expect(chip(tester, 'zone-1', 'Partly done').selected, isFalse);
+        expect(chip(tester, 'zone-1', 'Not done').selected, isFalse);
+        expect(reasonField('zone-1'), findsNothing);
+      });
+
+      testWidgets('saves a status at once, and asks for what is left or why with a hint while it is empty', (
+        tester,
+      ) async {
+        await pumpPage(tester);
+
+        await tester.tap(statusChip('zone-1', 'Partly done'));
+        await tester.pumpAndSettle();
+
+        expect((await savedRecord('zone-1')).status, ZoneStatus.partlyDone);
+        expect(chip(tester, 'zone-1', 'Partly done').selected, isTrue);
+        expect(find.descendant(of: zone('zone-1'), matching: find.text("What's left")), findsOneWidget);
+        expect(find.text('Your client reads this in the report.'), findsOneWidget);
+
+        await tester.enterText(reasonField('zone-1'), '유리문은 다음 방문에');
+        await tester.pump();
+
+        expect((await savedRecord('zone-1')).reason, '유리문은 다음 방문에');
+        expect(find.text('Your client reads this in the report.'), findsNothing);
+
+        await tester.tap(statusChip('zone-1', 'Not done'));
+        await tester.pumpAndSettle();
+
+        expect((await savedRecord('zone-1')).status, ZoneStatus.notDone);
+        expect(find.descendant(of: zone('zone-1'), matching: find.text("Why it wasn't done")), findsOneWidget);
+        expect(tester.widget<TextField>(reasonField('zone-1')).controller!.text, '유리문은 다음 방문에');
+      });
+
+      testWidgets('hides the reason of a zone set back to done, keeps it, and shows it at the next exception', (
+        tester,
+      ) async {
+        await pumpPage(
+          tester,
+          visit: visitWith([
+            ZoneRecord(zoneId: 'zone-1', zoneName: '로비', status: ZoneStatus.notDone, reason: '공사 중'),
+          ]),
+        );
+        expect(tester.widget<TextField>(reasonField('zone-1')).controller!.text, '공사 중');
+
+        await tester.tap(statusChip('zone-1', 'Done'));
+        await tester.pumpAndSettle();
+
+        expect(reasonField('zone-1'), findsNothing);
+        expect(await savedRecord('zone-1'), isA<ZoneRecord>().having((r) => r.reason, 'reason', '공사 중'));
+
+        await tester.tap(statusChip('zone-1', 'Partly done'));
+        await tester.pumpAndSettle();
+
+        expect(tester.widget<TextField>(reasonField('zone-1')).controller!.text, '공사 중');
+      });
+
+      testWidgets('keeps the text of the note when the reason field appears above it', (tester) async {
+        await pumpPage(tester);
+        await tester.enterText(noteField('zone-2'), '왁스 두 번');
+        await tester.pump();
+
+        await tester.tap(statusChip('zone-2', 'Not done'));
+        await tester.pumpAndSettle();
+
+        expect(tester.widget<TextField>(noteField('zone-2')).controller!.text, '왁스 두 번');
+        expect(tester.widget<TextField>(reasonField('zone-2')).controller!.text, isEmpty);
+        expect((await savedRecord('zone-2')).note, '왁스 두 번');
+      });
+
+      testWidgets('keeps a status that storage did not take, and shows the notice of unsaved changes', (tester) async {
+        await pumpPage(tester);
+        visits.failure = failure;
+
+        await tester.tap(statusChip('zone-1', 'Not done'));
+        await tester.pumpAndSettle();
+
+        expect(chip(tester, 'zone-1', 'Not done').selected, isTrue);
+        expect(find.text("Can't save your changes right now."), findsOneWidget);
+
+        visits.failure = null;
+        await tester.tap(find.widgetWithText(TextButton, 'Save Again'));
+        await tester.pumpAndSettle();
+
+        expect((await savedRecord('zone-1')).status, ZoneStatus.notDone);
+        expect(find.text("Can't save your changes right now."), findsNothing);
+      });
+
+      testWidgets('names the statuses, the fields, and the hint in Korean', (tester) async {
+        await pumpPage(tester, locale: const Locale('ko'));
+
+        expect(find.descendant(of: zone('zone-1'), matching: find.text('청소 상태')), findsOneWidget);
+        expect(statusChip('zone-1', '완료'), findsOneWidget);
+        await tester.tap(statusChip('zone-1', '일부 완료'));
+        await tester.pumpAndSettle();
+        expect(find.descendant(of: zone('zone-1'), matching: find.text('남은 부분')), findsOneWidget);
+        expect(find.text('거래처가 보고서에서 이 내용을 봐요.'), findsOneWidget);
+
+        await tester.tap(statusChip('zone-1', '못 함'));
+        await tester.pumpAndSettle();
+        expect(find.descendant(of: zone('zone-1'), matching: find.text('못 한 이유')), findsOneWidget);
       });
     });
 
@@ -678,6 +801,8 @@ void main() {
         visits.failure = failure;
         await tester.enterText(noteField('zone-1'), '유리');
         await tester.pumpAndSettle();
+        // The notice takes room above the zones, so the control under them is below the screen.
+        await scrollTo(tester, reportButton());
 
         expect(tester.widget<FilledButton>(reportButton()).onPressed, isNull);
         await tester.tap(reportButton(), warnIfMissed: false);
@@ -707,7 +832,9 @@ void main() {
 
         visits.gate!.completeError(failure);
         await tester.pumpAndSettle();
-        expect(find.text("Can't save your notes right now."), findsOneWidget);
+        expect(find.text("Can't save your changes right now."), findsOneWidget);
+        // The notice takes room above the zones, so the control under them is below the screen.
+        await scrollTo(tester, reportButton());
         expect(tester.widget<FilledButton>(reportButton()).onPressed, isNull);
       });
 
@@ -1045,6 +1172,49 @@ void main() {
         });
       }
 
+      final exceptionVisit = visitWith([
+        ZoneRecord(zoneId: 'zone-1', zoneName: longZoneName, status: ZoneStatus.notDone),
+        ZoneRecord(
+          zoneId: 'zone-2',
+          zoneName: '화장실',
+          status: ZoneStatus.partlyDone,
+          reason: '세면대 아래 배수구는 부품이 와야 해서 다음 방문에 마무리하기로 했어요',
+        ),
+      ]);
+
+      for (final (locale, firstZoneTexts, secondZoneTexts) in [
+        (
+          const Locale('en'),
+          [
+            'Cleaning status',
+            'Done',
+            'Partly done',
+            'Not done',
+            "Why it wasn't done",
+            'Your client reads this in the report.',
+          ],
+          ["What's left"],
+        ),
+        (
+          const Locale('ko'),
+          ['청소 상태', '완료', '일부 완료', '못 함', '못 한 이유', '거래처가 보고서에서 이 내용을 봐요.'],
+          ['남은 부분'],
+        ),
+      ]) {
+        testWidgets('fits the status chips, the reason fields, and the hint in ${locale.languageCode}', (tester) async {
+          tester.useNarrowScreenWithLargestText();
+
+          await pumpPage(tester, visit: exceptionVisit, locale: locale, keepScreen: true);
+
+          for (final text in firstZoneTexts) {
+            await expectWholeTextAfterScroll(tester, 'zone-1', text);
+          }
+          for (final text in secondZoneTexts) {
+            await expectWholeTextAfterScroll(tester, 'zone-2', text);
+          }
+        });
+      }
+
       for (final (locale, label) in [(const Locale('en'), 'View Report'), (const Locale('ko'), '보고서 보기')]) {
         testWidgets('fits the control that opens the report in ${locale.languageCode}', (tester) async {
           tester.useNarrowScreenWithLargestText();
@@ -1136,8 +1306,8 @@ void main() {
       }
 
       for (final (locale, message, saveAgain) in [
-        (const Locale('en'), "Can't save your notes right now.", 'Save Again'),
-        (const Locale('ko'), '메모를 저장하지 못했어요.', '다시 저장하기'),
+        (const Locale('en'), "Can't save your changes right now.", 'Save Again'),
+        (const Locale('ko'), '바꾼 내용을 저장하지 못했어요.', '다시 저장하기'),
       ]) {
         testWidgets('fits the notice of unsaved notes and keeps the zones in reach in ${locale.languageCode}', (
           tester,
@@ -1164,8 +1334,8 @@ void main() {
       }
 
       for (final (locale, title, message, cancel, leave) in [
-        (const Locale('en'), 'Leave without saving?', 'Your unsaved notes will be lost.', 'Cancel', 'Leave'),
-        (const Locale('ko'), '저장하지 않고 나갈까요?', '저장하지 못한 메모가 사라져요.', '닫기', '나가기'),
+        (const Locale('en'), 'Leave without saving?', 'Your unsaved changes will be lost.', 'Cancel', 'Leave'),
+        (const Locale('ko'), '저장하지 않고 나갈까요?', '저장하지 못한 내용이 사라져요.', '닫기', '나가기'),
       ]) {
         testWidgets('fits the question before the person leaves with unsaved notes in ${locale.languageCode}', (
           tester,
@@ -1228,7 +1398,10 @@ void main() {
     VisitCaptureState shown(VisitCaptureStatus status) =>
         VisitCaptureState(status: status, visit: current, photoDirectory: FakePhotoStore.directory);
 
-    setUpAll(() => registerFallbackValue(PhotoSlot.before));
+    setUpAll(() {
+      registerFallbackValue(PhotoSlot.before);
+      registerFallbackValue(ZoneStatus.done);
+    });
 
     setUp(() => cubit = _MockVisitCaptureCubit());
 
@@ -1267,7 +1440,7 @@ void main() {
       when(() => cubit.saveAgain()).thenAnswer((_) async {});
       await pumpView(tester, shown(VisitCaptureStatus.ready).copyWith(isStored: false));
 
-      expect(find.text("Can't save your notes right now."), findsOneWidget);
+      expect(find.text("Can't save your changes right now."), findsOneWidget);
       await tester.tap(find.widgetWithText(TextButton, 'Save Again'));
 
       verify(() => cubit.saveAgain()).called(1);
@@ -1301,7 +1474,7 @@ void main() {
     testWidgets('shows no notice while storage holds the notes', (tester) async {
       await pumpView(tester, shown(VisitCaptureStatus.saveFailed));
 
-      expect(find.text("Can't save your notes right now."), findsNothing);
+      expect(find.text("Can't save your changes right now."), findsNothing);
       expect(find.widgetWithText(TextButton, 'Save Again'), findsNothing);
     });
 
@@ -1313,14 +1486,52 @@ void main() {
 
     testWidgets('offers no report while the state tells that storage does not hold a note', (tester) async {
       await pumpView(tester, shown(VisitCaptureStatus.ready).copyWith(isStored: false));
+      // The notice takes room above the zones, so the control under them is below the screen.
+      final reportButton = find.widgetWithText(FilledButton, 'View Report');
+      await scrollTo(tester, reportButton);
 
-      expect(tester.widget<FilledButton>(find.widgetWithText(FilledButton, 'View Report')).onPressed, isNull);
+      expect(tester.widget<FilledButton>(reportButton).onPressed, isNull);
     });
 
     testWidgets('offers no report while the state tells that a note is on its way to storage', (tester) async {
       await pumpView(tester, shown(VisitCaptureStatus.ready).copyWith(isSavingNote: true));
 
       expect(tester.widget<FilledButton>(find.widgetWithText(FilledButton, 'View Report')).onPressed, isNull);
+    });
+
+    testWidgets('passes a status and each edit of a reason to the cubit', (tester) async {
+      when(() => cubit.setStatus(any(), any())).thenAnswer((_) async {});
+      when(() => cubit.editReason(any(), any())).thenAnswer((_) async {});
+      final exception = current.withRecord(current.recordFor('zone-2')!.withStatus(ZoneStatus.partlyDone));
+      await pumpView(
+        tester,
+        VisitCaptureState(status: VisitCaptureStatus.ready, visit: exception, photoDirectory: FakePhotoStore.directory),
+      );
+
+      await tester.tap(statusChip('zone-1', 'Not done'));
+      await tester.enterText(reasonField('zone-2'), '거울 얼룩');
+
+      verifyInOrder([
+        () => cubit.setStatus('zone-1', ZoneStatus.notDone),
+        () => cubit.editReason('zone-2', '거울 얼룩'),
+      ]);
+    });
+
+    testWidgets('takes no press of a status chip and no edit of a reason while a capture runs', (tester) async {
+      final exception = current.withRecord(current.recordFor('zone-1')!.withStatus(ZoneStatus.notDone));
+      await pumpView(
+        tester,
+        VisitCaptureState(
+          status: VisitCaptureStatus.capturing,
+          visit: exception,
+          photoDirectory: FakePhotoStore.directory,
+        ),
+      );
+
+      for (final label in ['Done', 'Partly done', 'Not done']) {
+        expect(tester.widget<ChoiceChip>(statusChip('zone-1', label)).onSelected, isNull);
+      }
+      expect(tester.widget<TextField>(reasonField('zone-1')).readOnly, isTrue);
     });
 
     testWidgets('passes a capture and each edit of a note to the cubit', (tester) async {

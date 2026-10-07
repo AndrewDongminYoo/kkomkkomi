@@ -252,29 +252,49 @@
     "@previousAfterPhotoLabel": {
         "description": "What a screen reader says for the photo that an earlier visit took after cleaning"
     },
-    "visitUnsavedMessage": "Can't save your notes right now.",
+    "visitUnsavedMessage": "Can't save your changes right now.",
     "@visitUnsavedMessage": {
-        "description": "Notice that stays at the top of the visit screen while a note is not saved"
+        "description": "Notice that stays at the top of the visit screen while a note, a status, or a reason is not saved"
     },
     "visitSaveAgainButton": "Save Again",
     "@visitSaveAgainButton": {
-        "description": "Label of the button in the notice of unsaved notes that saves the notes again"
+        "description": "Label of the button in the notice of unsaved changes that saves them again"
     },
     "visitLeaveUnsavedDialogTitle": "Leave without saving?",
     "@visitLeaveUnsavedDialogTitle": {
-        "description": "Title of the dialog that asks before the person leaves the visit screen with a note that is not saved"
+        "description": "Title of the dialog that asks before the person leaves the visit screen with a change that is not saved"
     },
-    "visitLeaveUnsavedDialogMessage": "Your unsaved notes will be lost.",
+    "visitLeaveUnsavedDialogMessage": "Your unsaved changes will be lost.",
     "@visitLeaveUnsavedDialogMessage": {
-        "description": "Text of the dialog that asks before the person leaves the visit screen with a note that is not saved"
+        "description": "Text of the dialog that asks before the person leaves the visit screen with a change that is not saved"
     },
     "visitLeaveUnsavedConfirmButton": "Leave",
     "@visitLeaveUnsavedConfirmButton": {
-        "description": "Label of the button that leaves the visit screen without the unsaved notes"
+        "description": "Label of the button that leaves the visit screen without the unsaved changes"
     },
     "noteFieldLabel": "Note",
     "@noteFieldLabel": {
         "description": "Label of the field for the note of a zone on the visit screen"
+    },
+    "zoneStatusLabel": "Cleaning status",
+    "@zoneStatusLabel": {
+        "description": "Label above the chips on the visit screen that set a zone as done, partly done, or not done"
+    },
+    "zoneStatusDoneLabel": "Done",
+    "@zoneStatusDoneLabel": {
+        "description": "Label of the chip on the visit screen that sets a zone as cleaned as agreed. The chips of the other two statuses use the texts of the report"
+    },
+    "zoneReasonPartlyDoneLabel": "What's left",
+    "@zoneReasonPartlyDoneLabel": {
+        "description": "Label of the field for what is left in a zone that is partly done"
+    },
+    "zoneReasonNotDoneLabel": "Why it wasn't done",
+    "@zoneReasonNotDoneLabel": {
+        "description": "Label of the field for why a zone was not cleaned"
+    },
+    "zoneReasonHelper": "Your client reads this in the report.",
+    "@zoneReasonHelper": {
+        "description": "Text under the field for what is left or why, while the field is empty"
     },
     "companyProfileTitle": "Company profile",
     "@companyProfileTitle": {

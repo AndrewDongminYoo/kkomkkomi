@@ -87,6 +87,16 @@ void main() {
     return from.withRecord(from.recordFor(zoneId)!.withNote(note));
   }
 
+  Visit withStatus(String zoneId, ZoneStatus status, {Visit? of}) {
+    final from = of ?? visit;
+    return from.withRecord(from.recordFor(zoneId)!.withStatus(status));
+  }
+
+  Visit withReason(String zoneId, String reason, {Visit? of}) {
+    final from = of ?? visit;
+    return from.withRecord(from.recordFor(zoneId)!.withReason(reason));
+  }
+
   Visit withPhoto(String zoneId, PhotoSlot slot, PhotoRef photo) =>
       visit.withRecord(visit.recordFor(zoneId)!.withPhoto(slot, photo));
 
@@ -875,6 +885,155 @@ void main() {
           expect(cubit.state, loaded(shown: withNote('zone-1', '유리'), isSavingNote: true));
         });
       }
+    });
+
+    group('setStatus', () {
+      blocTest<VisitCaptureCubit, VisitCaptureState>(
+        'shows the status at once and saves the visit with it',
+        build: build,
+        seed: loaded,
+        act: (cubit) => cubit.setStatus('zone-1', ZoneStatus.partlyDone),
+        expect: () => [
+          loaded(shown: withStatus('zone-1', ZoneStatus.partlyDone), isSavingNote: true),
+          loaded(shown: withStatus('zone-1', ZoneStatus.partlyDone)),
+        ],
+        verify: (_) => verify(() => visits.save(withStatus('zone-1', ZoneStatus.partlyDone))).called(1),
+      );
+
+      final exception = withReason('zone-1', '유리문', of: withStatus('zone-1', ZoneStatus.notDone));
+      blocTest<VisitCaptureCubit, VisitCaptureState>(
+        'keeps the reason of a zone whose status goes back to done',
+        build: build,
+        seed: () => loaded(shown: exception),
+        act: (cubit) => cubit.setStatus('zone-1', ZoneStatus.done),
+        expect: () => [
+          loaded(shown: withStatus('zone-1', ZoneStatus.done, of: exception), isSavingNote: true),
+          loaded(shown: withStatus('zone-1', ZoneStatus.done, of: exception)),
+        ],
+        verify: (_) {
+          final saved = verify(() => visits.save(captureAny())).captured.single as Visit;
+          expect(saved.recordFor('zone-1')!.reason, '유리문');
+        },
+      );
+
+      blocTest<VisitCaptureCubit, VisitCaptureState>(
+        'saves nothing for the status that the zone already has',
+        build: build,
+        seed: loaded,
+        act: (cubit) => cubit.setStatus('zone-1', ZoneStatus.done),
+        expect: () => isEmpty,
+        verify: (_) => verifyNever(() => visits.save(any())),
+      );
+
+      blocTest<VisitCaptureCubit, VisitCaptureState>(
+        'keeps the status on the screen when storage does not take it, until a save again holds it',
+        build: build,
+        seed: loaded,
+        act: (cubit) async {
+          when(() => visits.save(any())).thenThrow(failure);
+          await cubit.setStatus('zone-1', ZoneStatus.notDone);
+          when(() => visits.save(any())).thenAnswer((_) async {});
+          await cubit.saveAgain();
+        },
+        expect: () => [
+          loaded(shown: withStatus('zone-1', ZoneStatus.notDone), isSavingNote: true),
+          loaded(shown: withStatus('zone-1', ZoneStatus.notDone), isStored: false),
+          loaded(shown: withStatus('zone-1', ZoneStatus.notDone), isStored: false, isSavingNote: true),
+          loaded(shown: withStatus('zone-1', ZoneStatus.notDone)),
+        ],
+        errors: () => [failure],
+        verify: (_) => verify(() => visits.save(withStatus('zone-1', ZoneStatus.notDone))).called(2),
+      );
+
+      blocTest<VisitCaptureCubit, VisitCaptureState>(
+        'does nothing while a capture runs',
+        build: build,
+        seed: () => loaded(status: VisitCaptureStatus.capturing),
+        act: (cubit) => cubit.setStatus('zone-1', ZoneStatus.notDone),
+        expect: () => isEmpty,
+        verify: (_) => verifyNever(() => visits.save(any())),
+      );
+
+      blocTest<VisitCaptureCubit, VisitCaptureState>(
+        'does nothing for a zone that the visit does not hold',
+        build: build,
+        seed: loaded,
+        act: (cubit) => cubit.setStatus('zone-9', ZoneStatus.notDone),
+        expect: () => isEmpty,
+        verify: (_) => verifyNever(() => visits.save(any())),
+      );
+
+      blocTest<VisitCaptureCubit, VisitCaptureState>(
+        'does nothing before the visit is loaded',
+        build: build,
+        act: (cubit) => cubit.setStatus('zone-1', ZoneStatus.notDone),
+        expect: () => isEmpty,
+        verify: (_) => verifyNever(() => visits.save(any())),
+      );
+    });
+
+    group('editReason', () {
+      final exception = withStatus('zone-1', ZoneStatus.partlyDone);
+
+      blocTest<VisitCaptureCubit, VisitCaptureState>(
+        'shows the reason at once, as it is written, and saves the visit with it',
+        build: build,
+        seed: () => loaded(shown: exception),
+        act: (cubit) => cubit.editReason('zone-1', ' 유리문은 다음 방문에\n'),
+        expect: () => [
+          loaded(shown: withReason('zone-1', ' 유리문은 다음 방문에\n', of: exception), isSavingNote: true),
+          loaded(shown: withReason('zone-1', ' 유리문은 다음 방문에\n', of: exception)),
+        ],
+        verify: (_) => verify(() => visits.save(withReason('zone-1', ' 유리문은 다음 방문에\n', of: exception))).called(1),
+      );
+
+      blocTest<VisitCaptureCubit, VisitCaptureState>(
+        'saves nothing for the reason that the zone already has',
+        build: build,
+        seed: () => loaded(shown: exception),
+        act: (cubit) => cubit.editReason('zone-1', ''),
+        expect: () => isEmpty,
+        verify: (_) => verifyNever(() => visits.save(any())),
+      );
+
+      blocTest<VisitCaptureCubit, VisitCaptureState>(
+        'keeps the reason on the screen and reports the failure when storage does not take it',
+        setUp: () => when(() => visits.save(any())).thenThrow(failure),
+        build: build,
+        seed: () => loaded(shown: exception),
+        act: (cubit) => cubit.editReason('zone-1', '유리문'),
+        expect: () => [
+          loaded(shown: withReason('zone-1', '유리문', of: exception), isSavingNote: true),
+          loaded(shown: withReason('zone-1', '유리문', of: exception), isStored: false),
+        ],
+        errors: () => [failure],
+      );
+
+      blocTest<VisitCaptureCubit, VisitCaptureState>(
+        'does nothing while a capture runs',
+        build: build,
+        seed: () => loaded(shown: exception, status: VisitCaptureStatus.capturing),
+        act: (cubit) => cubit.editReason('zone-1', '유리문'),
+        expect: () => isEmpty,
+        verify: (_) => verifyNever(() => visits.save(any())),
+      );
+
+      blocTest<VisitCaptureCubit, VisitCaptureState>(
+        'does nothing for a zone that the visit does not hold',
+        build: build,
+        seed: () => loaded(shown: exception),
+        act: (cubit) => cubit.editReason('zone-9', '유리문'),
+        expect: () => isEmpty,
+        verify: (_) => verifyNever(() => visits.save(any())),
+      );
+
+      blocTest<VisitCaptureCubit, VisitCaptureState>(
+        'does nothing before the visit is loaded',
+        build: build,
+        act: (cubit) => cubit.editReason('zone-1', '유리문'),
+        expect: () => isEmpty,
+        verify: (_) => verifyNever(() => visits.save(any())),
+      );
     });
 
     group('saveAgain', () {
