@@ -75,6 +75,17 @@ def pubspec_version_name
   pubspec_version[0]
 end
 
+# The deliver options of a validated copy of the screenshots, which the personal app-store-assets checkout makes
+# under build/store-assets (fastlane/ASSETS.md): the path of the copy and `overwrite_screenshots: true`.
+def validated_ios_screenshots
+  assets_root = ENV.fetch("APP_STORE_ASSETS_ROOT", File.expand_path("../app-store-assets", ROOT))
+  bridge = File.join(assets_root, "lib/fastlane_assets.rb")
+  UI.user_error!("Set APP_STORE_ASSETS_ROOT to the personal app-store-assets checkout.") unless File.file?(bridge)
+  require bridge
+  AppStoreAssets.prepare(repo_root: ROOT, project: "kkomkkomi", bundle_id: "kr.donminzzi.kkomkkomi",
+                         source: IOS_SCREENSHOTS)
+end
+
 # The build number, which is the version code of the Android bundle.
 def pubspec_build_number
   pubspec_version[1]
@@ -122,11 +133,13 @@ platform :ios do
     )
   end
 
-  desc "Uploads fastlane/metadata/ios and fastlane/screenshots/ios to App Store Connect, without a binary and without a review submission."
-  lane :metadata do
+  desc "Uploads fastlane/metadata/ios and a validated copy of fastlane/screenshots/ios to App Store Connect, which replaces every screenshot set of each locale, without a binary and without a review submission. skip_screenshots:true uploads the texts only."
+  lane :metadata do |options|
+    skip_screenshots = %w[true 1 yes on].include?(options[:skip_screenshots].to_s.downcase) || !File.directory?(IOS_SCREENSHOTS)
+    # The one source of screenshots_path: the validated copy, or the originals that deliver then skips.
+    screenshots = skip_screenshots ? { screenshots_path: IOS_SCREENSHOTS } : validated_ios_screenshots
     api_key = app_store_connect_key
-    skip_screenshots = !File.directory?(IOS_SCREENSHOTS)
-    UI.important("#{IOS_SCREENSHOTS} does not exist, so no screenshot is uploaded.") if skip_screenshots
+    UI.important("Screenshot upload is disabled or #{IOS_SCREENSHOTS} is absent; uploading metadata only.") if skip_screenshots
 
     # deliver runs precheck after the metadata upload also without a review
     # submission, and precheck stops with an error for an API key while its
@@ -137,13 +150,13 @@ platform :ios do
       api_key: api_key,
       app_version: pubspec_version_name,
       metadata_path: IOS_METADATA,
-      screenshots_path: IOS_SCREENSHOTS,
       skip_binary_upload: true,
       skip_metadata: false,
       skip_screenshots: skip_screenshots,
       submit_for_review: false,
       run_precheck_before_submit: false,
-      force: true
+      force: true,
+      **screenshots
     )
   end
 end
