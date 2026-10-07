@@ -1,6 +1,6 @@
 name: kkomkkomi
 description: "Kkomkkomi (꼼꼬미) is a mobile app for small cleaning companies in Korea: teams of one to five people that clean offices and shops on a recurring schedule."
-version: 1.0.0+1
+version: 1.1.0+3
 publish_to: none
 
 environment:

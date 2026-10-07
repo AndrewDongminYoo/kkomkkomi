@@ -1,0 +1,7 @@
+• Mark each zone as done, partly done, or not done, and add what's left or why. The first page of the report sums it up.
+• The report PDF has a new design.
+• Subscribe to Basic or Pro, restore purchases, and manage your subscription in Plans.
+• The Free plan holds up to 2 clients. Paid plans leave "꼼꼬미로 작성됨" out of reports.
+• Close a client's report link, or replace it.
+• Delete all data on the phone and the server from Company profile.
+• Photos are saved without their location.
