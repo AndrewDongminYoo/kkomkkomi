@@ -466,11 +466,11 @@
     },
     "reportPartlyDoneLabel": "Partly done",
     "@reportPartlyDoneLabel": {
-        "description": "Status of a zone that the visit cleaned in part, next to its name and in the summary of the report"
+        "description": "Status of a zone that the visit cleaned in part, next to its name and in the summary of the report. The status chip of the visit screen shows the same text"
     },
     "reportNotDoneLabel": "Not done",
     "@reportNotDoneLabel": {
-        "description": "Status of a zone that the visit did not clean, next to its name, in the summary, and in its empty photo slots"
+        "description": "Status of a zone that the visit did not clean, next to its name, in the summary, and in its empty photo slots of the report. The status chip of the visit screen shows the same text"
     },
     "reportBeforePhotoLabel": "Before",
     "@reportBeforePhotoLabel": {

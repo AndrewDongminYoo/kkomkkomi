@@ -402,11 +402,11 @@
     },
     "reportPartlyDoneLabel": "일부 완료",
     "@reportPartlyDoneLabel": {
-        "description": "일부만 청소한 구역의 상태. 보고서의 구역 이름 옆과 요약에 나온다"
+        "description": "일부만 청소한 구역의 상태. 보고서의 구역 이름 옆과 요약에 나오고, 방문 화면의 청소 상태 칩도 이 문구를 쓴다"
     },
     "reportNotDoneLabel": "못 함",
     "@reportNotDoneLabel": {
-        "description": "청소하지 못한 구역의 상태. 보고서의 구역 이름 옆, 요약, 빈 사진 칸에 나온다"
+        "description": "청소하지 못한 구역의 상태. 보고서의 구역 이름 옆, 요약, 빈 사진 칸에 나오고, 방문 화면의 청소 상태 칩도 이 문구를 쓴다"
     },
     "reportBeforePhotoLabel": "청소 전",
     "@reportBeforePhotoLabel": {
