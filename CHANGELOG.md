@@ -6,12 +6,6 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 ## [Unreleased]
 
-- Nullable observed in-app camera times for PDF/preview captions; picker, gallery and old photos have no capture time.
-
-- Gallery selection for before/after photos, with gallery captions in the preview, PDF and web report.
-
-- An optional business phone in the company profile, report preview and PDF, kept out of public web reports.
-
 ## [1.1.0] - 2026-10-07
 
 The second test distribution: TestFlight and the Google Play internal testing track, build 3.
@@ -25,6 +19,8 @@ It holds every change after the 1.0.0 entry.
 - Close Link and Make New Link on the client screen, which close the report link of one client or replace it.
 - Delete All Data on the company profile screen, which deletes what the app published, the anonymous account, and the data on the phone.
 - The client name above the visit date on the visit screen.
+- A before or after photo from the photo library of the phone, beside the camera. The preview, the PDF, and the web report say that such a photo comes from the library.
+- An optional business phone number in the company profile, which the preview and the PDF of the report show under the company name. A published web report never holds it.
 
 ### Changed
 
@@ -40,6 +36,7 @@ It holds every change after the 1.0.0 entry.
 ### Internal
 
 - Store screenshots and the Play feature graphic are rendered from the app screens.
+- The report, the database, and the capture screen carry the capture time of a photo that the app itself takes. No camera inside the app exists yet, so this build records no capture time and prints none.
 
 ## [1.0.0] - 2026-10-02
 
