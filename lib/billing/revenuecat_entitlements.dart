@@ -99,6 +99,9 @@ final class RevenueCatEntitlements implements Entitlements {
   /// The last plan that RevenueCat confirmed for [_userId], which a call gives when RevenueCat does not answer.
   Plan _plan = Plan.free;
 
+  /// Changes when a newer entitlement answer arrives or the user changes, so that an older read cannot replace it.
+  int _entitlementRevision = 0;
+
   /// The user ID that RevenueCat is configured for, or null while no configuration or move to the current user ID
   /// worked.
   String? _userId;
@@ -227,7 +230,9 @@ final class RevenueCatEntitlements implements Entitlements {
     try {
       // Without the Firebase user ID, RevenueCat would make an anonymous user of its own.
       if (!await _ensureUser()) return _plan;
-      _plan = Plan.fromEntitlements(await _store.activeEntitlementIds());
+      final revision = _entitlementRevision;
+      final activeIds = await _store.activeEntitlementIds();
+      if (revision == _entitlementRevision) _plan = Plan.fromEntitlements(activeIds);
     } on Object catch (error, stackTrace) {
       // The plugin fails with a `PlatformException` without a network or a store, and a platform without the plugin
       // fails with an `Error`. The port does not throw, so the clause catches every object and keeps the last plan.
@@ -252,6 +257,7 @@ final class RevenueCatEntitlements implements Entitlements {
     // Until the move works, RevenueCat can still report the plan of that user ID, and the listener ignores it.
     _userId = null;
     _plan = Plan.free;
+    _entitlementRevision++;
     if (await _store.isConfigured()) {
       // RevenueCat was configured for another user ID, for example the one of an account that Delete All Data
       // removed, or by an earlier object in this process.
@@ -268,6 +274,8 @@ final class RevenueCatEntitlements implements Entitlements {
 
   void _onEntitlements(Iterable<String> activeIds) {
     if (_userId == null) return;
+    // A report of the same plan is still a newer answer, for example Free after an expiry while a paid read waits.
+    _entitlementRevision++;
     final plan = Plan.fromEntitlements(activeIds);
     if (plan == _plan) return;
     _plan = plan;

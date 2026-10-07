@@ -29,6 +29,9 @@ class _FakeStore implements RevenueCatStore {
   /// A configuration waits for this completer while it is set.
   Completer<void>? configureGate;
 
+  /// An entitlement read waits for this answer while it is set.
+  Completer<Iterable<String>>? readGate;
+
   final calls = <String>[];
   final listeners = <void Function(Iterable<String>)>[];
 
@@ -56,6 +59,7 @@ class _FakeStore implements RevenueCatStore {
   Future<Iterable<String>> activeEntitlementIds() async {
     calls.add('activeEntitlementIds');
     if (readFailure case final failure?) Error.throwWithStackTrace(failure, StackTrace.current);
+    if (readGate case final gate?) return await gate.future;
     return activeIds;
   }
 
@@ -343,6 +347,52 @@ void main() {
       expect(await entitlements.currentPlan(), Plan.pro);
     });
 
+    for (final (initialIds, lateIds, reportedIds, expected) in <(List<String>, List<String>, List<String>, Plan)>[
+      (['basic'], ['basic'], [], Plan.free),
+      ([], ['pro'], [], Plan.free),
+      ([], [], ['pro'], Plan.pro),
+    ]) {
+      test('keeps the newer report $reportedIds when an older read gives $lateIds', () async {
+        store.activeIds = initialIds;
+        await entitlements.currentPlan();
+        final changes = <Plan>[];
+        final subscription = entitlements.planChanges.listen(changes.add);
+        addTearDown(subscription.cancel);
+        store.readGate = Completer<Iterable<String>>();
+
+        final reading = entitlements.currentPlan();
+        await pumpEventQueue();
+        store.report(reportedIds);
+        store.readGate!.complete(lateIds);
+
+        expect(await reading, expected);
+        await pumpEventQueue();
+        expect(changes, initialIds.isEmpty && reportedIds.isEmpty ? isEmpty : [expected]);
+        store
+          ..readGate = null
+          ..readFailure = Exception('offline');
+        expect(await entitlements.currentPlan(), expected);
+      });
+    }
+
+    test('ignores an old user read after the offers move to a new user', () async {
+      store.activeIds = ['pro'];
+      await entitlements.currentPlan();
+      store.readGate = Completer<Iterable<String>>();
+
+      final reading = entitlements.currentPlan();
+      await pumpEventQueue();
+      identity.userId = 'user-2';
+      await entitlements.offers();
+      store.readGate!.complete(['pro']);
+
+      expect(await reading, Plan.free);
+      store
+        ..readGate = null
+        ..readFailure = Exception('offline');
+      expect(await entitlements.currentPlan(), Plan.free);
+    });
+
     test('adds no listener before the first configuration', () async {
       identity.userId = null;
 
@@ -455,6 +505,33 @@ void main() {
       // The plan that the purchase granted is the last plan that the adapter knows.
       store.readFailure = Exception('offline');
       expect(await entitlements.currentPlan(), Plan.basic);
+    });
+
+    test('keeps the purchased plan when an older read gives Free', () async {
+      await entitlements.currentPlan();
+      store
+        ..purchasedIds = ['basic']
+        ..readGate = Completer<Iterable<String>>();
+
+      final reading = entitlements.currentPlan();
+      await pumpEventQueue();
+      expect(await entitlements.purchase(basicMonthly), PurchaseOutcome.purchased);
+      store.readGate!.complete([]);
+
+      expect(await reading, Plan.basic);
+    });
+
+    test('keeps the restored Free plan when an older read gives Basic', () async {
+      store.activeIds = ['basic'];
+      await entitlements.currentPlan();
+      store.readGate = Completer<Iterable<String>>();
+
+      final reading = entitlements.currentPlan();
+      await pumpEventQueue();
+      expect(await entitlements.restore(), RestoreOutcome.nothingFound);
+      store.readGate!.complete(['basic']);
+
+      expect(await reading, Plan.free);
     });
 
     test('reports no change after a purchase that grants the plan that it knew', () async {
