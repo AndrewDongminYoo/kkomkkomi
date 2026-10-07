@@ -191,6 +191,44 @@ void main() {
       expect(find.text('Note'), findsNWidgets(2));
     });
 
+    testWidgets('shows the summary, each exception with its reason, the status after the name of an exception, and '
+        'the text of the PDF for an empty slot to a screen reader', (tester) async {
+      final semantics = tester.ensureSemantics();
+      await pumpPage(
+        tester,
+        visit: visitWith([
+          ZoneRecord(zoneId: 'zone-1', zoneName: '로비', beforePhoto: beforePhoto, afterPhoto: afterPhoto),
+          ZoneRecord(
+            zoneId: 'zone-2',
+            zoneName: '탕비실',
+            beforePhoto: beforePhoto,
+            status: ZoneStatus.partlyDone,
+            reason: '전자레인지는 다음 방문에',
+          ),
+          ZoneRecord(zoneId: 'zone-3', zoneName: '창고', status: ZoneStatus.notDone),
+        ]),
+      );
+
+      expect(find.text('1 of 3 zones done'), findsOneWidget);
+      expect(find.text('탕비실 · Partly done: 전자레인지는 다음 방문에'), findsOneWidget);
+      expect(find.text('창고 · Not done'), findsOneWidget);
+      // The badge after the name of each exception, and none for the done zone.
+      expect(find.text('Partly done'), findsOneWidget);
+      expect(find.text('Not done'), findsOneWidget);
+      expect(find.bySemanticsLabel(RegExp('Not photographed')), findsOneWidget);
+      expect(find.bySemanticsLabel(RegExp('Not done')), findsNWidgets(3));
+      semantics.dispose();
+    });
+
+    testWidgets('shows no summary for a report without a zone', (tester) async {
+      await pumpPage(
+        tester,
+        visit: visitWith([ZoneRecord(zoneId: 'zone-1', zoneName: '로비')]),
+      );
+
+      expect(find.textContaining('zones done'), findsNothing);
+    });
+
     testWidgets('puts the before slot of a zone left of its after slot, each in the ratio of a slot of the PDF', (
       tester,
     ) async {
@@ -247,7 +285,7 @@ void main() {
       expect(lobbyBefore.label, 'Before');
       expect(lobbyBefore.flagsCollection.isImage, isTrue);
       final hallAfter = tester.getSemantics(find.byIcon(Icons.no_photography_outlined).first);
-      expect(hallAfter.label, 'After\nNo photo');
+      expect(hallAfter.label, 'After\nNot photographed');
       expect(hallAfter.flagsCollection.isImage, isFalse);
       expect(tester.getSemantics(find.text('바닥 왁스')).label, 'Note\n바닥 왁스');
       semantics.dispose();
@@ -905,7 +943,10 @@ void main() {
       expect(labels.visitDate, '2026년 10월 1일');
       expect(labels.beforePhoto, '청소 전');
       expect(labels.afterPhoto, '청소 후');
-      expect(labels.noPhoto, '사진 없음');
+      expect(labels.notPhotographed, '촬영하지 않음');
+      expect(labels.partlyDone, '일부 완료');
+      expect(labels.notDone, '못 함');
+      expect(labels.summaryOf(4, 5), '5곳 중 4곳 완료');
       expect(labels.note, '메모');
       expect(labels.footer, '꼼꼬미로 작성됨');
     });
@@ -926,15 +967,17 @@ void main() {
 
     setUpAll(
       () => registerFallbackValue(
-        const ReportLabels(
+        ReportLabels(
           title: '',
           clientHeading: '',
           visitDateHeading: '',
-          zoneCountHeading: '',
           visitDate: '',
           beforePhoto: '',
           afterPhoto: '',
-          noPhoto: '',
+          notPhotographed: '',
+          partlyDone: '',
+          notDone: '',
+          summaryOf: (_, _) => '',
           note: '',
           footer: '',
         ),
@@ -985,7 +1028,10 @@ void main() {
       expect(labels.visitDate, 'October 1, 2026');
       expect(labels.beforePhoto, 'Before');
       expect(labels.afterPhoto, 'After');
-      expect(labels.noPhoto, 'No photo');
+      expect(labels.notPhotographed, 'Not photographed');
+      expect(labels.partlyDone, 'Partly done');
+      expect(labels.notDone, 'Not done');
+      expect(labels.summaryOf(4, 5), '4 of 5 zones done');
       expect(labels.note, 'Note');
       expect(labels.footer, 'Report made with Kkomkkomi');
     });

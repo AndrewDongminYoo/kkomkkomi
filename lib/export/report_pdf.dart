@@ -77,6 +77,19 @@ Future<Uint8List> renderReportPdf(
       footer: (context) => _footer(context, labels, showsFooterText: showsFooterText),
       build: (context) => [
         _header(document, labels),
+        // Each exception line is a direct child of the page and spans, as a note does, so that a list of exceptions
+        // and a reason of any length go on to the next page. The header cannot, because it is one column.
+        for (final zone in document.exceptions)
+          pw.Padding(
+            padding: const pw.EdgeInsets.only(top: 2),
+            child: pw.Text(
+              labels.exceptionLineOf(zone),
+              style: const pw.TextStyle(fontSize: 10, lineSpacing: 2, color: _ink),
+              overflow: pw.TextOverflow.span,
+            ),
+          ),
+        pw.SizedBox(height: 4),
+        pw.Divider(height: 1, thickness: 0.5, color: _rule),
         for (final (index, zone) in document.zones.indexed) ..._zone(index + 1, zone, labels, images),
       ],
     ),
@@ -88,7 +101,8 @@ Uint8List _bytesOf(PhotoRef photo, Map<PhotoRef, Uint8List> photos) =>
     photos[photo] ??
     (throw ArgumentError.value(photo.path, 'photos', 'The bytes of a photo of the document are missing'));
 
-/// The head of the first page: the company that sends the report, the title, and the table of the visit.
+/// The head of the first page: the company that sends the report, the title, the table of the visit, and the summary
+/// line when the report has a zone.
 pw.Widget _header(ReportDocument document, ReportLabels labels) => pw.Column(
   crossAxisAlignment: pw.CrossAxisAlignment.start,
   children: [
@@ -121,17 +135,15 @@ pw.Widget _header(ReportDocument document, ReportLabels labels) => pw.Column(
             ..._tableCells(labels.visitDateHeading, labels.visitDate),
           ],
         ),
-        pw.TableRow(
-          children: [
-            ..._tableCells(labels.zoneCountHeading, '${document.zones.length}'),
-            pw.SizedBox(),
-            pw.SizedBox(),
-          ],
-        ),
       ],
     ),
-    pw.SizedBox(height: 4),
-    pw.Divider(height: 1, thickness: 0.5, color: _rule),
+    if (document.zones.isNotEmpty) ...[
+      pw.SizedBox(height: 4),
+      pw.Text(
+        labels.summaryOf(document.doneCount, document.zones.length),
+        style: const pw.TextStyle(fontSize: 11, color: _ink, fontWeight: pw.FontWeight.bold),
+      ),
+    ],
   ],
 );
 
@@ -194,15 +206,16 @@ List<pw.Widget> _zone(int number, ReportZone zone, ReportLabels labels, Map<Phot
                 maxLines: _nameMaxLines,
               ),
             ),
+            if (zone.status != ZoneStatus.done) ...[pw.SizedBox(width: 8), _statusBadge(labels.statusOf(zone.status))],
           ],
         ),
         pw.SizedBox(height: 6),
         pw.Row(
           crossAxisAlignment: pw.CrossAxisAlignment.start,
           children: [
-            pw.Expanded(child: _slot(labels.beforePhoto, images[zone.beforePhoto], labels)),
+            pw.Expanded(child: _slot(labels.beforePhoto, images[zone.beforePhoto], labels.emptySlotOf(zone.status))),
             pw.SizedBox(width: _slotGap),
-            pw.Expanded(child: _slot(labels.afterPhoto, images[zone.afterPhoto], labels)),
+            pw.Expanded(child: _slot(labels.afterPhoto, images[zone.afterPhoto], labels.emptySlotOf(zone.status))),
           ],
         ),
       ],
@@ -234,11 +247,24 @@ pw.Widget _numberBadge(int number) => pw.Container(
   ),
 );
 
-/// One photo slot: [label] over the photo, or over an empty box that says that the zone has no photo there.
+/// The [status] of a zone that is not done, as a text inside an edge, so that a black-and-white print keeps it.
+pw.Widget _statusBadge(String status) => pw.Container(
+  padding: const pw.EdgeInsets.symmetric(horizontal: 6, vertical: 1),
+  decoration: pw.BoxDecoration(
+    border: pw.Border.all(color: _ink, width: 0.75),
+    borderRadius: const pw.BorderRadius.all(pw.Radius.circular(4)),
+  ),
+  child: pw.Text(
+    status,
+    style: const pw.TextStyle(fontSize: 9, color: _ink, fontWeight: pw.FontWeight.bold),
+  ),
+);
+
+/// One photo slot: [label] over the photo, or over an empty box with [emptyText].
 ///
 /// The photo sits on white inside a solid edge, and a slot without a photo has a dashed edge, so that the space
 /// beside a photo never looks like a missing photo.
-pw.Widget _slot(String label, pw.ImageProvider? image, ReportLabels labels) => pw.Column(
+pw.Widget _slot(String label, pw.ImageProvider? image, String emptyText) => pw.Column(
   crossAxisAlignment: pw.CrossAxisAlignment.start,
   children: [
     pw.Text(label, style: const pw.TextStyle(fontSize: 9, color: _secondaryText)),
@@ -256,7 +282,7 @@ pw.Widget _slot(String label, pw.ImageProvider? image, ReportLabels labels) => p
         // the edge there.
         foregroundDecoration: image == null ? null : pw.BoxDecoration(border: pw.Border.all(color: _rule, width: 0.5)),
         child: image == null
-            ? pw.Text(labels.noPhoto, style: const pw.TextStyle(fontSize: 10, color: _secondaryText))
+            ? pw.Text(emptyText, style: const pw.TextStyle(fontSize: 10, color: _secondaryText))
             // The default fit shows the whole photo, because a report must not cut what the photo proves.
             : pw.Image(image),
       ),

@@ -26,15 +26,17 @@ class _ErrorObserver extends BlocObserver {
 
 void main() {
   const visitId = 'visit-1';
-  const labels = ReportLabels(
+  final labels = ReportLabels(
     title: '청소 완료 보고서',
     clientHeading: '거래처',
     visitDateHeading: '방문일',
-    zoneCountHeading: '구역 수',
     visitDate: '2026년 10월 1일',
     beforePhoto: '청소 전',
     afterPhoto: '청소 후',
-    noPhoto: '사진 없음',
+    notPhotographed: '촬영하지 않음',
+    partlyDone: '일부 완료',
+    notDone: '못 함',
+    summaryOf: (done, total) => '$total곳 중 $done곳 완료',
     note: '메모',
     footer: '꼼꼬미로 만든 보고서',
   );
@@ -196,6 +198,31 @@ void main() {
         verify: (cubit) {
           expect(cubit.state.document!.zones.map((zone) => zone.name), ['로비', '복도']);
           expect(cubit.state.document!.companyName, '깔끔클린');
+        },
+      );
+
+      blocTest<VisitReportCubit, VisitReportState>(
+        'leaves a zone that is not done out of the zones that lack a photo, and keeps a partly done one',
+        setUp: () {
+          final storage = ZoneRecord(zoneId: 'zone-4', zoneName: '창고', status: ZoneStatus.notDone, reason: '잠김');
+          final kitchen = ZoneRecord(zoneId: 'zone-5', zoneName: '주방', status: ZoneStatus.partlyDone);
+          visits = FakeVisitRepository(
+            visits: [
+              Visit(
+                id: visitId,
+                clientId: 'client-1',
+                visitDate: VisitDate(2026, 10, 1),
+                createdAt: DateTime.utc(2026, 10, 1, 1),
+                zoneRecords: [lobby, hall, storage, kitchen],
+              ),
+            ],
+          );
+        },
+        build: build,
+        act: (cubit) => cubit.load(),
+        verify: (cubit) {
+          expect(cubit.state.zonesLackingPhoto.map((record) => record.zoneName), ['복도', '주방']);
+          expect(cubit.state.document!.zones.map((zone) => zone.name), ['로비', '복도', '창고', '주방']);
         },
       );
 

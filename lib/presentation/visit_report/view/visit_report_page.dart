@@ -21,11 +21,13 @@ ReportLabels reportLabelsOf(AppLocalizations l10n, VisitDate visitDate) => Repor
   title: l10n.reportDocumentTitle,
   clientHeading: l10n.reportClientHeading,
   visitDateHeading: l10n.reportVisitDateHeading,
-  zoneCountHeading: l10n.reportZoneCountHeading,
   visitDate: l10n.visitDateLabel(DateTime(visitDate.year, visitDate.month, visitDate.day)),
   beforePhoto: l10n.reportBeforePhotoLabel,
   afterPhoto: l10n.reportAfterPhotoLabel,
-  noPhoto: l10n.reportNoPhotoLabel,
+  notPhotographed: l10n.reportNotPhotographedLabel,
+  partlyDone: l10n.reportPartlyDoneLabel,
+  notDone: l10n.reportNotDoneLabel,
+  summaryOf: (done, total) => l10n.reportSummary(done, total),
   note: l10n.reportNoteLabel,
   footer: l10n.reportFooter,
 );
@@ -309,6 +311,18 @@ class _ReportPreview extends StatelessWidget {
             const SizedBox(height: 4),
             KeepAllText(document.clientName, style: theme.textTheme.titleMedium),
             KeepAllText(labels.visitDate, style: secondary),
+            if (document.zones.isNotEmpty) ...[
+              const SizedBox(height: 8),
+              KeepAllText(
+                labels.summaryOf(document.doneCount, document.zones.length),
+                style: theme.textTheme.titleSmall,
+              ),
+              for (final zone in document.exceptions)
+                Padding(
+                  padding: const EdgeInsets.only(top: 2),
+                  child: KeepAllText(labels.exceptionLineOf(zone)),
+                ),
+            ],
             const Divider(height: 24),
             if (document.zones.isEmpty) KeepAllText(l10n.reportEmptyMessage),
             for (final zone in document.zones) ...[
@@ -338,20 +352,41 @@ class _PreviewZone extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        Semantics(
-          header: true,
-          child: KeepAllText(zone.name, style: theme.textTheme.titleMedium),
+        Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Expanded(
+              child: Semantics(
+                header: true,
+                child: KeepAllText(zone.name, style: theme.textTheme.titleMedium),
+              ),
+            ),
+            if (zone.status != ZoneStatus.done) ...[
+              const SizedBox(width: 8),
+              _StatusBadge(status: labels.statusOf(zone.status)),
+            ],
+          ],
         ),
         const SizedBox(height: 4),
         Row(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Expanded(
-              child: _PreviewSlot(label: labels.beforePhoto, photo: zone.beforePhoto, labels: labels, pathOf: pathOf),
+              child: _PreviewSlot(
+                label: labels.beforePhoto,
+                photo: zone.beforePhoto,
+                emptyText: labels.emptySlotOf(zone.status),
+                pathOf: pathOf,
+              ),
             ),
             const SizedBox(width: 12),
             Expanded(
-              child: _PreviewSlot(label: labels.afterPhoto, photo: zone.afterPhoto, labels: labels, pathOf: pathOf),
+              child: _PreviewSlot(
+                label: labels.afterPhoto,
+                photo: zone.afterPhoto,
+                emptyText: labels.emptySlotOf(zone.status),
+                pathOf: pathOf,
+              ),
             ),
           ],
         ),
@@ -372,13 +407,37 @@ class _PreviewZone extends StatelessWidget {
   }
 }
 
+/// The status of a zone that is not done, as a text inside an edge, as the PDF prints it.
+class _StatusBadge extends StatelessWidget {
+  const new({required this.status});
+
+  final String status;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return DecoratedBox(
+      decoration: BoxDecoration(
+        border: Border.all(color: theme.colorScheme.onSurface),
+        borderRadius: BorderRadius.circular(4),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 1),
+        child: KeepAllText(status, style: theme.textTheme.labelMedium),
+      ),
+    );
+  }
+}
+
 /// One photo slot of the preview: [label] over the photo, or over an empty box for a photo that the zone lacks.
 class _PreviewSlot extends StatelessWidget {
-  const new({required this.label, required this.photo, required this.labels, required this.pathOf});
+  const new({required this.label, required this.photo, required this.emptyText, required this.pathOf});
 
   final String label;
   final PhotoRef? photo;
-  final ReportLabels labels;
+
+  /// What the PDF prints in the slot when it holds no photo, which a screen reader reads for the empty slot.
+  final String emptyText;
   final String Function(PhotoRef photo) pathOf;
 
   @override
@@ -401,7 +460,7 @@ class _PreviewSlot extends StatelessWidget {
                   ? ColoredBox(
                       color: theme.colorScheme.surfaceContainerHighest,
                       // The PDF prints the text of the label here. An icon keeps its size at a large text size.
-                      child: Center(child: Icon(Icons.no_photography_outlined, semanticLabel: labels.noPhoto)),
+                      child: Center(child: Icon(Icons.no_photography_outlined, semanticLabel: emptyText)),
                     )
                   // A photo sits on white inside an edge, as in the PDF, so that the space beside it never looks like
                   // a slot without a photo.
