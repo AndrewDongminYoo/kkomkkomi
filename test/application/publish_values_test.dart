@@ -136,6 +136,22 @@ void main() {
       expect(() => report('바닥').zones.add(report('바닥').zones.single), throwsUnsupportedError);
     });
 
+    test('a zone is done without a reason unless it is given a status, and both count for equality', () {
+      PublishedZone zone({ZoneStatus status = ZoneStatus.done, String reason = ''}) =>
+          PublishedZone(name: '탕비실', note: '', beforePhoto: null, afterPhoto: null, status: status, reason: reason);
+
+      expect(zone().status, ZoneStatus.done);
+      expect(zone().reason, '');
+      expect(zone(status: ZoneStatus.partlyDone, reason: '안쪽'), zone(status: ZoneStatus.partlyDone, reason: '안쪽'));
+      expect(
+        zone(status: ZoneStatus.partlyDone, reason: '안쪽').hashCode,
+        zone(status: ZoneStatus.partlyDone, reason: '안쪽').hashCode,
+      );
+      expect(zone(), isNot(zone(status: ZoneStatus.notDone)));
+      expect(zone(status: ZoneStatus.notDone), isNot(zone(status: ZoneStatus.notDone, reason: '공사 중')));
+      expect(zone(status: ZoneStatus.notDone, reason: '공사 중').toString(), allOf(contains('notDone'), contains('공사 중')));
+    });
+
     test('a publish exception says its kind and its message', () {
       expect(
         const PublishException(PublishErrorKind.refused, 'permission-denied').toString(),

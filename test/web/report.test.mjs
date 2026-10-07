@@ -11,17 +11,22 @@ import {
   createReader,
   decodePage,
   decodeReport,
+  decodeStatus,
   decodeValue,
   parseRoute,
   productionHosts,
   sortNewestFirst,
 } from "../../web/report/data.js";
 import {
+  emptySlotOf,
+  exceptionLineOf,
   formatVisitDate,
   privacyPath,
   renderFailure,
   renderHistory,
   renderReport,
+  statusOf,
+  summaryOf,
   texts,
 } from "../../web/report/view.js";
 import { FakeDocument } from "./fake_dom.mjs";
@@ -35,6 +40,7 @@ import {
   pageDocument,
   pageId,
   reportDocument,
+  restroomBefore,
   visitId,
 } from "./fixtures.mjs";
 
@@ -141,19 +147,47 @@ describe("decoding", () => {
       visitId,
       visitDate: "2026-10-01",
       publishedAt: "2026-10-01T09:00:00Z",
+      // The first three zones have no status key, as every zone that an earlier version published.
       zones: [
         {
           name: "로비",
           note: "바닥 왁스\n유리문 닦음",
           beforePhoto: lobbyBefore,
           afterPhoto: lobbyAfter,
+          status: "done",
+          reason: "",
         },
-        { name: "복도", note: "", beforePhoto: hallBefore, afterPhoto: null },
+        {
+          name: "복도",
+          note: "",
+          beforePhoto: hallBefore,
+          afterPhoto: null,
+          status: "done",
+          reason: "",
+        },
         {
           name: "탕비실",
           note: "공사 중이라 사진을 못 찍었어요",
           beforePhoto: null,
           afterPhoto: null,
+          status: "done",
+          reason: "",
+        },
+        {
+          name: "화장실",
+          note: "",
+          beforePhoto: restroomBefore,
+          afterPhoto: null,
+          status: "partlyDone",
+          reason: "세면대 아래는\n다음 방문에",
+        },
+        {
+          name: "창고",
+          note: "",
+          beforePhoto: null,
+          afterPhoto: null,
+          status: "notDone",
+          reason: "",
         },
       ],
       unbranded: false,
@@ -184,6 +218,54 @@ describe("decoding", () => {
     assert.deepEqual(decodeValue({ arrayValue: {} }), []);
     assert.deepEqual(decodeValue({ mapValue: {} }), {});
     assert.equal(decodeValue({ bytesValue: "AA==" }), null);
+  });
+
+  test("reads a missing status as done, and a status that it does not know as not done", () => {
+    assert.equal(decodeStatus(undefined), "done");
+    assert.equal(decodeStatus("done"), "done");
+    assert.equal(decodeStatus("partlyDone"), "partlyDone");
+    assert.equal(decodeStatus("notDone"), "notDone");
+    assert.equal(decodeStatus("skipped"), "notDone");
+    assert.equal(decodeStatus(null), "notDone");
+    assert.equal(decodeStatus(1), "notDone");
+  });
+
+  test("reads a reason only for a zone that is not done, and a reason that is no text as empty", () => {
+    const report = (fields) =>
+      decodeReport({
+        name: `x/reports/${visitId}`,
+        fields: {
+          zones: {
+            arrayValue: {
+              values: [
+                {
+                  mapValue: {
+                    fields: { name: { stringValue: "창고" }, ...fields },
+                  },
+                },
+              ],
+            },
+          },
+        },
+      }).zones[0];
+
+    assert.deepEqual(
+      [report({ reason: { stringValue: "남은 사유" } })].map((zone) => [
+        zone.status,
+        zone.reason,
+      ]),
+      [["done", ""]],
+    );
+    const unknown = report({
+      status: { stringValue: "skipped" },
+      reason: { stringValue: "공사 중" },
+    });
+    assert.deepEqual([unknown.status, unknown.reason], ["notDone", "공사 중"]);
+    const odd = report({
+      status: { stringValue: "partlyDone" },
+      reason: { integerValue: "3" },
+    });
+    assert.deepEqual([odd.status, odd.reason], ["partlyDone", ""]);
   });
 
   test("sorts the reports newest visit first, and of one date the one published last first", () => {
@@ -221,7 +303,7 @@ describe("createReader", () => {
       companyName: "깔끔클린",
       clientName: "행복빌딩",
     });
-    assert.equal((await backend.report(pageId, visitId)).zones.length, 3);
+    assert.equal((await backend.report(pageId, visitId)).zones.length, 5);
     assert.deepEqual(requests, [
       `${documentsUrl}/clientPages/${pageId}?key=fixture-key`,
       `${documentsUrl}/clientPages/${pageId}/reports/${visitId}?key=fixture-key`,
@@ -366,6 +448,9 @@ describe("renderReport", () => {
       "청소 완료 보고서",
       "행복빌딩",
       "2026년 10월 1일",
+      "5곳 중 3곳 완료",
+      "화장실 · 일부 완료: 세면대 아래는\n다음 방문에",
+      "창고 · 못 함",
       "로비",
       "청소 전",
       "청소 후",
@@ -374,14 +459,25 @@ describe("renderReport", () => {
       "복도",
       "청소 전",
       "청소 후",
-      "사진 없음",
+      "촬영하지 않음",
       "탕비실",
       "청소 전",
-      "사진 없음",
+      "촬영하지 않음",
       "청소 후",
-      "사진 없음",
+      "촬영하지 않음",
       "메모",
       "공사 중이라 사진을 못 찍었어요",
+      "화장실",
+      "일부 완료",
+      "청소 전",
+      "청소 후",
+      "촬영하지 않음",
+      "창고",
+      "못 함",
+      "청소 전",
+      "못 함",
+      "청소 후",
+      "못 함",
       "이 거래처의 보고서 모두 보기",
       "꼼꼬미로 작성됨",
       "개인정보 처리방침",
@@ -400,6 +496,7 @@ describe("renderReport", () => {
         [photoUrl(lobbyBefore), "로비 청소 전"],
         [photoUrl(lobbyAfter), "로비 청소 후"],
         [photoUrl(hallBefore), "복도 청소 전"],
+        [photoUrl(restroomBefore), "화장실 청소 전"],
       ],
     );
     assert.ok(
@@ -434,16 +531,78 @@ describe("renderReport", () => {
     );
   });
 
+  test("shows the summary between the head and the zones, with no exception line when every zone is done", () => {
+    const view = render();
+    const sheet = view.children;
+    const summary = sheet[1];
+
+    assert.equal(sheet[0].tagName, "header");
+    assert.equal(summary.getAttribute("class"), "summary");
+    assert.equal(sheet[2].getAttribute("class"), "zone");
+    assert.deepEqual(
+      summary.all("li").map((line) => line.textContent),
+      ["화장실 · 일부 완료: 세면대 아래는\n다음 방문에", "창고 · 못 함"],
+    );
+
+    const allDone = {
+      ...decodeReport(reportDocument),
+      zones: decodeReport(reportDocument).zones.slice(0, 3),
+    };
+    const done = render(undefined, allDone).children[1];
+    assert.deepEqual(done.texts(), ["3곳 중 3곳 완료"]);
+    assert.equal(done.all("ul").length, 0);
+  });
+
+  test("shows the status of a zone that is not done after its name, inside a border, and nothing for a done zone", () => {
+    const headings = render().all("h2");
+
+    assert.deepEqual(
+      headings.map((heading) => heading.textContent),
+      ["로비", "복도", "탕비실", "화장실일부 완료", "창고못 함"],
+    );
+    const badges = render()
+      .all("span")
+      .filter((span) => span.getAttribute("class") === "badge");
+    assert.deepEqual(
+      badges.map((badge) => badge.textContent),
+      ["일부 완료", "못 함"],
+    );
+    assert.match(
+      read("web/report/report.css"),
+      /\.badge \{[^}]*border: 1px solid/,
+    );
+  });
+
+  test("gives the texts of the app for the summary, the statuses, and the empty slots", () => {
+    assert.equal(summaryOf(4, 5), "5곳 중 4곳 완료");
+    assert.equal(statusOf("done"), "");
+    assert.equal(statusOf("partlyDone"), "일부 완료");
+    assert.equal(statusOf("notDone"), "못 함");
+    assert.equal(
+      exceptionLineOf({ name: "창고", status: "notDone", reason: "" }),
+      "창고 · 못 함",
+    );
+    assert.equal(
+      exceptionLineOf({ name: "탕비실", status: "partlyDone", reason: "안쪽" }),
+      "탕비실 · 일부 완료: 안쪽",
+    );
+    assert.equal(emptySlotOf("done"), "촬영하지 않음");
+    assert.equal(emptySlotOf("partlyDone"), "촬영하지 않음");
+    assert.equal(emptySlotOf("notDone"), "못 함");
+  });
+
   test("leaves out the company line when no company name is saved", () => {
     const view = render({ companyName: null, clientName: "행복빌딩" });
 
     assert.equal(view.texts()[0], "청소 완료 보고서");
   });
 
-  test("says so for a report without a zone", () => {
+  test("says so for a report without a zone, and shows no summary", () => {
     const report = { ...decodeReport(reportDocument), zones: [] };
+    const view = render(undefined, report);
 
-    assert.ok(render(undefined, report).texts().includes(texts.emptyReport));
+    assert.ok(view.texts().includes(texts.emptyReport));
+    assert.ok(!view.texts().some((text) => text.includes("곳 중")));
   });
 
   test("offers nothing of a later milestone: no confirm control and no view state", () => {
@@ -613,7 +772,7 @@ describe("start", () => {
       "청소 완료 보고서",
       "행복빌딩",
       "2026년 10월 1일",
-      "로비",
+      "5곳 중 3곳 완료",
     ]);
     assert.deepEqual(texts.slice(-2), ["꼼꼬미로 작성됨", "개인정보 처리방침"]);
     assert.equal(

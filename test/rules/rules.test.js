@@ -303,6 +303,36 @@ describe("firestore: writers", () => {
     );
   });
 
+  test("the owner writes a report whose zones carry the status and the reason of an exception", async () => {
+    await assertSucceeds(
+      signedIn(owner)
+        .firestore()
+        .doc(`clientPages/${openPage}/reports/visit-2`)
+        .set({
+          ...report(),
+          zones: [
+            { name: "입구", note: "", beforePhoto: null, afterPhoto: null },
+            {
+              name: "탕비실",
+              note: "",
+              beforePhoto: null,
+              afterPhoto: null,
+              status: "partlyDone",
+              reason: "전자레인지 안쪽은 다음 방문에",
+            },
+            {
+              name: "창고",
+              note: "",
+              beforePhoto: null,
+              afterPhoto: null,
+              status: "notDone",
+              reason: "",
+            },
+          ],
+        }),
+    );
+  });
+
   test("a report with an unknown field is refused", async () => {
     await assertFails(
       signedIn(owner)

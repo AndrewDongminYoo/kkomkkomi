@@ -122,6 +122,55 @@ void main() {
       ]);
     });
 
+    test('writes the status and the reason of a zone only for an exception', () async {
+      await publisher.writeReport(
+        pageId: 'page-1',
+        visitId: 'visit-1',
+        report: PublishedReport(
+          visitDate: VisitDate(2026, 10, 2),
+          publishedAt: DateTime.utc(2026, 10, 2, 9, 30),
+          zones: const [
+            PublishedZone(name: '입구', note: '', beforePhoto: 'a.jpg', afterPhoto: 'b.jpg'),
+            PublishedZone(
+              name: '탕비실',
+              note: '',
+              beforePhoto: 'c.jpg',
+              afterPhoto: null,
+              status: ZoneStatus.partlyDone,
+              reason: '전자레인지 안쪽은 다음 방문에',
+            ),
+            PublishedZone(
+              name: '창고',
+              note: '',
+              beforePhoto: null,
+              afterPhoto: null,
+              status: ZoneStatus.notDone,
+            ),
+          ],
+        ),
+      );
+
+      final zones = written('clientPages/page-1/reports/visit-1')['zones'] as List<Object?>;
+      // A done zone has the keys that a zone of an earlier version has, which the report page reads as done.
+      expect((zones[0]! as Map<String, Object?>).keys, ['name', 'note', 'beforePhoto', 'afterPhoto']);
+      expect(zones[1], {
+        'name': '탕비실',
+        'note': '',
+        'beforePhoto': 'c.jpg',
+        'afterPhoto': null,
+        'status': 'partlyDone',
+        'reason': '전자레인지 안쪽은 다음 방문에',
+      });
+      expect(zones[2], {
+        'name': '창고',
+        'note': '',
+        'beforePhoto': null,
+        'afterPhoto': null,
+        'status': 'notDone',
+        'reason': '',
+      });
+    });
+
     test('writes unbranded: true into a report without the footer', () async {
       await publisher.writeReport(
         pageId: 'page-1',

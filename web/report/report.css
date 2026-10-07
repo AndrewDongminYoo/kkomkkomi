@@ -100,9 +100,44 @@ h1 {
   font-weight: 600;
 }
 
+.summary {
+  padding: 0.5rem 0 1rem;
+  border-bottom: 1px solid var(--paper-edge);
+}
+
+.summary-count {
+  font-weight: 700;
+  margin: 0;
+}
+
+.exceptions {
+  margin: 0.25rem 0 0;
+  padding-left: 1.25rem;
+}
+
+/* A reason breaks its lines as a note does. */
+.exceptions li {
+  white-space: pre-line;
+}
+
 .zone {
   padding: 1rem 0;
   border-bottom: 1px solid var(--paper-edge);
+}
+
+/* The status of a zone that is not done. The border keeps it in a print without color. */
+.badge {
+  display: inline-block;
+  margin-left: 0.5rem;
+  padding: 0 0.375rem;
+  border: 1px solid var(--ink-2);
+  border-radius: 4px;
+  color: var(--ink-2);
+  font-size: 0.8125rem;
+  font-weight: 600;
+  line-height: 1.5;
+  vertical-align: 0.125rem;
+  white-space: nowrap;
 }
 
 h2 {
