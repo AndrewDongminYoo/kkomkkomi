@@ -15,6 +15,7 @@ class _Platform extends CameraPlatform {
   ];
   Object? failure;
   Object? captureFailure;
+  Object? initializationFailure;
   CameraDescription? selected;
   bool? audio;
   int disposals = 0;
@@ -38,7 +39,9 @@ class _Platform extends CameraPlatform {
   }
 
   @override
-  Future<void> initializeCamera(int cameraId, {ImageFormatGroup imageFormatGroup = ImageFormatGroup.unknown}) async {}
+  Future<void> initializeCamera(int cameraId, {ImageFormatGroup imageFormatGroup = ImageFormatGroup.unknown}) async {
+    if (initializationFailure case final error?) Error.throwWithStackTrace(error, StackTrace.current);
+  }
 
   @override
   Stream<CameraInitializedEvent> onCameraInitialized(int cameraId) => Stream.value(
@@ -72,7 +75,11 @@ void main() {
     platform = _Platform();
     CameraPlatform.instance = platform;
   });
-  tearDown(() => CameraPlatform.instance = previous);
+  tearDown(() async {
+    platform.errors.add(const CameraErrorEvent(1, 'test finished'));
+    await platform.errors.close();
+    CameraPlatform.instance = previous;
+  });
 
   testWidgets('opens the first rear camera without audio and returns a still path', (tester) async {
     final driver = CameraDriver();
@@ -119,6 +126,19 @@ void main() {
       await driver.dispose();
     });
   }
+
+  test('maps native permission failure after controller creation and disposes that controller', () async {
+    platform.initializationFailure = PlatformException(code: 'CameraAccessDenied');
+    final driver = CameraDriver();
+    await expectLater(
+      driver.initialize(),
+      throwsA(isA<PhotoCaptureException>().having((e) => e.isAccessDenied, 'access denied', isTrue)),
+    );
+    await driver.dispose();
+    expect(platform.selected!.name, 'back');
+    expect(platform.audio, isFalse);
+    expect(platform.disposals, 1);
+  });
 
   test('maps a platform capture failure and still closes the controller', () async {
     final driver = CameraDriver();

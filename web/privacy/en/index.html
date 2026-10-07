@@ -113,10 +113,13 @@
           converted to JPEG before it is saved; unsupported input is not saved.
         </p>
         <p>
-          If an in-app camera supplies a directly observed capture time, the app
-          stores it locally in UTC and shows it in the current device local time
-          in the preview and shared PDF. It is a device-clock observation and is
-          not sent to the operator's servers. The current picker, gallery,
+          The in-app camera reads the device clock immediately before the
+          shutter request. For a successful capture, the app stores this
+          observation locally in UTC and shows it in the current device local
+          time in the preview and shared PDF. It does not guarantee the sensor
+          exposure time and is not sent to the operator's servers. On Android
+          and iOS, camera permission is requested when opening the capture
+          screen; the app does not use the microphone. Picker, gallery,
           recovered and old photos have no capture time; no time is inferred
           from file times or when a photo was selected.
         </p>

@@ -83,6 +83,36 @@ void main() {
     expect(driver.disposals, 1);
   });
 
+  testWidgets('forwards initial background state and repeated pause/resume without replaying a shutter', (
+    tester,
+  ) async {
+    tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.inactive);
+    addTearDown(() => tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.resumed));
+    await open(tester);
+    expect(driver.initializations, 0);
+    tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.resumed);
+    await tester.pumpAndSettle();
+    expect(driver.initializations, 1);
+    [
+      AppLifecycleState.inactive,
+      AppLifecycleState.hidden,
+      AppLifecycleState.paused,
+    ].forEach(tester.binding.handleAppLifecycleStateChanged);
+    await tester.pump();
+    expect(driver.disposals, 1);
+    [
+      AppLifecycleState.hidden,
+      AppLifecycleState.inactive,
+      AppLifecycleState.resumed,
+    ].forEach(tester.binding.handleAppLifecycleStateChanged);
+    await tester.pumpAndSettle();
+    expect(driver.initializations, 2);
+    expect(driver.captures, 0);
+    await tester.tap(find.byTooltip('Close'));
+    await tester.pumpAndSettle();
+    expect(result, isNull);
+  });
+
   testWidgets('returns camera permission failure for the existing visit notice', (tester) async {
     driver.initializationFailure = const PhotoCaptureException(isAccessDenied: true);
     await open(tester);

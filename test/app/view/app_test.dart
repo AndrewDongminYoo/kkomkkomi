@@ -132,7 +132,7 @@ void main() {
       expect(context.read<Clock>(), same(clock));
     });
 
-    testWidgets('provides the camera of the picker and the photo store of the documents directory unless it is '
+    testWidgets('provides the mobile in-app camera and the photo store of the documents directory unless it is '
         'given others', (tester) async {
       await tester.pumpWidget(
         App(
@@ -144,7 +144,7 @@ void main() {
       );
 
       final context = tester.element(find.byType(ClientListPage));
-      expect(context.read<PhotoCapture>(), isA<ImagePickerPhotoCapture>());
+      expect(context.read<PhotoCapture>(), isA<InAppCameraPhotoCapture>());
       expect(context.read<PhotoStore>(), isA<DocumentsPhotoStore>());
     });
 
@@ -169,6 +169,55 @@ void main() {
         expect(context.read<ExternalLinks>(), isA<UrlLauncherExternalLinks>());
       },
     );
+
+    testWidgets('preserves its navigator and capture adapter across rebuilds and accepts a new explicit adapter', (
+      tester,
+    ) async {
+      final repositories = mockRepositories();
+      final identity = FakeIdentity();
+      final entitlements = FakeEntitlements();
+      final queue = publishQueueOf(repositories);
+      App app({PhotoCapture? capture}) => App(
+        repositories: repositories,
+        identity: identity,
+        entitlements: entitlements,
+        publishQueue: queue,
+        photoCapture: capture,
+      );
+      await tester.pumpWidget(app());
+      final context = tester.element(find.byType(ClientListPage));
+      final capture = context.read<PhotoCapture>();
+      final navigator = Navigator.of(context);
+      await tester.pumpWidget(app());
+      expect(context.read<PhotoCapture>(), same(capture));
+      expect(Navigator.of(context), same(navigator));
+      final override = FakePhotoCapture();
+      await tester.pumpWidget(app(capture: override));
+      expect(context.read<PhotoCapture>(), same(override));
+      expect(Navigator.of(context), same(navigator));
+    });
+
+    for (final platform in [TargetPlatform.iOS, TargetPlatform.windows]) {
+      testWidgets('chooses the mobile camera or picker fallback for $platform', (tester) async {
+        final picker = FakePhotoCapture();
+        await tester.pumpWidget(
+          App(
+            repositories: mockRepositories(),
+            identity: FakeIdentity(),
+            entitlements: FakeEntitlements(),
+            publishQueue: publishQueueOf(mockRepositories()),
+            externalPhotoCapture: picker,
+            cameraDriverFactory: () => throw StateError('startup must not touch hardware'),
+          ),
+        );
+        final capture = tester.element(find.byType(ClientListPage)).read<PhotoCapture>();
+        if (platform == TargetPlatform.iOS) {
+          expect(capture, isA<InAppCameraPhotoCapture>());
+        } else {
+          expect(capture, same(picker));
+        }
+      }, variant: TargetPlatformVariant.only(platform));
+    }
 
     testWidgets('provides the report font, the share sheets, and the links that it is given', (tester) async {
       final repositories = mockRepositories();

@@ -22,6 +22,8 @@ class StillCameraCubit extends Cubit<StillCameraState> {
   int _generation = 0;
 
   /// The preview is requested only while the state says the current driver is ready.
+  // Read-only access to the initialized preview resource; session mutations remain void commands.
+  // ignore: prefer_void_public_cubit_methods
   StillCameraDriver get driver => _driver!;
 
   Future<void> start() {
@@ -34,7 +36,7 @@ class StillCameraCubit extends Cubit<StillCameraState> {
     return _enqueue(() => _initialize(_generation));
   }
 
-  void setForeground(bool foreground) {
+  void setForeground({required bool foreground}) {
     if (_terminal || foreground == _foreground) return;
     _foreground = foreground;
     final generation = ++_generation;
@@ -44,9 +46,7 @@ class StillCameraCubit extends Cubit<StillCameraState> {
       _enqueue(() async {
         final error = await _release();
         if (error != null && !_terminal) {
-          _terminal = true;
-          ++_generation;
-          _show(StillCameraState(status: StillCameraStatus.complete, failure: _failure(error)));
+          _completeFailure(error);
         } else if (foreground) {
           await _initialize(generation);
         }
@@ -61,19 +61,23 @@ class StillCameraCubit extends Cubit<StillCameraState> {
       _driver = driver;
       await driver.initialize();
       if (!_current(generation)) {
-        await _release();
+        final error = await _release();
+        if (error != null && !_terminal) _completeFailure(error);
         return;
       }
       _driverReady = true;
       _showReady();
     } on Object catch (error) {
       await _release();
-      if (_current(generation)) {
-        _terminal = true;
-        ++_generation;
-        _show(StillCameraState(status: StillCameraStatus.complete, failure: _failure(error)));
-      }
+      // The permission prompt can change the generation before a denial answers. Do not request it again.
+      if (!_terminal) _completeFailure(error);
     }
+  }
+
+  void _completeFailure(Object error) {
+    _terminal = true;
+    ++_generation;
+    _show(StillCameraState(status: StillCameraStatus.complete, failure: _failure(error)));
   }
 
   Future<void> capture() async {

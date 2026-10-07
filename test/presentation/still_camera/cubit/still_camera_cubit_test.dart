@@ -49,6 +49,52 @@ void main() {
     expect(cubit.state.status, StillCameraStatus.ready);
   });
 
+  test('starting in the background waits for resume without opening hardware', () async {
+    cubit.setForeground(foreground: false);
+    await cubit.start();
+    expect(drivers, isEmpty);
+    expect(cubit.state.status, StillCameraStatus.suspended);
+    cubit.setForeground(foreground: true);
+    await pumpEventQueue();
+    expect(drivers.single.initializations, 1);
+    expect(cubit.state.status, StillCameraStatus.ready);
+    expect(clock.calls, 0);
+  });
+
+  test('lifecycle disposal failure terminates without starting a replacement controller', () async {
+    await cubit.start();
+    drivers.single.closingFailure = StateError('controller release failed');
+    cubit.setForeground(foreground: false);
+    cubit.setForeground(foreground: true);
+    await pumpEventQueue();
+    expect(drivers, hasLength(1));
+    expect(cubit.state.status, StillCameraStatus.complete);
+    expect(cubit.state.failure, isA<PhotoCaptureException>());
+    expect(cubit.state.photo, isNull);
+  });
+
+  test('resume while a shutter is pending rejects its old result before accepting a fresh request time', () async {
+    await cubit.start();
+    final old = drivers.single;
+    old.picture = Completer<String>();
+    final capturing = cubit.capture();
+    cubit.setForeground(foreground: false);
+    cubit.setForeground(foreground: true);
+    await pumpEventQueue();
+    expect(drivers, hasLength(2));
+    expect(cubit.state.status, StillCameraStatus.loading);
+    await cubit.capture();
+    expect(drivers.last.captures, 0);
+    old.picture!.complete('/cache/obsolete.jpg');
+    await capturing;
+    expect(files.discarded, ['/cache/obsolete.jpg']);
+    expect(cubit.state.status, StillCameraStatus.ready);
+    clock.time = clock.time.add(const Duration(minutes: 1));
+    await cubit.capture();
+    expect(cubit.state.photo!.capturedAt, clock.time);
+    expect(clock.calls, 2);
+  });
+
   test('observes request time once before dispatch, not delayed completion time', () async {
     await cubit.start();
     final atRequest = clock.time;
@@ -76,7 +122,7 @@ void main() {
     expect(cubit.state.photo, isNull);
     expect(cubit.state.failure, isNull);
     expect(drivers.single.disposals, 1);
-    cubit.setForeground(true);
+    cubit.setForeground(foreground: true);
     await pumpEventQueue();
     expect(drivers, hasLength(1));
   });
@@ -118,14 +164,14 @@ void main() {
     files.normalization = Completer<String>();
     final capturing = cubit.capture();
     await pumpEventQueue();
-    cubit.setForeground(false);
+    cubit.setForeground(foreground: false);
     await pumpEventQueue();
     files.normalization!.complete('/cache/obsolete.jpg');
     await capturing;
     expect(cubit.state.status, StillCameraStatus.suspended);
     expect(cubit.state.photo, isNull);
     expect(files.discarded, ['/cache/obsolete.jpg']);
-    cubit.setForeground(true);
+    cubit.setForeground(foreground: true);
     await pumpEventQueue();
     expect(cubit.state.status, StillCameraStatus.ready);
     expect(drivers, hasLength(2));
@@ -139,8 +185,8 @@ void main() {
     cubit = StillCameraCubit(driverFactory: () => pending.removeAt(0), files: files, clock: clock);
     final starting = cubit.start();
     await pumpEventQueue();
-    cubit.setForeground(false);
-    cubit.setForeground(true);
+    cubit.setForeground(foreground: false);
+    cubit.setForeground(foreground: true);
     first.initialization!.complete();
     await starting;
     await pumpEventQueue();
@@ -148,6 +194,52 @@ void main() {
     expect(second.initializations, 1);
     expect(cubit.state.status, StillCameraStatus.ready);
   });
+
+  test('permission denial during inactive/resumed initialization never starts an automatic retry', () async {
+    await cubit.close();
+    final first = FakeStillCameraDriver()
+      ..initialization = Completer<void>()
+      ..initializationFailure = const PhotoCaptureException(isAccessDenied: true);
+    final second = FakeStillCameraDriver();
+    final pending = [first, second];
+    cubit = StillCameraCubit(driverFactory: () => pending.removeAt(0), files: files, clock: clock);
+    final starting = cubit.start();
+    await pumpEventQueue();
+    cubit.setForeground(foreground: false);
+    cubit.setForeground(foreground: true);
+    first.initialization!.complete();
+    await starting;
+    await pumpEventQueue();
+    expect(second.initializations, 0);
+    expect(cubit.state.status, StillCameraStatus.complete);
+    expect(cubit.state.failure!.isAccessDenied, isTrue);
+  });
+
+  for (final initializationFails in [false, true]) {
+    test(
+      'obsolete initialization (failure: $initializationFails) with failed disposal never overlaps a new controller',
+      () async {
+        await cubit.close();
+        final first = FakeStillCameraDriver()
+          ..initialization = Completer<void>()
+          ..closingFailure = StateError('old controller could not close')
+          ..initializationFailure = initializationFails ? StateError('initialization failed') : null;
+        final second = FakeStillCameraDriver();
+        final pending = [first, second];
+        cubit = StillCameraCubit(driverFactory: () => pending.removeAt(0), files: files, clock: clock);
+        final starting = cubit.start();
+        await pumpEventQueue();
+        cubit.setForeground(foreground: false);
+        cubit.setForeground(foreground: true);
+        first.initialization!.complete();
+        await starting;
+        await pumpEventQueue();
+        expect(second.initializations, 0);
+        expect(cubit.state.status, StillCameraStatus.complete);
+        expect(cubit.state.failure, isA<PhotoCaptureException>());
+      },
+    );
+  }
 
   test('cancel during initialization never makes the late controller ready', () async {
     await cubit.close();
@@ -166,9 +258,9 @@ void main() {
   test('resume waits for prior disposal and never replays the shutter', () async {
     await cubit.start();
     drivers.single.closing = Completer<void>();
-    cubit.setForeground(false);
+    cubit.setForeground(foreground: false);
     await pumpEventQueue();
-    cubit.setForeground(true);
+    cubit.setForeground(foreground: true);
     await pumpEventQueue();
     expect(drivers, hasLength(1));
     drivers.single.closing!.complete();

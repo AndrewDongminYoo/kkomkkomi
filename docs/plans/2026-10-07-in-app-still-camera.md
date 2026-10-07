@@ -35,10 +35,10 @@
 
 **Interfaces:** Consume existing `InAppPhotoCapture`, `PhotoSource.camera` and `OpenCaptureRepository.clear/save`. Produce unchanged `capturePhoto(String zoneId, PhotoSlot slot, {PhotoSource source})`, with in-app preparation clearing the prior picker intent and gallery preparation retaining it.
 
-- [ ] Write tests proving no intent exists while an observed capture waits, a failed clear prevents capture and preserves the record, and gallery through a composite adapter still stores the gallery intent.
-- [ ] Run `flutter test test/presentation/visit_capture/cubit/visit_capture_cubit_test.dart`; expect new behavioral assertions to fail on current unconditional intent storage.
-- [ ] Change preparation only: clear for observed camera, save source-bearing intent for picker; preserve newest-save ordering and existing failure status.
-- [ ] Run the capture Cubit and lost-recovery test files; expect all passing, then commit.
+- [x] Write tests proving no intent exists while an observed capture waits, a failed clear prevents capture and preserves the record, and gallery through a composite adapter still stores the gallery intent.
+- [x] Run `flutter test test/presentation/visit_capture/cubit/visit_capture_cubit_test.dart`; expect new behavioral assertions to fail on current unconditional intent storage.
+- [x] Change preparation only: clear for observed camera, save source-bearing intent for picker; preserve newest-save ordering and existing failure status.
+- [x] Run the capture Cubit and lost-recovery test files; expect all passing, then commit.
 
 ## Task 2: Normalize camera files without weakening existing image boundaries
 
@@ -46,24 +46,24 @@
 
 **Interfaces:** `Uint8List normalizeCameraJpeg(Uint8List bytes)` returns sanitized oriented JPEG. `CameraPhotoFiles` defines `Future<String> normalize(String sourcePath)` and `Future<void> discard(String path)`; `TemporaryCameraPhotoFiles` owns new camera temporary files.
 
-- [ ] Write real-byte/file tests for rotated/large JPEG, size 1600, malformed/non-JPEG refusal, metadata absence, successful temporary output and failed/late-result cleanup.
-- [ ] Run the file tests, observe missing-feature then behavioral RED.
-- [ ] Implement decode/orient/resize/quality-80 encode/sanitize using `image`; normalize only known camera files and make cleanup safe for a missing owned file.
-- [ ] Run these tests and existing photo-store/sanitation tests; expect passing, then commit.
+- [x] Write real-byte/file tests for rotated/large JPEG, size 1600, malformed/non-JPEG refusal, metadata absence, successful temporary output and failed/late-result cleanup.
+- [x] Run the file tests, observe missing-feature then behavioral RED.
+- [x] Implement decode/orient/resize/quality-80 encode/sanitize using `image`; normalize only known camera files and make cleanup safe for a missing owned file.
+- [x] Run these tests and existing photo-store/sanitation tests; expect passing, then commit.
 
 ## Task 3: Driver, session lifecycle and preview
 
 **Files:** Create `lib/presentation/adapters/camera_driver.dart`; `lib/presentation/still_camera/still_camera.dart`, `cubit/still_camera_cubit.dart`, `cubit/still_camera_state.dart`, `view/still_camera_page.dart`; mirror tests under `test/presentation/`. Modify `pubspec.yaml`, lockfile and both ARB files.
 
-**Interfaces:** `StillCameraDriver` defines `Future<void> initialize()`, `Widget preview()`, `Future<String> takePicture()`, `Future<void> dispose()`. `CameraDriver` is its plugin adapter. `StillCameraCubit({required StillCameraDriver Function() driverFactory, required CameraPhotoFiles files, required Clock clock})` exposes `Future<void> start()`, `void setForeground(bool foreground)`, `Future<void> capture()`, `Future<void> cancel()` and closes resources. Its terminal state holds either `ObservedCameraPhoto`, `PhotoCaptureException` or cancellation. `StillCameraPage.route` returns an `Object?` route result; failures are typed exceptions consumed by the route adapter.
+**Interfaces:** `StillCameraDriver` defines `Future<void> initialize()`, `Widget preview()`, `Future<String> takePicture()`, `Future<void> dispose()`. `CameraDriver` is its plugin adapter. `StillCameraCubit({required StillCameraDriver Function() driverFactory, required CameraPhotoFiles files, required Clock clock})` exposes `Future<void> start()`, `void setForeground({required bool foreground})`, `Future<void> capture()`, `Future<void> cancel()` and closes resources. Its terminal state holds either `ObservedCameraPhoto`, `PhotoCaptureException` or cancellation. `StillCameraPage.route` returns an `Object?` route result; failures are typed exceptions consumed by the route adapter.
 
-- [ ] Add the approved camera dependency and a directly declared test platform-interface dependency; resolve packages and verify SDK compatibility without changing minimum versions.
-- [ ] Write fake-platform driver tests for rear-camera selection, audio false, no rear camera, permission mapping, preview, capture, initialization failure and disposal.
-- [ ] Write controlled session tests for request-time vs delayed completion, one operation, cancellation, foreground loss/resume, first permission grant, late initialization/capture/normalization, failures, retries and cleanup/disposal.
-- [ ] Run each test group RED before implementing its component.
-- [ ] Implement the driver behind one plugin import boundary, session generations and serialized controller lifetime; return only successful normalized results from the still-current session.
-- [ ] Write widget tests for ready-only shutter, title/close semantics, back/cancel, success/failure results, lifecycle forwarding and narrow/largest-text layout; observe RED, then implement page/view using the existing theme and localization conventions.
-- [ ] Run the driver/session/view tests; expect all passing, then commit.
+- [x] Add the approved camera dependency and a directly declared test platform-interface dependency; resolve packages and verify SDK compatibility without changing minimum versions.
+- [x] Write fake-platform driver tests for rear-camera selection, audio false, no rear camera, permission mapping, preview, capture, initialization failure and disposal.
+- [x] Write controlled session tests for request-time vs delayed completion, one operation, cancellation, foreground loss/resume, first permission grant, late initialization/capture/normalization, failures, retries and cleanup/disposal.
+- [x] Run each test group RED before implementing its component.
+- [x] Implement the driver behind one plugin import boundary, session generations and serialized controller lifetime; return only successful normalized results from the still-current session.
+- [x] Write widget tests for ready-only shutter, title/close semantics, back/cancel, success/failure results, lifecycle forwarding and narrow/largest-text layout; observe RED, then implement page/view using the existing theme and localization conventions.
+- [x] Run the driver/session/view tests; expect all passing, then commit.
 
 ## Task 4: Wire the mobile default and camera-only permissions
 
@@ -71,11 +71,11 @@
 
 **Interfaces:** `InAppCameraPhotoCapture({required Future<Object?> Function() openCamera, required PhotoCapture picker})` implements `InAppPhotoCapture`; camera route results become observations/errors, and gallery/lost retrieval delegate to picker. `App` preserves explicit capture injection and owns stable navigator wiring; new injectable driver/files dependencies are ordinary runtime interfaces used by tests. Bootstrap remains picker-only for startup recovery.
 
-- [ ] Write adapter/App tests for mobile default, no startup camera calls, unsupported-platform fallback, explicit injected capture preservation, gallery/recovery delegation and exception propagation; observe RED.
-- [ ] Implement stable mobile route wiring and retain the existing adapter on unsupported platforms.
-- [ ] Write an integration test that opens a slot, captures through the real route/adapter with a fake driver and controlled clock, reloads the saved record and checks observed UTC; replacing through gallery must clear time. Observe RED before finishing wiring.
-- [ ] Apply camera-only permission merges; remove audio/legacy-storage declarations and make camera hardware optional. Update purpose text and both privacy pages to describe actual behavior.
-- [ ] Run `merry run check`, `merry run coverage`, Trunk and development Android/iOS builds/manifest inspection as available. Expect clean repository checks, 100% coverage and compatible builds. Record any real-device gap explicitly; then commit.
+- [x] Write adapter/App tests for mobile default, no startup camera calls, unsupported-platform fallback, explicit injected capture preservation, gallery/recovery delegation and exception propagation; observe RED.
+- [x] Implement stable mobile route wiring and retain the existing adapter on unsupported platforms.
+- [x] Write an integration test that opens a slot, captures through the real route/adapter with a fake driver and controlled clock, reloads the saved record and checks observed UTC; replacing through gallery must clear time. Observe RED before finishing wiring.
+- [x] Apply camera-only permission merges; remove audio/legacy-storage declarations and make camera hardware optional. Update purpose text and both privacy pages to describe actual behavior.
+- [x] Run `merry run check`, `merry run coverage`, Trunk and development Android/iOS builds/manifest inspection as available. Expect clean repository checks, 100% coverage and compatible builds. Record any real-device gap explicitly; then commit.
 
 ## Task 5: Draft delivery and bounded review
 
@@ -83,3 +83,11 @@
 - [ ] Read every required check on the exact final head; await terminal CI. Inspect paginated review threads and obtain one independent whole-branch review with at most one subsequent fix/review round as justified.
 - [ ] For valid material findings, reproduce RED, fix, run affected/full gates and verify the new final head. Do not merge, deploy or close #61 based on a draft or unit tests.
 - [ ] Report PR/commits, exact tests/CI/review evidence, remaining iOS/Android device gates and any genuine new scope blocker.
+
+## Local implementation evidence
+
+- Tasks 1–4 are implemented in the isolated camera branch, based on #78. Recovery, image, driver/session, UI and App adapter changes were exercised with behavioral RED/GREEN tests.
+- Final Flutter suite: 1,739 tests. Web suite: 81 tests. Imported-library coverage: 100%, 4,005 of 4,005 lines. Format, analysis and Bloc lint pass.
+- Development debug Android APK and unsigned development iOS app build. Merged Android manifest has CAMERA, no microphone/read/write storage permission, optional camera hardware and minSdk 24. Built iOS app retains target 15.0 and localized camera/gallery purpose strings with no microphone-purpose key.
+- Initial merged-manifest checks exposed implied storage permission and required camera hardware; both were corrected and rebuilt. Session regressions also prevent obsolete initialization disposal failures from opening another controller and prevent a permission denial from triggering an automatic retry after lifecycle transitions.
+- Real iOS/Android permission, capture, interruption, orientation and output acceptance remains pending. Task 5 delivery/review/CI results are recorded on the Draft PR and in the coordinator's local progress ledger; no merge or deployment is authorized here.

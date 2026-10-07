@@ -28,7 +28,8 @@ class StillCameraPage extends StatelessWidget {
       unawaited(cubit.start());
       return cubit;
     },
-    child: const StillCameraView(),
+    // A visit notice must not move onto this route and cover its shutter control.
+    child: const ScaffoldMessenger(child: StillCameraView()),
   );
 }
 
@@ -45,9 +46,9 @@ class _StillCameraViewState extends State<StillCameraView> {
     super.initState();
     final cubit = context.read<StillCameraCubit>();
     final lifecycle = WidgetsBinding.instance.lifecycleState;
-    if (lifecycle != null) cubit.setForeground(lifecycle == AppLifecycleState.resumed);
+    if (lifecycle != null) cubit.setForeground(foreground: lifecycle == AppLifecycleState.resumed);
     _lifecycle = AppLifecycleListener(
-      onStateChange: (state) => cubit.setForeground(state == AppLifecycleState.resumed),
+      onStateChange: (state) => cubit.setForeground(foreground: state == AppLifecycleState.resumed),
     );
   }
 

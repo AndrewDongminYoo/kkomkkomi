@@ -120,12 +120,24 @@ const sectionIds = (html) =>
 
 describe("the privacy policy pages", () => {
   for (const [lang, page] of Object.entries(pages)) {
+    test(`the ${lang} page describes the shutter request observation and camera-only permission`, () => {
+      const device = sectionText(read(page.file), "device");
+      const expected =
+        lang === "ko"
+          ? ["셔터 요청 직전", "센서 노출 시각", "마이크를 사용하지 않습니다"]
+          : [
+              "immediately before the shutter request",
+              "sensor exposure time",
+              "does not use the microphone",
+            ];
+      for (const text of expected) assert.ok(device.includes(text));
+    });
     test(`the ${lang} page describes capture time as optional device-only observation`, () => {
       const device = sectionText(read(page.file), "device");
       const expected =
         lang === "ko"
           ? [
-              "앱 내부 카메라가 직접 관찰한 촬영 시각",
+              "앱 내부 카메라로 촬영하면",
               "UTC",
               "공유한 PDF",
               "현지 시각",
@@ -134,7 +146,7 @@ describe("the privacy policy pages", () => {
               "추정하지 않습니다",
             ]
           : [
-              "in-app camera supplies a directly observed capture time",
+              "in-app camera reads the device clock",
               "UTC",
               "shared PDF",
               "device local time",

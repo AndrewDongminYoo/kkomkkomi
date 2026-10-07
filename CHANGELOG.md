@@ -6,6 +6,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 ## [Unreleased]
 
+- In-app rear-camera preview for one still photo, with camera-only access, lifecycle/cancellation handling and request-observed UTC time for PDF/preview captions.
+
 - Nullable observed in-app camera times for PDF/preview captions; picker, gallery and old photos have no capture time.
 
 - Gallery selection for before/after photos, with gallery captions in the preview, PDF and web report.

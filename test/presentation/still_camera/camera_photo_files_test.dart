@@ -13,7 +13,7 @@ void main() {
   group('normalizeCameraJpeg', () {
     for (final size in [(2000, 1000), (1000, 2000)]) {
       test('limits the whole ${size.$1} x ${size.$2} image to a 1600 pixel edge', () {
-        final original = image.encodeJpg(image.Image(width: size.$1, height: size.$2), quality: 100);
+        final original = image.encodeJpg(image.Image(width: size.$1, height: size.$2));
         final bytes = normalizeCameraJpeg(original);
         final decoded = image.decodeJpg(bytes)!;
         expect((decoded.width, decoded.height), size.$1 > size.$2 ? (1600, 800) : (800, 1600));
@@ -21,7 +21,7 @@ void main() {
     }
 
     test('keeps a small image at its size and applies JPEG quality 80', () {
-      final original = image.encodeJpg(image.Image(width: 40, height: 20), quality: 100);
+      final original = image.encodeJpg(image.Image(width: 40, height: 20));
       final bytes = normalizeCameraJpeg(original);
       final decoded = image.decodeJpg(bytes)!;
       expect((decoded.width, decoded.height), (40, 20));
@@ -80,6 +80,15 @@ void main() {
       await expectLater(files.normalize(raw.path), throwsFormatException);
       expect(raw.existsSync(), isFalse);
       expect(root.listSync(recursive: true).whereType<File>(), isEmpty);
+    });
+
+    test('preserves a write failure and removes its owned source when the output cannot be written', () async {
+      final raw = File('${root.path}/raw.jpg')..writeAsBytesSync(gpsPhotoBytes());
+      // A file where the output directory belongs makes recursive creation fail after choosing the output path.
+      File('${root.path}/kkomkkomi-camera').writeAsStringSync('occupied');
+      await expectLater(files.normalize(raw.path), throwsA(isA<FileSystemException>()));
+      expect(raw.existsSync(), isFalse);
+      expect(File('${root.path}/kkomkkomi-camera').readAsStringSync(), 'occupied');
     });
 
     test('reports a missing source as a file error', () async {
