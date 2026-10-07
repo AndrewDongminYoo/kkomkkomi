@@ -195,6 +195,27 @@ void main() {
     expect(cubit.state.status, StillCameraStatus.ready);
   });
 
+  test('obsolete non-permission initialization failure leaves the resumed session ready', () async {
+    await cubit.close();
+    final first = FakeStillCameraDriver()
+      ..initialization = Completer<void>()
+      ..initializationFailure = StateError('old initialization failed in the background');
+    final second = FakeStillCameraDriver();
+    final pending = [first, second];
+    cubit = StillCameraCubit(driverFactory: () => pending.removeAt(0), files: files, clock: clock);
+    final starting = cubit.start();
+    await pumpEventQueue();
+    cubit.setForeground(foreground: false);
+    cubit.setForeground(foreground: true);
+    first.initialization!.complete();
+    await starting;
+    await pumpEventQueue();
+    expect(first.disposals, 1);
+    expect(second.initializations, 1);
+    expect(cubit.state.status, StillCameraStatus.ready);
+    expect(cubit.state.failure, isNull);
+  });
+
   test('permission denial during inactive/resumed initialization never starts an automatic retry', () async {
     await cubit.close();
     final first = FakeStillCameraDriver()
@@ -236,7 +257,7 @@ void main() {
         await pumpEventQueue();
         expect(second.initializations, 0);
         expect(cubit.state.status, StillCameraStatus.complete);
-        expect(cubit.state.failure, isA<PhotoCaptureException>());
+        expect(cubit.state.failure!.cause, same(first.closingFailure));
       },
     );
   }
@@ -254,6 +275,26 @@ void main() {
     expect(driver.disposals, 1);
     expect(clock.calls, 0);
   });
+
+  test(
+    'cancel during initialization ignores its late failure without reopening or changing the cancellation',
+    () async {
+      await cubit.close();
+      final driver = FakeStillCameraDriver()
+        ..initialization = Completer<void>()
+        ..initializationFailure = StateError('late initialization failure');
+      cubit = StillCameraCubit(driverFactory: () => driver, files: files, clock: clock);
+      final starting = cubit.start();
+      await pumpEventQueue();
+      final cancelling = cubit.cancel();
+      driver.initialization!.complete();
+      await Future.wait([starting, cancelling]);
+      expect(cubit.state.status, StillCameraStatus.complete);
+      expect(cubit.state.failure, isNull);
+      expect(cubit.state.photo, isNull);
+      expect(driver.disposals, 1);
+    },
+  );
 
   test('resume waits for prior disposal and never replays the shutter', () async {
     await cubit.start();

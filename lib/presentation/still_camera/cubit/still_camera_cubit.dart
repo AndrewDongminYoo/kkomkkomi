@@ -68,9 +68,16 @@ class StillCameraCubit extends Cubit<StillCameraState> {
       _driverReady = true;
       _showReady();
     } on Object catch (error) {
-      await _release();
-      // The permission prompt can change the generation before a denial answers. Do not request it again.
-      if (!_terminal) _completeFailure(error);
+      final closingError = await _release();
+      if (!_terminal) {
+        final failure = _failure(error);
+        // A prompt can change generations before denial; obsolete hardware errors belong to the old session.
+        if (_current(generation) || failure.isAccessDenied) {
+          _completeFailure(failure);
+        } else if (closingError != null) {
+          _completeFailure(closingError);
+        }
+      }
     }
   }
 
