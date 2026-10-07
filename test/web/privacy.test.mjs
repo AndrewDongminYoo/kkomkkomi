@@ -120,6 +120,22 @@ const sectionIds = (html) =>
 
 describe("the privacy policy pages", () => {
   for (const [lang, page] of Object.entries(pages)) {
+    test(`the ${lang} page discloses the optional phone in a shared PDF and excludes it from the web`, () => {
+      const device = sectionText(read(page.file), "device");
+      const expected =
+        lang === "ko"
+          ? [
+              "선택 입력한 사업자 전화번호",
+              "사업자 전화번호는 운영자의 서버로 보내지 않습니다",
+              "공개 웹 보고서에는 전화번호가 표시되지 않습니다",
+            ]
+          : [
+              "optional business phone",
+              "The business phone is not sent to the operator's servers",
+              "Public web reports do not include the business phone",
+            ];
+      for (const text of expected) assert.ok(device.includes(text));
+    });
     test(`the ${lang} page names its language and links to the other one`, () => {
       const html = read(page.file);
 

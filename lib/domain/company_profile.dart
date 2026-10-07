@@ -6,13 +6,16 @@ import 'package:kkomkkomi/domain/name.dart';
 
 /// The cleaning company that uses the app. The report header prints [name].
 final class CompanyProfile {
-  new({required String name}) : name = normalizeName(name);
+  new({required String name, String phone = ''}) : name = normalizeName(name), phone = phone.trim();
 
   final String name;
 
-  @override
-  bool operator ==(Object other) => other is CompanyProfile && other.name == name;
+  /// An optional business phone shown on the device and in a shared PDF, never in a web report.
+  final String phone;
 
   @override
-  int get hashCode => name.hashCode;
+  bool operator ==(Object other) => other is CompanyProfile && other.name == name && other.phone == phone;
+
+  @override
+  int get hashCode => Object.hash(name, phone);
 }

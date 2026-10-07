@@ -13,6 +13,7 @@ final class ReportDocument {
     required this.clientName,
     required this.visitDate,
     required Iterable<ReportZone> zones,
+    this.companyPhone = '',
   }) : zones = List.unmodifiable(zones);
 
   /// The report of [visit], which is a visit to [client] by the company of [companyProfile].
@@ -25,6 +26,7 @@ final class ReportDocument {
     }
     return ReportDocument(
       companyName: companyProfile?.name,
+      companyPhone: companyProfile?.phone ?? '',
       clientName: client.name,
       visitDate: visit.visitDate,
       zones: [
@@ -37,6 +39,7 @@ final class ReportDocument {
   /// The name of the cleaning company, or null when no company profile is saved. A report without it has no
   /// company line.
   final String? companyName;
+  final String companyPhone;
   final String clientName;
   final VisitDate visitDate;
 
@@ -63,15 +66,16 @@ final class ReportDocument {
   bool operator ==(Object other) =>
       other is ReportDocument &&
       other.companyName == companyName &&
+      other.companyPhone == companyPhone &&
       other.clientName == clientName &&
       other.visitDate == visitDate &&
       sameElements(other.zones, zones);
 
   @override
-  int get hashCode => Object.hash(companyName, clientName, visitDate, Object.hashAll(zones));
+  int get hashCode => Object.hash(companyName, companyPhone, clientName, visitDate, Object.hashAll(zones));
 
   @override
-  String toString() => 'ReportDocument($companyName, $clientName, $visitDate, $zones)';
+  String toString() => 'ReportDocument($companyName, $companyPhone, $clientName, $visitDate, $zones)';
 }
 
 /// What a report prints for one zone: its name, its status, the two photo slots, and the note.

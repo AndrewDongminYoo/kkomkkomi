@@ -30,6 +30,7 @@ final class CompanyProfileState {
   const new({
     this.status = CompanyProfileStatus.loading,
     this.name = '',
+    this.phone = '',
     this.entry = NameEntry.editing,
     this.deletion = DataDeletion.idle,
     this.deletionFailure,
@@ -39,6 +40,7 @@ final class CompanyProfileState {
 
   /// The saved company name, or an empty text when no profile was saved.
   final String name;
+  final String phone;
 
   /// What became of the company name that the form last submitted.
   final NameEntry entry;
@@ -48,18 +50,21 @@ final class CompanyProfileState {
   /// The step at which the last deletion stopped, or null when none stopped.
   final DeletionStep? deletionFailure;
 
-  CompanyProfileState copyWith({CompanyProfileStatus? status, String? name, NameEntry? entry}) => CompanyProfileState(
-    status: status ?? this.status,
-    name: name ?? this.name,
-    entry: entry ?? this.entry,
-    deletion: deletion,
-    deletionFailure: deletionFailure,
-  );
+  CompanyProfileState copyWith({CompanyProfileStatus? status, String? name, String? phone, NameEntry? entry}) =>
+      CompanyProfileState(
+        status: status ?? this.status,
+        name: name ?? this.name,
+        phone: phone ?? this.phone,
+        entry: entry ?? this.entry,
+        deletion: deletion,
+        deletionFailure: deletionFailure,
+      );
 
   /// This state with [deletion], and [failure] as the step at which the deletion stopped.
   CompanyProfileState withDeletion(DataDeletion deletion, {DeletionStep? failure}) => CompanyProfileState(
     status: status,
     name: name,
+    phone: phone,
     entry: entry,
     deletion: deletion,
     deletionFailure: failure,
@@ -70,10 +75,11 @@ final class CompanyProfileState {
       other is CompanyProfileState &&
       other.status == status &&
       other.name == name &&
+      other.phone == phone &&
       other.entry == entry &&
       other.deletion == deletion &&
       other.deletionFailure == deletionFailure;
 
   @override
-  int get hashCode => Object.hash(status, name, entry, deletion, deletionFailure);
+  int get hashCode => Object.hash(status, name, phone, entry, deletion, deletionFailure);
 }

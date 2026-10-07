@@ -45,7 +45,22 @@ void main() {
   });
 
   group('openAppDatabase', () {
-    test('creates the version 5 schema with one table for each entity, the tables of publishing, and the open '
+    test('upgrades a version 5 profile with no phone without changing its name', () async {
+      final path = p.join(directory.path, databaseFileName);
+      final old = await testDatabaseFactory.openDatabase(
+        path,
+        options: OpenDatabaseOptions(version: 5, onCreate: (database, _) => upgradeSchema(database, from: 0, to: 5)),
+      );
+      await old.insert('company_profile', {'id': 1, 'name': '반짝 클린'});
+      await old.close();
+      final upgraded = await openAppDatabase(testDatabaseFactory, path);
+      addTearDown(upgraded.close);
+      final repository = SqliteCompanyProfileRepository(upgraded);
+      expect(await repository.load(), CompanyProfile(name: '반짝 클린'));
+      await repository.save(CompanyProfile(name: '반짝 클린', phone: '02-1234-5678'));
+      expect((await repository.load())!.phone, '02-1234-5678');
+    });
+    test('creates the version 6 schema with one table for each entity, the tables of publishing, and the open '
         'capture', () async {
       final database = await openMemoryDatabase();
       addTearDown(database.close);
@@ -64,7 +79,7 @@ void main() {
         'zones',
       ]);
       expect(await database.getVersion(), schemaVersion);
-      expect(schemaVersion, 5);
+      expect(schemaVersion, 6);
       final columns = await database.rawQuery('PRAGMA table_info(client_pages)');
       for (final name in ['server_delete_requested_at', 'server_deleted_at']) {
         final column = columns.singleWhere((row) => row['name'] == name);
@@ -327,7 +342,7 @@ void main() {
       addTearDown(database.close);
       expect(File(path).existsSync(), isTrue);
       expect(await database.query('company_profile'), [
-        {'id': 1, 'name': '반짝 클린'},
+        {'id': 1, 'name': '반짝 클린', 'phone': ''},
       ]);
     });
 

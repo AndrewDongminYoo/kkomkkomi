@@ -268,9 +268,9 @@
     "@companyNameHelper": {
         "description": "회사 이름 입력란 아래에서 이름이 어디에 쓰이는지 알려주는 문구"
     },
-    "companyProfileSavedMessage": "회사 이름을 저장했어요.",
+    "companyProfileSavedMessage": "회사 정보를 저장했어요.",
     "@companyProfileSavedMessage": {
-        "description": "회사 이름을 저장한 뒤 표시되는 문구"
+        "description": "Message shown after the company profile was saved"
     },
     "companyProfileLoadFailedMessage": "회사 정보를 불러오지 못했어요. 다시 시도해 주세요.",
     "@companyProfileLoadFailedMessage": {
@@ -663,5 +663,13 @@
     "plansLinkFailedMessage": "페이지를 열지 못했어요.",
     "@plansLinkFailedMessage": {
         "description": "앱 밖의 페이지가 열리지 않았을 때 표시되는 문구"
+    },
+    "companyPhoneFieldLabel": "사업자 전화번호 (선택)",
+    "@companyPhoneFieldLabel": {
+        "description": "Label of the optional company business phone field"
+    },
+    "companyPhoneHelper": "PDF와 미리보기에 표시해요. 공개 웹 보고서에는 포함하지 않아요.",
+    "@companyPhoneHelper": {
+        "description": "Where the business phone is shown"
     }
 }

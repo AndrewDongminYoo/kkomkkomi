@@ -78,6 +78,19 @@ void main() {
   int countOf(String part, String text) => part.allMatches(text).length;
 
   group('renderReportPdf', () {
+    test('prints the business phone between the company name and title', () async {
+      final summary = await render(
+        ReportDocument(
+          companyName: '깔끔클린',
+          companyPhone: '02-1234-5678',
+          clientName: '행복빌딩',
+          visitDate: VisitDate(2026, 10, 1),
+          zones: [],
+        ),
+      );
+      expectInOrder(summary.text, ['깔끔클린', '02-1234-5678', '청소 완료 보고서']);
+      expect(summary.pageCount, 1);
+    });
     test('renders a full visit as A4 pages that parse, with the header table and each zone in order', () async {
       final summary = await render(
         document([

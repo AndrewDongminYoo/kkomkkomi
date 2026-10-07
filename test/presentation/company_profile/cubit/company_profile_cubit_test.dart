@@ -87,6 +87,13 @@ void main() {
   }
 
   group('CompanyProfileState', () {
+    test('keeps the phone across deletion and entry states', () {
+      final state = ready(name: '반짝 클린').copyWith(phone: '02-1234-5678');
+      expect(state.withDeletion(DataDeletion.deleting).phone, state.phone);
+      expect(state.copyWith(entry: NameEntry.saving).phone, state.phone);
+      expect(state, isNot(ready(name: '반짝 클린')));
+      expect(state.hashCode, ready(name: '반짝 클린').copyWith(phone: '02-1234-5678').hashCode);
+    });
     test('is equal to a state with the same fields', () {
       expect(ready(name: '반짝 클린'), ready(name: '반짝 클린'));
       expect(ready(name: '반짝 클린').hashCode, ready(name: '반짝 클린').hashCode);
@@ -174,6 +181,21 @@ void main() {
     });
 
     group('save', () {
+      blocTest<CompanyProfileCubit, CompanyProfileState>(
+        'saves the phone with the name and can clear it',
+        build: build,
+        seed: ready,
+        act: (cubit) async {
+          await cubit.save('반짝 클린', phone: ' 02-1234-5678 ');
+          await cubit.save('반짝 클린');
+        },
+        expect: () => [
+          ready(entry: NameEntry.saving),
+          ready(name: '반짝 클린', entry: NameEntry.saved).copyWith(phone: '02-1234-5678'),
+          ready(name: '반짝 클린', entry: NameEntry.saving).copyWith(phone: '02-1234-5678'),
+          ready(name: '반짝 클린', entry: NameEntry.saved),
+        ],
+      );
       blocTest<CompanyProfileCubit, CompanyProfileState>(
         'saves the trimmed name and shows it as the saved name',
         build: build,

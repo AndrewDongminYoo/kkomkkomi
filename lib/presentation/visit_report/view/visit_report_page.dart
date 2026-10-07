@@ -307,6 +307,7 @@ class _ReportPreview extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             if (document.companyName case final companyName?) KeepAllText(companyName, style: secondary),
+            if (document.companyPhone.isNotEmpty) KeepAllText(document.companyPhone, style: secondary),
             KeepAllText(labels.title, style: theme.textTheme.titleLarge),
             const SizedBox(height: 4),
             KeepAllText(document.clientName, style: theme.textTheme.titleMedium),

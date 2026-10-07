@@ -308,9 +308,9 @@
     "@companyNameHelper": {
         "description": "Text under the company name field that says where the name is used"
     },
-    "companyProfileSavedMessage": "Company name saved.",
+    "companyProfileSavedMessage": "Company profile saved.",
     "@companyProfileSavedMessage": {
-        "description": "Message shown after the company name was saved"
+        "description": "Message shown after the company profile was saved"
     },
     "companyProfileLoadFailedMessage": "Can't load your company profile. Try again.",
     "@companyProfileLoadFailedMessage": {
@@ -769,5 +769,13 @@
     "plansLinkFailedMessage": "Can't open the page.",
     "@plansLinkFailedMessage": {
         "description": "Shown when a page outside the app did not open"
+    },
+    "companyPhoneFieldLabel": "Business phone (optional)",
+    "@companyPhoneFieldLabel": {
+        "description": "Label of the optional company business phone field"
+    },
+    "companyPhoneHelper": "Shown in PDFs and the preview. Not included in public web reports.",
+    "@companyPhoneHelper": {
+        "description": "Where the business phone is shown"
     }
 }
