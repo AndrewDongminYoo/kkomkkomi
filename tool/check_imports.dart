@@ -4,6 +4,8 @@
 import 'dart:convert';
 import 'dart:io';
 
+import 'package:analyzer/dart/ast/ast.dart';
+import 'package:analyzer/dart/analysis/utilities.dart';
 import 'package:import_sorter/sort.dart';
 import 'package:path/path.dart' as p;
 import 'package:yaml/yaml.dart';
@@ -29,6 +31,7 @@ List<String> importProblems(Directory root, {bool fix = false}) {
   final config = pubspec['import_sorter'] as YamlMap?;
   final ignored = (config?['ignored_files'] as YamlList? ?? YamlList()).cast<String>().map(RegExp.new).toList();
   final problems = <String>[];
+  final changes = <File, String>{};
   for (final name in ['lib', 'test']) {
     final directory = Directory(p.join(root.path, name));
     if (!directory.existsSync()) continue;
@@ -37,21 +40,80 @@ List<String> importProblems(Directory root, {bool fix = false}) {
       final relative = p.relative(file.path, from: root.path).split(p.separator).join('/');
       if (ignored.any((pattern) => pattern.hasMatch('/$relative'))) continue;
       final source = file.readAsStringSync();
-      final sorted = sortImports(
-        const LineSplitter().convert(source),
+      final directives = <String, String>{};
+      final sortedLines = sortImports(
+        _directiveLines(source, relative, directives),
         pubspec['name'] as String,
         config?['emojis'] as bool? ?? false,
         false,
         !(config?['comments'] as bool? ?? true),
       ).sortedFile;
+      final sorted =
+          '${const LineSplitter().convert(sortedLines).map((line) => directives[line] ?? line).join('\n')}\n';
       if (_withoutBlankLines(source) != _withoutBlankLines(sorted)) {
         problems.add(relative);
-        if (fix) file.writeAsStringSync(sorted);
+        if (fix) changes[file] = sorted;
       }
     }
   }
+  for (final change in changes.entries) {
+    change.key.writeAsStringSync(change.value);
+  }
   return problems..sort();
 }
+
+List<String> _directiveLines(String source, String file, Map<String, String> directives) {
+  final unit = parseString(content: source, path: file).unit;
+  final lines = <String>[];
+  var offset = 0;
+  for (final directive in unit.directives.whereType<ImportDirective>()) {
+    final prefix = const LineSplitter().convert(source.substring(offset, directive.offset));
+    final fileIgnore = RegExp(r'^\s*//\s*ignore_for_file:');
+    final preambleEnd = offset == 0 ? prefix.indexWhere(fileIgnore.hasMatch) : -1;
+    final hasUnsupportedTrivia = prefix.indexed.any((entry) {
+      final (index, line) = entry;
+      final isFilePreamble =
+          index <= preambleEnd && line.trimLeft().startsWith('//') && !RegExp(r'^\s*//\s*ignore:').hasMatch(line);
+      return line.trim().isNotEmpty && !_importGroupHeaders.contains(line) && !isFilePreamble;
+    });
+    if (hasUnsupportedTrivia) {
+      throw FormatException('Cannot preserve import-leading trivia in $file');
+    }
+    final newline = source.indexOf('\n', directive.end);
+    final remainder = source.substring(directive.end, newline < 0 ? source.length : newline);
+    final uri = directive.uri.stringValue;
+    if (uri == null || directive.metadata.isNotEmpty || remainder.trim().isNotEmpty) {
+      throw FormatException('Cannot preserve import-line trivia in $file');
+    }
+    // Sort by the primary URI, keeping the complete directive as an opaque block.
+    // Generated keys cannot collide with code or text already in the file.
+    final index = directives.length.toString().padLeft(8, '0');
+    var suffix = 0;
+    late String key;
+    do {
+      key = 'import ${jsonEncode(uri)} as _sort_import_${index}_${suffix++};';
+    } while (source.contains(key));
+    directives[key] = source.substring(directive.offset, directive.end);
+    lines
+      ..addAll(prefix)
+      ..add(key);
+    offset = directive.end;
+  }
+  lines.addAll(const LineSplitter().convert(source.substring(offset)));
+  return lines;
+}
+
+const _importGroupHeaders = {
+  '// Dart imports:',
+  '// Flutter imports:',
+  '// Package imports:',
+  '// Project imports:',
+  '// 🎯 Dart imports:',
+  '// 🐦 Flutter imports:',
+  '// 📱 Flutter imports:',
+  '// 📦 Package imports:',
+  '// 🌎 Project imports:',
+};
 
 String _withoutBlankLines(String source) =>
     const LineSplitter().convert(source).where((line) => line.trim().isNotEmpty).join('\n');

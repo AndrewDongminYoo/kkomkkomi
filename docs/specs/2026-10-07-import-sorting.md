@@ -14,6 +14,8 @@ Replace the incompatible `directives_ordering` lint with a scoped sorter check i
 The checker compares import order and group comments while `dart format` owns blank lines, because the upstream sorter removes the formatter's separator between package and relative imports.
 The same checker applies fixes with `--fix`, so both lanes use identical path normalization and exclusions on every platform.
 The existing locked `yaml` package becomes a direct development dependency so the checker can read the same sorter configuration as the write command.
+The existing locked `analyzer` package parses complete import directives, including multiline conditional imports, before sorting.
+Unsupported annotations or comments outside a directive stop the operation before any source is written, except group headers and a comment-only preamble ending in an initial file-level lint directive.
 Do not change app behavior, store artifacts, security rules, or release metadata.
 
 ## Acceptance

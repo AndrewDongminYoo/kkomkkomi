@@ -87,4 +87,103 @@ void main() {
       expect(File('${root.path}/$name').readAsStringSync(), source);
     }
   });
+
+  test('rejects unsorted multiline conditional imports without writing', () {
+    const source =
+        "// 📦 Package imports:\nimport 'package:z/z.dart';\n"
+        "import 'package:alpha/alpha.dart'\n    if (dart.library.io) 'package:alpha/io.dart';\n";
+    write('lib/example.dart', source);
+    expect(importProblems(root), ['lib/example.dart']);
+    expect(File('${root.path}/lib/example.dart').readAsStringSync(), source);
+  });
+
+  test('accepts correctly grouped multiline conditional imports', () {
+    write(
+      'lib/example.dart',
+      "// 📦 Package imports:\nimport 'package:alpha/alpha.dart'\n"
+          "    if (dart.library.io) 'package:alpha/io.dart';\nimport 'package:z/z.dart';\n",
+    );
+    expect(importProblems(root), isEmpty);
+  });
+
+  test('fixes conditional import order while preserving its URI, alias, and comment', () {
+    write(
+      'lib/example.dart',
+      "// 📦 Package imports:\nimport 'package:z/z.dart';\n"
+          "import 'package:alpha/alpha.dart'\n    // Keep the platform fallback.\n"
+          "    if (dart.library.io) 'package:alpha/io.dart' as platform;\n",
+    );
+    expect(importProblems(root, fix: true), ['lib/example.dart']);
+    expect(
+      File('${root.path}/lib/example.dart').readAsStringSync().trimRight(),
+      "// 📦 Package imports:\nimport 'package:alpha/alpha.dart'\n"
+      '    // Keep the platform fallback.\n'
+      "    if (dart.library.io) 'package:alpha/io.dart' as platform;\nimport 'package:z/z.dart';",
+    );
+    expect(importProblems(root), isEmpty);
+  });
+
+  test('refuses import-line lint comments before writing any source', () {
+    const source = "import 'dart:io'; // ignore: unnecessary_import\n";
+    const other = "import 'package:z/z.dart';\nimport 'dart:io';\n";
+    write('lib/other.dart', other);
+    write('lib/example.dart', source);
+    expect(() => importProblems(root, fix: true), throwsFormatException);
+    expect(File('${root.path}/lib/example.dart').readAsStringSync(), source);
+    expect(File('${root.path}/lib/other.dart').readAsStringSync(), other);
+  });
+
+  test('groups a conditional import by its primary URI', () {
+    write(
+      'lib/example.dart',
+      "// 📦 Package imports:\nimport 'package:alpha/alpha.dart'\n"
+          "    if (dart.library.io) 'package:kkomkkomi/platform.dart';\n\n"
+          "// 🌎 Project imports:\nimport 'package:kkomkkomi/app/app.dart';\n",
+    );
+    expect(importProblems(root), isEmpty);
+  });
+
+  test('refuses leading lint comments between imports before writing any source', () {
+    const source = "import 'package:z/z.dart';\n// ignore: unnecessary_import\nimport 'package:alpha/alpha.dart';\n";
+    const other = "import 'package:z/z.dart';\nimport 'dart:io';\n";
+    write('lib/other.dart', other);
+    write('lib/example.dart', source);
+    expect(() => importProblems(root, fix: true), throwsFormatException);
+    expect(File('${root.path}/lib/example.dart').readAsStringSync(), source);
+    expect(File('${root.path}/lib/other.dart').readAsStringSync(), other);
+  });
+
+  test('refuses a lint comment before the first import without moving it', () {
+    const source = "// ignore: unnecessary_import\nimport 'dart:io';\n";
+    write('lib/example.dart', source);
+    expect(() => importProblems(root, fix: true), throwsFormatException);
+    expect(File('${root.path}/lib/example.dart').readAsStringSync(), source);
+  });
+
+  test('refuses an ambiguous rationale before the first import without writing any source', () {
+    const source = "// Rationale for z.\nimport 'package:z/z.dart';\nimport 'package:alpha/alpha.dart';\n";
+    const other = "import 'package:z/z.dart';\nimport 'dart:io';\n";
+    write('lib/other.dart', other);
+    write('lib/example.dart', source);
+    expect(() => importProblems(root, fix: true), throwsFormatException);
+    expect(File('${root.path}/lib/example.dart').readAsStringSync(), source);
+    expect(File('${root.path}/lib/other.dart').readAsStringSync(), other);
+  });
+
+  test('preserves the existing file-level lint preamble when reordering imports', () {
+    const preamble =
+        '// Every field of this class is final.\n'
+        '// The domain annotation is not available here.\n'
+        '// ignore_for_file: avoid_equals_and_hash_code_on_mutable_classes\n\n';
+    write(
+      'lib/example.dart',
+      "$preamble// 📦 Package imports:\nimport 'package:z/z.dart';\nimport 'package:alpha/alpha.dart';\n",
+    );
+    expect(importProblems(root, fix: true), ['lib/example.dart']);
+    expect(
+      File('${root.path}/lib/example.dart').readAsStringSync().trimRight(),
+      "$preamble// 📦 Package imports:\nimport 'package:alpha/alpha.dart';\nimport 'package:z/z.dart';",
+    );
+    expect(importProblems(root), isEmpty);
+  });
 }
