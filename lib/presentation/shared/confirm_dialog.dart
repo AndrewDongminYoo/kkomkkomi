@@ -1,7 +1,10 @@
+// 📦 Package imports:
+import 'package:material_ui/material_ui.dart';
+
+// 🌎 Project imports:
 import 'package:kkomkkomi/l10n/l10n.dart';
 import 'package:kkomkkomi/presentation/shared/dialog_layout.dart';
 import 'package:kkomkkomi/presentation/shared/keep_all_text.dart';
-import 'package:material_ui/material_ui.dart';
 
 /// Asks [title] with [message] under it, and [details] under the message when given, and completes with true when the
 /// person presses the [confirmLabel] button.

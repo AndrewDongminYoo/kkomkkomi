@@ -1,7 +1,10 @@
+// 📦 Package imports:
+import 'package:sqflite/sqflite.dart';
+
+// 🌎 Project imports:
 import 'package:kkomkkomi/application/application.dart';
 import 'package:kkomkkomi/domain/domain.dart';
 import 'package:kkomkkomi/persistence/upsert.dart';
-import 'package:sqflite/sqflite.dart';
 
 /// Stores the company profile as the one row of the `company_profile` table.
 final class SqliteCompanyProfileRepository implements CompanyProfileRepository {

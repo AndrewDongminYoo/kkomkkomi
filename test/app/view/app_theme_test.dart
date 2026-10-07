@@ -1,6 +1,9 @@
+// 📦 Package imports:
 import 'package:flutter_test/flutter_test.dart';
-import 'package:kkomkkomi/app/app.dart';
 import 'package:material_ui/material_ui.dart';
+
+// 🌎 Project imports:
+import 'package:kkomkkomi/app/app.dart';
 
 /// The contrast ratio of WCAG 2.2 between [a] and [b].
 double contrastRatio(Color a, Color b) {

@@ -1,8 +1,11 @@
+// 📦 Package imports:
+import 'package:material_ui/material_ui.dart';
+
+// 🌎 Project imports:
 import 'package:kkomkkomi/l10n/l10n.dart';
 import 'package:kkomkkomi/presentation/shared/keep_all_text.dart';
 import 'package:kkomkkomi/presentation/shared/name_entry.dart';
 import 'package:kkomkkomi/presentation/shared/name_entry_message.dart';
-import 'package:material_ui/material_ui.dart';
 
 /// The most lines that a message under a name field takes before it is cut.
 const _messageMaxLines = 10;

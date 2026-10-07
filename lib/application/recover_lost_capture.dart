@@ -1,3 +1,4 @@
+// 🌎 Project imports:
 import 'package:kkomkkomi/application/id_generator.dart';
 import 'package:kkomkkomi/application/open_capture.dart';
 import 'package:kkomkkomi/application/photo_capture.dart';

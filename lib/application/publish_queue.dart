@@ -1,8 +1,10 @@
+// 🎯 Dart imports:
 import 'dart:async';
 import 'dart:developer';
 import 'dart:math' show Random, min;
 import 'dart:typed_data';
 
+// 🌎 Project imports:
 import 'package:kkomkkomi/application/client_page.dart';
 import 'package:kkomkkomi/application/client_repository.dart';
 import 'package:kkomkkomi/application/clock.dart';

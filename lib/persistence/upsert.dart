@@ -1,3 +1,4 @@
+// 📦 Package imports:
 import 'package:sqflite/sqflite.dart';
 
 /// Updates the row of [table] that [where] selects, or inserts [key] and [values] as a new row when it selects none.

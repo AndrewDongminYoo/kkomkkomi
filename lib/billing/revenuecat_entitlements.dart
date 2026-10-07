@@ -1,11 +1,17 @@
+// 🎯 Dart imports:
 import 'dart:async';
 import 'dart:developer';
 
+// 🐦 Flutter imports:
 import 'package:flutter/services.dart';
+
+// 📦 Package imports:
+import 'package:purchases_flutter/purchases_flutter.dart' show PurchasesErrorCode, PurchasesErrorHelper;
+
+// 🌎 Project imports:
 import 'package:kkomkkomi/application/application.dart';
 import 'package:kkomkkomi/billing/purchases_store.dart';
 import 'package:kkomkkomi/domain/domain.dart';
-import 'package:purchases_flutter/purchases_flutter.dart' show PurchasesErrorCode, PurchasesErrorHelper;
 
 /// The RevenueCat adapter for [platform], or null when the platform is not iOS or Android or its key is empty.
 ///

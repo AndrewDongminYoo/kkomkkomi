@@ -1,6 +1,11 @@
+// 🎯 Dart imports:
 import 'dart:async';
 
+// 📦 Package imports:
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:material_ui/material_ui.dart';
+
+// 🌎 Project imports:
 import 'package:kkomkkomi/application/application.dart';
 import 'package:kkomkkomi/domain/domain.dart';
 import 'package:kkomkkomi/l10n/l10n.dart';
@@ -12,7 +17,6 @@ import 'package:kkomkkomi/presentation/shared/keep_all_text.dart';
 import 'package:kkomkkomi/presentation/shared/load_failure.dart';
 import 'package:kkomkkomi/presentation/shared/name_dialog.dart';
 import 'package:kkomkkomi/presentation/shared/notice.dart';
-import 'package:material_ui/material_ui.dart';
 
 /// The home screen: the active clients, a control that adds a client, and the way to the company profile.
 class ClientListPage extends StatelessWidget {

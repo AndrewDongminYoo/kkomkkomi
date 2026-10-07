@@ -1,6 +1,10 @@
+// 🎯 Dart imports:
 import 'dart:async';
 
+// 📦 Package imports:
 import 'package:bloc/bloc.dart';
+
+// 🌎 Project imports:
 import 'package:kkomkkomi/application/application.dart';
 import 'package:kkomkkomi/presentation/still_camera/camera_photo_files.dart';
 import 'package:kkomkkomi/presentation/still_camera/still_camera_driver.dart';

@@ -1,10 +1,14 @@
+// 🎯 Dart imports:
 import 'dart:io';
 import 'dart:typed_data';
 
+// 📦 Package imports:
 import 'package:image/image.dart' as image;
+import 'package:path_provider/path_provider.dart';
+
+// 🌎 Project imports:
 import 'package:kkomkkomi/application/application.dart';
 import 'package:kkomkkomi/domain/domain.dart';
-import 'package:path_provider/path_provider.dart';
 
 /// Keeps the photo files under the application documents directory, which `path_provider` finds.
 final class DocumentsPhotoStore implements PhotoStore {

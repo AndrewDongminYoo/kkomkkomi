@@ -1,10 +1,14 @@
+// 🎯 Dart imports:
 import 'dart:typed_data';
 
+// 📦 Package imports:
+import 'package:pdf/pdf.dart';
+import 'package:pdf/widgets.dart' as pw;
+
+// 🌎 Project imports:
 import 'package:kkomkkomi/domain/domain.dart';
 import 'package:kkomkkomi/export/report_document.dart';
 import 'package:kkomkkomi/export/report_labels.dart';
-import 'package:pdf/pdf.dart';
-import 'package:pdf/widgets.dart' as pw;
 
 /// The space around the content of a page, in points.
 const double _pageMargin = 40;

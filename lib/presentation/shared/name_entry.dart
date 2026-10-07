@@ -1,3 +1,4 @@
+// 🌎 Project imports:
 import 'package:kkomkkomi/domain/domain.dart';
 
 /// What became of the name that a person last submitted in a name field.

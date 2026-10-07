@@ -2,6 +2,7 @@
 // `package:meta` is not available here. Every field of the class is final.
 // ignore_for_file: avoid_equals_and_hash_code_on_mutable_classes
 
+// 🌎 Project imports:
 import 'package:kkomkkomi/domain/name.dart';
 
 /// An area inside a client site that gets one before/after photo pair per visit.

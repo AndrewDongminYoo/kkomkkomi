@@ -1,5 +1,6 @@
 // The function relies on the grapheme cluster rules of `characters`, a direct dependency, and not on the export of
 // Flutter that makes the library visible here too.
+// 📦 Package imports:
 // ignore: unnecessary_import
 import 'package:characters/characters.dart';
 import 'package:material_ui/material_ui.dart';

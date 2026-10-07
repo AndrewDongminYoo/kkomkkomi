@@ -1,10 +1,15 @@
+// 🐦 Flutter imports:
 import 'package:flutter/foundation.dart';
+
+// 📦 Package imports:
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:material_ui/material_ui.dart';
+
+// 🌎 Project imports:
 import 'package:kkomkkomi/app/view/app_theme.dart';
 import 'package:kkomkkomi/application/application.dart';
 import 'package:kkomkkomi/l10n/l10n.dart';
 import 'package:kkomkkomi/presentation/presentation.dart';
-import 'package:material_ui/material_ui.dart';
 
 /// The name of the initial route that opens the visit of [App.recovery] over the client list.
 const _recoveredVisitRouteName = '/recovered-visit';

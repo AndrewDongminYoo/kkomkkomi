@@ -1,7 +1,10 @@
+// 📦 Package imports:
 import 'package:flutter_test/flutter_test.dart';
+import 'package:mocktail/mocktail.dart';
+
+// 🌎 Project imports:
 import 'package:kkomkkomi/application/application.dart';
 import 'package:kkomkkomi/domain/domain.dart';
-import 'package:mocktail/mocktail.dart';
 
 class _MockVisitRepository extends Mock implements VisitRepository;
 

@@ -1,9 +1,14 @@
+// 🐦 Flutter imports:
 import 'package:flutter/rendering.dart';
+
+// 📦 Package imports:
 import 'package:flutter_test/flutter_test.dart';
+import 'package:material_ui/material_ui.dart';
+
+// 🌎 Project imports:
 import 'package:kkomkkomi/presentation/shared/keep_all_text.dart';
 import 'package:kkomkkomi/presentation/shared/name_entry.dart';
 import 'package:kkomkkomi/presentation/shared/name_field.dart';
-import 'package:material_ui/material_ui.dart';
 
 import '../../helpers/helpers.dart';
 

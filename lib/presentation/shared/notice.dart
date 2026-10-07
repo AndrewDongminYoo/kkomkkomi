@@ -1,5 +1,8 @@
-import 'package:kkomkkomi/presentation/shared/corner_radius.dart';
+// 📦 Package imports:
 import 'package:material_ui/material_ui.dart';
+
+// 🌎 Project imports:
+import 'package:kkomkkomi/presentation/shared/corner_radius.dart';
 
 /// What a [Notice] tells: a fact that the person should know, or a failure.
 enum NoticeTone { info, error }

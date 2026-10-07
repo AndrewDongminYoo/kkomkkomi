@@ -1,7 +1,10 @@
+// 📦 Package imports:
+import 'package:sqflite/sqflite.dart';
+
+// 🌎 Project imports:
 import 'package:kkomkkomi/application/application.dart';
 import 'package:kkomkkomi/domain/domain.dart';
 import 'package:kkomkkomi/persistence/upsert.dart';
-import 'package:sqflite/sqflite.dart';
 
 /// Stores the clients and their zones in the `clients` and `zones` tables.
 final class SqliteClientRepository implements ClientRepository {

@@ -1,10 +1,14 @@
+// 🎯 Dart imports:
 import 'dart:io';
 import 'dart:typed_data';
 
+// 📦 Package imports:
 import 'package:image/image.dart' as image;
+import 'package:path_provider/path_provider.dart';
+
+// 🌎 Project imports:
 import 'package:kkomkkomi/application/application.dart';
 import 'package:kkomkkomi/presentation/adapters/random_id_generator.dart';
-import 'package:path_provider/path_provider.dart';
 
 /// Preserves the whole visible camera image while applying the existing photo bounds and metadata policy.
 Uint8List normalizeCameraJpeg(Uint8List bytes) {

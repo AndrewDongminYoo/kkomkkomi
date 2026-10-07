@@ -35,6 +35,7 @@ dependencies:
   url_launcher: ^6.3.3
 
 dev_dependencies:
+  analyzer: ^13.3.0
   bloc_lint: ^0.4.3
   bloc_test: ^10.0.0
   bloc_tools: ^0.1.0-dev.25
@@ -43,9 +44,11 @@ dev_dependencies:
   flutter_gen_runner: ^5.15.0
   flutter_test:
     sdk: flutter
+  import_sorter: ^4.6.0
   mocktail: ^1.0.5
   sqflite_common_ffi: ^2.4.3
   very_good_analysis: ^11.0.0
+  yaml: ^3.1.4
 
 flutter:
   assets:
@@ -60,3 +63,12 @@ flutter_gen:
   line_length: 120 # Optional (default: 80)
 
 scripts: merry.yaml
+
+import_sorter:
+  emojis: true
+  ignored_files:
+    - "^/lib/gen/"
+    - "^/lib/l10n/gen/"
+    - '^/lib/firebase_options\.dart$'
+    # The sorter moves per-import comments and cannot preserve this lint scope.
+    - '^/lib/presentation/shared/keep_all_text\.dart$'

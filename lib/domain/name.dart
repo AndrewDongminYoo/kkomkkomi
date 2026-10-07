@@ -1,3 +1,4 @@
+// 🌎 Project imports:
 import 'package:kkomkkomi/domain/domain_exception.dart';
 
 /// Trims [raw], and throws an [EmptyNameException] when nothing is left.

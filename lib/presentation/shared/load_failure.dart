@@ -1,7 +1,10 @@
+// 📦 Package imports:
+import 'package:material_ui/material_ui.dart';
+
+// 🌎 Project imports:
 import 'package:kkomkkomi/l10n/l10n.dart';
 import 'package:kkomkkomi/presentation/shared/keep_all_text.dart';
 import 'package:kkomkkomi/presentation/shared/notice.dart';
-import 'package:material_ui/material_ui.dart';
 
 /// What a screen shows in place of its content when the content did not load: [message] in an error notice and a
 /// retry control.

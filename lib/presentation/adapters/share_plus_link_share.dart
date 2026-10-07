@@ -1,5 +1,8 @@
-import 'package:kkomkkomi/application/application.dart';
+// 📦 Package imports:
 import 'package:share_plus/share_plus.dart';
+
+// 🌎 Project imports:
+import 'package:kkomkkomi/application/application.dart';
 
 /// Opens the share sheet of the device with a report link through `share_plus`.
 final class SharePlusLinkShare implements LinkShare {

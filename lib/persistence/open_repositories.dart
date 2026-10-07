@@ -1,3 +1,8 @@
+// 📦 Package imports:
+import 'package:path/path.dart' as p;
+import 'package:sqflite/sqflite.dart';
+
+// 🌎 Project imports:
 import 'package:kkomkkomi/application/application.dart';
 import 'package:kkomkkomi/persistence/schema.dart';
 import 'package:kkomkkomi/persistence/sqlite_client_repository.dart';
@@ -6,8 +11,6 @@ import 'package:kkomkkomi/persistence/sqlite_local_data_repository.dart';
 import 'package:kkomkkomi/persistence/sqlite_open_capture_repository.dart';
 import 'package:kkomkkomi/persistence/sqlite_publish_repository.dart';
 import 'package:kkomkkomi/persistence/sqlite_visit_repository.dart';
-import 'package:path/path.dart' as p;
-import 'package:sqflite/sqflite.dart';
 
 /// The name of the database file inside the databases directory of the platform.
 const databaseFileName = 'kkomkkomi.db';

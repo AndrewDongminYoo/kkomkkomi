@@ -1,3 +1,4 @@
+// 🌎 Project imports:
 import 'package:kkomkkomi/application/application.dart';
 
 /// Reports that identity is unavailable, for a flavor that does not start Firebase.

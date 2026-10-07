@@ -1,7 +1,10 @@
+// 📦 Package imports:
+import 'package:sqflite/sqflite.dart';
+
+// 🌎 Project imports:
 import 'package:kkomkkomi/application/application.dart';
 import 'package:kkomkkomi/domain/domain.dart';
 import 'package:kkomkkomi/persistence/upsert.dart';
-import 'package:sqflite/sqflite.dart';
 
 /// Stores the capture that has the camera open as the one row of the `open_capture` table.
 ///

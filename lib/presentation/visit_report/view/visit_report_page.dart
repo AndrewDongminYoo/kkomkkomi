@@ -1,6 +1,11 @@
+// 🎯 Dart imports:
 import 'dart:async';
 
+// 📦 Package imports:
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:material_ui/material_ui.dart';
+
+// 🌎 Project imports:
 import 'package:kkomkkomi/application/application.dart';
 import 'package:kkomkkomi/domain/domain.dart';
 import 'package:kkomkkomi/export/export.dart';
@@ -14,7 +19,6 @@ import 'package:kkomkkomi/presentation/shared/photo_thumbnail.dart';
 import 'package:kkomkkomi/presentation/shared/save_guard.dart';
 import 'package:kkomkkomi/presentation/visit_report/cubit/report_link_cubit.dart';
 import 'package:kkomkkomi/presentation/visit_report/cubit/visit_report_cubit.dart';
-import 'package:material_ui/material_ui.dart';
 
 /// The texts of the report of a visit on [visitDate], in the language of [l10n].
 ReportLabels reportLabelsOf(AppLocalizations l10n, VisitDate visitDate) => ReportLabels(

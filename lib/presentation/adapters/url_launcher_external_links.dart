@@ -1,7 +1,11 @@
+// 🎯 Dart imports:
 import 'dart:developer';
 
-import 'package:kkomkkomi/application/application.dart';
+// 📦 Package imports:
 import 'package:url_launcher/url_launcher.dart';
+
+// 🌎 Project imports:
+import 'package:kkomkkomi/application/application.dart';
 
 /// Opens a link in the browser or the store app of the device through `url_launcher`.
 final class UrlLauncherExternalLinks implements ExternalLinks {

@@ -1,6 +1,7 @@
 // Every field of `PlanOffer` is final, and `package:meta`, which has `@immutable`, is not a dependency.
 // ignore_for_file: avoid_equals_and_hash_code_on_mutable_classes
 
+// 🌎 Project imports:
 import 'package:kkomkkomi/domain/domain.dart';
 
 /// Tells which plan the company has, and sells the paid plans, so that tests never reach a store.

@@ -1,5 +1,8 @@
-import 'package:kkomkkomi/billing/revenuecat_entitlements.dart';
+// 📦 Package imports:
 import 'package:purchases_flutter/purchases_flutter.dart';
+
+// 🌎 Project imports:
+import 'package:kkomkkomi/billing/revenuecat_entitlements.dart';
 
 /// The [RevenueCatStore] of `purchases_flutter`, the one class that calls the plugin.
 final class PurchasesStore implements RevenueCatStore {

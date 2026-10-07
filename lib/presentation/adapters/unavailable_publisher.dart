@@ -1,5 +1,7 @@
+// 🎯 Dart imports:
 import 'dart:typed_data';
 
+// 🌎 Project imports:
 import 'package:kkomkkomi/application/application.dart';
 
 /// Reports that publishing is unavailable, for a flavor that does not start Firebase.

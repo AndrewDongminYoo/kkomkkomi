@@ -1,3 +1,4 @@
+// 🌎 Project imports:
 import 'package:kkomkkomi/domain/domain.dart';
 
 /// The most bytes that the title takes in a file name, in UTF-8.

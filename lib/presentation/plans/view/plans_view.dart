@@ -1,6 +1,11 @@
+// 🎯 Dart imports:
 import 'dart:async';
 
+// 📦 Package imports:
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:material_ui/material_ui.dart';
+
+// 🌎 Project imports:
 import 'package:kkomkkomi/application/application.dart';
 import 'package:kkomkkomi/domain/domain.dart';
 import 'package:kkomkkomi/l10n/l10n.dart';
@@ -10,7 +15,6 @@ import 'package:kkomkkomi/presentation/shared/corner_radius.dart';
 import 'package:kkomkkomi/presentation/shared/keep_all_text.dart';
 import 'package:kkomkkomi/presentation/shared/notice.dart';
 import 'package:kkomkkomi/presentation/shared/save_guard.dart';
-import 'package:material_ui/material_ui.dart';
 
 /// The standard end user license agreement of Apple, which is the terms of use of the subscriptions (operator,
 /// 2026-10-05).
