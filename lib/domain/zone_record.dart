@@ -5,6 +5,7 @@
 import 'package:kkomkkomi/domain/name.dart';
 import 'package:kkomkkomi/domain/photo_ref.dart';
 import 'package:kkomkkomi/domain/photo_slot.dart';
+import 'package:kkomkkomi/domain/zone_status.dart';
 
 /// What one visit recorded for one zone.
 ///
@@ -16,6 +17,8 @@ final class ZoneRecord {
     this.beforePhoto,
     this.afterPhoto,
     this.note = '',
+    this.status = ZoneStatus.done,
+    this.reason = '',
   }) : zoneName = normalizeName(zoneName);
 
   final String zoneId;
@@ -23,6 +26,13 @@ final class ZoneRecord {
   final PhotoRef? beforePhoto;
   final PhotoRef? afterPhoto;
   final String note;
+
+  /// Whether the visit cleaned the zone as agreed. A record is done unless the person sets an exception.
+  final ZoneStatus status;
+
+  /// What is left or why, for an exception, as it is written. A record keeps its reason when its status goes back to
+  /// [ZoneStatus.done], so that a status set by mistake loses no text, and every reader of a done record ignores it.
+  final String reason;
 
   /// The photo in [slot], or null when the visit did not take it.
   PhotoRef? photoIn(PhotoSlot slot) => switch (slot) {
@@ -39,8 +49,11 @@ final class ZoneRecord {
   /// Whether the note holds text. A note of spaces and line breaks alone holds none.
   bool get hasNote => note.trim().isNotEmpty;
 
-  /// Whether the record holds a photo or a note, which is what a report can print for the zone.
-  bool get hasContent => beforePhoto != null || afterPhoto != null || hasNote;
+  /// Whether the record holds a photo, a note, or an exception, which is what a report can print for the zone.
+  ///
+  /// A done record without a photo and without a note was not part of the visit, and a record with an exception
+  /// always counts, so that a zone that was not cleaned is never left out of a report.
+  bool get hasContent => beforePhoto != null || afterPhoto != null || hasNote || status != ZoneStatus.done;
 
   /// This record with [photo] in [slot], in place of the photo that it holds there.
   ZoneRecord withPhoto(PhotoSlot slot, PhotoRef photo) => ZoneRecord(
@@ -49,11 +62,28 @@ final class ZoneRecord {
     beforePhoto: slot == PhotoSlot.before ? photo : beforePhoto,
     afterPhoto: slot == PhotoSlot.after ? photo : afterPhoto,
     note: note,
+    status: status,
+    reason: reason,
   );
 
   /// This record with [note] in place of its note. The note stays as it is written, so it is not trimmed.
-  ZoneRecord withNote(String note) =>
-      ZoneRecord(zoneId: zoneId, zoneName: zoneName, beforePhoto: beforePhoto, afterPhoto: afterPhoto, note: note);
+  ZoneRecord withNote(String note) => _copy(note: note);
+
+  /// This record with [status] in place of its status. The reason stays, also for [ZoneStatus.done].
+  ZoneRecord withStatus(ZoneStatus status) => _copy(status: status);
+
+  /// This record with [reason] in place of its reason. The reason stays as it is written, so it is not trimmed.
+  ZoneRecord withReason(String reason) => _copy(reason: reason);
+
+  ZoneRecord _copy({String? note, ZoneStatus? status, String? reason}) => ZoneRecord(
+    zoneId: zoneId,
+    zoneName: zoneName,
+    beforePhoto: beforePhoto,
+    afterPhoto: afterPhoto,
+    note: note ?? this.note,
+    status: status ?? this.status,
+    reason: reason ?? this.reason,
+  );
 
   @override
   bool operator ==(Object other) =>
@@ -62,8 +92,10 @@ final class ZoneRecord {
       other.zoneName == zoneName &&
       other.beforePhoto == beforePhoto &&
       other.afterPhoto == afterPhoto &&
-      other.note == note;
+      other.note == note &&
+      other.status == status &&
+      other.reason == reason;
 
   @override
-  int get hashCode => Object.hash(zoneId, zoneName, beforePhoto, afterPhoto, note);
+  int get hashCode => Object.hash(zoneId, zoneName, beforePhoto, afterPhoto, note, status, reason);
 }

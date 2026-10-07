@@ -71,6 +71,35 @@ void main() {
       expect(await repository.visitById('visit-1'), saved);
     });
 
+    test('round-trips the status and the reason of each record', () async {
+      final saved = visit(
+        'visit-1',
+        records: [
+          ZoneRecord(zoneId: 'zone-1', zoneName: '로비', status: ZoneStatus.partlyDone, reason: '전자레인지는 다음 방문에'),
+          ZoneRecord(zoneId: 'zone-2', zoneName: '복도', status: ZoneStatus.notDone, reason: ' 공사 중\n'),
+        ],
+      );
+
+      await repository.save(saved);
+
+      expect(await repository.visitById('visit-1'), saved);
+      await repository.save(visit('visit-1', records: [saved.zoneRecords.first.withStatus(ZoneStatus.done)]));
+      final done = (await repository.visitById('visit-1'))!.zoneRecords.single;
+      expect((done.status, done.reason), (ZoneStatus.done, '전자레인지는 다음 방문에'));
+    });
+
+    test('reads a stored status that the app does not know as not done', () async {
+      await repository.save(
+        visit(
+          'visit-1',
+          records: [ZoneRecord(zoneId: 'zone-1', zoneName: '로비')],
+        ),
+      );
+      await database.update('zone_records', {'status': 'skipped'}, where: 'zone_id = ?', whereArgs: ['zone-1']);
+
+      expect((await repository.visitById('visit-1'))!.zoneRecords.single.status, ZoneStatus.notDone);
+    });
+
     test('round-trips a visit without zone records', () async {
       await repository.save(visit('visit-1'));
 

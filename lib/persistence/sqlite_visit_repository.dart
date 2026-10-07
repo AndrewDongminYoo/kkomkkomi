@@ -45,6 +45,8 @@ final class SqliteVisitRepository implements VisitRepository {
           'before_photo': record.beforePhoto?.path,
           'after_photo': record.afterPhoto?.path,
           'note': record.note,
+          'status': record.status.name,
+          'reason': record.reason,
         });
       }
     });
@@ -87,7 +89,13 @@ final class SqliteVisitRepository implements VisitRepository {
     beforePhoto: _photoFrom(row['before_photo']),
     afterPhoto: _photoFrom(row['after_photo']),
     note: row['note']! as String,
+    // A status that a later version stored reads as not done, so that a report never claims a completion that this
+    // version cannot read.
+    status: _statuses[row['status']! as String] ?? ZoneStatus.notDone,
+    reason: row['reason']! as String,
   );
+
+  static final Map<String, ZoneStatus> _statuses = ZoneStatus.values.asNameMap();
 
   static PhotoRef? _photoFrom(Object? path) => path == null ? null : PhotoRef(path as String);
 

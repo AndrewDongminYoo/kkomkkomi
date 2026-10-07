@@ -9,6 +9,30 @@ import 'package:sqflite_common_ffi/sqflite_ffi.dart';
 
 import 'support.dart';
 
+/// Writes [visit] into a file of an earlier schema version, with the columns that version 1 created.
+///
+/// `SqliteVisitRepository.save` writes the columns of the current version, which an earlier file does not have.
+Future<void> insertVisit(Database database, Visit visit) async {
+  final date = visit.visitDate;
+  await database.insert('visits', {
+    'id': visit.id,
+    'client_id': visit.clientId,
+    'visit_date': date.year * 10000 + date.month * 100 + date.day,
+    'created_at': visit.createdAt.microsecondsSinceEpoch,
+  });
+  for (final (position, record) in visit.zoneRecords.indexed) {
+    await database.insert('zone_records', {
+      'visit_id': visit.id,
+      'zone_id': record.zoneId,
+      'position': position,
+      'zone_name': record.zoneName,
+      'before_photo': record.beforePhoto?.path,
+      'after_photo': record.afterPhoto?.path,
+      'note': record.note,
+    });
+  }
+}
+
 void main() {
   late Directory directory;
 
@@ -21,7 +45,7 @@ void main() {
   });
 
   group('openAppDatabase', () {
-    test('creates the version 4 schema with one table for each entity, the tables of publishing, and the open '
+    test('creates the version 5 schema with one table for each entity, the tables of publishing, and the open '
         'capture', () async {
       final database = await openMemoryDatabase();
       addTearDown(database.close);
@@ -40,11 +64,16 @@ void main() {
         'zones',
       ]);
       expect(await database.getVersion(), schemaVersion);
-      expect(schemaVersion, 4);
+      expect(schemaVersion, 5);
       final columns = await database.rawQuery('PRAGMA table_info(client_pages)');
       for (final name in ['server_delete_requested_at', 'server_deleted_at']) {
         final column = columns.singleWhere((row) => row['name'] == name);
         expect((column['type'], column['notnull']), ('INTEGER', 0));
+      }
+      final recordColumns = await database.rawQuery('PRAGMA table_info(zone_records)');
+      for (final (name, defaultValue) in [('status', "'done'"), ('reason', "''")]) {
+        final column = recordColumns.singleWhere((row) => row['name'] == name);
+        expect((column['type'], column['notnull'], column['dflt_value']), ('TEXT', 1, defaultValue));
       }
     });
 
@@ -83,7 +112,7 @@ void main() {
       expect(await repositories.publishing.uploadedPhoto(pageId: 'page-1', objectPath: 'a.jpg'), isNull);
     });
 
-    test('takes a version 2 file to version 4, keeps its data, and stores an open capture', () async {
+    test('takes a version 2 file to the current version, keeps its data, and stores an open capture', () async {
       final path = p.join(directory.path, databaseFileName);
       final client = Client(id: 'client-1', name: '한빛 사무실', createdAt: DateTime.utc(2026, 9));
       final zones = ClientZones(
@@ -106,9 +135,9 @@ void main() {
           onCreate: (database, _) => upgradeSchema(database, from: 0, to: 2),
         ),
       );
-      final written = sqliteRepositories(old);
-      await written.clients.save(client, zones: zones);
-      await written.visits.save(visit);
+      await sqliteRepositories(old).clients.save(client, zones: zones);
+      // The visit repository writes the columns of the current version, which a version 2 file does not have.
+      await insertVisit(old, visit);
       await old.insert('client_pages', {
         'id': page.id,
         'client_id': page.clientId,
@@ -126,7 +155,7 @@ void main() {
       final repositories = sqliteRepositories(upgraded);
       const capture = OpenCapture(visitId: 'visit-1', zoneId: 'zone-1', slot: PhotoSlot.after);
 
-      expect(await upgraded.getVersion(), 4);
+      expect(await upgraded.getVersion(), schemaVersion);
       expect(await repositories.clients.clientById('client-1'), client);
       expect(await repositories.clients.zonesOf('client-1'), zones);
       expect(await repositories.visits.visitById('visit-1'), visit);
@@ -175,7 +204,7 @@ void main() {
       addTearDown(upgraded.close);
       final repositories = sqliteRepositories(upgraded);
       final stored = (await repositories.publishing.pageById('page-1'))!;
-      expect(await upgraded.getVersion(), 4);
+      expect(await upgraded.getVersion(), schemaVersion);
       expect(stored.createdAt, at);
       expect(stored.revokedAt, at);
       expect(stored.serverDeleteRequestedAt, isNull);
@@ -188,6 +217,41 @@ void main() {
         await repositories.openCaptures.load(),
         const OpenCapture(visitId: 'visit-1', zoneId: 'zone-1', slot: PhotoSlot.before),
       );
+    });
+
+    test('takes a version 4 file to the current version and reads its zone records as done with no reason', () async {
+      final path = p.join(directory.path, databaseFileName);
+      final client = Client(id: 'client-1', name: '한빛 사무실', createdAt: DateTime.utc(2026, 9));
+      final zones = ClientZones(
+        clientId: 'client-1',
+        zones: [Zone(id: 'zone-1', clientId: 'client-1', name: '로비', position: 0)],
+      );
+      final visit = Visit(
+        id: 'visit-1',
+        clientId: 'client-1',
+        visitDate: VisitDate(2026, 10, 2),
+        createdAt: DateTime.utc(2026, 10, 2, 9),
+        zoneRecords: [ZoneRecord(zoneId: 'zone-1', zoneName: '로비', note: '바닥 왁스')],
+      );
+      final old = await testDatabaseFactory.openDatabase(
+        path,
+        options: OpenDatabaseOptions(
+          version: 4,
+          onConfigure: (database) => database.execute('PRAGMA foreign_keys = ON'),
+          onCreate: (database, _) => upgradeSchema(database, from: 0, to: 4),
+        ),
+      );
+      await sqliteRepositories(old).clients.save(client, zones: zones);
+      await insertVisit(old, visit);
+      await old.close();
+
+      final upgraded = await openAppDatabase(testDatabaseFactory, path);
+      addTearDown(upgraded.close);
+      final record = (await sqliteRepositories(upgraded).visits.visitById('visit-1'))!.zoneRecords.single;
+
+      expect(await upgraded.getVersion(), schemaVersion);
+      expect(record, visit.zoneRecords.single);
+      expect((record.status, record.reason), (ZoneStatus.done, ''));
     });
 
     test('enforces foreign keys', () async {
