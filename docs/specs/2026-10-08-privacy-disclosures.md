@@ -13,20 +13,20 @@ Keep the Korean and English pages consistent with `SqliteLocalDataRepository.era
 Preserve camera cleanup and optional device-only observation details as future disclosures, without presenting them as available in the distributed build.
 Change neither security rules nor page layout.
 Do not upload a build or deploy Hosting through this PR loop.
-The later Hosting deployment requires separate operator approval and live readback.
+The later Hosting deployment requires separate operator approval and verification of the live pages.
 
 ## Acceptance
 
 - Section 6 names the optional business phone in the local database deletion list in both languages.
 - The camera cleanup and shutter-observation paragraphs, and the capture-time item in the data list, explicitly identify the planned feature.
 - A focused privacy regression fails if either language loses the gallery-source disclosure in section 3.
-- Emulator tests exercise owner writes with both source fields, anonymous readback, and non-owner or revoked-page write denials without relaxing rules.
+- Emulator tests exercise owner writes with both source fields, anonymous reads, and non-owner or revoked-page write denials without relaxing rules.
 - The existing local check, coverage, rules, lint, and current-head hosted review gates pass.
 
 ## Sources and verification limits
 
 Issue https://github.com/AndrewDongminYoo/kkomkkomi/issues/81 owns the contract.
 `lib/persistence/sqlite_local_data_repository.dart` deletes `company_profile`; `lib/firebase/firebase_publisher.dart` serializes gallery sources.
-Retained source records and store readbacks under `~/Desktop/kkomkkomi-1.1.0+3/` establish build 3 provenance and the observed upload state, rather than current main establishing shipped functionality.
+Retained source records and store verification results under `~/Desktop/kkomkkomi-1.1.0+3/` establish build 3 provenance and the observed upload state, rather than current main establishing shipped functionality.
 Privacy source tests check disclosure presence and section placement; a browser check reads the rendered text and narrow-screen overflow.
 Oracle retrieval for privacy pages and shipped features returned \[no precedent found\]; current issue and repository evidence determine the scope.
