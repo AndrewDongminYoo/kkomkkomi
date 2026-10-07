@@ -1,4 +1,7 @@
 {
+    "cameraTitle": "카메라",
+    "cameraShutter": "촬영",
+    "cameraClose": "닫기",
     "@@locale": "ko",
     "startupFailureMessage": "저장한 기록을 열지 못했어요. 다시 시도해 주세요.",
     "@startupFailureMessage": {

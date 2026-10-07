@@ -1,4 +1,10 @@
 {
+    "cameraTitle": "Camera",
+    "@cameraTitle": { "description": "Title of the in-app still camera preview" },
+    "cameraShutter": "Take photo",
+    "@cameraShutter": { "description": "Accessible label of the single still-photo shutter control" },
+    "cameraClose": "Close",
+    "@cameraClose": { "description": "Closes the camera without replacing the existing photo" },
     "@@locale": "en",
     "startupFailureMessage": "Can't open your saved records. Try again.",
     "@startupFailureMessage": {

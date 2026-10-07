@@ -9,6 +9,7 @@ environment:
 
 dependencies:
   bloc: ^9.2.1
+  camera: ^0.12.1
   characters: ^1.4.1
   cloud_firestore: ^6.10.0
   connectivity_plus: ^7.3.2
@@ -38,6 +39,7 @@ dev_dependencies:
   bloc_test: ^10.0.0
   bloc_tools: ^0.1.0-dev.25
   build_runner: ^2.16.1
+  camera_platform_interface: ^2.14.0
   flutter_gen_runner: ^5.15.0
   flutter_test:
     sdk: flutter
