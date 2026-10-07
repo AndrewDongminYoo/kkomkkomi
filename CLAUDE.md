@@ -55,7 +55,8 @@ The Firestore rules and Hosting were deployed from `135c67f` on 2026-10-05, afte
 Hosting alone was deployed from `0da9ccf` on 2026-10-06, after #55 merged, which added the Google Search Console verification file under `web/` (issue #53). No other file under `web/` had changed since `135c67f`.
 Hosting alone was deployed again from `6bae5df` on 2026-10-06, after #57 merged, which added `web/sitemap.xml` and `web/robots.txt`.
 Hosting alone was deployed from `300add7` on 2026-10-07, after #69 merged, which changed the web report and both privacy pages for the zone status. No other file under `web/` had changed since `6bae5df`.
-The deployed Firestore rules equal the tracked ones at `135c67f`, the deployed Hosting files equal the tracked ones at `300add7`, and the deployed Storage rules equal the tracked ones at `34d5d23`.
+Hosting alone was deployed again from `59b1c84` on 2026-10-07, after #74, #76, #77, #78, and #80 merged, which changed the web report (the gallery mark of #77) and both privacy pages (#76, #77, #78). No other file under `web/` had changed since `300add7`.
+The deployed Firestore rules equal the tracked ones at `135c67f`, the deployed Hosting files equal the tracked ones at `59b1c84`, and the deployed Storage rules equal the tracked ones at `34d5d23`.
 A deploy is the operator's decision each time: do not deploy rules or Hosting without that approval.
 
 The operator installed the RevenueCat Firebase extension from the Firebase console on 2026-10-05, as the instance `firestore-revenuecat-purchases`.
