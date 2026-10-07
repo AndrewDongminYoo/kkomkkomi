@@ -192,7 +192,7 @@
     "@photoRetakeAfterButton": {
         "description": "구역의 청소 후 사진을 바꾸려고 카메라를 여는 버튼의 라벨"
     },
-    "photoCaptureFailedMessage": "사진을 찍지 못했어요. 다시 시도해 주세요.",
+    "photoCaptureFailedMessage": "사진을 가져오지 못했어요. 다시 시도해 주세요.",
     "@photoCaptureFailedMessage": {
         "description": "카메라가 사진을 주지 않았거나 사진을 보관하지 못했을 때 표시되는 문구"
     },

@@ -226,7 +226,7 @@
     "@photoRetakeAfterButton": {
         "description": "Label of the control of a zone that opens the camera to replace the photo after cleaning"
     },
-    "photoCaptureFailedMessage": "Can't take the photo right now. Try again.",
+    "photoCaptureFailedMessage": "Can't get the photo right now. Try again.",
     "@photoCaptureFailedMessage": {
         "description": "Message shown when the camera gave no photo or the photo could not be kept"
     },

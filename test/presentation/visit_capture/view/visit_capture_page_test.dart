@@ -143,6 +143,23 @@ void main() {
   Future<ZoneRecord> savedRecord(String zoneId) async => (await visits.visitById(visitId))!.recordFor(zoneId)!;
 
   group('VisitCapturePage', () {
+    testWidgets('reports a rejected gallery file with neutral copy and preserves the old photo', (tester) async {
+      await pumpPage(tester);
+      photoCapture.results.add('/cache/unsupported.heic');
+      photoStore.saveFailure = const FormatException('unsupported image');
+      final old = await savedRecord('zone-2');
+      final gallery = find.descendant(
+        of: zone('zone-2'),
+        matching: find.widgetWithText(TextButton, 'Select before photo from gallery'),
+      );
+      await tester.tap(gallery);
+      await tester.pumpAndSettle();
+      expect(find.widgetWithText(SnackBar, "Can't get the photo right now. Try again."), findsOneWidget);
+      expect(await savedRecord('zone-2'), old);
+      expect(tester.photoPathsIn(zone('zone-2')), [beforeFile]);
+      expect(photoCapture.calls, 0);
+    });
+
     testWidgets('selects a before photo from the gallery without opening the camera', (tester) async {
       await pumpPage(tester);
       photoCapture.results.add('/cache/gallery.png');
@@ -321,7 +338,7 @@ void main() {
 
         await tester.tap(control('zone-1', 'Take After Photo'));
         await tester.pumpAndSettle();
-        expect(find.widgetWithText(SnackBar, "Can't take the photo right now. Try again."), findsOneWidget);
+        expect(find.widgetWithText(SnackBar, "Can't get the photo right now. Try again."), findsOneWidget);
         expect(await visits.visitById(visitId), current);
 
         await tester.tap(control('zone-1', 'Take After Photo'));
@@ -510,7 +527,7 @@ void main() {
         await tester.tap(control('zone-1', 'Take Before Photo'));
         await tester.pumpAndSettle();
 
-        expect(find.widgetWithText(SnackBar, "Can't take the photo right now. Try again."), findsOneWidget);
+        expect(find.widgetWithText(SnackBar, "Can't get the photo right now. Try again."), findsOneWidget);
         expect(find.text("Can't save your changes right now."), findsOneWidget);
       });
 
@@ -1302,7 +1319,7 @@ void main() {
           const Locale('en'),
           'Take Before Photo',
           [
-            "Can't take the photo right now. Try again.",
+            "Can't get the photo right now. Try again.",
             'Camera access is off. To take photos, turn it on in Settings.',
             "Can't save right now. Try again.",
           ],
@@ -1311,7 +1328,7 @@ void main() {
           const Locale('ko'),
           '청소 전 사진 찍기',
           [
-            '사진을 찍지 못했어요. 다시 시도해 주세요.',
+            '사진을 가져오지 못했어요. 다시 시도해 주세요.',
             '카메라를 쓸 수 없어요. 설정에서 카메라를 허용하면 사진을 찍을 수 있어요.',
             '저장하지 못했어요. 다시 시도해 주세요.',
           ],
@@ -1602,7 +1619,7 @@ void main() {
 
       states.add(shown(VisitCaptureStatus.captureFailed));
       await tester.pumpAndSettle();
-      expect(find.widgetWithText(SnackBar, "Can't take the photo right now. Try again."), findsOneWidget);
+      expect(find.widgetWithText(SnackBar, "Can't get the photo right now. Try again."), findsOneWidget);
       // The message leaves after its time on the screen, which starts when it has come in.
       await tester.pump(const Duration(seconds: 5));
       await tester.pumpAndSettle();
