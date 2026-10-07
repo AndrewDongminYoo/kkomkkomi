@@ -6,10 +6,6 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 ## [Unreleased]
 
-### Fixed
-
-- A delayed plan read no longer replaces a newer purchase, restore, or subscription update, or brings back the plan of a previous user.
-
 ## [1.1.0] - 2026-10-07
 
 The second test distribution: TestFlight and the Google Play internal testing track, build 3.
@@ -33,6 +29,7 @@ It holds every change after the 1.0.0 entry.
 
 - A stored, uploaded, or printed photo no longer keeps the location that the camera app recorded.
 - A link whose deletion stopped part of the way, in Delete All Data, is deleted again at the next Delete All Data.
+- A delayed plan read no longer replaces a newer purchase, restore, or subscription update, or brings back the plan of a previous user.
 
 ### Internal
 
