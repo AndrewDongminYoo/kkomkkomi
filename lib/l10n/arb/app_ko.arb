@@ -212,29 +212,49 @@
     "@previousAfterPhotoLabel": {
         "description": "이전 방문에서 찍은 청소 후 사진을 화면 낭독기가 읽는 문구"
     },
-    "visitUnsavedMessage": "메모를 저장하지 못했어요.",
+    "visitUnsavedMessage": "바꾼 내용을 저장하지 못했어요.",
     "@visitUnsavedMessage": {
-        "description": "메모를 저장하지 못한 동안 방문 화면 맨 위에 계속 표시되는 안내 문구"
+        "description": "메모, 청소 상태, 남은 부분이나 못 한 이유를 저장하지 못한 동안 방문 화면 맨 위에 계속 표시되는 안내 문구"
     },
     "visitSaveAgainButton": "다시 저장하기",
     "@visitSaveAgainButton": {
-        "description": "메모 미저장 안내에서 메모를 다시 저장하는 버튼의 라벨"
+        "description": "미저장 안내에서 바꾼 내용을 다시 저장하는 버튼의 라벨"
     },
     "visitLeaveUnsavedDialogTitle": "저장하지 않고 나갈까요?",
     "@visitLeaveUnsavedDialogTitle": {
-        "description": "저장하지 못한 메모가 있는 채로 방문 화면을 나가기 전에 묻는 대화상자의 제목"
+        "description": "저장하지 못한 내용이 있는 채로 방문 화면을 나가기 전에 묻는 대화상자의 제목"
     },
-    "visitLeaveUnsavedDialogMessage": "저장하지 못한 메모가 사라져요.",
+    "visitLeaveUnsavedDialogMessage": "저장하지 못한 내용이 사라져요.",
     "@visitLeaveUnsavedDialogMessage": {
-        "description": "저장하지 못한 메모가 있는 채로 방문 화면을 나가기 전에 묻는 대화상자의 본문"
+        "description": "저장하지 못한 내용이 있는 채로 방문 화면을 나가기 전에 묻는 대화상자의 본문"
     },
     "visitLeaveUnsavedConfirmButton": "나가기",
     "@visitLeaveUnsavedConfirmButton": {
-        "description": "저장하지 못한 메모를 두고 방문 화면을 나가는 버튼의 라벨"
+        "description": "저장하지 못한 내용을 두고 방문 화면을 나가는 버튼의 라벨"
     },
     "noteFieldLabel": "메모",
     "@noteFieldLabel": {
         "description": "방문 화면에 있는 구역 메모 입력란의 라벨"
+    },
+    "zoneStatusLabel": "청소 상태",
+    "@zoneStatusLabel": {
+        "description": "방문 화면에서 구역마다 완료, 일부 완료, 못 함을 고르는 칩 위의 라벨"
+    },
+    "zoneStatusDoneLabel": "완료",
+    "@zoneStatusDoneLabel": {
+        "description": "방문 화면에서 구역을 약속대로 청소했다고 고르는 칩의 라벨. 일부 완료와 못 함 칩은 보고서와 같은 문구를 쓴다"
+    },
+    "zoneReasonPartlyDoneLabel": "남은 부분",
+    "@zoneReasonPartlyDoneLabel": {
+        "description": "일부 완료로 고른 구역에서 남은 부분을 적는 입력란의 라벨"
+    },
+    "zoneReasonNotDoneLabel": "못 한 이유",
+    "@zoneReasonNotDoneLabel": {
+        "description": "못 함으로 고른 구역에서 청소하지 못한 이유를 적는 입력란의 라벨"
+    },
+    "zoneReasonHelper": "거래처가 보고서에서 이 내용을 봐요.",
+    "@zoneReasonHelper": {
+        "description": "남은 부분이나 못 한 이유 입력란이 비어 있는 동안 그 아래에 표시되는 안내 문구"
     },
     "companyProfileTitle": "회사 정보",
     "@companyProfileTitle": {
@@ -382,11 +402,11 @@
     },
     "reportPartlyDoneLabel": "일부 완료",
     "@reportPartlyDoneLabel": {
-        "description": "일부만 청소한 구역의 상태. 보고서의 구역 이름 옆과 요약에 나온다"
+        "description": "일부만 청소한 구역의 상태. 보고서의 구역 이름 옆과 요약에 나오고, 방문 화면의 청소 상태 칩도 이 문구를 쓴다"
     },
     "reportNotDoneLabel": "못 함",
     "@reportNotDoneLabel": {
-        "description": "청소하지 못한 구역의 상태. 보고서의 구역 이름 옆, 요약, 빈 사진 칸에 나온다"
+        "description": "청소하지 못한 구역의 상태. 보고서의 구역 이름 옆, 요약, 빈 사진 칸에 나오고, 방문 화면의 청소 상태 칩도 이 문구를 쓴다"
     },
     "reportBeforePhotoLabel": "청소 전",
     "@reportBeforePhotoLabel": {

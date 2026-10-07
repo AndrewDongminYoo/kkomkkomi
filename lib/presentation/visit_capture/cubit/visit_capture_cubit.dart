@@ -4,9 +4,9 @@ import 'package:kkomkkomi/domain/domain.dart';
 
 part 'visit_capture_state.dart';
 
-/// Loads one visit, and saves each photo and each note of its zone records at once.
+/// Loads one visit, and saves each photo, note, status, and reason of its zone records at once.
 ///
-/// Every save holds the whole visit. A note edit goes to the repository at the moment of the edit, without a wait
+/// Every save holds the whole visit. A note edit, a status change, and a reason edit each go to the repository at the moment of the edit, without a wait
 /// for the save before it, and a capture waits for the answer to the newest save before it opens the camera. The
 /// repository applies saves in the order of the calls, so the last save that storage takes holds every change
 /// before it, and a screen that opens later reads the visit after every save that an earlier screen sent.
@@ -168,14 +168,37 @@ class VisitCaptureCubit extends Cubit<VisitCaptureState> {
     final visit = state.visit;
     final record = visit?.recordFor(zoneId);
     if (visit == null || record == null || !state.status.takesChange || record.note == note) return;
-    final changed = visit.withRecord(record.withNote(note));
+    await _saveEntry(visit.withRecord(record.withNote(note)));
+  }
+
+  /// Sets the status of the zone with [zoneId] to [status], shows it at once, and saves the visit, as [editNote] does
+  /// with a note. The record keeps its reason when [status] is done, so that a status that was set by mistake and then
+  /// set back loses no text.
+  Future<void> setStatus(String zoneId, ZoneStatus status) async {
+    final visit = state.visit;
+    final record = visit?.recordFor(zoneId);
+    if (visit == null || record == null || !state.status.takesChange || record.status == status) return;
+    await _saveEntry(visit.withRecord(record.withStatus(status)));
+  }
+
+  /// Sets the reason of the zone with [zoneId] to [reason], shows it at once, and saves the visit, as [editNote] does
+  /// with a note.
+  Future<void> editReason(String zoneId, String reason) async {
+    final visit = state.visit;
+    final record = visit?.recordFor(zoneId);
+    if (visit == null || record == null || !state.status.takesChange || record.reason == reason) return;
+    await _saveEntry(visit.withRecord(record.withReason(reason)));
+  }
+
+  /// Shows [changed], which differs from the visit of the state by one entry of the person, and saves it.
+  Future<void> _saveEntry(Visit changed) async {
     emit(state.copyWith(visit: changed, isSavingNote: true));
     await _saveNotes(changed);
   }
 
-  /// Sends the visit to storage again, after storage did not take a note.
+  /// Sends the visit to storage again, after storage did not take a note, a status, or a reason.
   ///
-  /// A call does nothing while storage holds the notes and while the visit takes no change.
+  /// A call does nothing while storage holds every entry and while the visit takes no change.
   Future<void> saveAgain() async {
     final visit = state.visit;
     if (visit == null || !state.status.takesChange || state.isStored) return;
@@ -183,8 +206,8 @@ class VisitCaptureCubit extends Cubit<VisitCaptureState> {
     await _saveNotes(visit);
   }
 
-  /// Saves [visit], which differs from the visit in storage by its notes, and reports the answer in
-  /// [VisitCaptureState.isStored].
+  /// Saves [visit], which differs from the visit in storage by its notes, statuses, or reasons, and reports the answer
+  /// in [VisitCaptureState.isStored].
   Future<void> _saveNotes(Visit visit) async {
     final save = _save(visit);
     final isSaved = await save;

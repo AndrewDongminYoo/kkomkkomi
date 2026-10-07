@@ -36,7 +36,8 @@ const _titleVerticalPadding = 8.0;
 /// has no length limit, so a longer name ends in an ellipsis and the list of zones keeps room on the screen.
 const _clientNameMaxLines = 3;
 
-/// The screen of one visit: for each zone record a before photo, an after photo, the previous photos, and a note.
+/// The screen of one visit: for each zone record a before photo, an after photo, the previous photos, the status with
+/// the reason of an exception, and a note.
 class VisitCapturePage extends StatelessWidget {
   const new({required this.visitId, this.recovery, super.key});
 
@@ -351,7 +352,8 @@ class _EmptyVisit extends StatelessWidget {
   }
 }
 
-/// One zone of the visit: its name, the two photo controls, the previous photos, and the note.
+/// One zone of the visit: its name, the two photo controls, the previous photos, the status, the reason of an
+/// exception, and the note.
 class _ZoneCapture extends StatelessWidget {
   const new({
     required this.record,
@@ -400,7 +402,30 @@ class _ZoneCapture extends StatelessWidget {
             _PreviousPhotoRow(previousPhotos: previous, pathOf: pathOf),
           ],
           const SizedBox(height: 12),
-          _NoteField(zoneId: record.zoneId, note: record.note, readOnly: isCapturing),
+          _StatusChoice(zoneId: record.zoneId, status: record.status, isEnabled: !isCapturing),
+          if (record.status != ZoneStatus.done) ...[
+            const SizedBox(height: 12),
+            _EntryField(
+              // The record keeps its reason while its status is done, so the field shows it again at the next
+              // exception.
+              key: const ValueKey('reason'),
+              label: record.status == ZoneStatus.partlyDone
+                  ? context.l10n.zoneReasonPartlyDoneLabel
+                  : context.l10n.zoneReasonNotDoneLabel,
+              text: record.reason,
+              emptyHelper: context.l10n.zoneReasonHelper,
+              readOnly: isCapturing,
+              onChanged: (reason) => unawaited(context.read<VisitCaptureCubit>().editReason(record.zoneId, reason)),
+            ),
+          ],
+          const SizedBox(height: 12),
+          _EntryField(
+            key: const ValueKey('note'),
+            label: context.l10n.noteFieldLabel,
+            text: record.note,
+            readOnly: isCapturing,
+            onChanged: (note) => unawaited(context.read<VisitCaptureCubit>().editNote(record.zoneId, note)),
+          ),
         ],
       ),
     );
@@ -532,24 +557,77 @@ class _PreviousPhoto extends StatelessWidget {
   }
 }
 
-/// The note of one zone. Each edit goes to the cubit, which saves it at once.
-///
-/// The label is a text of its own above the field, as in `NameField`, so that a large text size cuts nothing.
-class _NoteField extends StatefulWidget {
-  const new({required this.zoneId, required this.note, required this.readOnly});
+/// The status of one zone: a chip for each status, which a press sets. The chips go to the next line when they do not
+/// fit, so that a narrow screen with a large text size cuts none.
+class _StatusChoice extends StatelessWidget {
+  const new({required this.zoneId, required this.status, required this.isEnabled});
 
   final String zoneId;
+  final ZoneStatus status;
 
-  /// The note that the field holds when it opens. A later value does not replace what the person typed.
-  final String note;
-  final bool readOnly;
+  /// False while a capture runs, because the visit then takes no change.
+  final bool isEnabled;
 
   @override
-  State<_NoteField> createState() => _NoteFieldState();
+  Widget build(BuildContext context) {
+    final l10n = context.l10n;
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        KeepAllText(l10n.zoneStatusLabel, style: Theme.of(context).textTheme.labelLarge),
+        const SizedBox(height: 4),
+        Wrap(
+          spacing: 8,
+          runSpacing: 8,
+          children: [
+            for (final option in ZoneStatus.values)
+              ChoiceChip(
+                label: KeepAllText(switch (option) {
+                  ZoneStatus.done => l10n.zoneStatusDoneLabel,
+                  ZoneStatus.partlyDone => l10n.reportPartlyDoneLabel,
+                  ZoneStatus.notDone => l10n.reportNotDoneLabel,
+                }),
+                selected: option == status,
+                onSelected: isEnabled
+                    ? (_) => unawaited(context.read<VisitCaptureCubit>().setStatus(zoneId, option))
+                    : null,
+              ),
+          ],
+        ),
+      ],
+    );
+  }
 }
 
-class _NoteFieldState extends State<_NoteField> {
-  late final _controller = TextEditingController(text: widget.note);
+/// A text of one zone, such as its note or its reason. Each edit goes to the cubit, which saves it at once.
+///
+/// The label is a text of its own above the field, as in `NameField`, so that a large text size cuts nothing.
+class _EntryField extends StatefulWidget {
+  const new({
+    required this.label,
+    required this.text,
+    required this.readOnly,
+    required this.onChanged,
+    this.emptyHelper,
+    super.key,
+  });
+
+  final String label;
+
+  /// The text that the field holds when it opens. A later value does not replace what the person typed.
+  final String text;
+  final bool readOnly;
+  final ValueChanged<String> onChanged;
+
+  /// The text under the field while the field is empty, or null for none.
+  final String? emptyHelper;
+
+  @override
+  State<_EntryField> createState() => _EntryFieldState();
+}
+
+class _EntryFieldState extends State<_EntryField> {
+  late final _controller = TextEditingController(text: widget.text);
 
   @override
   void dispose() {
@@ -559,19 +637,26 @@ class _NoteFieldState extends State<_NoteField> {
 
   @override
   Widget build(BuildContext context) {
+    final emptyHelper = widget.emptyHelper;
     return MergeSemantics(
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          KeepAllText(context.l10n.noteFieldLabel, style: Theme.of(context).textTheme.labelLarge),
-          TextField(
-            controller: _controller,
-            readOnly: widget.readOnly,
-            keyboardType: TextInputType.multiline,
-            textCapitalization: TextCapitalization.sentences,
-            minLines: 1,
-            maxLines: null,
-            onChanged: (note) => unawaited(context.read<VisitCaptureCubit>().editNote(widget.zoneId, note)),
+          KeepAllText(widget.label, style: Theme.of(context).textTheme.labelLarge),
+          ValueListenableBuilder(
+            valueListenable: _controller,
+            builder: (context, value, _) => TextField(
+              controller: _controller,
+              readOnly: widget.readOnly,
+              keyboardType: TextInputType.multiline,
+              textCapitalization: TextCapitalization.sentences,
+              minLines: 1,
+              maxLines: null,
+              decoration: InputDecoration(
+                helper: emptyHelper != null && value.text.isEmpty ? KeepAllText(emptyHelper) : null,
+              ),
+              onChanged: widget.onChanged,
+            ),
           ),
         ],
       ),

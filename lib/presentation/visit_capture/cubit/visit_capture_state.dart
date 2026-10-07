@@ -57,16 +57,16 @@ final class VisitCaptureState {
   /// The absolute path of the directory that the path of each photo is relative to, in this launch of the app.
   final String photoDirectory;
 
-  /// Whether storage holds every note of [visit], as far as the answers to the saves tell.
+  /// Whether storage holds every note, status, and reason of [visit], as far as the answers to the saves tell.
   ///
-  /// It is false after storage did not take a note, until a later save holds that note. The photos of [visit] are
+  /// It is false after storage did not take one of them, until a later save holds it. The photos of [visit] are
   /// always in storage, because the state takes a photo only after storage took it.
   final bool isStored;
 
-  /// Whether a note is on its way to storage and the answer to the newest save is not here.
+  /// Whether a note, a status, or a reason is on its way to storage and the answer to the newest save is not here.
   final bool isSavingNote;
 
-  /// Whether the person can leave the screen and lose nothing: storage holds every note, and none is on its way.
+  /// Whether the person can leave the screen and lose nothing: storage holds every entry, and none is on its way.
   bool get canLeave => isStored && !isSavingNote;
 
   /// The absolute path of the file of [photo] in this launch of the app.
