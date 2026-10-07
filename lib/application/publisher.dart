@@ -134,12 +134,25 @@ final class PublishedReport {
 
 /// What a report shows for one zone. A photo is the path of its object, never a download URL.
 final class PublishedZone {
-  const new({required this.name, required this.note, required this.beforePhoto, required this.afterPhoto});
+  const new({
+    required this.name,
+    required this.note,
+    required this.beforePhoto,
+    required this.afterPhoto,
+    this.status = ZoneStatus.done,
+    this.reason = '',
+  });
 
   final String name;
   final String note;
   final String? beforePhoto;
   final String? afterPhoto;
+
+  /// Whether the visit cleaned the zone as agreed.
+  final ZoneStatus status;
+
+  /// What is left or why, for an exception, or an empty text.
+  final String reason;
 
   @override
   bool operator ==(Object other) =>
@@ -147,11 +160,13 @@ final class PublishedZone {
       other.name == name &&
       other.note == note &&
       other.beforePhoto == beforePhoto &&
-      other.afterPhoto == afterPhoto;
+      other.afterPhoto == afterPhoto &&
+      other.status == status &&
+      other.reason == reason;
 
   @override
-  int get hashCode => Object.hash(name, note, beforePhoto, afterPhoto);
+  int get hashCode => Object.hash(name, note, beforePhoto, afterPhoto, status, reason);
 
   @override
-  String toString() => 'PublishedZone($name, $note, $beforePhoto, $afterPhoto)';
+  String toString() => 'PublishedZone($name, $note, $beforePhoto, $afterPhoto, ${status.name}, $reason)';
 }

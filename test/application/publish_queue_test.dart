@@ -637,6 +637,48 @@ void main() {
       expect(activeTimers(), isEmpty);
     });
 
+    test('publishes the status of each zone, and the reason of an exception without the space around it', () async {
+      await repositories.visits.save(
+        Visit(
+          id: 'visit-3',
+          clientId: 'client-1',
+          visitDate: VisitDate(2026, 10, 4),
+          createdAt: start,
+          zoneRecords: [
+            ZoneRecord(
+              zoneId: 'zone-1',
+              zoneName: '입구',
+              note: '바닥',
+              status: ZoneStatus.partlyDone,
+              reason: ' 유리문은 다음 방문에 \n',
+            ),
+            // The reason of a status that was set back to done stays on the device and is never published.
+            ZoneRecord(zoneId: 'zone-2', zoneName: '복도', note: '왁스', reason: '잘못 고른 사유'),
+            // A zone that was not cleaned is published also without a photo and without a note.
+            ZoneRecord(zoneId: 'zone-3', zoneName: '창고', status: ZoneStatus.notDone),
+          ],
+        ),
+      );
+      final queue = newQueue();
+
+      final job = await queue.publishVisit('visit-3');
+      await settle();
+
+      expect(publisher.reports['${job.pageId}/visit-3']?.zones, const [
+        PublishedZone(
+          name: '입구',
+          note: '바닥',
+          beforePhoto: null,
+          afterPhoto: null,
+          status: ZoneStatus.partlyDone,
+          reason: '유리문은 다음 방문에',
+        ),
+        PublishedZone(name: '복도', note: '왁스', beforePhoto: null, afterPhoto: null),
+        PublishedZone(name: '창고', note: '', beforePhoto: null, afterPhoto: null, status: ZoneStatus.notDone),
+      ]);
+      expect(await jobOf(job), job.succeed());
+    });
+
     test('writes the report without the footer for a user with a paid entitlement', () async {
       identity.paid = true;
       final queue = newQueue();

@@ -3,6 +3,7 @@ import 'dart:typed_data';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_storage/firebase_storage.dart';
 import 'package:kkomkkomi/application/application.dart';
+import 'package:kkomkkomi/domain/domain.dart';
 
 /// Writes published reports to Firestore and their photos to Storage, as `firestore.rules` and `storage.rules`
 /// expect them.
@@ -49,6 +50,9 @@ final class FirebasePublisher implements Publisher {
                 'note': zone.note,
                 'beforePhoto': zone.beforePhoto,
                 'afterPhoto': zone.afterPhoto,
+                // A done zone leaves both keys out, so it has the shape of a zone that an earlier version published,
+                // and the report page reads a missing status as done.
+                if (zone.status != ZoneStatus.done) ...{'status': zone.status.name, 'reason': zone.reason},
               },
           ],
           // The rules take only the value true, and only from a paid writer, so a report with the footer leaves the
