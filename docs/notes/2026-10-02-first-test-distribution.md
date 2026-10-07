@@ -59,6 +59,12 @@ en-US:
 • Share the report as a PDF, or as a link that your client opens without signing in.
 ```
 
+### "What to Test" for build 3
+
+Version 1.1.0 build 3 is the second test build, and App Store Connect still has no released version, so the reason above holds.
+Paste the text of `fastlane/metadata/android/ko-KR/changelogs/3.txt` and `fastlane/metadata/android/en-US/changelogs/3.txt` into the field, in that order, as for build 1.
+App Store Connect held builds 1 and 2 of version 1.0.0 on 2026-10-07 (the operator), so `pubspec.yaml` carries build 3, which the `beta` lane checks against the IPA.
+
 ## Google Play
 
 1. **Play Console app.** Create the app with the default language Korean (`ko-KR`), the name from `fastlane/metadata/android/ko-KR/title.txt`, the type App, and Free (operator decision, 2026-10-04; the paid plans are in-app subscriptions, M3, issue 36). The choice is final: "Once your app has been offered for free, the app can't be changed to paid" (Play Console Help, "Set up your app's prices", https://support.google.com/googleplay/android-developer/answer/6334373, read on 2026-10-04).

@@ -6,6 +6,34 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 ## [Unreleased]
 
+## [1.1.0] - 2026-10-07
+
+The second test distribution: TestFlight and the Google Play internal testing track, build 3.
+It holds every change after the 1.0.0 entry.
+
+### Added
+
+- A status for each zone of a visit: done, partly done, or not done, with what is left or why for a zone that is not done. The first page of the report counts the done zones and lists each zone that is not done with its reason, and the PDF, the preview, and the web report show the status after the name of the zone.
+- Basic and Pro subscriptions, monthly or annual, from a plans screen that also restores purchases and opens the subscription management of the store.
+- The Free plan holds up to 2 active clients. A paid plan leaves the "꼼꼬미로 작성됨" line out of the PDF and the web report.
+- Close Link and Make New Link on the client screen, which close the report link of one client or replace it.
+- Delete All Data on the company profile screen, which deletes what the app published, the anonymous account, and the data on the phone.
+- The client name above the visit date on the visit screen.
+
+### Changed
+
+- A new layout of the completion report PDF, with Bold headings and square photo slots that show the whole photo. The preview of the report screen shows the same slots.
+- The app has its own colors, and Korean text breaks between words, not inside a word.
+
+### Fixed
+
+- A stored, uploaded, or printed photo no longer keeps the location that the camera app recorded.
+- A link whose deletion stopped part of the way, in Delete All Data, is deleted again at the next Delete All Data.
+
+### Internal
+
+- Store screenshots and the Play feature graphic are rendered from the app screens.
+
 ## [1.0.0] - 2026-10-02
 
 The first test distribution: TestFlight and the Google Play internal testing track, build 1.
