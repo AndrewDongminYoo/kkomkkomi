@@ -120,6 +120,30 @@ const sectionIds = (html) =>
 
 describe("the privacy policy pages", () => {
   for (const [lang, page] of Object.entries(pages)) {
+    test(`the ${lang} page describes capture time as optional device-only observation`, () => {
+      const device = sectionText(read(page.file), "device");
+      const expected =
+        lang === "ko"
+          ? [
+              "앱 내부 카메라가 직접 관찰한 촬영 시각",
+              "UTC",
+              "공유한 PDF",
+              "현지 시각",
+              "촬영 시각도 운영자의 서버로 보내지 않습니다",
+              "기존 사진에는 촬영 시각이 없고",
+              "추정하지 않습니다",
+            ]
+          : [
+              "in-app camera supplies a directly observed capture time",
+              "UTC",
+              "shared PDF",
+              "device local time",
+              "capture times are not sent to the operator's servers",
+              "old photos have no capture time",
+              "no time is inferred",
+            ];
+      for (const text of expected) assert.ok(device.includes(text));
+    });
     test(`the ${lang} page discloses the optional phone in a shared PDF and excludes it from the web`, () => {
       const device = sectionText(read(page.file), "device");
       const expected =

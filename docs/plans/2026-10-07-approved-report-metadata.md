@@ -11,3 +11,16 @@ Source: `docs/specs/2026-10-07-report-photo-and-company-metadata.md` and operato
    Publish a draft PR for #61, clearly separating tested metadata from camera/device acceptance.
 
 Keep each PR reviewable; do not merge or deploy. Never insert the operator's private report URL into tracked files.
+
+## Capture-time implementation boundary
+
+SQLite version 8 stores nullable UTC microseconds beside each photo. `InAppPhotoCapture.takeObservedPhoto`
+returns an `ObservedCameraPhoto` from a directly observed shutter event; the capture cubit consumes that optional
+capability only for a camera source. The existing `ImagePickerPhotoCapture` does not implement it and remains
+untimed. Replacement clears an old time unless the new camera photo supplies its own observation. Lost-picker
+recovery never supplies a time. Preview/PDF captions display the supplied instant as HH:mm in the current device
+local time. Publishing deliberately has no capture-time fields.
+
+The future M2 camera preview and its lifecycle, cancellation, no-audio and real-device acceptance are separate
+unfinished camera work. This implementation does not claim that the current camera-app picker observes shutter
+time, and does not add a camera plugin or infer a timestamp from its answer.

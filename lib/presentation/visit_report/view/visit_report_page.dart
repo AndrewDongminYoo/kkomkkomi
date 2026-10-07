@@ -31,6 +31,7 @@ ReportLabels reportLabelsOf(AppLocalizations l10n, VisitDate visitDate) => Repor
   note: l10n.reportNoteLabel,
   footer: l10n.reportFooter,
   galleryPhoto: l10n.photoGallerySourceLabel,
+  captureTimeOf: (time) => l10n.reportCameraTimeLabel(time.toLocal()),
 );
 
 /// The screen of the report of one visit: what the report lacks, a preview, and the controls that share the link
@@ -377,7 +378,7 @@ class _PreviewZone extends StatelessWidget {
               child: _PreviewSlot(
                 label: labels.beforePhoto,
                 photo: zone.beforePhoto,
-                caption: zone.beforePhotoSource == PhotoSource.gallery ? labels.galleryPhoto : '',
+                caption: labels.photoCaptionOf(zone.beforePhoto, zone.beforePhotoSource, zone.beforeCapturedAt),
                 emptyText: labels.emptySlotOf(zone.status),
                 pathOf: pathOf,
               ),
@@ -387,7 +388,7 @@ class _PreviewZone extends StatelessWidget {
               child: _PreviewSlot(
                 label: labels.afterPhoto,
                 photo: zone.afterPhoto,
-                caption: zone.afterPhotoSource == PhotoSource.gallery ? labels.galleryPhoto : '',
+                caption: labels.photoCaptionOf(zone.afterPhoto, zone.afterPhotoSource, zone.afterCapturedAt),
                 emptyText: labels.emptySlotOf(zone.status),
                 pathOf: pathOf,
               ),

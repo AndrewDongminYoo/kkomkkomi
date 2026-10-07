@@ -19,6 +19,7 @@ final class ReportLabels {
     required this.note,
     required this.footer,
     required this.galleryPhoto,
+    required this.captureTimeOf,
   });
 
   /// The heading of the report, which also starts the file name.
@@ -57,6 +58,14 @@ final class ReportLabels {
   /// The text at the foot of every page.
   final String footer;
   final String galleryPhoto;
+  final String Function(DateTime) captureTimeOf;
+
+  /// A caption only when the slot holds a photo with a known gallery source or an observed camera time.
+  String photoCaptionOf(PhotoRef? photo, PhotoSource source, DateTime? capturedAt) {
+    if (photo == null) return '';
+    if (source == PhotoSource.gallery) return galleryPhoto;
+    return source == PhotoSource.camera && capturedAt != null ? captureTimeOf(capturedAt) : '';
+  }
 
   /// The status of [status] as the report writes it, or an empty text for [ZoneStatus.done], which the report does
   /// not write.

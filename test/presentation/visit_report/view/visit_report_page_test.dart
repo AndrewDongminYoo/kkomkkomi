@@ -132,6 +132,39 @@ void main() {
   );
 
   group('VisitReportPage', () {
+    for (final (locale, beforeCaption, afterCaption) in [
+      (const Locale('en'), 'Captured 09:12', 'Captured 09:41'),
+      (const Locale('ko'), '촬영 09:12', '촬영 09:41'),
+    ]) {
+      testWidgets('shows observed camera times in preview and PDF in ${locale.languageCode}', (tester) async {
+        final visit = visitWith([
+          ZoneRecord(
+            zoneId: 'zone-1',
+            zoneName: 'Lobby',
+            beforePhoto: beforePhoto,
+            afterPhoto: afterPhoto,
+            beforePhotoSource: PhotoSource.camera,
+            afterPhotoSource: PhotoSource.camera,
+            beforeCapturedAt: DateTime(2026, 10, 7, 9, 12).toUtc(),
+            afterCapturedAt: DateTime(2026, 10, 7, 9, 41).toUtc(),
+          ),
+        ]);
+        tester.useNarrowScreenWithLargestText();
+        await pumpPage(tester, visit: visit, locale: locale, keepScreen: true);
+        await scrollTo(tester, beforeCaption);
+        tester.expectWholeText(beforeCaption);
+        await scrollTo(tester, afterCaption);
+        tester.expectWholeText(afterCaption);
+        final button = locale.languageCode == 'ko' ? 'PDF로 공유하기' : 'Share PDF';
+        await scrollTo(tester, button);
+        await tester.tap(shareButton(button));
+        await tester.pumpAndSettle();
+        final text = PdfSummary.read(reportShare.shared.single.bytes).text;
+        expect(text, contains(beforeCaption));
+        expect(text, contains(afterCaption));
+      });
+    }
+
     testWidgets('marks gallery provenance in preview and shared PDF', (tester) async {
       final visit = visitWith([
         ZoneRecord(
@@ -1007,6 +1040,7 @@ void main() {
           note: '',
           footer: '',
           galleryPhoto: '',
+          captureTimeOf: (_) => '',
         ),
       ),
     );

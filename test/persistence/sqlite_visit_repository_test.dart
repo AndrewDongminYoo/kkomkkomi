@@ -46,6 +46,32 @@ void main() {
   tearDown(() => database.close());
 
   group('SqliteVisitRepository', () {
+    test('round-trips each observed time as nullable UTC microseconds and clears a replacement time', () async {
+      final before = DateTime.utc(2026, 10, 7, 9, 12, 30, 123, 456);
+      final after = before.add(const Duration(minutes: 29));
+      final record = ZoneRecord(
+        zoneId: 'zone-1',
+        zoneName: 'Lobby',
+        beforePhoto: PhotoRef('photos/times/b.jpg'),
+        afterPhoto: PhotoRef('photos/times/a.jpg'),
+        beforePhotoSource: PhotoSource.camera,
+        afterPhotoSource: PhotoSource.camera,
+        beforeCapturedAt: before.toLocal(),
+        afterCapturedAt: after,
+      );
+      final saved = visit('times', records: [record]);
+      await repository.save(saved);
+      expect(await repository.visitById('times'), saved);
+      final row = (await database.query('zone_records')).single;
+      expect(row['before_captured_at'], before.microsecondsSinceEpoch);
+      expect(row['after_captured_at'], after.microsecondsSinceEpoch);
+      final gallery = record.withPhoto(PhotoSlot.before, record.beforePhoto!, source: PhotoSource.gallery);
+      await repository.save(saved.withRecord(gallery));
+      final loaded = (await repository.visitById('times'))!.zoneRecords.single;
+      expect(loaded.beforeCapturedAt, isNull);
+      expect(loaded.afterCapturedAt, after);
+      expect((await database.query('zone_records')).single['before_captured_at'], isNull);
+    });
     test('round-trips provenance and reads a future source conservatively', () async {
       final recorded = visit(
         'source-test',

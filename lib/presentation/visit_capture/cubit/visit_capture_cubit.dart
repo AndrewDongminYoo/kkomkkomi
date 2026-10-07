@@ -100,13 +100,15 @@ class VisitCaptureCubit extends Cubit<VisitCaptureState> {
     }
 
     final PhotoRef photo;
+    final DateTime? capturedAt;
     try {
       final picked = await _takePhoto(source);
       if (picked == null) {
         _show(after(VisitCaptureStatus.ready));
         return;
       }
-      photo = await _photoStore.save(sourcePath: picked, visitId: visit.id, photoId: _idGenerator.newId());
+      capturedAt = picked.capturedAt;
+      photo = await _photoStore.save(sourcePath: picked.path, visitId: visit.id, photoId: _idGenerator.newId());
     } on Exception catch (error, stackTrace) {
       _report(error, stackTrace);
       final isDenied = error is PhotoCaptureException && error.isAccessDenied;
@@ -114,7 +116,7 @@ class VisitCaptureCubit extends Cubit<VisitCaptureState> {
       return;
     }
 
-    final changed = visit.withRecord(record.withPhoto(slot, photo, source: source));
+    final changed = visit.withRecord(record.withPhoto(slot, photo, source: source, capturedAt: capturedAt));
     if (await _save(changed)) {
       _show(state.copyWith(status: VisitCaptureStatus.ready, visit: changed, isStored: true, isSavingNote: false));
       // The old file goes only now, so that a failed save leaves the slot with the photo that storage names.
@@ -146,9 +148,16 @@ class VisitCaptureCubit extends Cubit<VisitCaptureState> {
   ///
   /// A failed removal is reported and does not change the answer: the camera gave its answer to this call, so the
   /// next start finds no photo for the capture, and the next capture replaces it.
-  Future<String?> _takePhoto(PhotoSource source) async {
+  Future<({String path, DateTime? capturedAt})?> _takePhoto(PhotoSource source) async {
     try {
-      return source == PhotoSource.gallery ? await _photoCapture.selectGalleryPhoto() : await _photoCapture.takePhoto();
+      if (_photoCapture case final InAppPhotoCapture capture when source == PhotoSource.camera) {
+        final observed = await capture.takeObservedPhoto();
+        return observed == null ? null : (path: observed.path, capturedAt: observed.capturedAt);
+      }
+      final path = source == PhotoSource.gallery
+          ? await _photoCapture.selectGalleryPhoto()
+          : await _photoCapture.takePhoto();
+      return path == null ? null : (path: path, capturedAt: null);
     } finally {
       try {
         await _openCaptures.clear();

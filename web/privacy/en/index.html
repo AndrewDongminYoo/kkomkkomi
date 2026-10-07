@@ -65,8 +65,9 @@
           <li>Client names, and the names and order of their zones</li>
           <li>
             Visit dates, and for each zone the before and after photos, the
-            note, the source of each photo, and the cleaning status (done,
-            partly done, or not done) with its reason
+            note, the source of each photo, any directly observed capture time,
+            and the cleaning status (done, partly done, or not done) with its
+            reason
           </li>
           <li>
             The IDs of the pages it published, the state of its publish jobs,
@@ -75,11 +76,12 @@
           </li>
         </ul>
         <p>
-          The business phone is not sent to the operator's servers. The other
-          data does not reach those servers until you share a report as a link.
-          If the phone's backup is on (Android Auto Backup or iCloud Backup),
-          the phone's operating system can back this data up to your own Google
-          or Apple account. The operator cannot see that backup.
+          The business phone is not sent to the operator's servers. Directly
+          observed capture times are not sent to the operator's servers either.
+          The other data does not reach those servers until you share a report
+          as a link. If the phone's backup is on (Android Auto Backup or iCloud
+          Backup), the phone's operating system can back this data up to your
+          own Google or Apple account. The operator cannot see that backup.
         </p>
         <p>
           A PDF report is made on the phone and sent, through the system share
@@ -109,6 +111,14 @@
           Gallery photos are labeled in the preview, PDF and web report. The app
           does not infer when a gallery photo was taken. Supported PNG input is
           converted to JPEG before it is saved; unsupported input is not saved.
+        </p>
+        <p>
+          If an in-app camera supplies a directly observed capture time, the app
+          stores it locally in UTC and shows it in the current device local time
+          in the preview and shared PDF. It is a device-clock observation and is
+          not sent to the operator's servers. The current picker, gallery,
+          recovered and old photos have no capture time; no time is inferred
+          from file times or when a photo was selected.
         </p>
         <h2 id="sign-in">2. Anonymous sign-in and the user ID</h2>
         <p>

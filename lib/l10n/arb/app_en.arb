@@ -793,5 +793,16 @@
     "photoGallerySourceLabel": "Selected from gallery",
     "@photoGallerySourceLabel": {
         "description": "Report caption for a photo selected from the gallery"
+    },
+    "reportCameraTimeLabel": "Captured {time}",
+    "@reportCameraTimeLabel": {
+        "description": "Caption for a directly observed in-app camera capture time",
+        "placeholders": {
+            "time": {
+                "type": "DateTime",
+                "format": "HH:mm",
+                "isCustomDateFormat": true
+            }
+        }
     }
 }

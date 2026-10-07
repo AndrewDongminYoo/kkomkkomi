@@ -45,6 +45,50 @@ void main() {
   });
 
   group('openAppDatabase', () {
+    test('upgrades version 7 photos without inferring their times or changing their provenance', () async {
+      final path = p.join(directory.path, databaseFileName);
+      final old = await testDatabaseFactory.openDatabase(
+        path,
+        options: OpenDatabaseOptions(version: 7, onCreate: (database, _) => upgradeSchema(database, from: 0, to: 7)),
+      );
+      final client = Client(id: 'client-1', name: 'Office', createdAt: DateTime.utc(2026));
+      await sqliteRepositories(old).clients.save(
+        client,
+        zones: ClientZones(
+          clientId: client.id,
+          zones: [
+            Zone(id: 'zone-1', clientId: client.id, name: 'Lobby', position: 0),
+          ],
+        ),
+      );
+      final visit = Visit(
+        id: 'visit-1',
+        clientId: client.id,
+        visitDate: VisitDate(2026, 10, 7),
+        createdAt: DateTime.utc(2026, 10, 7, 9),
+        zoneRecords: [
+          ZoneRecord(zoneId: 'zone-1', zoneName: 'Lobby', beforePhoto: PhotoRef('photos/visit-1/b.jpg')),
+        ],
+      );
+      await insertVisit(old, visit);
+      await old.update('zone_records', {'before_photo_source': 'gallery', 'status': 'partlyDone', 'reason': 'keep'});
+      await old.close();
+      final upgraded = await openAppDatabase(testDatabaseFactory, path);
+      addTearDown(upgraded.close);
+      final record = (await SqliteVisitRepository(upgraded).visitById('visit-1'))!.zoneRecords.single;
+      expect(record.beforePhoto, visit.zoneRecords.single.beforePhoto);
+      expect(record.beforePhotoSource, PhotoSource.gallery);
+      expect(record.status, ZoneStatus.partlyDone);
+      expect(record.reason, 'keep');
+      expect(record.beforeCapturedAt, isNull);
+      expect(record.afterCapturedAt, isNull);
+      final columns = await upgraded.rawQuery('PRAGMA table_info(zone_records)');
+      for (final name in ['before_captured_at', 'after_captured_at']) {
+        final column = columns.singleWhere((row) => row['name'] == name);
+        expect((column['type'], column['notnull'], column['dflt_value']), ('INTEGER', 0, null));
+      }
+    });
+
     test('upgrades a version 5 profile with no phone without changing its name', () async {
       final path = p.join(directory.path, databaseFileName);
       final old = await testDatabaseFactory.openDatabase(
@@ -60,7 +104,7 @@ void main() {
       await repository.save(CompanyProfile(name: '반짝 클린', phone: '02-1234-5678'));
       expect((await repository.load())!.phone, '02-1234-5678');
     });
-    test('creates the version 7 schema with one table for each entity, the tables of publishing, and the open '
+    test('creates the version 8 schema with one table for each entity, the tables of publishing, and the open '
         'capture', () async {
       final database = await openMemoryDatabase();
       addTearDown(database.close);
@@ -79,7 +123,7 @@ void main() {
         'zones',
       ]);
       expect(await database.getVersion(), schemaVersion);
-      expect(schemaVersion, 7);
+      expect(schemaVersion, 8);
       final columns = await database.rawQuery('PRAGMA table_info(client_pages)');
       for (final name in ['server_delete_requested_at', 'server_deleted_at']) {
         final column = columns.singleWhere((row) => row['name'] == name);

@@ -6,6 +6,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 ## [Unreleased]
 
+- Nullable observed in-app camera times for PDF/preview captions; picker, gallery and old photos stay untimed.
+
 - Gallery selection for before/after photos, with gallery captions in the preview, PDF and web report.
 
 - An optional business phone in the company profile, report preview and PDF, kept out of public web reports.

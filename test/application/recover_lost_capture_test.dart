@@ -54,6 +54,21 @@ void main() {
   });
 
   group('RecoverLostCapture', () {
+    test('keeps recovered picker photos untimed and clears the replaced observation', () async {
+      final old = hall.withPhoto(
+        PhotoSlot.after,
+        oldPhoto,
+        source: PhotoSource.camera,
+        capturedAt: DateTime.utc(2026, 10, 7, 9, 12),
+      );
+      visits = FakeVisitRepository(visits: [visit.withRecord(old)]);
+      await recover()();
+      final recovered = (await visits.visitById('visit-1'))!.recordFor('zone-2')!;
+      expect(recovered.afterPhoto, newPhoto);
+      expect(recovered.afterPhotoSource, PhotoSource.camera);
+      expect(recovered.afterCapturedAt, isNull);
+    });
+
     test('keeps the gallery source of an Android lost pick', () async {
       openCaptures.capture = const OpenCapture(
         visitId: 'visit-1',

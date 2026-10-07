@@ -38,3 +38,19 @@ final class PhotoCaptureException implements Exception {
   @override
   String toString() => 'PhotoCaptureException(isAccessDenied: $isAccessDenied, cause: $cause)';
 }
+
+/// Optional capability of a future camera preview inside the app.
+///
+/// The adapter observes the shutter time directly. A picker, a gallery image and a recovered picker result must
+/// never implement this capability by using their return time, file time or Exif.
+abstract interface class InAppPhotoCapture implements PhotoCapture {
+  Future<ObservedCameraPhoto?> takeObservedPhoto();
+}
+
+/// A temporary photo and the device-clock time observed by the in-app camera at capture.
+final class ObservedCameraPhoto {
+  new({required this.path, required DateTime capturedAt}) : capturedAt = capturedAt.toUtc();
+
+  final String path;
+  final DateTime capturedAt;
+}
