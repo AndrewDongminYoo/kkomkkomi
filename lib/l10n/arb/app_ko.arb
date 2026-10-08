@@ -273,7 +273,7 @@
     },
     "companyProfileSavedMessage": "회사 정보를 저장했어요.",
     "@companyProfileSavedMessage": {
-        "description": "Message shown after the company profile was saved"
+        "description": "회사 정보를 저장한 뒤 표시되는 문구"
     },
     "companyProfileLoadFailedMessage": "회사 정보를 불러오지 못했어요. 다시 시도해 주세요.",
     "@companyProfileLoadFailedMessage": {
@@ -673,11 +673,11 @@
     },
     "companyPhoneFieldLabel": "사업자 전화번호 (선택)",
     "@companyPhoneFieldLabel": {
-        "description": "Label of the optional company business phone field"
+        "description": "선택 항목인 사업자 전화번호 입력란의 이름"
     },
     "companyPhoneHelper": "PDF와 미리보기에 표시해요. 공개 웹 보고서에는 포함하지 않아요.",
     "@companyPhoneHelper": {
-        "description": "Where the business phone is shown"
+        "description": "사업자 전화번호가 어디에 표시되는지 알려주는 문구"
     },
     "photoGalleryBeforeButton": "청소 전 사진 갤러리에서 선택",
     "@photoGalleryBeforeButton": {
