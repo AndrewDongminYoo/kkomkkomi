@@ -14,7 +14,7 @@ When the dates match, retain the existing `Captured HH:mm` or `촬영 HH:mm` cap
 When they differ, show `Captured yyyy-MM-dd HH:mm` or `촬영 yyyy-MM-dd HH:mm`, including the year.
 The preview and shared PDF receive the same labels.
 Keep gallery provenance, unknown capture times and missing-photo behavior unchanged.
-No web metadata, stored timestamp, public API, timezone policy, dependency or release change is needed.
+No web metadata, stored timestamp, public API, time zone policy, dependency or release change is needed.
 
 ## Acceptance criteria
 
@@ -27,7 +27,7 @@ No web metadata, stored timestamp, public API, timezone policy, dependency or re
 ## Evidence and limits
 
 The issue is https://github.com/AndrewDongminYoo/kkomkkomi/issues/83.
-`reportLabelsOf` owns the localized callback used by both outputs; `VisitDate` is explicitly a calendar date without a timezone.
+`reportLabelsOf` owns the localized callback used by both outputs; `VisitDate` is explicitly a calendar date without a time zone.
 Project-scoped Oracle retrieval for capture time and report date returned \[no precedent found\].
-Device-local presentation can differ when a report is generated in another timezone; this preserves the existing behavior rather than introducing a location or timezone record.
+Device-local presentation can differ when a report is generated in another time zone; this preserves the existing behavior rather than introducing a location or time zone record.
 Operator visual approval of rendered preview and PDF artifacts remains required before merge.
