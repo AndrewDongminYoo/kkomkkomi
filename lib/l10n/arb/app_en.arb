@@ -810,5 +810,33 @@
                 "isCustomDateFormat": true
             }
         }
+    },
+    "reportApprovalButton": "Request link sharing approval",
+    "@reportApprovalButton": {
+        "description": "Publisher approval and safety limits."
+    },
+    "reportApprovalTitle": "Link sharing approval",
+    "@reportApprovalTitle": {
+        "description": "Publisher approval and safety limits."
+    },
+    "reportApprovalMessage": "Link sharing needs operator approval. Email the registration code below. The default usage limits are 50 client pages, 1,000 reports, 2,000 photos and 1 GiB of photo data. Deletion does not restore the allowance. Each report allows up to 20 zones, 100 characters per name and 2,000 characters per note or reason. Capture and PDF sharing work without approval.",
+    "@reportApprovalMessage": {
+        "description": "Publisher approval and safety limits."
+    },
+    "reportApprovalEmailButton": "Open email app",
+    "@reportApprovalEmailButton": {
+        "description": "Publisher approval and safety limits."
+    },
+    "reportApprovalFallback": "If the email app does not open, send the registration code to donminzzi@gmail.com.",
+    "@reportApprovalFallback": {
+        "description": "Publisher approval and safety limits."
+    },
+    "reportApprovalUnavailable": "Cannot load the registration code. Check your connection and request approval again.",
+    "@reportApprovalUnavailable": {
+        "description": "Publisher approval and safety limits."
+    },
+    "reportLinkRefusedMessage": "Link sharing was refused. Check approval, usage limits and report content. You can share the PDF for now.",
+    "@reportLinkRefusedMessage": {
+        "description": "Publisher approval and safety limits."
     }
 }

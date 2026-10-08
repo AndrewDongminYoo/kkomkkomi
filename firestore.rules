@@ -9,6 +9,29 @@ service cloud.firestore {
       return request.auth != null;
     }
 
+    // Only privileged operator access issues grants and blocks pages. A replacement anonymous UID gets no grant.
+    function grant(uid) {
+      return get(/databases/$(database)/documents/publishingGrants/$(uid)).data;
+    }
+
+    function approved(uid) {
+      return signedIn() && request.auth.uid == uid && grant(uid).enabled == true;
+    }
+
+    function unblocked(pageId) {
+      return !exists(/databases/$(database)/documents/blockedPages/$(pageId))
+        && (!exists(/databases/$(database)/documents/clientPages/$(pageId))
+          || get(/databases/$(database)/documents/clientPages/$(pageId)).data.get('blockedAt', null) == null);
+    }
+
+    function id(value) {
+      return value is string && value.matches('[A-Za-z0-9_-]{1,128}');
+    }
+
+    function text(value, limit) {
+      return value is string && value.size() <= limit;
+    }
+
     // The entitlements that the RevenueCat Firebase extension writes into the token of a paying user. A missing claim
     // or a claim that is not a list is not paid.
     function paid() {
@@ -18,22 +41,52 @@ service cloud.firestore {
     }
 
     function isPage(data) {
-      return data.keys().hasOnly(['ownerUid', 'companyName', 'clientName', 'createdAt', 'revokedAt'])
+      return data.keys().hasOnly(['ownerUid', 'companyName', 'clientName', 'createdAt', 'revokedAt', 'blockedAt'])
         && data.keys().hasAll(['ownerUid', 'clientName', 'createdAt'])
         && data.ownerUid is string
-        && data.clientName is string
-        && (data.get('companyName', null) == null || data.companyName is string)
+        && text(data.clientName, 100)
+        && (data.get('companyName', null) == null || text(data.companyName, 100))
         && data.createdAt is timestamp
         && (data.get('revokedAt', null) == null || data.revokedAt is timestamp);
     }
 
     // A report without the footer of the Free plan carries unbranded: true, and only a paid writer may write it.
-    function isReport(data) {
+    function photo(value, pageId, visitId) {
+      return value == null || (value is string
+        && value.matches('clientPages/' + pageId + '/' + visitId + '/[A-Za-z0-9_-]{1,240}[.]jpg'));
+    }
+
+    function zone(data, pageId, visitId) {
+      let fields = data.keys();
+      return data is map
+        && fields.hasOnly(['name', 'note', 'beforePhoto', 'afterPhoto', 'beforePhotoSource', 'afterPhotoSource', 'status', 'reason'])
+        && fields.hasAll(['name', 'note', 'beforePhoto', 'afterPhoto'])
+        && text(data.name, 100) && text(data.note, 2000)
+        && photo(data.beforePhoto, pageId, visitId) && photo(data.afterPhoto, pageId, visitId)
+        && (!fields.hasAny(['beforePhotoSource']) || (data.beforePhoto != null && data.beforePhotoSource == 'gallery'))
+        && (!fields.hasAny(['afterPhotoSource']) || (data.afterPhoto != null && data.afterPhotoSource == 'gallery'))
+        && data.get('status', 'done') in ['done', 'partlyDone', 'notDone']
+        && text(data.get('reason', ''), 2000);
+    }
+
+    // Rules have no loop; the bounded list must check every supported position, including the last one.
+    function zoneAt(zones, index, pageId, visitId) {
+      return zones.size() <= index || zone(zones[index], pageId, visitId);
+    }
+
+    function isReport(data, pageId, visitId) {
       return data.keys().hasOnly(['visitDate', 'publishedAt', 'zones', 'unbranded'])
         && data.keys().hasAll(['visitDate', 'publishedAt', 'zones'])
-        && data.visitDate is string
+        && data.visitDate is string && data.visitDate.matches('[0-9]{4}-[0-9]{2}-[0-9]{2}')
         && data.publishedAt is timestamp
-        && data.zones is list
+        && data.zones is list && data.zones.size() <= 20
+        && data.zones == get(/databases/$(database)/documents/clientPages/$(pageId)/reportValidation/$(visitId)/chunks/0).data.zones
+          .concat(get(/databases/$(database)/documents/clientPages/$(pageId)/reportValidation/$(visitId)/chunks/1).data.zones)
+          .concat(get(/databases/$(database)/documents/clientPages/$(pageId)/reportValidation/$(visitId)/chunks/2).data.zones)
+          .concat(get(/databases/$(database)/documents/clientPages/$(pageId)/reportValidation/$(visitId)/chunks/3).data.zones)
+          .concat(get(/databases/$(database)/documents/clientPages/$(pageId)/reportValidation/$(visitId)/chunks/4).data.zones)
+          .concat(get(/databases/$(database)/documents/clientPages/$(pageId)/reportValidation/$(visitId)/chunks/5).data.zones)
+          .concat(get(/databases/$(database)/documents/clientPages/$(pageId)/reportValidation/$(visitId)/chunks/6).data.zones)
         && (!data.keys().hasAny(['unbranded']) || (data.unbranded == true && paid()));
     }
 
@@ -43,7 +96,7 @@ service cloud.firestore {
 
     // A missing field reads as null, because the read of a missing field fails the rule.
     function isOpen(page) {
-      return page.get('revokedAt', null) == null;
+      return page.get('revokedAt', null) == null && page.get('blockedAt', null) == null;
     }
 
     function owns(page) {
@@ -54,21 +107,121 @@ service cloud.firestore {
       return owns(page) && isOpen(page);
     }
 
+    // Public report commits spend exactly ten calls: one page, one block, seven chunks and one grant.
+    function ownsUnblockedPage(pageId) {
+      let page = pageOf(pageId);
+      return ownsOpen(page) && !exists(/databases/$(database)/documents/blockedPages/$(pageId));
+    }
+
+    function charged(uid, type, pageId, visitId, fileName) {
+      let usage = getAfter(/databases/$(database)/documents/publishingGrants/$(uid)).data;
+      return (usage.enabled == true || type == 'revoke') && usage.updatedAt == request.time && usage.type == type
+        && usage.pageId == pageId && usage.visitId == visitId && usage.fileName == fileName;
+    }
+
+    function sameCounters(before, after, pages, reports, photos, bytes) {
+      return after.pages == before.get('pages', 0) + pages
+        && after.reports == before.get('reports', 0) + reports
+        && after.photos == before.get('photos', 0) + photos
+        && after.bytes == before.get('bytes', 0) + bytes;
+    }
+
+    function pageCharge(uid, before, after) {
+      return after.visitId == '' && after.fileName == ''
+        && getAfter(/databases/$(database)/documents/clientPages/$(after.pageId)).data.ownerUid == uid
+        && sameCounters(before, after,
+          exists(/databases/$(database)/documents/clientPages/$(after.pageId)) ? 0 : 1, 0, 0, 0);
+    }
+
+    function reportCharge(uid, before, after) {
+      return id(after.visitId) && after.fileName == ''
+        && pageOf(after.pageId).ownerUid == uid
+        && getAfter(/databases/$(database)/documents/clientPages/$(after.pageId)/reports/$(after.visitId)).data is map
+        && exists(/databases/$(database)/documents/clientPages/$(after.pageId)/reportValidation/$(after.visitId))
+        && sameCounters(before, after, 0, 0, 0, 0);
+    }
+
+    // Reserve one report slot before private staging, so interrupted drafts cannot create unbounded documents.
+    function reserveReport(uid, before, after) {
+      return id(after.visitId) && after.fileName == '' && pageOf(after.pageId).ownerUid == uid
+        && !exists(/databases/$(database)/documents/clientPages/$(after.pageId)/reportValidation/$(after.visitId))
+        && getAfter(/databases/$(database)/documents/clientPages/$(after.pageId)/reportValidation/$(after.visitId)).data.createdAt == request.time
+        && sameCounters(before, after, 0,
+          exists(/databases/$(database)/documents/clientPages/$(after.pageId)/reports/$(after.visitId)) ? 0 : 1, 0, 0);
+    }
+
+    function photoCharge(before, after) {
+      let key = after.pageId + '/' + after.visitId + '/' + after.fileName;
+      let prior = before.reservations.get(key, null);
+      let bytes = after.reservations.get(key, 0);
+      return key.size() <= 384 && id(after.visitId) && after.fileName.matches('[A-Za-z0-9_-]{1,240}[.]jpg')
+        && after.reservations.diff(before.reservations).affectedKeys().hasOnly([key])
+        && bytes is int && bytes > 0 && bytes <= 5 * 1024 * 1024
+        && (prior == null || bytes == prior)
+        && sameCounters(before, after, 0, 0, prior == null ? 1 : 0, prior == null ? bytes : 0);
+    }
+
+    function removePhoto(before, after) {
+      let key = after.pageId + '/' + after.visitId + '/' + after.fileName;
+      return after.reservations.diff(before.reservations).affectedKeys().hasOnly([key])
+        && !after.reservations.keys().hasAny([key])
+        && sameCounters(before, after, 0, 0, 0, 0);
+    }
+
+    function validUsage(uid, before, after) {
+      return signedIn() && request.auth.uid == uid
+        && after.diff(before).affectedKeys().hasOnly(['pages', 'reports', 'photos', 'bytes', 'type', 'pageId', 'visitId', 'fileName', 'updatedAt', 'reservations'])
+        && after.keys().hasAll(['pages', 'reports', 'photos', 'bytes', 'type', 'pageId', 'visitId', 'fileName', 'updatedAt', 'reservations'])
+        && after.pages is int && after.pages >= 0
+        && after.reports is int && after.reports >= 0
+        && after.photos is int && after.photos >= 0
+        && after.bytes is int && after.bytes >= 0
+        && after.reservations is map && after.reservations.size() <= 2000
+        && id(after.pageId) && after.updatedAt == request.time
+        && ((after.type == 'removePhoto' && removePhoto(before, after))
+          || ((before.enabled == true || (after.type == 'revoke'
+              && getAfter(/databases/$(database)/documents/clientPages/$(after.pageId)).data.revokedAt is timestamp)) && unblocked(after.pageId)
+            && after.pages <= before.pageLimit && after.reports <= before.reportLimit
+            && after.photos <= before.photoLimit && after.bytes <= before.byteLimit
+            && request.time >= before.get('updatedAt', timestamp.date(2000, 1, 1)) + duration.value(1, 's')
+            && (after.type == 'photo'
+              ? (pageOf(after.pageId).ownerUid == uid && isOpen(pageOf(after.pageId)) && photoCharge(before, after))
+              : (after.reservations == before.reservations
+                && (after.type in ['page', 'revoke'] ? pageCharge(uid, before, after)
+                  : (after.type == 'report' ? reportCharge(uid, before, after)
+                    : (after.type == 'reserveReport' && reserveReport(uid, before, after))))))));
+
+    }
+
+    match /publishingGrants/{uid} {
+      allow get: if signedIn() && request.auth.uid == uid;
+      // Operator-managed approval and budgets are immutable to clients; only bound usage changes are permitted.
+      allow update: if validUsage(uid, resource.data, request.resource.data);
+    }
+
     match /clientPages/{pageId} {
       // A get and no list: a reader opens one page by its ID and cannot find the IDs of the others.
-      allow get: if isOpen(resource.data);
+      allow get: if (signedIn() && resource == null) || owns(resource.data)
+        || (isOpen(resource.data) && unblocked(pageId));
       // A page can be created revoked, so that a revoke does not depend on an earlier write that may not have
       // arrived.
-      allow create: if signedIn()
+      allow create: if signedIn() && id(pageId) && unblocked(pageId)
         && isPage(request.resource.data)
-        && request.resource.data.ownerUid == request.auth.uid;
+        && request.resource.data.ownerUid == request.auth.uid
+        && request.resource.data.get('blockedAt', null) == null
+        && ((approved(request.auth.uid) && charged(request.auth.uid, 'page', pageId, '', ''))
+          || (request.resource.data.get('revokedAt', null) is timestamp && charged(request.auth.uid, 'revoke', pageId, '', '')));
       // The owner stays the owner, and a revoked page stays revoked, because a reissue makes a new page. A repeated
       // revoke of a revoked page is allowed, so that the step is safe to repeat.
       allow update: if owns(resource.data)
-        && isPage(request.resource.data)
         && request.resource.data.ownerUid == resource.data.ownerUid
         && request.resource.data.createdAt == resource.data.createdAt
-        && (isOpen(resource.data) || !isOpen(request.resource.data));
+        && request.resource.data.get('blockedAt', null) == resource.data.get('blockedAt', null)
+        && ((request.resource.data.diff(resource.data).affectedKeys().hasOnly(['revokedAt'])
+            && request.resource.data.get('revokedAt', null) is timestamp)
+          || (approved(request.auth.uid) && unblocked(pageId) && isPage(request.resource.data)
+            && (isOpen(resource.data) || !isOpen(request.resource.data))
+            && (request.resource.data == resource.data || charged(request.auth.uid, 'page', pageId, '', ''))));
       // The owner deletes its page, open or revoked, when the person deletes all data in the app. A delete of a page
       // that does not exist changes nothing, so a signed-in user may repeat it, as the app does when the answer of an
       // earlier delete did not arrive.
@@ -76,13 +229,42 @@ service cloud.firestore {
 
       match /reports/{visitId} {
         // The history view of a page lists its reports.
-        allow get, list: if isOpen(pageOf(pageId));
-        allow create, update: if ownsOpen(pageOf(pageId)) && isReport(request.resource.data);
+        allow get: if owns(pageOf(pageId)) || (isOpen(pageOf(pageId)) && unblocked(pageId));
+        allow list: if isOpen(pageOf(pageId)) && unblocked(pageId);
+        allow create, update: if id(visitId) && ownsUnblockedPage(pageId)
+          && (!request.resource.data.get('unbranded', false) || paid())
+          && ((resource != null && request.resource.data == resource.data)
+            ? approved(request.auth.uid)
+            : (isReport(request.resource.data, pageId, visitId) && charged(request.auth.uid, 'report', pageId, visitId, '')));
         // The owner deletes the reports of its page, open or revoked, before the page, because this rule reads the
         // page to find its owner. A delete of a report that does not exist changes nothing, so a signed-in user may
         // repeat it, also after the page is gone.
         allow delete: if signedIn() && (resource == null || owns(pageOf(pageId)));
       }
+
+      // Private bounded staging commits separately; one public report commit reads only validated chunks.
+      match /reportValidation/{visitId} {
+        allow get: if owns(pageOf(pageId));
+        allow create: if id(visitId) && ownsOpen(pageOf(pageId)) && unblocked(pageId)
+          && approved(request.auth.uid) && charged(request.auth.uid, 'reserveReport', pageId, visitId, '')
+          && request.resource.data.keys().hasOnly(['createdAt']) && request.resource.data.createdAt == request.time;
+        allow delete: if signedIn() && (resource == null || owns(pageOf(pageId)));
+
+        match /chunks/{chunkId} {
+          function validChunk(data) {
+            return data.keys().hasOnly(['zones']) && data.zones is list && data.zones.size() <= (chunkId == '6' ? 2 : 3)
+              && zoneAt(data.zones, 0, pageId, visitId) && zoneAt(data.zones, 1, pageId, visitId)
+              && zoneAt(data.zones, 2, pageId, visitId);
+          }
+          allow get: if owns(pageOf(pageId));
+          allow create, update: if chunkId in ['0', '1', '2', '3', '4', '5', '6'] && ownsOpen(pageOf(pageId)) && unblocked(pageId)
+            && exists(/databases/$(database)/documents/clientPages/$(pageId)/reportValidation/$(visitId))
+            && approved(request.auth.uid)
+            && validChunk(request.resource.data);
+          allow delete: if signedIn() && (resource == null || owns(pageOf(pageId)));
+        }
+      }
+
     }
   }
 }

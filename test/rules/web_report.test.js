@@ -208,3 +208,52 @@ describe("web report page: reads without sign-in", () => {
     );
   });
 });
+
+test("operator blocking denies the real web reader and token-free photo endpoint", async () => {
+  const report = await reader.report(openPage, visit);
+  assert.ok(report.zones.length > 0);
+  let issuedUrl;
+  await env.withSecurityRulesDisabled(async (context) => {
+    issuedUrl = await context
+      .storage()
+      .ref(photoPath(openPage))
+      .getDownloadURL();
+  });
+  assert.equal((await fetch(issuedUrl)).status, 200);
+  assert.equal((await fetch(reader.photoUrl(photoPath(openPage)))).status, 200);
+  await env.withSecurityRulesDisabled(async (context) => {
+    const batch = context.firestore().batch();
+    batch.update(context.firestore().doc(`clientPages/${openPage}`), {
+      blockedAt: new Date(),
+    });
+    batch.set(context.firestore().doc(`blockedPages/${openPage}`), {
+      blockedAt: new Date(),
+    });
+    await batch.commit();
+  });
+  await assert.rejects(
+    reader.page(openPage),
+    (error) => error.kind === "unavailable",
+  );
+  await assert.rejects(
+    reader.report(openPage, visit),
+    (error) => error.kind === "unavailable",
+  );
+  await assert.rejects(
+    reader.reports(openPage),
+    (error) => error.kind === "unavailable",
+  );
+  assert.equal((await fetch(reader.photoUrl(photoPath(openPage)))).status, 403);
+  // Issued tokens bypass later rule checks; complete takedown must remove the object too.
+  assert.equal((await fetch(issuedUrl)).status, 200);
+  await env.withSecurityRulesDisabled((context) =>
+    context.storage().ref(photoPath(openPage)).delete(),
+  );
+  await env.withSecurityRulesDisabled(async (context) => {
+    await assert.rejects(
+      context.storage().ref(photoPath(openPage)).getMetadata(),
+      (error) => error.code === "storage/object-not-found",
+    );
+  });
+  assert.ok([403, 404].includes((await fetch(issuedUrl)).status));
+});

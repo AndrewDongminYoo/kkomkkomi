@@ -71,7 +71,12 @@ export async function start({ doc, root, location, fetch, hosts }) {
     show(
       doc,
       root,
-      renderFailure(doc, { kind, pageId: route.pageId, onRetry }),
+      renderFailure(doc, {
+        kind,
+        pageId: route.pageId,
+        visitId: route.visitId,
+        onRetry,
+      }),
       titles[kind] ?? texts.failedTitle,
     );
   }

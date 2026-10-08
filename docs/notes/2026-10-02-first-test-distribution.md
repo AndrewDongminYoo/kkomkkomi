@@ -17,6 +17,15 @@ The same page allows up to 100 internal testers per app, who are App Store Conne
 5. **Privacy policy.** The pages at `/privacy/` and `/privacy/en/` are live since the Hosting deploy from `34d5d23`, and no placeholder of pull request 19 is left in them. Four clauses are agent defaults that a qualified person should review: the legal basis of the transfer abroad (Article 28-8(1)3 of the Personal Information Protection Act), the cleaning company as the party responsible for the people in the photos, the Firebase support URL as the contact of Google, and the effective date, which is the merge date of the last change to the pages (the pull request of `docs/plans/2026-10-05-m3-04b-limits-and-pdf.md`, which adds the add control of the client list at 2 or more active clients to the moments in sections 6 and 9 when the app reaches RevenueCat, after the pull request of `docs/plans/2026-10-05-m3-04a-plans-screen.md` added RevenueCat as a processor and a recipient abroad to sections 6, 8, 9, and 10; the pages say 2026-10-05, and a later merge changes the date).
    That pull request body lists each RevenueCat clause that the code does not show by itself.
 
+## Report abuse controls before public release
+
+Issue #86 implements operator approval for anonymous publishers, fixed safety budgets and recipient email reporting locally.
+Read `docs/notes/report-abuse-operations.md` before enforcement: enroll approved existing UIDs and inventory prior usage, deliver a compatible app, then deploy the rules and Hosting with per-run approval.
+Build 3 predates this adapter and cannot create or change a report under the enforced rules; local capture, PDF and existing public links remain available.
+The email contact is `donminzzi@gmail.com`; no delivery test or live enrollment has been performed.
+The same Hosting domain remains in use with the operator's acceptance of its residual risk.
+This item stays open until the rollout and read-back are approved and verified.
+
 ## Values
 
 | Item                           | Value                                                                                            |

@@ -11,21 +11,41 @@ service firebase.storage {
 
     // A missing field reads as null, because the read of a missing field fails the rule.
     function isOpen(page) {
-      return page.get('revokedAt', null) == null;
+      return page.get('revokedAt', null) == null && page.get('blockedAt', null) == null;
+    }
+
+    function access(uid) {
+      return firestore.get(/databases/(default)/documents/publishingGrants/$(uid)).data;
+    }
+
+    function canCreate(uid, pageId, visitId, fileName) {
+      let page = pageOf(pageId);
+      let grant = access(uid);
+      return page.ownerUid == uid && isOpen(page)
+        && grant.enabled == true
+        && request.resource.size <= grant.reservations[pageId + '/' + visitId + '/' + fileName]
+        && request.resource.contentType == 'image/jpeg'
+        && request.resource.size > 0 && request.resource.size <= 5 * 1024 * 1024;
+    }
+
+    function canDelete(uid, pageId, visitId, fileName) {
+      let page = pageOf(pageId);
+      let grant = firestore.get(/databases/(default)/documents/publishingGrants/$(uid));
+      return page.ownerUid == uid
+        && (grant == null || !grant.data.reservations.keys().hasAny([pageId + '/' + visitId + '/' + fileName]));
     }
 
     match /clientPages/{pageId}/{visitId}/{fileName} {
-      // A get and no list, while the page is not revoked.
-      allow get: if isOpen(pageOf(pageId));
-      // A photo declares the JPEG content type and has at most 5 MiB. The rules cannot read the bytes, so the app
-      // checks that a photo starts like a JPEG before it uploads one. The app stores a photo at 1600 pixels on each
-      // side at most, with the JPEG quality 80, which is far below the limit.
-      allow create, update: if request.auth != null
-        && pageOf(pageId).ownerUid == request.auth.uid
-        && isOpen(pageOf(pageId))
-        && request.resource.contentType == 'image/jpeg'
-        && request.resource.size <= 5 * 1024 * 1024;
-      allow delete: if request.auth != null && pageOf(pageId).ownerUid == request.auth.uid;
+      // A get and no list, while the page is open and has no durable operator block.
+      allow get: if isOpen(pageOf(pageId))
+        && !firestore.exists(/databases/(default)/documents/blockedPages/$(pageId));
+      // Objects declare JPEG type and have at most 5 MiB; rules cannot inspect the bytes.
+      // Objects are immutable. The adapter compares uncertain prior bytes before retrying.
+      // Each helper reads the page and account once, without depending on access-call caching.
+      allow create: if resource == null && request.auth != null
+        && canCreate(request.auth.uid, pageId, visitId, fileName);
+      // Release the reservation first, without refunding usage. A delete/recreate cannot reuse the same allowance.
+      allow delete: if request.auth != null && canDelete(request.auth.uid, pageId, visitId, fileName);
     }
   }
 }

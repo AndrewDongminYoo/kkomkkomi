@@ -92,12 +92,34 @@ function element(
 export const privacyPath = "/privacy/";
 
 /** The footer of a sheet: the footer text of the Free plan unless `branded` is false, and the privacy policy link. */
-function footer(doc, { branded = true } = {}) {
+function footer(doc, { branded = true, pageId = null, visitId = null } = {}) {
+  const valid = (value) =>
+    typeof value === "string" && /^[A-Za-z0-9_-]{1,128}$/.test(value);
+  const path = valid(pageId)
+    ? valid(visitId)
+      ? reportPath(pageId, visitId)
+      : historyPath(pageId)
+    : null;
+  const query = new URLSearchParams({
+    subject: "꼼꼬미 보고서 신고",
+    body: `${path ? `보고서 주소: https://kkomkkomi.web.app${path}\n` : ""}신고 이유:\n`,
+  });
   return element(doc, "footer", { className: "footer" }, [
     ...(branded ? [element(doc, "p", { text: texts.footer })] : []),
     element(doc, "a", {
       text: texts.privacyLink,
       attributes: { href: privacyPath },
+    }),
+    element(doc, "p", {}, [
+      element(doc, "a", {
+        text: "이 보고서 신고하기",
+        attributes: {
+          href: `mailto:donminzzi@gmail.com?${query.toString().replaceAll("+", "%20")}`,
+        },
+      }),
+    ]),
+    element(doc, "p", {
+      text: "메일 앱이 열리지 않으면 보고서 주소와 신고 이유를 donminzzi@gmail.com으로 보내 주세요.",
     }),
   ]);
 }
@@ -249,7 +271,11 @@ export function renderReport(doc, { pageId, page, report, photoUrl }) {
         attributes: { href: historyPath(pageId) },
       }),
     ]),
-    footer(doc, { branded: !report.unbranded }),
+    footer(doc, {
+      branded: !report.unbranded,
+      pageId,
+      visitId: report.visitId,
+    }),
   ]);
 }
 
@@ -274,6 +300,7 @@ export function renderHistory(doc, { pageId, page, reports }) {
         ),
     // The list shows the footer text unless it lists a report and every listed report is without the footer.
     footer(doc, {
+      pageId,
       branded:
         reports.length === 0 || reports.some((report) => !report.unbranded),
     }),
@@ -293,7 +320,10 @@ export function renderLoading(doc) {
  * The view of a read that failed with `kind`: "unavailable", "missing", or "failed". A missing report under an open
  * page links to the list of the page, and a failure that a retry can fix offers the retry, which calls `onRetry`.
  */
-export function renderFailure(doc, { kind, pageId = null, onRetry = null }) {
+export function renderFailure(
+  doc,
+  { kind, pageId = null, visitId = null, onRetry = null },
+) {
   const [title, message] = {
     unavailable: [texts.unavailableTitle, texts.unavailableMessage],
     missing: [texts.missingTitle, texts.missingMessage],
@@ -325,7 +355,7 @@ export function renderFailure(doc, { kind, pageId = null, onRetry = null }) {
       ...(actions.length > 0
         ? [element(doc, "nav", { className: "more" }, actions)]
         : []),
-      footer(doc),
+      footer(doc, { pageId, visitId }),
     ],
   );
 }

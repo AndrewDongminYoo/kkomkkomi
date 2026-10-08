@@ -701,5 +701,33 @@
                 "isCustomDateFormat": true
             }
         }
+    },
+    "reportApprovalButton": "링크 공유 승인 요청하기",
+    "@reportApprovalButton": {
+        "description": "Publisher approval and safety limits."
+    },
+    "reportApprovalTitle": "링크 공유 승인",
+    "@reportApprovalTitle": {
+        "description": "Publisher approval and safety limits."
+    },
+    "reportApprovalMessage": "링크로 공유하려면 운영자 승인이 필요해요. 아래 등록 코드를 이메일로 보내 주세요. 기본 사용량 한도는 거래처 페이지 50개, 보고서 1,000개, 사진 2,000개, 사진 용량 1 GiB예요. 삭제해도 사용량은 돌아오지 않아요. 보고서마다 구역은 20곳, 이름은 100자, 메모와 사유는 각각 2,000자까지 쓸 수 있어요. 촬영과 PDF 공유는 승인 없이 쓸 수 있어요.",
+    "@reportApprovalMessage": {
+        "description": "Publisher approval and safety limits."
+    },
+    "reportApprovalEmailButton": "메일 앱 열기",
+    "@reportApprovalEmailButton": {
+        "description": "Publisher approval and safety limits."
+    },
+    "reportApprovalFallback": "메일 앱이 열리지 않으면 등록 코드를 donminzzi@gmail.com으로 보내 주세요.",
+    "@reportApprovalFallback": {
+        "description": "Publisher approval and safety limits."
+    },
+    "reportApprovalUnavailable": "등록 코드를 불러오지 못했어요. 인터넷 연결을 확인한 뒤 다시 요청해 주세요.",
+    "@reportApprovalUnavailable": {
+        "description": "Publisher approval and safety limits."
+    },
+    "reportLinkRefusedMessage": "링크 공유가 허용되지 않았어요. 승인 여부, 사용량 한도와 보고서 내용을 확인해 주세요. 지금은 PDF로 공유할 수 있어요.",
+    "@reportLinkRefusedMessage": {
+        "description": "Publisher approval and safety limits."
     }
 }

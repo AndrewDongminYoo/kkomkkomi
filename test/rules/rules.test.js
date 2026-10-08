@@ -55,6 +55,28 @@ beforeEach(async () => {
   await env.clearStorage();
   await env.withSecurityRulesDisabled(async (context) => {
     const db = context.firestore();
+    for (const uid of [owner, stranger])
+      await db.doc(`publishingGrants/${uid}`).set({
+        enabled: true,
+        pageLimit: 50,
+        reportLimit: 1000,
+        photoLimit: 2000,
+        byteLimit: 1024 ** 3,
+        pages: 2,
+        reports: 2,
+        photos: 2,
+        bytes: 12,
+        reservations: {
+          [`${openPage}/${visit}/zone-2-after-photo-2.jpg`]: jpeg.length,
+          [`${openPage}/${visit}/at-limit.jpg`]: limit,
+          [`${openPage}/${visit}/over-limit.jpg`]: limit + 1,
+        },
+        type: "page",
+        pageId: openPage,
+        visitId: "",
+        fileName: "",
+        updatedAt: new Date("2000-01-01"),
+      });
     await db.doc(`clientPages/${openPage}`).set(page(owner));
     await db
       .doc(`clientPages/${revokedPage}`)
@@ -91,10 +113,106 @@ function photoPath(pageId, fileName = "zone-1-before-photo-1.jpg") {
 }
 
 const reader = () => env.unauthenticatedContext();
-const signedIn = (uid) => env.authenticatedContext(uid);
+// Legacy payload tests use the new atomic writer shape. Direct bypass tests live in abuse.test.js.
+const signedIn = (uid) => publishingContext(uid);
 // `authenticatedContext` spreads its token options into the token, so the claim reaches `request.auth.token`.
 const withEntitlements = (uid, entitlements) =>
-  env.authenticatedContext(uid, { revenueCatEntitlements: entitlements });
+  publishingContext(uid, { revenueCatEntitlements: entitlements });
+
+function publishingContext(uid, claims = {}) {
+  const context = env.authenticatedContext(uid, claims);
+  return {
+    storage: () => context.storage(),
+    firestore: () => {
+      const db = context.firestore();
+      return new Proxy(db, {
+        get(target, property) {
+          if (property !== "doc")
+            return typeof target[property] === "function"
+              ? target[property].bind(target)
+              : target[property];
+          return (path) => {
+            const ref = db.doc(path);
+            return new Proxy(ref, {
+              get(document, key) {
+                if (key !== "set")
+                  return typeof document[key] === "function"
+                    ? document[key].bind(document)
+                    : document[key];
+                return async (data) => {
+                  const segments = path.split("/");
+                  const type = segments.length === 2 ? "page" : "report";
+                  const account = db.doc(`publishingGrants/${uid}`);
+                  const prior = (await account.get()).data();
+                  const exists = (await ref.get()).exists;
+                  // This suite tests payload/owner semantics; the separate abuse suite exercises the real cooldown.
+                  await env.withSecurityRulesDisabled((admin) =>
+                    admin
+                      .firestore()
+                      .doc(account.path)
+                      .update({ updatedAt: new Date("2000-01-01") }),
+                  );
+                  const resetClock = () =>
+                    env.withSecurityRulesDisabled((admin) =>
+                      admin
+                        .firestore()
+                        .doc(account.path)
+                        .update({ updatedAt: new Date("2000-01-01") }),
+                    );
+                  if (type === "report") {
+                    const header = db.doc(
+                      `clientPages/${segments[1]}/reportValidation/${segments[3]}`,
+                    );
+                    if (!(await header.get()).exists) {
+                      const slot = db.batch();
+                      slot.update(account, {
+                        reports: prior.reports + (exists ? 0 : 1),
+                        type: "reserveReport",
+                        pageId: segments[1],
+                        visitId: segments[3],
+                        fileName: "",
+                        updatedAt:
+                          firebase.firestore.FieldValue.serverTimestamp(),
+                      });
+                      slot.set(header, {
+                        createdAt:
+                          firebase.firestore.FieldValue.serverTimestamp(),
+                      });
+                      await slot.commit();
+                    }
+                    for (let index = 0; index < 7; index++) {
+                      await resetClock();
+                      await db.doc(`${header.path}/chunks/${index}`).set({
+                        zones: (data.zones ?? []).slice(
+                          index * 3,
+                          index * 3 + 3,
+                        ),
+                      });
+                    }
+                    await resetClock();
+                  }
+                  const current = (await account.get()).data();
+                  const batch = db.batch();
+                  batch.update(account, {
+                    ...current,
+                    pages: current.pages + (type === "page" && !exists ? 1 : 0),
+                    type,
+                    pageId: segments[1],
+                    visitId: segments[3] ?? "",
+                    fileName: "",
+                    updatedAt: firebase.firestore.FieldValue.serverTimestamp(),
+                  });
+                  batch.set(ref, data);
+                  return batch.commit();
+                };
+              },
+            });
+          };
+        },
+      });
+    },
+  };
+}
 
 describe("firestore: readers", () => {
   test("a reader gets an open page by its ID", async () => {
@@ -346,8 +464,14 @@ describe("firestore: writers", () => {
           {
             name: "입구",
             note: "",
-            beforePhoto: photoPath(openPage),
-            afterPhoto: photoPath(openPage, "zone-1-after-photo-1.jpg"),
+            beforePhoto: photoPath(openPage).replace(
+              `/${visit}/`,
+              "/visit-gallery/",
+            ),
+            afterPhoto: photoPath(openPage, "zone-1-after-photo-1.jpg").replace(
+              `/${visit}/`,
+              "/visit-gallery/",
+            ),
             ...sources,
           },
         ],
@@ -357,8 +481,14 @@ describe("firestore: writers", () => {
       assert.deepEqual(saved.data().zones[0], {
         name: "입구",
         note: "",
-        beforePhoto: photoPath(openPage),
-        afterPhoto: photoPath(openPage, "zone-1-after-photo-1.jpg"),
+        beforePhoto: photoPath(openPage).replace(
+          `/${visit}/`,
+          "/visit-gallery/",
+        ),
+        afterPhoto: photoPath(openPage, "zone-1-after-photo-1.jpg").replace(
+          `/${visit}/`,
+          "/visit-gallery/",
+        ),
         ...sources,
       });
       await assertFails(signedIn(stranger).firestore().doc(path).set(marked));
