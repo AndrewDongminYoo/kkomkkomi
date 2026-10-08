@@ -5,6 +5,7 @@ import 'dart:typed_data';
 
 // 📦 Package imports:
 import 'package:flutter_test/flutter_test.dart';
+import 'package:image/image.dart' as img;
 import 'package:pdf/pdf.dart';
 
 // 🌎 Project imports:
@@ -84,6 +85,66 @@ void main() {
   int countOf(String part, String text) => part.allMatches(text).length;
 
   group('renderReportPdf', () {
+    for (final (name, before, after, beforeWidth, afterWidth, height) in [
+      ('portrait pair', tallBytes, tallBytes, 251.64, 251.64, 335.52),
+      ('landscape pair', wideBytes, wideBytes, 251.64, 251.64, 188.73),
+      ('portrait then landscape', tallBytes, wideBytes, 141.55, 251.64, 188.73),
+      ('landscape then portrait', wideBytes, tallBytes, 251.64, 141.55, 188.73),
+      ('rotated portrait pair', gpsPhotoBytes(), gpsPhotoBytes(), 251.64, 251.64, 335.52),
+      ('square then portrait', img.encodePng(img.Image(width: 8, height: 8)), tallBytes, 188.73, 141.55, 188.73),
+    ]) {
+      test('fits both complete photos in the slots of a $name', () async {
+        final summary = await render(
+          document([ReportZone(name: 'Lobby', beforePhoto: photo('b'), afterPhoto: photo('a'), note: '')]),
+          photos: {photo('b'): before, photo('a'): after},
+        );
+        final page = summary.pages.single;
+        final [beforeRect, afterRect] = page.imageRects;
+        expect(beforeRect.width, closeTo(beforeWidth, 0.02));
+        expect(afterRect.width, closeTo(afterWidth, 0.02));
+        expect(beforeRect.height, closeTo(height, 0.02));
+        expect(afterRect.height, closeTo(height, 0.02));
+        final slotRects = page.rects.where((rect) => (rect.width - 251.64).abs() < 0.02).toList();
+        expect(slotRects, isNotEmpty);
+        for (final rect in slotRects) {
+          expect(rect.height, closeTo(height, 0.02));
+        }
+      });
+    }
+
+    test('uses a landscape slot for a portrait photo beside an empty slot', () async {
+      final summary = await render(
+        document([
+          ReportZone(name: 'Lobby', beforePhoto: photo('tall-b'), afterPhoto: null, note: ''),
+        ]),
+      );
+      final rect = summary.pages.single.imageRects.single;
+      expect(rect.width, closeTo(141.55, 0.02));
+      expect(rect.height, closeTo(188.73, 0.02));
+      expect(summary.text, contains(labels.notPhotographed));
+    });
+
+    test('keeps portrait pairs with their names and inside page margins across page breaks', () async {
+      final summary = await render(
+        document([
+          for (var index = 0; index < 5; index++)
+            ReportZone(name: 'Portrait$index', beforePhoto: photo('tall-b'), afterPhoto: photo('tall-a'), note: ''),
+        ]),
+      );
+      // A portrait row is too tall for two complete zones on A4, including the zone headings and page furniture.
+      expect(summary.pageCount, 5);
+      expect([for (final page in summary.pages) page.images.length], [2, 2, 2, 2, 2]);
+      for (final page in summary.pages) {
+        expect(page.texts.where((text) => text.text.startsWith('Portrait')).length * 2, page.images.length);
+        for (final rect in page.imageRects) {
+          expect(rect.x, greaterThanOrEqualTo(40));
+          expect(rect.y, greaterThanOrEqualTo(40));
+          expect(rect.x + rect.width, lessThanOrEqualTo(page.width - 39.99));
+          expect(rect.y + rect.height, lessThanOrEqualTo(page.height - 39.99));
+        }
+      }
+    });
+
     test('prints directly observed before and after times under their camera photos', () async {
       final summary = await render(
         document([

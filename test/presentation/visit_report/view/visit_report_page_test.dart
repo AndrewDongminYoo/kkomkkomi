@@ -1,10 +1,13 @@
 // 🎯 Dart imports:
 import 'dart:async';
+import 'dart:io';
+import 'dart:typed_data';
 
 // 📦 Package imports:
 import 'package:bloc_test/bloc_test.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:image/image.dart' as img;
 import 'package:material_ui/material_ui.dart';
 import 'package:mocktail/mocktail.dart';
 
@@ -84,6 +87,7 @@ void main() {
     FakePublisher? publisher,
     Identity? identity,
     ExternalLinks? externalLinks,
+    Map<PhotoRef, Uint8List>? photos,
   }) async {
     if (!keepScreen) useTallPhoneScreen(tester);
     visits = FakeVisitRepository(visits: [visit ?? current])..failure = loadFailure;
@@ -91,6 +95,7 @@ void main() {
       profile: companyName == null ? null : CompanyProfile(name: companyName, phone: companyPhone),
     );
     photoStore = FakePhotoStore();
+    if (photos != null) photoStore.contents.addAll(photos);
     reportShare = FakeReportShare();
     linkShare = FakeLinkShare();
     final repositories = Repositories(
@@ -138,6 +143,94 @@ void main() {
   );
 
   group('VisitReportPage', () {
+    for (final (name, before, after, ratio) in [
+      (
+        'portrait pair',
+        File('test/fixtures/photo_tall.jpg').readAsBytesSync(),
+        File('test/fixtures/photo_tall.jpg').readAsBytesSync(),
+        0.75,
+      ),
+      ('landscape pair', fixturePhotoBytes(), fixturePhotoBytes(), 4 / 3),
+      ('mixed pair', File('test/fixtures/photo_tall.jpg').readAsBytesSync(), fixturePhotoBytes(), 4 / 3),
+      ('reversed mixed pair', fixturePhotoBytes(), File('test/fixtures/photo_tall.jpg').readAsBytesSync(), 4 / 3),
+      (
+        'square and portrait pair',
+        img.encodePng(img.Image(width: 8, height: 8)),
+        File('test/fixtures/photo_tall.jpg').readAsBytesSync(),
+        4 / 3,
+      ),
+      ('rotated portrait pair', gpsPhotoBytes(), gpsPhotoBytes(), 0.75),
+    ]) {
+      testWidgets('lays out both preview slots for a $name', (tester) async {
+        await pumpPage(tester, visit: complete, photos: {beforePhoto: before, afterPhoto: after});
+        final slots = find.byType(AspectRatio);
+        expect(slots, findsNWidgets(2));
+        for (var index = 0; index < 2; index++) {
+          final size = tester.getSize(slots.at(index));
+          expect(size.width / size.height, closeTo(ratio, 0.001));
+        }
+      });
+    }
+
+    for (final (before, after) in [(true, false), (false, true), (false, false)]) {
+      testWidgets('uses landscape slots with missing photos before=$before after=$after', (tester) async {
+        await pumpPage(
+          tester,
+          visit: visitWith([
+            ZoneRecord(
+              zoneId: 'zone-1',
+              zoneName: 'Lobby',
+              beforePhoto: before ? beforePhoto : null,
+              afterPhoto: after ? afterPhoto : null,
+              note: 'Keep the zone',
+            ),
+          ]),
+          photos: {beforePhoto: gpsPhotoBytes(), afterPhoto: gpsPhotoBytes()},
+        );
+        final slots = find.byType(AspectRatio);
+        expect(slots, findsNWidgets(2));
+        for (var index = 0; index < 2; index++) {
+          final size = tester.getSize(slots.at(index));
+          expect(size.width / size.height, closeTo(4 / 3, 0.001));
+        }
+      });
+    }
+
+    for (final locale in [const Locale('en'), const Locale('ko')]) {
+      testWidgets('portrait slots and captions fit largest text in ${locale.languageCode}', (tester) async {
+        tester.useNarrowScreenWithLargestText();
+        await pumpPage(
+          tester,
+          visit: visitWith([
+            ZoneRecord(
+              zoneId: 'zone-1',
+              zoneName: 'Lobby',
+              beforePhoto: beforePhoto,
+              afterPhoto: afterPhoto,
+              beforePhotoSource: PhotoSource.gallery,
+              afterPhotoSource: PhotoSource.camera,
+              afterCapturedAt: DateTime(2026, 10, 1, 9, 41).toUtc(),
+              note: 'A note',
+            ),
+          ]),
+          photos: {beforePhoto: gpsPhotoBytes(), afterPhoto: gpsPhotoBytes()},
+          locale: locale,
+          keepScreen: true,
+        );
+        final captions = locale.languageCode == 'ko'
+            ? ['갤러리에서 선택한 사진', '촬영 09:41']
+            : ['Selected from gallery', 'Captured 09:41'];
+        for (final caption in captions) {
+          await scrollTo(tester, caption);
+          tester.expectWholeText(caption);
+        }
+        expect(tester.takeException(), isNull);
+        for (final slot in tester.widgetList<AspectRatio>(find.byType(AspectRatio))) {
+          expect(slot.aspectRatio, 0.75);
+        }
+      });
+    }
+
     for (final (locale, beforeCaption, afterCaption) in [
       (const Locale('en'), 'Captured 00:12', 'Captured 09:41'),
       (const Locale('ko'), '촬영 00:12', '촬영 09:41'),
@@ -339,12 +432,11 @@ void main() {
 
       expect(tester.getTopLeft(find.text('Before')).dx, lessThan(tester.getTopLeft(find.text('After')).dx));
       expect(tester.getTopLeft(find.text('Before')).dy, tester.getTopLeft(find.text('After')).dy);
-      expect(reportSlotAspectRatio, 1);
       final photo = tester.getSize(find.byType(PhotoThumbnail));
       final empty = tester.getSize(
         find.ancestor(of: find.byIcon(Icons.no_photography_outlined), matching: find.byType(ColoredBox)).first,
       );
-      expect(photo.width / photo.height, moreOrLessEquals(1, epsilon: 0.01));
+      expect(photo.width / photo.height, moreOrLessEquals(4 / 3, epsilon: 0.01));
       expect(empty, photo);
     });
 
@@ -521,7 +613,7 @@ void main() {
           stringContainsInOrder(['Report made with Kkomkkomi', '깔끔클린', 'Cleaning Report', '행복빌딩', 'October 1, 2026']),
         );
         expect(summary.text, stringContainsInOrder(['로비', 'Before', 'After', 'Note', '바닥 왁스']));
-        expect(photoStore.readPhotos, [beforePhoto, afterPhoto]);
+        expect(photoStore.readPhotos, [beforePhoto, afterPhoto, beforePhoto, afterPhoto]);
         expect(find.byType(SnackBar), findsNothing);
         expect(isEnabled(tester, shareButton()), isTrue);
       });

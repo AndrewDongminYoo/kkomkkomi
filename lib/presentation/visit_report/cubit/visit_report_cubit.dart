@@ -60,10 +60,20 @@ class VisitReportCubit extends Cubit<VisitReportState> {
       }
       final companyProfile = await _companyProfile.load();
       final photoDirectory = await _photoStore.directoryPath();
+      final document = ReportDocument.fromVisit(visit: visit, client: client, companyProfile: companyProfile);
+      final portraitPhotos = <PhotoRef>[];
+      for (final photo in document.photos.toSet()) {
+        try {
+          if (reportPhotoIsPortrait(await _photoStore.read(photo))) portraitPhotos.add(photo);
+        } on Object {
+          // An unreadable photo keeps its broken-image placeholder; it must not hide the rest of the report.
+        }
+      }
       _show(
         VisitReportState(
           status: VisitReportStatus.ready,
-          document: ReportDocument.fromVisit(visit: visit, client: client, companyProfile: companyProfile),
+          document: document,
+          portraitPhotos: List.unmodifiable(portraitPhotos),
           // A zone that is not done lacks its photos on purpose, so the warning leaves it out.
           zonesLackingPhoto: [
             for (final record in visit.zoneRecords)
