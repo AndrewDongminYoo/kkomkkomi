@@ -554,6 +554,7 @@ class _ShareBar extends StatelessWidget {
                 const SizedBox(height: 8),
               ],
               if (hasLink) ...[
+                TextButton(onPressed: () => _requestApproval(context), child: KeepAllText(l10n.reportApprovalButton)),
                 FilledButton(
                   onPressed: onShareLink,
                   child: linkState.status == ReportLinkStatus.publishing
@@ -571,6 +572,63 @@ class _ShareBar extends StatelessWidget {
     );
   }
 
+  static Future<void> _requestApproval(BuildContext context) async {
+    final l10n = context.l10n;
+    final identity = context.read<Identity>().currentUserId();
+    final links = context.read<ExternalLinks>();
+    await showDialog<void>(
+      context: context,
+      builder: (context) => AlertDialog(
+        scrollable: true,
+        title: KeepAllText(l10n.reportApprovalTitle),
+        content: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              KeepAllText(l10n.reportApprovalMessage),
+              const SizedBox(height: 12),
+              FutureBuilder<String?>(
+                future: identity,
+                builder: (context, snapshot) {
+                  if (snapshot.connectionState != ConnectionState.done) return const CircularProgressIndicator();
+                  final uid = snapshot.data;
+                  if (uid == null) return KeepAllText(l10n.reportApprovalUnavailable);
+                  return Column(
+                    mainAxisSize: MainAxisSize.min,
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      SelectableText(uid),
+                      TextButton(
+                        onPressed: () {
+                          unawaited(
+                            links.open(
+                              Uri(
+                                scheme: 'mailto',
+                                path: 'donminzzi@gmail.com',
+                                query:
+                                    'subject=${Uri.encodeComponent(l10n.reportApprovalTitle)}&body=${Uri.encodeComponent(uid)}',
+                              ),
+                            ),
+                          );
+                        },
+                        child: KeepAllText(l10n.reportApprovalEmailButton),
+                      ),
+                    ],
+                  );
+                },
+              ),
+              KeepAllText(l10n.reportApprovalFallback),
+            ],
+          ),
+        ),
+        actions: [
+          TextButton(onPressed: () => Navigator.of(context).pop(), child: KeepAllText(l10n.dialogCancelButton)),
+        ],
+      ),
+    );
+  }
+
   /// What the screen says about the link share in [state] and in which tone, or null when it says nothing.
   ///
   /// A job that waits for its next try is still on its way, so only a job that stopped is a failure.
@@ -583,7 +641,8 @@ class _ShareBar extends StatelessWidget {
         PublishFailure.deletion => l10n.reportLinkStoppedByDeletionMessage,
         PublishFailure.photoMissing => l10n.reportLinkPhotoMissingMessage,
         PublishFailure.photoNotJpeg || PublishFailure.photoTooLarge => l10n.reportLinkPhotoUnusableMessage,
-        PublishFailure.unavailable || PublishFailure.refused || null => l10n.reportLinkFailedMessage,
+        PublishFailure.refused => l10n.reportLinkRefusedMessage,
+        PublishFailure.unavailable || null => l10n.reportLinkFailedMessage,
       },
       NoticeTone.error,
     ),

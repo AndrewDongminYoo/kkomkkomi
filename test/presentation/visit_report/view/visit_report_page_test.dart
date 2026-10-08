@@ -83,6 +83,7 @@ void main() {
     bool keepScreen = false,
     FakePublisher? publisher,
     Identity? identity,
+    ExternalLinks? externalLinks,
   }) async {
     if (!keepScreen) useTallPhoneScreen(tester);
     visits = FakeVisitRepository(visits: [visit ?? current])..failure = loadFailure;
@@ -117,6 +118,7 @@ void main() {
       reportShare: reportShare,
       linkShare: linkShare,
       identity: identity,
+      externalLinks: externalLinks,
     );
     await tester.tap(find.text('host'));
     await tester.pumpAndSettle();
@@ -590,6 +592,70 @@ void main() {
         expect(tester.getTopLeft(linkButton()).dy, lessThan(tester.getTopLeft(pdfButton()).dy));
       });
 
+      testWidgets('approval request exposes only its registration code and leaves PDF sharing available', (
+        tester,
+      ) async {
+        final identity = FakeIdentity(userId: 'approval-uid');
+        final links = FakeExternalLinks()..opens = false;
+        await pumpPage(tester, publisher: FakePublisher(), identity: identity, externalLinks: links);
+        expect(identity.calls, 0);
+        await tester.tap(find.text('Request link sharing approval'));
+        await tester.pumpAndSettle();
+        expect(find.text('approval-uid'), findsOneWidget);
+        expect(find.textContaining('donminzzi@gmail.com'), findsOneWidget);
+        await tester.tap(find.text('Open email app'));
+        await tester.pumpAndSettle();
+        expect(links.opened.single.path, 'donminzzi@gmail.com');
+        expect(links.opened.single.queryParameters['body'], 'approval-uid');
+        await tester.tap(find.widgetWithText(TextButton, 'Cancel'));
+        await tester.pumpAndSettle();
+        expect(tester.widget<OutlinedButton>(pdfButton()).onPressed, isNotNull);
+        expect(publishing.jobs, isEmpty);
+      });
+
+      for (final (locale, button, title, email, close) in [
+        (const Locale('en'), 'Request link sharing approval', 'Link sharing approval', 'Open email app', 'Cancel'),
+        (const Locale('ko'), '링크 공유 승인 요청하기', '링크 공유 승인', '메일 앱 열기', '닫기'),
+      ]) {
+        testWidgets('approval request fits a narrow screen in ${locale.languageCode}', (tester) async {
+          tester.useNarrowScreenWithLargestText();
+          await pumpPage(
+            tester,
+            publisher: FakePublisher(),
+            identity: FakeIdentity(userId: 'fictional-approval-uid'),
+            locale: locale,
+            keepScreen: true,
+          );
+          final request = find.text(button);
+          await tester.ensureVisible(request);
+          await tester.tap(request);
+          await tester.pumpAndSettle();
+          tester.expectWholeText(title);
+          final scrollable = find.descendant(of: find.byType(AlertDialog), matching: find.byType(Scrollable)).first;
+          await tester.scrollUntilVisible(find.text(email), 80, scrollable: scrollable);
+          tester.expectWholeText(email);
+          await tester.tap(find.widgetWithText(TextButton, close));
+          await tester.pumpAndSettle();
+        });
+      }
+
+      testWidgets('approval request handles delayed and unavailable identity without sending email', (tester) async {
+        final identity = FakeIdentity()..gate = Completer<void>();
+        final links = FakeExternalLinks();
+        await pumpPage(tester, publisher: FakePublisher(), identity: identity, externalLinks: links);
+        await tester.tap(find.text('Request link sharing approval'));
+        await tester.pump();
+        expect(find.byType(CircularProgressIndicator), findsOneWidget);
+        identity.gate!.complete();
+        await tester.pumpAndSettle();
+        expect(
+          find.text('Cannot load the registration code. Check your connection and request approval again.'),
+          findsOneWidget,
+        );
+        expect(find.text('Open email app'), findsNothing);
+        expect(links.opened, isEmpty);
+      });
+
       testWidgets('offers the PDF alone in a flavor without a backend', (tester) async {
         await pumpPage(tester);
 
@@ -743,7 +809,12 @@ void main() {
         await tester.tap(linkButton());
         await tester.pumpAndSettle();
 
-        expect(find.text("Can't upload the report. You can share the PDF for now."), findsOneWidget);
+        expect(
+          find.text(
+            'Link sharing was refused. Check approval, usage limits and report content. You can share the PDF for now.',
+          ),
+          findsOneWidget,
+        );
         expect(isEnabled(tester, linkButton()), isTrue);
         expect(linkShare.shared, isEmpty);
       });
@@ -1161,11 +1232,15 @@ void main() {
           "Can't upload the report yet. It tries again soon, and the share sheet opens when it's done.",
           '아직 보고서를 올리지 못했어요. 잠시 뒤에 다시 올리고, 다 올리면 공유 창이 열려요.',
         ),
-        for (final failure in [null, PublishFailure.refused, PublishFailure.unavailable])
+        for (final failure in [null, PublishFailure.unavailable])
           ReportLinkState(status: ReportLinkStatus.failed, failure: failure): (
             "Can't upload the report. You can share the PDF for now.",
             '보고서를 올리지 못했어요. 지금은 PDF로 공유할 수 있어요.',
           ),
+        const ReportLinkState(status: ReportLinkStatus.failed, failure: PublishFailure.refused): (
+          'Link sharing was refused. Check approval, usage limits and report content. You can share the PDF for now.',
+          '링크 공유가 허용되지 않았어요. 승인 여부, 사용량 한도와 보고서 내용을 확인해 주세요. 지금은 PDF로 공유할 수 있어요.',
+        ),
         const ReportLinkState(status: ReportLinkStatus.failed, failure: PublishFailure.revoked): (
           'The link of this client changed during the upload. Try again.',
           '올리는 동안 이 거래처의 링크가 바뀌었어요. 다시 시도해 주세요.',
@@ -1226,7 +1301,7 @@ void main() {
           await pumpView(tester, shown(VisitReportStatus.ready));
 
           final bar = find.ancestor(of: find.text('Share link'), matching: find.byType(Column)).first;
-          expect(find.descendant(of: bar, matching: find.byType(KeepAllText)), findsNWidgets(2));
+          expect(find.descendant(of: bar, matching: find.byType(KeepAllText)), findsNWidgets(3));
         });
       }
 

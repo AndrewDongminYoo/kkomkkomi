@@ -44,6 +44,13 @@ import {
   visitId,
 } from "./fixtures.mjs";
 
+const abuseTexts = [
+  "이 보고서 신고하기",
+  "메일 앱이 열리지 않으면 보고서 주소와 신고 이유를 donminzzi@gmail.com으로 보내 주세요.",
+];
+const abuseLink = (page, visit = null) =>
+  `mailto:donminzzi@gmail.com?${new URLSearchParams({ subject: "꼼꼬미 보고서 신고", body: `보고서 주소: https://kkomkkomi.web.app/r/${page}${visit ? `/${visit}` : ""}\n신고 이유:\n` }).toString().replaceAll("+", "%20")}`;
+
 const repository = new URL("../../", import.meta.url);
 const read = (path) => readFileSync(new URL(path, repository), "utf8");
 
@@ -502,6 +509,7 @@ describe("renderReport", () => {
       "이 거래처의 보고서 모두 보기",
       "꼼꼬미로 작성됨",
       "개인정보 처리방침",
+      ...abuseTexts,
     ]);
   });
 
@@ -541,14 +549,14 @@ describe("renderReport", () => {
 
     assert.deepEqual(
       view.all("a").map((link) => link.getAttribute("href")),
-      [`/r/${pageId}`, privacyPath],
+      [`/r/${pageId}`, privacyPath, abuseLink(pageId, visitId)],
     );
     assert.deepEqual(
       view
         .all("footer")[0]
         .all("a")
         .map((link) => link.getAttribute("href")),
-      [privacyPath],
+      [privacyPath, abuseLink(pageId, visitId)],
     );
   });
 
@@ -657,10 +665,16 @@ describe("renderHistory", () => {
       "2026년 9월 24일",
       "꼼꼬미로 작성됨",
       "개인정보 처리방침",
+      ...abuseTexts,
     ]);
     assert.deepEqual(
       view.all("a").map((link) => link.getAttribute("href")),
-      [`/r/${pageId}/${visitId}`, `/r/${pageId}/${olderVisitId}`, privacyPath],
+      [
+        `/r/${pageId}/${visitId}`,
+        `/r/${pageId}/${olderVisitId}`,
+        privacyPath,
+        abuseLink(pageId),
+      ],
     );
   });
 
@@ -738,6 +752,7 @@ describe("renderFailure", () => {
       texts.unavailableMessage,
       texts.footer,
       texts.privacyLink,
+      ...abuseTexts,
     ]);
     assert.equal(view.all("button").length, 0);
     assert.equal(view.getAttribute("role"), "alert");
@@ -752,6 +767,7 @@ describe("renderFailure", () => {
       texts.historyLink,
       texts.footer,
       texts.privacyLink,
+      ...abuseTexts,
     ]);
     assert.equal(view.all("a")[0].getAttribute("href"), `/r/${pageId}`);
   });
@@ -771,6 +787,7 @@ describe("renderFailure", () => {
       texts.retry,
       texts.footer,
       texts.privacyLink,
+      ...abuseTexts,
     ]);
     assert.equal(retries, 1);
   });
@@ -795,7 +812,11 @@ describe("start", () => {
       "2026년 10월 1일",
       "5곳 중 3곳 완료",
     ]);
-    assert.deepEqual(texts.slice(-2), ["꼼꼬미로 작성됨", "개인정보 처리방침"]);
+    assert.deepEqual(texts.slice(-4), [
+      "꼼꼬미로 작성됨",
+      "개인정보 처리방침",
+      ...abuseTexts,
+    ]);
     assert.equal(
       root.all("img")[0].getAttribute("src"),
       `https://firebasestorage.googleapis.com/v0/b/demo-kkomkkomi.appspot.com/o/${encodeURIComponent(lobbyBefore)}?alt=media`,
