@@ -35,7 +35,12 @@ ReportLabels reportLabelsOf(AppLocalizations l10n, VisitDate visitDate) => Repor
   note: l10n.reportNoteLabel,
   footer: l10n.reportFooter,
   galleryPhoto: l10n.photoGallerySourceLabel,
-  captureTimeOf: (time) => l10n.reportCameraTimeLabel(time.toLocal()),
+  captureTimeOf: (time) {
+    final localTime = time.toLocal();
+    return VisitDate.fromDateTime(localTime) == visitDate
+        ? l10n.reportCameraTimeLabel(localTime)
+        : l10n.reportCameraDateTimeLabel(localTime);
+  },
 );
 
 /// The screen of the report of one visit: what the report lacks, a preview, and the controls that share the link

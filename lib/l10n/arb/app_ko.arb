@@ -702,6 +702,17 @@
             }
         }
     },
+    "reportCameraDateTimeLabel": "촬영 {time}",
+    "@reportCameraDateTimeLabel": {
+        "description": "현지 촬영일이 방문일과 다를 때 표시하는 앱 안 카메라의 촬영 날짜와 시각",
+        "placeholders": {
+            "time": {
+                "type": "DateTime",
+                "format": "yyyy-MM-dd HH:mm",
+                "isCustomDateFormat": true
+            }
+        }
+    },
     "reportApprovalButton": "링크 공유 승인 요청하기",
     "@reportApprovalButton": {
         "description": "Publisher approval and safety limits."
