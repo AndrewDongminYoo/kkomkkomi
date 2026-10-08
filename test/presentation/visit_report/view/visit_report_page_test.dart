@@ -139,8 +139,8 @@ void main() {
 
   group('VisitReportPage', () {
     for (final (locale, beforeCaption, afterCaption) in [
-      (const Locale('en'), 'Captured 09:12', 'Captured 09:41'),
-      (const Locale('ko'), '촬영 09:12', '촬영 09:41'),
+      (const Locale('en'), 'Captured 00:12', 'Captured 09:41'),
+      (const Locale('ko'), '촬영 00:12', '촬영 09:41'),
     ]) {
       testWidgets('shows observed camera times in preview and PDF in ${locale.languageCode}', (tester) async {
         final visit = visitWith([
@@ -151,12 +151,47 @@ void main() {
             afterPhoto: afterPhoto,
             beforePhotoSource: PhotoSource.camera,
             afterPhotoSource: PhotoSource.camera,
-            beforeCapturedAt: DateTime(2026, 10, 7, 9, 12).toUtc(),
-            afterCapturedAt: DateTime(2026, 10, 7, 9, 41).toUtc(),
+            beforeCapturedAt: DateTime(2026, 10, 1, 0, 12).toUtc(),
+            afterCapturedAt: DateTime(2026, 10, 1, 9, 41).toUtc(),
           ),
         ]);
         tester.useNarrowScreenWithLargestText();
         await pumpPage(tester, visit: visit, locale: locale, keepScreen: true);
+        await scrollTo(tester, beforeCaption);
+        tester.expectWholeText(beforeCaption);
+        await scrollTo(tester, afterCaption);
+        tester.expectWholeText(afterCaption);
+        final button = locale.languageCode == 'ko' ? 'PDF로 공유하기' : 'Share PDF';
+        await scrollTo(tester, button);
+        await tester.tap(shareButton(button));
+        await tester.pumpAndSettle();
+        final text = PdfSummary.read(reportShare.shared.single.bytes).text;
+        expect(text, contains(beforeCaption));
+        expect(text, contains(afterCaption));
+      });
+    }
+
+    for (final (locale, beforeCaption, afterCaption) in [
+      (const Locale('en'), 'Captured 2026-10-03 09:12', 'Captured 2027-10-01 09:41'),
+      (const Locale('ko'), '촬영 2026-10-03 09:12', '촬영 2027-10-01 09:41'),
+    ]) {
+      testWidgets('shows different capture dates in preview and PDF in ${locale.languageCode}', (tester) async {
+        final visit = visitWith([
+          ZoneRecord(
+            zoneId: 'zone-1',
+            zoneName: 'Lobby',
+            beforePhoto: beforePhoto,
+            afterPhoto: afterPhoto,
+            beforePhotoSource: PhotoSource.camera,
+            afterPhotoSource: PhotoSource.camera,
+            beforeCapturedAt: DateTime(2026, 10, 3, 9, 12).toUtc(),
+            afterCapturedAt: DateTime(2027, 10, 1, 9, 41).toUtc(),
+          ),
+        ]);
+        tester.useNarrowScreenWithLargestText();
+        await pumpPage(tester, visit: visit, locale: locale, keepScreen: true);
+        expect(find.text(beforeCaption), findsOneWidget);
+        expect(find.text(afterCaption), findsOneWidget);
         await scrollTo(tester, beforeCaption);
         tester.expectWholeText(beforeCaption);
         await scrollTo(tester, afterCaption);

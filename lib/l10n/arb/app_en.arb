@@ -811,6 +811,17 @@
             }
         }
     },
+    "reportCameraDateTimeLabel": "Captured {time}",
+    "@reportCameraDateTimeLabel": {
+        "description": "Observed camera capture date and time when the local date differs from the visit date",
+        "placeholders": {
+            "time": {
+                "type": "DateTime",
+                "format": "yyyy-MM-dd HH:mm",
+                "isCustomDateFormat": true
+            }
+        }
+    },
     "reportApprovalButton": "Request link sharing approval",
     "@reportApprovalButton": {
         "description": "Publisher approval and safety limits."
