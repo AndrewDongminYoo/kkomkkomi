@@ -110,7 +110,7 @@ const _version5 = [
   "ALTER TABLE zone_records ADD COLUMN reason TEXT NOT NULL DEFAULT ''",
 ];
 
-/// The statements that take the schema from each version to the next, in order: the first item makes version 1.
+// Version 6 adds the optional business phone, leaving an empty phone for existing company profiles.
 const _version6 = ["ALTER TABLE company_profile ADD COLUMN phone TEXT NOT NULL DEFAULT ''"];
 
 const _version7 = [
@@ -124,6 +124,7 @@ const _version8 = [
   'ALTER TABLE zone_records ADD COLUMN after_captured_at INTEGER',
 ];
 
+/// The statements that take the schema from each version to the next, in order: the first item makes version 1.
 const List<List<String>> _migrations = [
   _version1,
   _version2,
