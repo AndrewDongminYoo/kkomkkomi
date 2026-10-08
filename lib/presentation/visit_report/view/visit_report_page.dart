@@ -216,7 +216,12 @@ class _ReportBody extends StatelessWidget {
           child: KeepAllText(l10n.reportPreviewTitle, style: Theme.of(context).textTheme.titleMedium),
         ),
         const SizedBox(height: 8),
-        _ReportPreview(document: document, pathOf: state.pathOf, showsFooterText: state.showsFooterText),
+        _ReportPreview(
+          document: document,
+          pathOf: state.pathOf,
+          portraitPhotos: state.portraitPhotos,
+          showsFooterText: state.showsFooterText,
+        ),
       ],
     );
   }
@@ -291,9 +296,15 @@ class _MissingPhotos extends StatelessWidget {
 
 /// The report as the PDF prints it: the same texts and the same zones, in the layout of the screen.
 class _ReportPreview extends StatelessWidget {
-  const new({required this.document, required this.pathOf, required this.showsFooterText});
+  const new({
+    required this.document,
+    required this.pathOf,
+    required this.portraitPhotos,
+    required this.showsFooterText,
+  });
 
   final ReportDocument document;
+  final List<PhotoRef> portraitPhotos;
 
   /// Gives the absolute path of the file of a photo.
   final String Function(PhotoRef photo) pathOf;
@@ -338,7 +349,12 @@ class _ReportPreview extends StatelessWidget {
             const Divider(height: 24),
             if (document.zones.isEmpty) KeepAllText(l10n.reportEmptyMessage),
             for (final zone in document.zones) ...[
-              _PreviewZone(zone: zone, labels: labels, pathOf: pathOf),
+              _PreviewZone(
+                zone: zone,
+                labels: labels,
+                pathOf: pathOf,
+                aspectRatio: reportSlotAspectRatioOf(zone, portraitPhotos),
+              ),
               const SizedBox(height: 16),
             ],
             if (showsFooterText) KeepAllText(labels.footer, style: secondary),
@@ -351,9 +367,10 @@ class _ReportPreview extends StatelessWidget {
 
 /// One zone of the preview: its name, the two photo slots, and the note.
 class _PreviewZone extends StatelessWidget {
-  const new({required this.zone, required this.labels, required this.pathOf});
+  const new({required this.zone, required this.labels, required this.pathOf, required this.aspectRatio});
 
   final ReportZone zone;
+  final double aspectRatio;
   final ReportLabels labels;
   final String Function(PhotoRef photo) pathOf;
 
@@ -390,6 +407,7 @@ class _PreviewZone extends StatelessWidget {
                 caption: labels.photoCaptionOf(zone.beforePhoto, zone.beforePhotoSource, zone.beforeCapturedAt),
                 emptyText: labels.emptySlotOf(zone.status),
                 pathOf: pathOf,
+                aspectRatio: aspectRatio,
               ),
             ),
             const SizedBox(width: 12),
@@ -400,6 +418,7 @@ class _PreviewZone extends StatelessWidget {
                 caption: labels.photoCaptionOf(zone.afterPhoto, zone.afterPhotoSource, zone.afterCapturedAt),
                 emptyText: labels.emptySlotOf(zone.status),
                 pathOf: pathOf,
+                aspectRatio: aspectRatio,
               ),
             ),
           ],
@@ -450,6 +469,7 @@ class _PreviewSlot extends StatelessWidget {
     required this.photo,
     required this.emptyText,
     required this.pathOf,
+    required this.aspectRatio,
     this.caption = '',
   });
 
@@ -460,6 +480,7 @@ class _PreviewSlot extends StatelessWidget {
   /// What the PDF prints in the slot when it holds no photo, which a screen reader reads for the empty slot.
   final String emptyText;
   final String Function(PhotoRef photo) pathOf;
+  final double aspectRatio;
 
   @override
   Widget build(BuildContext context) {
@@ -474,7 +495,7 @@ class _PreviewSlot extends StatelessWidget {
           KeepAllText(label, style: theme.textTheme.bodySmall?.copyWith(color: theme.colorScheme.onSurfaceVariant)),
           const SizedBox(height: 4),
           AspectRatio(
-            aspectRatio: reportSlotAspectRatio,
+            aspectRatio: aspectRatio,
             child: ClipRRect(
               borderRadius: BorderRadius.circular(8),
               child: photo == null
@@ -487,7 +508,7 @@ class _PreviewSlot extends StatelessWidget {
                   // a slot without a photo.
                   : ColoredBox(
                       color: theme.colorScheme.surfaceContainerLowest,
-                      // The edge is painted over the photo, which reaches two sides of the square slot and would
+                      // The edge is painted over the photo, which reaches two sides of the slot and would
                       // hide the edge there.
                       child: DecoratedBox(
                         position: DecorationPosition.foreground,

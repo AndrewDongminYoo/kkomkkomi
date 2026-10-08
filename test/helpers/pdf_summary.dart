@@ -1,6 +1,7 @@
 // 🎯 Dart imports:
 import 'dart:convert';
 import 'dart:io';
+import 'dart:math' as math;
 import 'dart:typed_data';
 
 final _startXref = RegExp(r'startxref\s+(\d+)\s+%%EOF\s*$');
@@ -14,7 +15,7 @@ final _hexString = RegExp('<([0-9A-Fa-f]*)>');
 /// the graphics state.
 final _operator = RegExp(
   r'/(\w+)\s+[\d.]+\s+Tf|(?:(-?[\d.]+\s+-?[\d.]+)\s+Td\s*)?\[([^\]]*)\]\s*TJ|/(\w+)\s+Do\b'
-  r'|((?:-?[\d.]+\s+){6})cm\b|\b([qQ])\b',
+  r'|((?:-?[\d.]+\s+){6})cm\b|\b([qQ])\b|((?:-?[\d.]+\s+){4})re\b',
 );
 
 /// What a test reads of a PDF file that the `pdf` package wrote: its pages, with their size, text, and images.
@@ -41,7 +42,14 @@ final class PdfSummary {
 
 /// One page of a PDF file.
 final class PdfPage {
-  const new({required this.width, required this.height, required this.texts, required this.images});
+  const new({
+    required this.width,
+    required this.height,
+    required this.texts,
+    required this.images,
+    this.imageRects = const [],
+    this.rects = const [],
+  });
 
   /// The width of the page in points.
   final double width;
@@ -63,6 +71,12 @@ final class PdfPage {
 
   /// The pixel size of each image that the page shows, in the order in which the file draws them.
   final List<({int width, int height})> images;
+
+  /// The bounds in page points of each drawn image, after the content stream's transforms.
+  final List<({double x, double y, double width, double height})> imageRects;
+
+  /// The rectangular paths in page points, including slot backgrounds, borders and clipping paths.
+  final List<({double x, double y, double width, double height})> rects;
 }
 
 final class _PdfReader {
@@ -113,6 +127,8 @@ final class _PdfReader {
     final content = latin1.decode(_streamOf(_object(_referenceIn(page.source, 'Contents'))));
     final texts = <({String text, double x})>[];
     final images = <({int width, int height})>[];
+    final imageRects = <({double x, double y, double width, double height})>[];
+    final rects = <({double x, double y, double width, double height})>[];
     var characterMap = const <int, String>{};
     // The current transformation matrix [a, b, c, d, e, f], which takes a point of the current coordinates to the
     // page, and the matrices that each save of the graphics state keeps.
@@ -138,6 +154,13 @@ final class _PdfReader {
       } else if (operator.group(4) case final name?) {
         final image = _object(_referenceIn(page.source, name)).source;
         images.add((width: _numberIn(image, 'Width'), height: _numberIn(image, 'Height')));
+        final [a, b, c, d, e, f] = matrix;
+        imageRects.add((
+          x: e + math.min(0.0, a) + math.min(0.0, c),
+          y: f + math.min(0.0, b) + math.min(0.0, d),
+          width: a.abs() + c.abs(),
+          height: b.abs() + d.abs(),
+        ));
       } else if (operator.group(5) case final change?) {
         // The change applies before the current matrix: the product of the change and the current matrix.
         final [a, b, c, d, e, f] = _numbers(change);
@@ -152,6 +175,15 @@ final class _PdfReader {
         ];
       } else if (operator.group(6) == 'q') {
         savedMatrices.add(matrix);
+      } else if (operator.group(7) case final rectangle?) {
+        final [x, y, width, height] = _numbers(rectangle);
+        final [a, b, c, d, e, f] = matrix;
+        rects.add((
+          x: a * x + c * y + e + math.min(0.0, a * width) + math.min(0.0, c * height),
+          y: b * x + d * y + f + math.min(0.0, b * width) + math.min(0.0, d * height),
+          width: (a * width).abs() + (c * height).abs(),
+          height: (b * width).abs() + (d * height).abs(),
+        ));
       } else {
         matrix = savedMatrices.removeLast();
       }
@@ -161,6 +193,8 @@ final class _PdfReader {
       height: double.parse(mediaBox.group(2)!),
       texts: texts,
       images: images,
+      imageRects: imageRects,
+      rects: rects,
     );
   }
 

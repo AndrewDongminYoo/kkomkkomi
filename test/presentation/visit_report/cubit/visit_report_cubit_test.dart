@@ -99,12 +99,14 @@ void main() {
     String? companyName = '깔끔클린',
     List<ZoneRecord>? zonesLackingPhoto,
     bool showsFooterText = true,
+    List<PhotoRef> portraitPhotos = const [],
   }) => VisitReportState(
     status: status,
     document: documentOf(of ?? visit, companyName: companyName),
     zonesLackingPhoto: zonesLackingPhoto ?? [hall, pantry],
     photoDirectory: FakePhotoStore.directory,
     showsFooterText: showsFooterText,
+    portraitPhotos: portraitPhotos,
   );
 
   /// Gives the errors that the cubits report from now until the test ends.
@@ -156,9 +158,15 @@ void main() {
     test('is equal to a state with the same fields', () {
       expect(loaded(), loaded());
       expect(loaded().hashCode, loaded().hashCode);
+      expect(loaded(portraitPhotos: [lobbyBefore]), loaded(portraitPhotos: [lobbyBefore]));
+      expect(loaded(portraitPhotos: [lobbyBefore]).hashCode, loaded(portraitPhotos: [lobbyBefore]).hashCode);
     });
 
     test('copyWith replaces the status and keeps the rest', () {
+      expect(
+        loaded(portraitPhotos: [lobbyBefore]).copyWith(status: VisitReportStatus.sharing),
+        loaded(status: VisitReportStatus.sharing, portraitPhotos: [lobbyBefore]),
+      );
       expect(loaded().copyWith(status: VisitReportStatus.sharing), loaded(status: VisitReportStatus.sharing));
       expect(loaded(status: VisitReportStatus.shareFailed).copyWith(), loaded(status: VisitReportStatus.shareFailed));
       expect(
@@ -176,6 +184,7 @@ void main() {
       expect(loaded(), isNot(loaded(companyName: null)));
       expect(loaded(), isNot(loaded(zonesLackingPhoto: [hall])));
       expect(loaded(), isNot(loaded(showsFooterText: false)));
+      expect(loaded(), isNot(loaded(portraitPhotos: [lobbyBefore])));
       expect(
         loaded(),
         isNot(
@@ -196,6 +205,21 @@ void main() {
     });
 
     group('load', () {
+      test('loads displayed portrait orientation and forgets it after an unreadable replacement', () async {
+        photoStore.contents[lobbyAfter] = gpsPhotoBytes();
+        final cubit = build();
+        await cubit.load();
+        expect(cubit.state.portraitPhotos, [lobbyAfter]);
+        expect(() => cubit.state.portraitPhotos.add(lobbyBefore), throwsUnsupportedError);
+
+        photoStore.contents[lobbyAfter] = Uint8List.fromList([1, 2, 3]);
+        await cubit.load();
+        expect(cubit.state.status, VisitReportStatus.ready);
+        expect(cubit.state.portraitPhotos, isEmpty);
+        expect(cubit.state.document!.zones, hasLength(2));
+        await cubit.close();
+      });
+
       blocTest<VisitReportCubit, VisitReportState>(
         'builds the report of the visit, and lists the zones that lack a photo in visit order',
         build: build,
@@ -451,7 +475,7 @@ void main() {
             stringContainsInOrder(['깔끔클린', '청소 완료 보고서', '행복빌딩', '2026년 10월 1일', '로비', '바닥 왁스', '복도']),
           );
           expect(summary.text, isNot(contains('탕비실')));
-          expect(photoStore.readPhotos, [lobbyBefore, lobbyAfter, hallBefore]);
+          expect(photoStore.readPhotos, [lobbyBefore, lobbyAfter, hallBefore, lobbyBefore, lobbyAfter, hallBefore]);
         },
       );
 
@@ -553,7 +577,11 @@ void main() {
           await cubit.load();
           await cubit.share(labels);
         },
-        expect: () => [loaded(), loaded(status: VisitReportStatus.sharing), loaded()],
+        expect: () => [
+          loaded(portraitPhotos: [lobbyAfter]),
+          loaded(status: VisitReportStatus.sharing, portraitPhotos: [lobbyAfter]),
+          loaded(portraitPhotos: [lobbyAfter]),
+        ],
         verify: (_) => expect(holdsMetadataText(reportShare.shared.single.bytes), isFalse),
       );
 

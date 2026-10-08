@@ -18,9 +18,23 @@ const double _slotGap = 12;
 
 /// The width of a photo slot over its height, in the PDF and in a preview of the report.
 ///
-/// A square slot shows a portrait photo and a landscape photo of a phone camera at the same size, and lets two zones
-/// without a note share a page.
-const double reportSlotAspectRatio = 1;
+/// The fallback is landscape; [reportSlotAspectRatioOf] selects portrait for a pair of portrait photos.
+const double reportSlotAspectRatio = 4 / 3;
+
+/// Whether the displayed photo is portrait, including the rotation in a JPEG's Exif orientation.
+bool reportPhotoIsPortrait(Uint8List bytes) {
+  final image = pw.MemoryImage(bytes);
+  return image.width! < image.height!;
+}
+
+/// Both slots are portrait only when both photos exist and display as portrait.
+double reportSlotAspectRatioOf(ReportZone zone, Iterable<PhotoRef> portraitPhotos) =>
+    zone.beforePhoto != null &&
+        zone.afterPhoto != null &&
+        portraitPhotos.contains(zone.beforePhoto) &&
+        portraitPhotos.contains(zone.afterPhoto)
+    ? 3 / 4
+    : reportSlotAspectRatio;
 
 /// The most lines that a name takes. A block with a name must fit on one page, and a name has no length limit.
 const _nameMaxLines = 3;
@@ -72,6 +86,10 @@ Future<Uint8List> renderReportPdf(
   final images = {
     for (final photo in document.photos) photo: pw.MemoryImage(_bytesOf(photo, photos)),
   };
+  final portraitPhotos = [
+    for (final entry in images.entries)
+      if (entry.value.width! < entry.value.height!) entry.key,
+  ];
   pdf.addPage(
     pw.MultiPage(
       pageFormat: PdfPageFormat.a4,
@@ -94,7 +112,8 @@ Future<Uint8List> renderReportPdf(
           ),
         pw.SizedBox(height: 4),
         pw.Divider(height: 1, thickness: 0.5, color: _rule),
-        for (final (index, zone) in document.zones.indexed) ..._zone(index + 1, zone, labels, images),
+        for (final (index, zone) in document.zones.indexed)
+          ..._zone(index + 1, zone, labels, images, reportSlotAspectRatioOf(zone, portraitPhotos)),
       ],
     ),
   );
@@ -195,7 +214,13 @@ pw.Widget _runningHeader(ReportDocument document, ReportLabels labels) => pw.Con
 
 /// The widgets of the zone with the [number] in the report. The number, the name, and the photo slots stay on one
 /// page, and the note can go on to the next page.
-List<pw.Widget> _zone(int number, ReportZone zone, ReportLabels labels, Map<PhotoRef, pw.ImageProvider> images) => [
+List<pw.Widget> _zone(
+  int number,
+  ReportZone zone,
+  ReportLabels labels,
+  Map<PhotoRef, pw.ImageProvider> images,
+  double aspectRatio,
+) => [
   // A column spans pages when it is a direct child of the page, which would leave a name at the foot of one page
   // and its photos at the head of the next.
   pw.Inseparable(
@@ -226,6 +251,7 @@ List<pw.Widget> _zone(int number, ReportZone zone, ReportLabels labels, Map<Phot
                 labels.beforePhoto,
                 images[zone.beforePhoto],
                 labels.emptySlotOf(zone.status),
+                aspectRatio: aspectRatio,
                 caption: labels.photoCaptionOf(zone.beforePhoto, zone.beforePhotoSource, zone.beforeCapturedAt),
               ),
             ),
@@ -235,6 +261,7 @@ List<pw.Widget> _zone(int number, ReportZone zone, ReportLabels labels, Map<Phot
                 labels.afterPhoto,
                 images[zone.afterPhoto],
                 labels.emptySlotOf(zone.status),
+                aspectRatio: aspectRatio,
                 caption: labels.photoCaptionOf(zone.afterPhoto, zone.afterPhotoSource, zone.afterCapturedAt),
               ),
             ),
@@ -286,13 +313,19 @@ pw.Widget _statusBadge(String status) => pw.Container(
 ///
 /// The photo sits on white inside a solid edge, and a slot without a photo has a dashed edge, so that the space
 /// beside a photo never looks like a missing photo.
-pw.Widget _slot(String label, pw.ImageProvider? image, String emptyText, {String caption = ''}) => pw.Column(
+pw.Widget _slot(
+  String label,
+  pw.ImageProvider? image,
+  String emptyText, {
+  required double aspectRatio,
+  String caption = '',
+}) => pw.Column(
   crossAxisAlignment: pw.CrossAxisAlignment.start,
   children: [
     pw.Text(label, style: const pw.TextStyle(fontSize: 9, color: _secondaryText)),
     pw.SizedBox(height: 3),
     pw.AspectRatio(
-      aspectRatio: reportSlotAspectRatio,
+      aspectRatio: aspectRatio,
       child: pw.Container(
         alignment: pw.Alignment.center,
         decoration: image == null
@@ -300,7 +333,7 @@ pw.Widget _slot(String label, pw.ImageProvider? image, String emptyText, {String
                 border: pw.Border.all(color: _emptySlotEdge, width: 0.75, style: pw.BorderStyle.dashed),
               )
             : const pw.BoxDecoration(color: PdfColors.white),
-        // The edge of a photo is painted over the photo, which reaches two sides of the square slot and would hide
+        // The edge of a photo is painted over the photo, which reaches two sides of the slot and would hide
         // the edge there.
         foregroundDecoration: image == null ? null : pw.BoxDecoration(border: pw.Border.all(color: _rule, width: 0.5)),
         child: image == null

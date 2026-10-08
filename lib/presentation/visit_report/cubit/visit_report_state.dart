@@ -26,6 +26,7 @@ final class VisitReportState {
     this.document,
     this.zonesLackingPhoto = const [],
     this.photoDirectory = '',
+    this.portraitPhotos = const [],
     this.showsFooterText = true,
   });
 
@@ -41,6 +42,9 @@ final class VisitReportState {
 
   /// The absolute path of the directory that the path of each photo is relative to, in this launch of the app.
   final String photoDirectory;
+
+  /// The readable photos whose displayed height exceeds their width, after Exif rotation.
+  final List<PhotoRef> portraitPhotos;
 
   /// Whether the preview and the PDF show the footer text. Only a company with a paid entitlement leaves it out, and
   /// the page number of the PDF stays either way.
@@ -59,6 +63,7 @@ final class VisitReportState {
     document: document,
     zonesLackingPhoto: zonesLackingPhoto,
     photoDirectory: photoDirectory,
+    portraitPhotos: portraitPhotos,
     showsFooterText: showsFooterText ?? this.showsFooterText,
   );
 
@@ -69,8 +74,16 @@ final class VisitReportState {
       other.document == document &&
       other.photoDirectory == photoDirectory &&
       other.showsFooterText == showsFooterText &&
+      sameElements(other.portraitPhotos, portraitPhotos) &&
       sameElements(other.zonesLackingPhoto, zonesLackingPhoto);
 
   @override
-  int get hashCode => Object.hash(status, document, photoDirectory, showsFooterText, Object.hashAll(zonesLackingPhoto));
+  int get hashCode => Object.hash(
+    status,
+    document,
+    photoDirectory,
+    showsFooterText,
+    Object.hashAll(portraitPhotos),
+    Object.hashAll(zonesLackingPhoto),
+  );
 }
