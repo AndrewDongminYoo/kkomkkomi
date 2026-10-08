@@ -487,3 +487,25 @@ describe("the privacy policy pages", () => {
     assert.ok(read(`web${pages.en.path}index.html`).length > 0);
   });
 });
+
+test("both privacy pages disclose controlled publication, reporting and retained abuse controls", () => {
+  for (const page of Object.values(pages)) {
+    const html = read(page.file).replace(/\s+/g, " ");
+    assert.ok(html.includes("donminzzi@gmail.com"));
+    assert.ok(html.includes("Firestore"));
+    assert.ok(
+      html.includes(
+        page === pages.ko
+          ? "계정을 지운 뒤에도 남습니다"
+          : "remain after account deletion",
+      ),
+    );
+    assert.ok(
+      html.includes(
+        page === pages.ko
+          ? "처리가 끝나면 이메일을 삭제"
+          : "deletes the emails when processing is complete",
+      ),
+    );
+  }
+});

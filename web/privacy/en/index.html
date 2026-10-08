@@ -155,6 +155,13 @@
           close or delete those pages on request; section 12 says how to ask.
         </p>
 
+        <p>
+          Link sharing is available only to anonymous accounts approved by the
+          operator. When you send an approval request, the operator receives
+          your registration code (user ID) and email address. Capture and PDF
+          sharing do not need approval.
+        </p>
+
         <h2 id="publish">3. What a link share sends</h2>
         <p>
           When you tap "링크로 공유하기" (Share as link) on the visit report
@@ -234,6 +241,15 @@
           the IP address of each visitor for a few months. As the administrator
           of the Firebase project, the operator can access the data stored on
           the server.
+        </p>
+
+        <p>
+          To report inappropriate content or a privacy violation, use "이 보고서
+          신고하기" (Report this report) on the page and email
+          donminzzi@gmail.com. The draft contains only the report address and a
+          space for your reason. It does not attach report content or photos
+          automatically. The operator can block a page, delete its photos and
+          withdraw the publisher's approval after checking a report.
         </p>
 
         <h2 id="revoke">5. Closing a link</h2>
@@ -398,6 +414,12 @@
           </li>
         </ul>
 
+        <p>
+          This control does not remove publication approval and usage records or
+          operator page blocks. Section 8 describes what remains and how to
+          request deletion.
+        </p>
+
         <h2 id="uninstall">7. When the app is uninstalled</h2>
         <p>
           Uninstalling the app deletes the publish records on the phone, and the
@@ -442,6 +464,27 @@
             operator deletes it at RevenueCat at your request.
           </li>
         </ul>
+
+        <p>
+          To prevent abuse of link sharing, Firestore keeps each user ID's
+          publication approval, limits, lifetime page, report and photo counts,
+          reserved photo bytes, last request time, target page, visit and photo
+          IDs, and current photo reservations. Private headers reserve report
+          slots; validation documents hold report zones in groups of three. Both
+          are deleted with the report. Deleting a photo removes its reservation
+          but does not restore the allowance. Approval and usage records have no
+          automatic deletion and remain after account deletion in the app. The
+          operator deletes them on request to the contact in section 12. Blocked
+          page IDs and block times remain while the link sharing service
+          operates, to prevent the same address from becoming public again.
+        </p>
+        <p>
+          Approval requests and abuse reports contain the sender's email
+          address, the registration code or report address, and text the sender
+          adds. The operator uses them only to handle approval or abuse reports
+          and deletes the emails when processing is complete. Please do not add
+          sensitive content or photos to an email.
+        </p>
 
         <h2 id="location">
           9. Where data is stored, processing by Google and RevenueCat, and
