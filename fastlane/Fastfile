@@ -250,11 +250,14 @@ platform :ios do
     # the pin itself before it runs any code of the checkout.
     verify_store_runtime(runtime, checkout)
     # The runtime's doctor then checks the profile and its inputs. It gets no
-    # credential variable, and -B with PYTHONDONTWRITEBYTECODE keeps bytecode
+    # credential variable; -E ignores PYTHON* variables, -s skips the user site
+    # directory and -S skips site initialization, so no .pth file or
+    # sitecustomize module of this machine runs before it (the runtime needs the
+    # standard library only); -B with PYTHONDONTWRITEBYTECODE keeps bytecode
     # caches out of the checkout.
     _, errors, status = Open3.capture3(
       { "PATH" => ENV.fetch("PATH"), "HOME" => ENV.fetch("HOME"), "LANG" => "C.UTF-8", "PYTHONDONTWRITEBYTECODE" => "1" },
-      ENV.fetch("PYTHON", "python3"), "-B", "-m", "app_store_assets", "doctor",
+      ENV.fetch("PYTHON", "python3"), "-B", "-E", "-s", "-S", "-m", "app_store_assets", "doctor",
       "--root", ROOT, "--profile", File.basename(STORE_PROFILE), "--target", STORE_PROFILE_IOS_TARGET,
       chdir: checkout, unsetenv_others: true
     )
@@ -263,6 +266,9 @@ platform :ios do
     name, build = pubspec_version
     identity = target.slice("store", "platform", "account", "account_id", "app_id", "flavor", "stage")
                      .merge("version" => { "name" => name, "build" => build.to_s })
+    # The doctor ran code of the checkout, so check the pin again before the
+    # credentials are loaded and the bridge runs.
+    verify_store_runtime(runtime, checkout)
     # app_store_connect_api_key also sets Spaceship::ConnectAPI.token, which export_snapshot reads with.
     app_store_connect_key
     require bridge
