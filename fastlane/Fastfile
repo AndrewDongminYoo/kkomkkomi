@@ -100,33 +100,71 @@ def pubspec_build_number
   pubspec_version[1]
 end
 
+# The directories whose files the pinned runtime runs or reads, and the root
+# file types it runs, as runtime_inventory in app_store_assets/identity.py lists them.
+STORE_RUNTIME_DIRECTORIES = %w[app_store_assets app_store_assets_local lib schemas catalog __pycache__].freeze
+STORE_RUNTIME_ROOT_TYPES = %w[.py .rb .sh].freeze
+
+# Runs a git query that reads refs and objects only. Like the pinned runtime, it
+# ignores system and global configuration and turns off fsmonitor and hooks, and
+# the child gets no credential variable.
+def store_runtime_git(dir, *args)
+  env = { "PATH" => ENV.fetch("PATH"), "GIT_CONFIG_NOSYSTEM" => "1", "GIT_CONFIG_GLOBAL" => File::NULL,
+          "GIT_OPTIONAL_LOCKS" => "0" }
+  out, status = Open3.capture2(env, "git", "-c", "core.fsmonitor=false", "-c", "core.hooksPath=#{File::NULL}",
+                               "-C", dir, *args, unsetenv_others: true)
+  UI.user_error!("git #{args.first} failed in #{dir}.") unless status.success?
+  out.strip
+end
+
+# Every runtime file of the checkout, found by walking the checkout without
+# following a symbolic link; a symbolic link stops the lane.
+def store_runtime_files(checkout)
+  found = []
+  Dir.children(checkout).each do |name|
+    path = File.join(checkout, name)
+    stat = File.lstat(path)
+    UI.user_error!("The runtime checkout has a symbolic link: #{name}") if stat.symlink?
+    if STORE_RUNTIME_DIRECTORIES.include?(name)
+      UI.user_error!("The runtime entry #{name} is not a directory.") unless stat.directory?
+      pending = [name]
+      until pending.empty?
+        relative = pending.shift
+        Dir.children(File.join(checkout, relative)).each do |child|
+          entry = File.join(relative, child)
+          child_stat = File.lstat(File.join(checkout, entry))
+          UI.user_error!("The runtime checkout has a symbolic link: #{entry}") if child_stat.symlink?
+          child_stat.directory? ? pending << entry : found << entry
+        end
+      end
+    elsif stat.file? && STORE_RUNTIME_ROOT_TYPES.include?(File.extname(name))
+      found << name
+    end
+  end
+  found
+end
+
 # Stops unless the runtime checkout is exactly the one that store-upload.json pins:
-# the gitlink of HEAD, the checkout's HEAD and origin URL, no modified, untracked
-# or ignored file (a bytecode cache would run instead of its source), and the
-# SHA-256 of every file of the pinned inventory. It runs no code of the checkout.
+# the submodule commit that HEAD records, the checkout's HEAD and origin URL, and
+# exactly the pinned runtime files with their SHA-256, so no extra file such as a
+# bytecode cache can run instead of its source. It runs no code of the checkout,
+# and it reads files directly instead of running `git status`, whose filters and
+# hooks the checkout's own configuration could name.
 def verify_store_runtime(runtime, checkout)
   commit = runtime.fetch("commit")
-  git = lambda do |dir, *args|
-    out, status = Open3.capture2("git", "-C", dir, *args)
-    UI.user_error!("git #{args.first} failed in #{dir}.") unless status.success?
-    out.strip
-  end
-  gitlink = git.call(ROOT, "ls-tree", "HEAD", "--", runtime.fetch("path"))
-  UI.user_error!("HEAD pins #{runtime.fetch('path')} at another commit than store-upload.json.") unless gitlink.split[2] == commit
-  UI.user_error!("The runtime checkout is not at the pinned commit #{commit}.") unless git.call(checkout, "rev-parse", "HEAD") == commit
-  unless git.call(checkout, "remote", "get-url", "origin") == runtime.fetch("url")
+  recorded = store_runtime_git(ROOT, "ls-tree", "HEAD", "--", runtime.fetch("path"))
+  UI.user_error!("HEAD pins #{runtime.fetch('path')} at another commit than store-upload.json.") unless recorded.split[2] == commit
+  UI.user_error!("The runtime checkout is not at the pinned commit #{commit}.") unless store_runtime_git(checkout, "rev-parse", "HEAD") == commit
+  unless store_runtime_git(checkout, "remote", "get-url", "origin") == runtime.fetch("url")
     UI.user_error!("The runtime checkout has another origin than store-upload.json.")
   end
-  unless git.call(checkout, "status", "--porcelain", "--ignored", "--untracked-files=all").empty?
-    UI.user_error!("The runtime checkout has modified, untracked or ignored files. Restore it to the pinned commit.")
-  end
-  runtime.fetch("files").each do |name, sha256|
-    path = File.join(checkout, name)
-    unless File.lstat(path).file? && Digest::SHA256.file(path).hexdigest == sha256
-      UI.user_error!("The runtime file #{name} differs from store-upload.json.")
-    end
-  rescue Errno::ENOENT
-    UI.user_error!("The runtime file #{name} is missing.")
+  pinned = runtime.fetch("files")
+  extra = store_runtime_files(checkout).sort - pinned.keys
+  missing = pinned.keys - store_runtime_files(checkout)
+  UI.user_error!("The runtime checkout has files that store-upload.json does not pin: #{extra.join(', ')}") unless extra.empty?
+  UI.user_error!("The runtime checkout lacks pinned files: #{missing.join(', ')}") unless missing.empty?
+  pinned.each do |name, sha256|
+    UI.user_error!("The runtime file #{name} differs from store-upload.json.") unless Digest::SHA256.file(File.join(checkout, name)).hexdigest == sha256
   end
 end
 
