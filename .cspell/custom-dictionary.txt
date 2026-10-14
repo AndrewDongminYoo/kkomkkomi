@@ -75,6 +75,7 @@ pgrep
 PRODUCTVERSION
 proguard
 protoc
+PYTHONPATH
 refetches
 SRCROOT
 SUBLANG
