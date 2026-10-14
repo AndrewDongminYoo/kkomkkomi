@@ -5,6 +5,9 @@
 # and the files that they name, before it calls an action that reaches the
 # network. No credential file belongs in the repository.
 
+require "json"
+require "open3"
+
 opt_out_usage
 skip_docs
 
@@ -13,6 +16,11 @@ IOS_METADATA = File.join(ROOT, "fastlane/metadata/ios")
 IOS_SCREENSHOTS = File.join(ROOT, "fastlane/screenshots/ios")
 ANDROID_METADATA = File.join(ROOT, "fastlane/metadata/android")
 AAB = File.join(ROOT, "build/app/outputs/bundle/productionRelease/app-production-release.aab")
+# The offline profile of app-store-assets. Its iOS target names the store
+# identity, and its runtime names the pinned checkout, the tools/app-store-assets
+# submodule.
+STORE_PROFILE = File.join(ROOT, "store-upload.json")
+STORE_PROFILE_IOS_TARGET = "ios"
 
 # The names that fastlane's app_store_connect_api_key action reads by default.
 ASC_KEY_ID = "APP_STORE_CONNECT_API_KEY_KEY_ID"
@@ -158,6 +166,37 @@ platform :ios do
       force: true,
       **screenshots
     )
+  end
+
+  desc "Writes the App Store Connect state of the iOS target of store-upload.json, at the version of pubspec.yaml, to output:, the absolute path of a new file. It makes read calls only."
+  lane :export_store_snapshot do |options|
+    output = options[:output].to_s
+    UI.user_error!("Pass output:<absolute path of a new file>.") unless output.start_with?("/")
+
+    profile = JSON.parse(File.read(STORE_PROFILE))
+    runtime = profile.fetch("runtime")
+    target = profile.fetch("targets").fetch(STORE_PROFILE_IOS_TARGET)
+    checkout = File.join(ROOT, runtime.fetch("path"))
+    bridge = File.join(checkout, "lib/fastlane_assets.rb")
+    UI.user_error!("#{bridge} is missing. Run `git submodule update --init`.") unless File.file?(bridge)
+    # Only the runtime that store-upload.json pins reads the store. The runtime's
+    # own doctor checks the commit, the source URL, a clean checkout and the hash
+    # inventory, and it runs from the checkout, so it also checks its own code.
+    # -B keeps bytecode caches out of the checkout.
+    _, errors, status = Open3.capture3(
+      ENV.fetch("PYTHON", "python3"), "-B", "-m", "app_store_assets", "doctor",
+      "--root", ROOT, "--profile", File.basename(STORE_PROFILE), "--target", STORE_PROFILE_IOS_TARGET,
+      chdir: checkout
+    )
+    UI.user_error!("The runtime doctor refuses store-upload.json: #{errors.strip.lines.last.to_s.strip}") unless status.success?
+
+    name, build = pubspec_version
+    identity = target.slice("store", "platform", "account", "account_id", "app_id", "flavor", "stage")
+                     .merge("version" => { "name" => name, "build" => build.to_s })
+    # app_store_connect_api_key also sets Spaceship::ConnectAPI.token, which export_snapshot reads with.
+    app_store_connect_key
+    require bridge
+    AppStoreAssets.export_snapshot(target: identity, output: output)
   end
 end
 
