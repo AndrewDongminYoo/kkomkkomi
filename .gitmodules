@@ -1,0 +1,3 @@
+[submodule "tools/app-store-assets"]
+	path = tools/app-store-assets
+	url = https://github.com/AndrewDongminYoo/app-store-assets.git
