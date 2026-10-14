@@ -5,6 +5,7 @@
 # and the files that they name, before it calls an action that reaches the
 # network. No credential file belongs in the repository.
 
+require "digest"
 require "json"
 require "open3"
 
@@ -99,6 +100,36 @@ def pubspec_build_number
   pubspec_version[1]
 end
 
+# Stops unless the runtime checkout is exactly the one that store-upload.json pins:
+# the gitlink of HEAD, the checkout's HEAD and origin URL, no modified, untracked
+# or ignored file (a bytecode cache would run instead of its source), and the
+# SHA-256 of every file of the pinned inventory. It runs no code of the checkout.
+def verify_store_runtime(runtime, checkout)
+  commit = runtime.fetch("commit")
+  git = lambda do |dir, *args|
+    out, status = Open3.capture2("git", "-C", dir, *args)
+    UI.user_error!("git #{args.first} failed in #{dir}.") unless status.success?
+    out.strip
+  end
+  gitlink = git.call(ROOT, "ls-tree", "HEAD", "--", runtime.fetch("path"))
+  UI.user_error!("HEAD pins #{runtime.fetch('path')} at another commit than store-upload.json.") unless gitlink.split[2] == commit
+  UI.user_error!("The runtime checkout is not at the pinned commit #{commit}.") unless git.call(checkout, "rev-parse", "HEAD") == commit
+  unless git.call(checkout, "remote", "get-url", "origin") == runtime.fetch("url")
+    UI.user_error!("The runtime checkout has another origin than store-upload.json.")
+  end
+  unless git.call(checkout, "status", "--porcelain", "--ignored", "--untracked-files=all").empty?
+    UI.user_error!("The runtime checkout has modified, untracked or ignored files. Restore it to the pinned commit.")
+  end
+  runtime.fetch("files").each do |name, sha256|
+    path = File.join(checkout, name)
+    unless File.lstat(path).file? && Digest::SHA256.file(path).hexdigest == sha256
+      UI.user_error!("The runtime file #{name} differs from store-upload.json.")
+    end
+  rescue Errno::ENOENT
+    UI.user_error!("The runtime file #{name} is missing.")
+  end
+end
+
 def play_release_status
   status = ENV.fetch(PLAY_RELEASE_STATUS, "draft").strip
   return status if PLAY_RELEASE_STATUSES.include?(status)
@@ -179,14 +210,17 @@ platform :ios do
     checkout = File.join(ROOT, runtime.fetch("path"))
     bridge = File.join(checkout, "lib/fastlane_assets.rb")
     UI.user_error!("#{bridge} is missing. Run `git submodule update --init`.") unless File.file?(bridge)
-    # Only the runtime that store-upload.json pins reads the store. The runtime's
-    # own doctor checks the commit, the source URL, a clean checkout and the hash
-    # inventory, and it runs from the checkout, so it also checks its own code.
-    # -B keeps bytecode caches out of the checkout.
+    # Only the runtime that store-upload.json pins reads the store. This file checks
+    # the pin itself before it runs any code of the checkout.
+    verify_store_runtime(runtime, checkout)
+    # The runtime's doctor then checks the profile and its inputs. It gets no
+    # credential variable, and -B with PYTHONDONTWRITEBYTECODE keeps bytecode
+    # caches out of the checkout.
     _, errors, status = Open3.capture3(
+      { "PATH" => ENV.fetch("PATH"), "HOME" => ENV.fetch("HOME"), "LANG" => "C.UTF-8", "PYTHONDONTWRITEBYTECODE" => "1" },
       ENV.fetch("PYTHON", "python3"), "-B", "-m", "app_store_assets", "doctor",
       "--root", ROOT, "--profile", File.basename(STORE_PROFILE), "--target", STORE_PROFILE_IOS_TARGET,
-      chdir: checkout
+      chdir: checkout, unsetenv_others: true
     )
     UI.user_error!("The runtime doctor refuses store-upload.json: #{errors.strip.lines.last.to_s.strip}") unless status.success?
 
