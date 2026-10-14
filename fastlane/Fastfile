@@ -104,10 +104,11 @@ end
 # ignores system and global configuration and turns off fsmonitor and hooks, and
 # the child gets no credential variable.
 def store_runtime_git(dir, *args)
+  # Replacement refs would make ls-tree read another tree under the pinned hash.
   env = { "PATH" => ENV.fetch("PATH"), "GIT_CONFIG_NOSYSTEM" => "1", "GIT_CONFIG_GLOBAL" => File::NULL,
-          "GIT_OPTIONAL_LOCKS" => "0" }
-  out, status = Open3.capture2(env, "git", "-c", "core.fsmonitor=false", "-c", "core.hooksPath=#{File::NULL}",
-                               "-C", dir, *args, unsetenv_others: true)
+          "GIT_OPTIONAL_LOCKS" => "0", "GIT_NO_REPLACE_OBJECTS" => "1" }
+  out, status = Open3.capture2(env, "git", "--no-replace-objects", "-c", "core.fsmonitor=false",
+                               "-c", "core.hooksPath=#{File::NULL}", "-C", dir, *args, unsetenv_others: true)
   UI.user_error!("git #{args.first} failed in #{dir}.") unless status.success?
   out.strip
 end
