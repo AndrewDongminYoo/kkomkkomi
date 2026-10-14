@@ -113,7 +113,9 @@ def store_runtime_git(dir, *args)
 end
 
 # Every file of the checkout except its `.git` entry, found by walking it
-# without following a symbolic link; a symbolic link stops the lane.
+# without following a symbolic link; an entry that is neither a directory nor a
+# regular file (a symbolic link, a FIFO, a device) stops the lane, so no later
+# read can block or leave the checkout.
 def store_runtime_files(checkout)
   found = []
   pending = [nil]
@@ -124,8 +126,13 @@ def store_runtime_files(checkout)
 
       entry = relative ? File.join(relative, name) : name
       stat = File.lstat(File.join(checkout, entry))
-      UI.user_error!("The runtime checkout has a symbolic link: #{entry}") if stat.symlink?
-      stat.directory? ? pending << entry : found << entry
+      if stat.directory?
+        pending << entry
+      elsif stat.file?
+        found << entry
+      else
+        UI.user_error!("The runtime checkout has an entry that is not a regular file or directory: #{entry}")
+      end
     end
   end
   found
