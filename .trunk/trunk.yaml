@@ -39,6 +39,11 @@ lint:
     - linters: [oxipng]
       paths:
         - android/app/src/*/ic_launcher-playstore.png
+    # The app-store-assets import wrote these records and images, and store-upload.json and the offline plan bind
+    # their bytes by hash, so no formatter may rewrite them.
+    - linters: [oxipng, prettier]
+      paths:
+        - fastlane/store-state/**
 actions:
   enabled:
     - trunk-announce

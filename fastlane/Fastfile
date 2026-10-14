@@ -5,6 +5,10 @@
 # and the files that they name, before it calls an action that reaches the
 # network. No credential file belongs in the repository.
 
+require "digest"
+require "json"
+require "open3"
+
 opt_out_usage
 skip_docs
 
@@ -13,6 +17,11 @@ IOS_METADATA = File.join(ROOT, "fastlane/metadata/ios")
 IOS_SCREENSHOTS = File.join(ROOT, "fastlane/screenshots/ios")
 ANDROID_METADATA = File.join(ROOT, "fastlane/metadata/android")
 AAB = File.join(ROOT, "build/app/outputs/bundle/productionRelease/app-production-release.aab")
+# The offline profile of app-store-assets. Its iOS target names the store
+# identity, and its runtime names the pinned checkout, the tools/app-store-assets
+# submodule.
+STORE_PROFILE = File.join(ROOT, "store-upload.json")
+STORE_PROFILE_IOS_TARGET = "ios"
 
 # The names that fastlane's app_store_connect_api_key action reads by default.
 ASC_KEY_ID = "APP_STORE_CONNECT_API_KEY_KEY_ID"
@@ -91,6 +100,72 @@ def pubspec_build_number
   pubspec_version[1]
 end
 
+# Runs a git query that reads refs and objects only. Like the pinned runtime, it
+# ignores system and global configuration and turns off fsmonitor and hooks, and
+# the child gets no credential variable.
+def store_runtime_git(dir, *args)
+  # Replacement refs would make ls-tree read another tree under the pinned hash.
+  env = { "PATH" => ENV.fetch("PATH"), "GIT_CONFIG_NOSYSTEM" => "1", "GIT_CONFIG_GLOBAL" => File::NULL,
+          "GIT_OPTIONAL_LOCKS" => "0", "GIT_NO_REPLACE_OBJECTS" => "1" }
+  out, status = Open3.capture2(env, "git", "--no-replace-objects", "-c", "core.fsmonitor=false",
+                               "-c", "core.hooksPath=#{File::NULL}", "-C", dir, *args, unsetenv_others: true)
+  UI.user_error!("git #{args.first} failed in #{dir}.") unless status.success?
+  out.strip
+end
+
+# Every file of the checkout except its `.git` entry, found by walking it
+# without following a symbolic link; an entry that is neither a directory nor a
+# regular file (a symbolic link, a FIFO, a device) stops the lane, so no later
+# read can block or leave the checkout.
+def store_runtime_files(checkout)
+  found = []
+  pending = [nil]
+  until pending.empty?
+    relative = pending.shift
+    Dir.children(relative ? File.join(checkout, relative) : checkout).each do |name|
+      next if relative.nil? && name == ".git"
+
+      entry = relative ? File.join(relative, name) : name
+      stat = File.lstat(File.join(checkout, entry))
+      if stat.directory?
+        pending << entry
+      elsif stat.file?
+        found << entry
+      else
+        UI.user_error!("The runtime checkout has an entry that is not a regular file or directory: #{entry}")
+      end
+    end
+  end
+  found
+end
+
+# Stops unless the runtime checkout is exactly the one that store-upload.json pins:
+# the submodule commit that HEAD records, the checkout's HEAD and origin URL, every
+# file of the checkout tracked at that commit and no other (so no bytecode cache or
+# added package, which `python -m` from the checkout would import first, can run),
+# and the SHA-256 of every pinned runtime file. It runs no code of the checkout, and
+# it reads the files directly instead of running `git status`, whose filters and
+# hooks the checkout's own configuration could name.
+def verify_store_runtime(runtime, checkout)
+  commit = runtime.fetch("commit")
+  recorded = store_runtime_git(ROOT, "ls-tree", "HEAD", "--", runtime.fetch("path"))
+  UI.user_error!("HEAD pins #{runtime.fetch('path')} at another commit than store-upload.json.") unless recorded.split[2] == commit
+  UI.user_error!("The runtime checkout is not at the pinned commit #{commit}.") unless store_runtime_git(checkout, "rev-parse", "HEAD") == commit
+  unless store_runtime_git(checkout, "remote", "get-url", "origin") == runtime.fetch("url")
+    UI.user_error!("The runtime checkout has another origin than store-upload.json.")
+  end
+  tracked = store_runtime_git(checkout, "ls-tree", "-r", "--name-only", "-z", commit).split("\0")
+  present = store_runtime_files(checkout)
+  extra = present - tracked
+  missing = tracked - present
+  UI.user_error!("The runtime checkout has files that its pinned commit does not track: #{extra.sort.join(', ')}") unless extra.empty?
+  UI.user_error!("The runtime checkout lacks tracked files: #{missing.sort.join(', ')}") unless missing.empty?
+  pinned = runtime.fetch("files")
+  pinned.each do |name, sha256|
+    UI.user_error!("The runtime file #{name} differs from store-upload.json.") unless Digest::SHA256.file(File.join(checkout, name)).hexdigest == sha256
+  end
+end
+
 def play_release_status
   status = ENV.fetch(PLAY_RELEASE_STATUS, "draft").strip
   return status if PLAY_RELEASE_STATUSES.include?(status)
@@ -158,6 +233,46 @@ platform :ios do
       force: true,
       **screenshots
     )
+  end
+
+  desc "Writes the App Store Connect state of the iOS target of store-upload.json, at the version of pubspec.yaml, to output:, the absolute path of a new file. It makes read calls only."
+  lane :export_store_snapshot do |options|
+    output = options[:output].to_s
+    UI.user_error!("Pass output:<absolute path of a new file>.") unless output.start_with?("/")
+
+    profile = JSON.parse(File.read(STORE_PROFILE))
+    runtime = profile.fetch("runtime")
+    target = profile.fetch("targets").fetch(STORE_PROFILE_IOS_TARGET)
+    checkout = File.join(ROOT, runtime.fetch("path"))
+    bridge = File.join(checkout, "lib/fastlane_assets.rb")
+    UI.user_error!("#{bridge} is missing. Run `git submodule update --init`.") unless File.file?(bridge)
+    # Only the runtime that store-upload.json pins reads the store. This file checks
+    # the pin itself before it runs any code of the checkout.
+    verify_store_runtime(runtime, checkout)
+    # The runtime's doctor then checks the profile and its inputs. It gets no
+    # credential variable; -E ignores PYTHON* variables, -s skips the user site
+    # directory and -S skips site initialization, so no .pth file or
+    # sitecustomize module of this machine runs before it (the runtime needs the
+    # standard library only); -B with PYTHONDONTWRITEBYTECODE keeps bytecode
+    # caches out of the checkout.
+    _, errors, status = Open3.capture3(
+      { "PATH" => ENV.fetch("PATH"), "HOME" => ENV.fetch("HOME"), "LANG" => "C.UTF-8", "PYTHONDONTWRITEBYTECODE" => "1" },
+      ENV.fetch("PYTHON", "python3"), "-B", "-E", "-s", "-S", "-m", "app_store_assets", "doctor",
+      "--root", ROOT, "--profile", File.basename(STORE_PROFILE), "--target", STORE_PROFILE_IOS_TARGET,
+      chdir: checkout, unsetenv_others: true
+    )
+    UI.user_error!("The runtime doctor refuses store-upload.json: #{errors.strip.lines.last.to_s.strip}") unless status.success?
+
+    name, build = pubspec_version
+    identity = target.slice("store", "platform", "account", "account_id", "app_id", "flavor", "stage")
+                     .merge("version" => { "name" => name, "build" => build.to_s })
+    # The doctor ran code of the checkout, so check the pin again before the
+    # credentials are loaded and the bridge runs.
+    verify_store_runtime(runtime, checkout)
+    # app_store_connect_api_key also sets Spaceship::ConnectAPI.token, which export_snapshot reads with.
+    app_store_connect_key
+    require bridge
+    AppStoreAssets.export_snapshot(target: identity, output: output)
   end
 end
 

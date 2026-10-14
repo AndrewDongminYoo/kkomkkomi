@@ -1,70 +1,65 @@
 {
-  "account": "personal",
-  "remote": "https://github.com/AndrewDongminYoo/kkomkkomi.git",
-  "apple": {
-    "identifier": "kr.donminzzi.kkomkkomi",
-    "version_source": {
-      "file": "pubspec.yaml"
-    },
-    "artifact_glob": "build/ios/ipa/*.ipa",
-    "metadata": "fastlane/metadata/ios",
-    "screenshots": "fastlane/screenshots/ios",
-    "backend": "native",
-    "upload_command": ["bundle", "exec", "fastlane", "ios", "beta"],
-    "guards": [
-      {
-        "operations": ["binary"],
-        "command": ["dart", "run", "tool/release_check.dart"]
-      },
-      {
-        "operations": ["metadata"],
-        "command": ["dart", "run", "tool/release_check.dart", "--metadata"]
-      },
-      {
-        "operations": ["screenshots", "images"],
-        "command": ["bash", "tool/store_screenshots/check.sh"]
-      }
-    ],
-    "extra_effects": [
-      "Existing TestFlight group settings govern internal distribution."
-    ],
-    "provenance": {
-      "type": "commit_hash",
-      "record": "build/ios/ipa/build-record.txt"
-    },
-    "asset_preparation": {
-      "project": "kkomkkomi"
+  "schema_version": 1,
+  "type": "offline-profile",
+  "project": "kkomkkomi",
+  "mode": "live",
+  "runtime": {
+    "path": "tools/app-store-assets",
+    "url": "https://github.com/AndrewDongminYoo/app-store-assets.git",
+    "commit": "a9168ee32dfe45df4337ff604020922eb2c351b3",
+    "files": {
+      "app_store_assets/__init__.py": "1770f240c815305c01ee0e6db657e3d877119ed4adb61afbd2727265466da354",
+      "app_store_assets/__main__.py": "935a1c1166b0c1ea35a82256345000bf2c73ded718d77773bc27a71ecce28f7d",
+      "app_store_assets/artifacts.py": "e45b59e3e1454b316cda640e81c720e968476340c3f4814e083a2d335035270a",
+      "app_store_assets/catalog.py": "94e0418ad93efc827755bb1a8b4aef220f4e68f9f26727b05b1fb772f9ca777a",
+      "app_store_assets/cli.py": "0c057e0e734c2fcafc0829b57db11696929543d3daaca20f3cc6424ce6950e13",
+      "app_store_assets/contracts.py": "ff45efa3503891bb54787fbc600bd49c443ac1fd5cfbbca2304c53f7e41c7851",
+      "app_store_assets/decoding.py": "f2530353f422b12d09805fe754816d906b508119f63eeae8747ada8be1e7fd69",
+      "app_store_assets/environment.py": "ed9e4075e189e62200fdc61dbc7cd0672523edcf7f40fd724c491366d6029099",
+      "app_store_assets/identity.py": "c78a8968161a36536543e3e1deb0a0c81f0cad164db467b0c82045d6e5301bbe",
+      "app_store_assets/metadata.py": "458d8dc5da2b40118dffe411992be62f09d5af8341e1df1212d37ab412d2360c",
+      "app_store_assets/planning.py": "4b919b9622ac783afed4956773dca563f187d3f9160b9ae4ec4cd8f34831b2e4",
+      "app_store_assets/profiles.py": "0a2be397b11ac655255387b38766ed499e0691e1aabfbcc419145e1985a8ba18",
+      "app_store_assets/record_types.py": "e37fb0ee4ba9b96aa1c56de03f1936203d45231d781b6821020a1e890c98f83a",
+      "app_store_assets/records.py": "d322e7c0903a654cd49c81ad37b93082f13aa6c49cdc73dcabf5d06bccf050fe",
+      "app_store_assets/snapshots.py": "c95e983efd8abd1f664433d161632d094fe40d984ea9de5a78fcf2de3ea55cac",
+      "app_store_assets_local/__init__.py": "222a4634a93c5659d683d4b61c266f919ae1c910052c1aa216faea19da3d49cd",
+      "app_store_assets_local/__main__.py": "ddc6d35a854c5eaf56a4ed9849e47b80913ccf727e3d0b3b0192ebc13ac631a8",
+      "app_store_assets_local/budgets.py": "8aba0dadbce1584b0367617cf82a7ebd7e6b622b8b19f339c9e8423fb3418fe4",
+      "app_store_assets_local/metadata_io.py": "73d597810f58438b5cf44589327708b1e668a45bf55837d400bffe0d247f2441",
+      "app_store_assets_local/outputs.py": "86c75c7177d9b35ca13747ab548d248c7c9ac6b53fe5572cf14be669e2a1bbc9",
+      "app_store_assets_local/publisher.py": "8429f2f249438ed0b7eb740a22e5300f2e9afd62814f448ec4420ac5b6d94e32",
+      "app_store_assets_local/staging.py": "696e86a2bf0b822b81f24aa4da21d693172cc53f5c62625fe2573114ed98a7ed",
+      "app_store_assets_local/write_cli.py": "a885ac16e1a4f19033254ed0bb8c411c99313df60182e8190671e1e5689f2e61",
+      "assets.py": "4755c7b4d8a7692e4df78819c75fdaeb5ad8360e5457f0b330146e80483d235f",
+      "catalog/store-rules-v1.json": "3ea0db0402f484a7c940186f4ec4acf102dbb4d3d70df11af464d9ca4dee9797",
+      "lib/fastlane_assets.rb": "5c6863d94c17abaa8c358e4175dd5ca8a7aa1bdfb09d2906444b0ad588028f3b",
+      "schemas/offline-profile-v1.json": "f003ed136acd2f7114085f25a293ed417d35cb5afaaea89046ea3f5233b362a2",
+      "schemas/records-v1.json": "a76a04ded23c39f29c1834c12662a4cb70fefe030bb950cc24b2c1c50a4e90cd"
     }
   },
-  "google": {
-    "identifier": "kr.donminzzi.kkomkkomi",
-    "version_source": {
-      "file": "pubspec.yaml"
-    },
-    "artifact": "build/app/outputs/bundle/productionRelease/app-production-release.aab",
-    "metadata": "fastlane/metadata/android",
-    "track": "internal",
-    "release_status": "draft",
-    "backend": "native",
-    "upload_command": ["bundle", "exec", "fastlane", "android", "internal"],
-    "guards": [
-      {
-        "operations": ["binary"],
-        "command": ["dart", "run", "tool/release_check.dart"]
+  "targets": {
+    "ios": {
+      "store": "apple",
+      "platform": "ios",
+      "account": "personal",
+      "app_id": "kr.donminzzi.kkomkkomi",
+      "flavor": "production",
+      "stage": "production",
+      "version_source": {
+        "file": "pubspec.yaml"
       },
-      {
-        "operations": ["metadata"],
-        "command": ["dart", "run", "tool/release_check.dart", "--metadata"]
+      "inputs": ["fastlane/metadata/ios", "fastlane/screenshots/ios"],
+      "metadata": "fastlane/store-state/ios-listing.json",
+      "remote": "fastlane/store-state/ios-remote.json",
+      "replacement": {
+        "locales": ["en-US", "ko"],
+        "slots": ["APP_IPHONE_67"],
+        "allow_delete": false
       },
-      {
-        "operations": ["screenshots", "images"],
-        "command": ["bash", "tool/store_screenshots/check.sh"]
+      "assets": {
+        "manifest": "fastlane/store-state/assets/4576984de47240bda8cdbc2d24dab563b4470483c387ddfe5a3876782313b5a8/manifest.json"
       }
-    ],
-    "provenance": {
-      "type": "commit_hash",
-      "record": "build/app/outputs/bundle/productionRelease/build-record.txt"
     }
-  },
-  "gemfile": "Gemfile"
+  }
 }
