@@ -178,7 +178,8 @@ The root `Gemfile` pins fastlane (run `bundle install` once), `fastlane/Fastfile
 - `merry run release ios` runs the check, checks the credentials, deletes `build/ios/ipa`, builds the production IPA, and uploads it to TestFlight. The upload lane stops for an IPA whose version and build number are not those of `pubspec.yaml`, because `flutter build ipa` exits 0 when the export of the IPA fails after the archive.
 - `merry run release android` runs the check, checks the credentials, builds the production App Bundle, and uploads it with its changelogs to the internal testing track.
 - `merry run release metadata ios` and `merry run release metadata android` run the check, so that a text over its store limit stops before the upload.
-  The iOS lane refuses screenshot transfer through the legacy `AppStoreAssets.prepare` entrypoint; `bundle exec fastlane ios metadata skip_screenshots:true` uploads the texts only.
+  The iOS screenshot lane loads `AppStoreAssets.prepare` from `APP_STORE_ASSETS_ROOT` or the sibling checkout, so its behavior depends on that checkout and is not protected by the runtime pin below.
+  Use the guarded entrypoint for an approved screenshot transfer; `bundle exec fastlane ios metadata skip_screenshots:true` uploads the texts only.
   The Android lane uploads its metadata and images without a binary or review submission; it needs a release on the internal testing track that holds the build number of `pubspec.yaml`, because `supply` stops before it uploads when it finds no release on the track that it is given.
 
 The build number is an integer that grows by one for each upload, so bump `pubspec.yaml`, add the changelogs, and commit before a release.
@@ -203,7 +204,8 @@ From the repository root, `PYTHONPATH=tools/app-store-assets python3 -B -m app_s
 Neither command makes a store call.
 The pinned runtime also exposes `AppStoreAssets.transfer_screenshots` with read-only and transfer modes; both require a plan, a separate approval record for its digest and exact target, and matching live state including the attached build.
 The guarded transfer requires an exclusive writer window and explicit approval for each operation; `allow_delete: false` refuses a different non-empty screenshot group before any write.
-The legacy screenshot metadata lane remains blocked by `AppStoreAssets.prepare`; use `skip_screenshots:true` for its metadata-only operation.
+The pinned runtime's `AppStoreAssets.prepare` refuses legacy screenshot transfer, but the existing metadata lane loads a separate runtime path and is not wired to this pin.
+Use `skip_screenshots:true` for that lane's metadata-only operation.
 Every upload, deletion, or review submission still needs the operator's approval for that run.
 `docs/notes/2026-10-02-first-test-distribution.md` lists the console steps that stay with the operator.
 
