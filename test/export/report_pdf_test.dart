@@ -552,8 +552,7 @@ void main() {
     test('fails for a photo whose bytes are no image', () async {
       final withPhoto = document([ReportZone(name: '로비', beforePhoto: photo('a'), afterPhoto: null, note: '')]);
 
-      // The image decoder of the `pdf` package fails with an `Error`, so a caller that must not stop on a broken
-      // photo file catches more than `Exception`.
+      // The image decoder rejects these bytes, so the `pdf` package cannot identify an image type.
       await expectLater(
         render(
           withPhoto,
@@ -561,7 +560,7 @@ void main() {
             photo('a'): Uint8List.fromList([1, 2, 3]),
           },
         ),
-        throwsA(isA<Error>()),
+        throwsA(isA<PdfException>()),
       );
     });
   });
