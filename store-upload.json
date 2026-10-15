@@ -58,7 +58,7 @@
         "allow_delete": false
       },
       "assets": {
-        "manifest": "fastlane/store-state/assets/4576984de47240bda8cdbc2d24dab563b4470483c387ddfe5a3876782313b5a8/manifest.json"
+        "manifest": "fastlane/store-state/assets/3a01f7f5e4dba0086b126aec809e919597dccf5741a2ffad0ac036d509b6cc13/manifest.json"
       }
     }
   }
