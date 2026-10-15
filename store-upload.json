@@ -6,7 +6,7 @@
   "runtime": {
     "path": "tools/app-store-assets",
     "url": "https://github.com/AndrewDongminYoo/app-store-assets.git",
-    "commit": "a9168ee32dfe45df4337ff604020922eb2c351b3",
+    "commit": "1422b030308330c024d1fc723d0956d145133b3e",
     "files": {
       "app_store_assets/__init__.py": "1770f240c815305c01ee0e6db657e3d877119ed4adb61afbd2727265466da354",
       "app_store_assets/__main__.py": "935a1c1166b0c1ea35a82256345000bf2c73ded718d77773bc27a71ecce28f7d",
@@ -33,7 +33,7 @@
       "app_store_assets_local/write_cli.py": "a885ac16e1a4f19033254ed0bb8c411c99313df60182e8190671e1e5689f2e61",
       "assets.py": "4755c7b4d8a7692e4df78819c75fdaeb5ad8360e5457f0b330146e80483d235f",
       "catalog/store-rules-v1.json": "3ea0db0402f484a7c940186f4ec4acf102dbb4d3d70df11af464d9ca4dee9797",
-      "lib/fastlane_assets.rb": "5c6863d94c17abaa8c358e4175dd5ca8a7aa1bdfb09d2906444b0ad588028f3b",
+      "lib/fastlane_assets.rb": "424e838465a99c088b8d84b4cb26504339c1521f0d26aae64e9dc06e14aac8d8",
       "schemas/offline-profile-v1.json": "f003ed136acd2f7114085f25a293ed417d35cb5afaaea89046ea3f5233b362a2",
       "schemas/records-v1.json": "a76a04ded23c39f29c1834c12662a4cb70fefe030bb950cc24b2c1c50a4e90cd"
     }
