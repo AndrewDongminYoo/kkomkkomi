@@ -6,19 +6,19 @@
   "runtime": {
     "path": "tools/app-store-assets",
     "url": "https://github.com/AndrewDongminYoo/app-store-assets.git",
-    "commit": "1422b030308330c024d1fc723d0956d145133b3e",
+    "commit": "bfae59e569434de5c3ca20b03b95f7fa66b73e38",
     "files": {
       "app_store_assets/__init__.py": "1770f240c815305c01ee0e6db657e3d877119ed4adb61afbd2727265466da354",
       "app_store_assets/__main__.py": "935a1c1166b0c1ea35a82256345000bf2c73ded718d77773bc27a71ecce28f7d",
       "app_store_assets/artifacts.py": "e45b59e3e1454b316cda640e81c720e968476340c3f4814e083a2d335035270a",
-      "app_store_assets/catalog.py": "94e0418ad93efc827755bb1a8b4aef220f4e68f9f26727b05b1fb772f9ca777a",
-      "app_store_assets/cli.py": "0c057e0e734c2fcafc0829b57db11696929543d3daaca20f3cc6424ce6950e13",
+      "app_store_assets/catalog.py": "c16b67f6d5103b17b8c94af5d47e28aace8151083df4b9ab16fd36d997157f9d",
+      "app_store_assets/cli.py": "2da6753381ff1d12cf105819fc95d472524662e8ea26daf2b54546c0071d860a",
       "app_store_assets/contracts.py": "ff45efa3503891bb54787fbc600bd49c443ac1fd5cfbbca2304c53f7e41c7851",
       "app_store_assets/decoding.py": "f2530353f422b12d09805fe754816d906b508119f63eeae8747ada8be1e7fd69",
       "app_store_assets/environment.py": "ed9e4075e189e62200fdc61dbc7cd0672523edcf7f40fd724c491366d6029099",
       "app_store_assets/identity.py": "c78a8968161a36536543e3e1deb0a0c81f0cad164db467b0c82045d6e5301bbe",
-      "app_store_assets/metadata.py": "458d8dc5da2b40118dffe411992be62f09d5af8341e1df1212d37ab412d2360c",
-      "app_store_assets/planning.py": "4b919b9622ac783afed4956773dca563f187d3f9160b9ae4ec4cd8f34831b2e4",
+      "app_store_assets/metadata.py": "26e114c05468145bf9d7df41e304c1e8cc0a5a0f95622b7a07c2124de8d4e596",
+      "app_store_assets/planning.py": "33f973bdad025f479e963f179450f3383a16f852beaf85e0c83112cd78598cc5",
       "app_store_assets/profiles.py": "0a2be397b11ac655255387b38766ed499e0691e1aabfbcc419145e1985a8ba18",
       "app_store_assets/record_types.py": "e37fb0ee4ba9b96aa1c56de03f1936203d45231d781b6821020a1e890c98f83a",
       "app_store_assets/records.py": "d322e7c0903a654cd49c81ad37b93082f13aa6c49cdc73dcabf5d06bccf050fe",
@@ -30,12 +30,15 @@
       "app_store_assets_local/outputs.py": "86c75c7177d9b35ca13747ab548d248c7c9ac6b53fe5572cf14be669e2a1bbc9",
       "app_store_assets_local/publisher.py": "8429f2f249438ed0b7eb740a22e5300f2e9afd62814f448ec4420ac5b6d94e32",
       "app_store_assets_local/staging.py": "696e86a2bf0b822b81f24aa4da21d693172cc53f5c62625fe2573114ed98a7ed",
+      "app_store_assets_local/transfer.py": "3dcf894691bebdf8c46367da1cf526b59326c56326ed9a2f9617cb33bc831be6",
       "app_store_assets_local/write_cli.py": "a885ac16e1a4f19033254ed0bb8c411c99313df60182e8190671e1e5689f2e61",
       "assets.py": "4755c7b4d8a7692e4df78819c75fdaeb5ad8360e5457f0b330146e80483d235f",
       "catalog/store-rules-v1.json": "3ea0db0402f484a7c940186f4ec4acf102dbb4d3d70df11af464d9ca4dee9797",
-      "lib/fastlane_assets.rb": "424e838465a99c088b8d84b4cb26504339c1521f0d26aae64e9dc06e14aac8d8",
+      "lib/fastlane_assets.rb": "d887cc1a0361c26bfa855a6dcf5e8ef83a4a544af17bf4d61d70e3d48bd37e94",
+      "lib/fastlane_transfer.rb": "46277ceccd1392d2a6b5f04b6a50052fa846c8799268dbb74f0145e65358b586",
       "schemas/offline-profile-v1.json": "f003ed136acd2f7114085f25a293ed417d35cb5afaaea89046ea3f5233b362a2",
-      "schemas/records-v1.json": "a76a04ded23c39f29c1834c12662a4cb70fefe030bb950cc24b2c1c50a4e90cd"
+      "schemas/records-v1.json": "a76a04ded23c39f29c1834c12662a4cb70fefe030bb950cc24b2c1c50a4e90cd",
+      "schemas/transfer-approval-v1.json": "0ed8afe401c9c6f1c2feb3f9a54d1203d5de59ce3bf5d4ddc73fe686fb93c4d7"
     }
   },
   "targets": {
