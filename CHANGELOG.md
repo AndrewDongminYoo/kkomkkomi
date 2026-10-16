@@ -6,7 +6,17 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 ## [Unreleased]
 
+## [1.1.1] - 2026-10-16
+
+Prepared for iOS TestFlight, build 5.
+
+### Added
+
 - In-app rear-camera preview for one still photo, with camera-only access, lifecycle/cancellation handling and request-observed UTC time for PDF/preview captions.
+
+### Internal
+
+- Align the App Store draft and binary marketing version after the published App Store version 1.0.0 used binary 1.1.0 (3).
 
 ## [1.1.0] - 2026-10-07
 
