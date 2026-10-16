@@ -1,0 +1,102 @@
+{
+  "schema_version": 1,
+  "type": "metadata-snapshot",
+  "target": {
+    "store": "apple",
+    "platform": "ios",
+    "account": "personal",
+    "app_id": "kr.donminzzi.kkomkkomi",
+    "flavor": "production",
+    "stage": "production",
+    "version": {
+      "name": "1.1.1",
+      "build": "5"
+    }
+  },
+  "version_id": "e427f7af-3793-4505-b96d-a16ae527070d",
+  "editable": true,
+  "review_active": false,
+  "app_info_id": "b67e38fc-8bb1-456e-914c-33c50f9be12c",
+  "fields": {
+    "en-US": {
+      "name": "Kkomkkomi",
+      "subtitle": "Cleaning reports with photos",
+      "privacy_url": "https://kkomkkomi.web.app/privacy/en/",
+      "description": "Kkomkkomi is for small cleaning companies that clean offices and shops on a regular schedule.\nOn each visit, take before and after photos of each zone and turn them into a report for your client.\n\nSet up clients and zones once\n• Add each office or shop you clean as a client.\n• Split a site into zones, such as a lobby or a restroom. The next visit starts with the same zones.\n\nTake before and after photos on each visit\n• Pick the visit date, then take a before photo and an after photo of each zone.\n• Add a note to any zone.\n• See the photos from the last visit before you take new ones.\n\nSend the report as a link or a PDF\n• Preview the cleaning report with your company name at the top, and share it as a PDF.\n• Share it as a link, and your client can open the report without installing an app or signing in. A link below the report opens the client's earlier shared reports.\n• If the connection drops while a report is uploading, the upload starts again when the connection is back.\n\nGood to know\n• Anyone who has the link can open the reports of that client. Send it only to the people who receive the reports.\n• Take care that photos don't show faces, monitors, or documents.\n\nTerms of Use: https://www.apple.com/legal/internet-services/itunes/dev/stdeula/\nPrivacy Policy: https://kkomkkomi.web.app/privacy/en/",
+      "keywords": "cleaning,janitorial,office cleaning,before and after,photo report,client report,cleaning log,PDF",
+      "promotional_text": "",
+      "release_notes": "",
+      "support_url": "https://kkomkkomi.web.app/privacy/en/",
+      "marketing_url": ""
+    },
+    "ko": {
+      "name": "꼼꼬미: 청소 업체용 깔끔 보고서",
+      "subtitle": "전후 사진을 찍어 거래처와 링크로 공유",
+      "privacy_url": "https://kkomkkomi.web.app/privacy/",
+      "description": "꼼꼬미는 사무실과 매장을 정기적으로 청소하는 작은 청소 업체를 위한 앱이에요.\n방문할 때마다 구역별로 청소 전후 사진을 찍고, 거래처에 보낼 보고서로 정리해요.\n\n거래처와 구역은 한 번만 정해 두면 돼요\n• 청소하러 가는 사무실이나 매장을 거래처로 추가해요.\n• 로비, 화장실처럼 구역을 나눠 두면 다음 방문에도 같은 구역 목록이 나와요.\n\n방문하면 구역마다 전후 사진을 찍어요\n• 방문 날짜를 고르고, 구역마다 청소 전 사진과 청소 후 사진을 짝지어 찍어요.\n• 구역마다 메모를 남길 수 있어요.\n• 새로 찍기 전에 지난 방문에 찍은 사진을 볼 수 있어요.\n\n보고서는 링크나 PDF로 보내요\n• 회사 이름이 들어간 청소 완료 보고서를 미리 보고, PDF로 공유할 수 있어요.\n• 링크로 공유하면 거래처는 앱을 설치하거나 로그인하지 않고 보고서를 열어 볼 수 있어요. 보고서 아래 링크에서 그 거래처에 공유한 지난 보고서도 볼 수 있어요.\n• 보고서를 올리는 중에 인터넷이 끊기면, 연결이 돌아왔을 때 다시 올려요.\n\n알아 두세요\n• 링크가 있으면 누구나 그 거래처의 보고서를 볼 수 있어요. 보고서를 받을 분에게만 보내 주세요.\n• 사진에 사람 얼굴이나 모니터, 문서가 찍히지 않게 주의해 주세요.\n\n이용약관: https://www.apple.com/legal/internet-services/itunes/dev/stdeula/\n개인정보 처리방침: https://kkomkkomi.web.app/privacy/",
+      "keywords": "청소업체,정기청소,사무실청소,상가청소,전후사진,청소보고서,작업보고서",
+      "promotional_text": "",
+      "release_notes": "",
+      "support_url": "https://kkomkkomi.web.app/privacy/",
+      "marketing_url": ""
+    }
+  },
+  "images": {
+    "ko": {
+      "APP_IPHONE_67": [
+        {
+          "id": "d268c3d6-c7db-449d-b096-51ed511937b8",
+          "processing_state": "COMPLETE",
+          "width": 1320,
+          "height": 2868
+        },
+        {
+          "id": "fe61c1b1-0498-4955-abc7-a7bb86cd4025",
+          "processing_state": "COMPLETE",
+          "width": 1320,
+          "height": 2868
+        },
+        {
+          "id": "36f916c9-3013-4de2-bfd2-67eed00f0541",
+          "processing_state": "COMPLETE",
+          "width": 1320,
+          "height": 2868
+        },
+        {
+          "id": "e49b16a3-6546-49d5-af19-88e631745287",
+          "processing_state": "COMPLETE",
+          "width": 1320,
+          "height": 2868
+        }
+      ]
+    },
+    "en-US": {
+      "APP_IPHONE_67": [
+        {
+          "id": "05578bd5-eaa6-4d52-8ce0-5dc5af8a02ab",
+          "processing_state": "COMPLETE",
+          "width": 1320,
+          "height": 2868
+        },
+        {
+          "id": "d903a6f2-dd38-4526-97d7-c71a48400bfa",
+          "processing_state": "COMPLETE",
+          "width": 1320,
+          "height": 2868
+        },
+        {
+          "id": "07158715-ccb5-4802-b293-a10fcf6fdf39",
+          "processing_state": "COMPLETE",
+          "width": 1320,
+          "height": 2868
+        },
+        {
+          "id": "8776676e-618e-46cb-89b8-49442f12deb0",
+          "processing_state": "COMPLETE",
+          "width": 1320,
+          "height": 2868
+        }
+      ]
+    }
+  }
+}
