@@ -3,6 +3,7 @@
 //
 // Run it with `flutter test tool/store_screenshots/render_screens.dart`; render.sh runs it before it frames the
 // screens. It lives outside test/, so the test suite, the coverage gate, and CI never run it.
+import 'dart:convert';
 import 'dart:io';
 import 'dart:ui' as ui;
 
@@ -20,14 +21,38 @@ import 'package:path/path.dart' as p;
 import '../../test/helpers/helpers.dart';
 import 'fixtures.dart';
 
-/// A store size of a platform: the size of the screen in logical pixels and the pixel ratio of the image.
-typedef _Device = ({String name, TargetPlatform platform, Size logicalSize, double pixelRatio});
+/// A store size of a platform: the size of the screen in logical pixels, the pixel ratio of the image, and the system
+/// bars over the top and the bottom of the screen in logical pixels, which frame.html draws.
+typedef _Device = ({
+  String name,
+  TargetPlatform platform,
+  Size logicalSize,
+  double pixelRatio,
+  double topInset,
+  double bottomInset,
+});
 
 const _devices = <_Device>[
-  // 1320 x 2868, the iPhone 6.9-inch size of App Store Connect.
-  (name: 'ios', platform: TargetPlatform.iOS, logicalSize: Size(440, 956), pixelRatio: 3),
-  // 1080 x 1920, the 9:16 phone size of Google Play.
-  (name: 'android', platform: TargetPlatform.android, logicalSize: Size(432, 768), pixelRatio: 2.5),
+  // 1320 x 2868, the iPhone 6.9-inch size of App Store Connect. The insets are the status bar with the Dynamic Island
+  // and the home indicator, as an iPhone 16 Pro screenshot of the app measured them.
+  (
+    name: 'ios',
+    platform: TargetPlatform.iOS,
+    logicalSize: Size(440, 956),
+    pixelRatio: 3,
+    topInset: 62,
+    bottomInset: 34,
+  ),
+  // 1080 x 1920, the 9:16 phone size of Google Play. The insets are status_bar_height and navigation_bar_height of the
+  // Android framework.
+  (
+    name: 'android',
+    platform: TargetPlatform.android,
+    logicalSize: Size(432, 768),
+    pixelRatio: 2.5,
+    topInset: 24,
+    bottomInset: 48,
+  ),
 ];
 
 const _languages = <(String, Locale, StoreFixtures)>[
@@ -70,12 +95,28 @@ void main() {
         debugDisableShadows = false;
         WidgetsApp.debugAllowBannerOverride = false;
         debugDefaultTargetPlatformOverride = device.platform;
+        // The test view has no system bars, so without the insets every screen starts at the top edge.
+        final insets = FakeViewPadding(
+          top: device.topInset * device.pixelRatio,
+          bottom: device.bottomInset * device.pixelRatio,
+        );
         tester.view
           ..physicalSize = device.logicalSize * device.pixelRatio
-          ..devicePixelRatio = device.pixelRatio;
+          ..devicePixelRatio = device.pixelRatio
+          ..padding = insets
+          ..viewPadding = insets;
         try {
           final directory = p.join(_outputDirectory, device.name, language);
           Directory(directory).createSync(recursive: true);
+          // frame.html draws the system bars from this file, so the insets live in one place.
+          final geometry = jsonEncode({
+            'width': device.logicalSize.width,
+            'height': device.logicalSize.height,
+            'top': device.topInset,
+            'bottom': device.bottomInset,
+          });
+          File(p.join(_outputDirectory, device.name, 'device.js'))
+              .writeAsStringSync('window.STORE_DEVICE = $geometry;\n');
 
           await _pumpScreen(tester, locale, fixtures, VisitCapturePage.route(visitId: StoreFixtures.latestVisitId));
           await _write(tester, p.join(directory, '01_capture.png'));

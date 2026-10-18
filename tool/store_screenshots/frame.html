@@ -6,12 +6,14 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link
       rel="stylesheet"
-      href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700;800&display=swap" />
+      href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700;800&family=Roboto:wght@500&display=swap" />
     <style>
       /*
        * The frame of one store screenshot: the headline of copy.js above a raw screen of render_screens.dart.
-       * render.sh opens it as frame.html?screen=<name>&lang=<ko|en>&image=<raw PNG> at the store size, so every length is
-       * in vw and the phone takes the height that the words leave.
+       * render.sh opens it as frame.html?screen=<name>&lang=<ko|en>&platform=<ios|android>&device=<device.js>&image=<raw
+       * PNG> at the store size, so every length is in vw and the phone takes the height that the words leave.
+       * The raw screen leaves the system bars empty, and the script below draws them over it in the logical pixels of the
+       * device.js that render_screens.dart writes.
        * The color tokens are copies from web/index.html, so a change to them there must be repeated here.
        */
       :root {
@@ -93,11 +95,20 @@
         background: var(--ink);
         box-shadow: 0 3vw 8vw -3vw rgba(22, 36, 59, 0.45);
       }
-      .phone img {
+      .screen {
+        position: relative;
+        width: 100%;
+        height: 100%;
+        overflow: hidden;
+        border-radius: 6.6vw 6.6vw 0 0;
+      }
+      .screen img,
+      .screen svg {
+        position: absolute;
+        inset: 0;
         display: block;
         width: 100%;
         height: 100%;
-        border-radius: 6.6vw 6.6vw 0 0;
       }
     </style>
     <script src="copy.js"></script>
@@ -108,7 +119,12 @@
       <p id="sub"></p>
     </header>
     <div class="stage">
-      <div class="phone"><img id="screen" alt="" /></div>
+      <div class="phone">
+        <div class="screen">
+          <img id="screen" alt="" />
+          <svg id="bars" aria-hidden="true"></svg>
+        </div>
+      </div>
     </div>
     <script>
       const params = new URLSearchParams(location.search);
@@ -140,6 +156,183 @@
       const phone = document.querySelector(".phone");
       phone.style.aspectRatio = `${innerWidth} / ${innerHeight}`;
       document.getElementById("screen").src = params.get("image");
+
+      // device.js sets window.STORE_DEVICE, and the bars are drawn when it has loaded.
+      let device;
+      const bars = document.getElementById("bars");
+      const geometry = document.createElement("script");
+      geometry.src = params.get("device");
+      geometry.onerror = () => {
+        throw new Error(`No device geometry at ${params.get("device")}`);
+      };
+      geometry.onload = () => {
+        device = window.STORE_DEVICE;
+        bars.setAttribute("viewBox", `0 0 ${device.width} ${device.height}`);
+        ({ ios: drawIos, android: drawAndroid })[params.get("platform")]();
+      };
+      document.head.append(geometry);
+
+      // Adds an SVG element with the attributes of `attributes` to the bars.
+      function draw(name, attributes, text) {
+        const node = document.createElementNS(
+          "http://www.w3.org/2000/svg",
+          name,
+        );
+        for (const [key, value] of Object.entries(attributes))
+          node.setAttribute(key, value);
+        if (text) node.textContent = text;
+        bars.append(node);
+      }
+
+      // An arc of radius `r` around the point (x, y), `angle` degrees to each side of straight up.
+      function arc(x, y, r, angle) {
+        const dx = r * Math.sin((angle * Math.PI) / 180);
+        const dy = r * Math.cos((angle * Math.PI) / 180);
+        return `M ${x - dx} ${y - dy} A ${r} ${r} 0 0 1 ${x + dx} ${y - dy}`;
+      }
+
+      // The iOS status bar of an iPhone screenshot, in points. The sizes and the positions were measured on an iPhone 16
+      // Pro screenshot of the app: every item is centered at 53% of the top inset, and the time and the icons are
+      // centered in the space beside the Dynamic Island, 5 points out from its middle. A screenshot shows neither the
+      // Dynamic Island nor the home indicator, so the frame draws neither.
+      function drawIos() {
+        const { width, top } = device;
+        const y = top * 0.53;
+        const side = (width - 126) / 4 + 5;
+        draw(
+          "text",
+          {
+            x: side,
+            y,
+            "text-anchor": "middle",
+            "dominant-baseline": "central",
+            "font-family":
+              '-apple-system, "SF Pro Text", system-ui, sans-serif',
+            "font-size": 17,
+            "font-weight": 600,
+          },
+          "9:41",
+        );
+        // Signal, Wi-Fi, and battery, 80.5 points from the left of the signal to the end of the battery cap.
+        const x = width - side - 40.25;
+        [4.6, 6.7, 8.8, 10.9].forEach((height, index) =>
+          draw("rect", {
+            x: x + index * 5,
+            y: y + 5.45 - height,
+            width: 3.4,
+            height,
+            rx: 1,
+          }),
+        );
+        const wifi = x + 35;
+        for (const r of [12.2, 7.4]) {
+          draw("path", {
+            d: arc(wifi, y + 6.25, r, 42),
+            fill: "none",
+            stroke: "#000",
+            "stroke-width": 2.6,
+            "stroke-linecap": "round",
+          });
+        }
+        draw("path", {
+          d: `M ${wifi} ${y + 6.25} L ${arc(wifi, y + 6.25, 3.6, 42).slice(2)} Z`,
+        });
+        const battery = x + 51.2;
+        draw("rect", {
+          x: battery,
+          y: y - 6.55,
+          width: 27.5,
+          height: 13.1,
+          rx: 4.2,
+          "fill-opacity": 0.35,
+        });
+        draw("rect", {
+          x: battery + 2,
+          y: y - 4.55,
+          width: 23.5,
+          height: 9.1,
+          rx: 2.5,
+        });
+        draw("rect", {
+          x: battery + 28.5,
+          y: y - 2.3,
+          width: 1.6,
+          height: 4.6,
+          rx: 0.8,
+          "fill-opacity": 0.4,
+        });
+      }
+
+      // The Android status bar and three-button navigation bar, in density-independent pixels, with the 16 dp margins
+      // and the icon shapes of the AOSP system UI.
+      function drawAndroid() {
+        const { width, height, top, bottom } = device;
+        const ink = "#1f1f1f";
+        const y = top / 2;
+        draw(
+          "text",
+          {
+            x: 16,
+            y,
+            "dominant-baseline": "central",
+            "font-family": "Roboto, sans-serif",
+            "font-size": 14,
+            "font-weight": 500,
+            fill: ink,
+          },
+          "9:41",
+        );
+        const battery = width - 16 - 7.5;
+        draw("rect", {
+          x: battery,
+          y: y - 6,
+          width: 7.5,
+          height: 13,
+          rx: 1.2,
+          fill: ink,
+        });
+        draw("rect", {
+          x: battery + 2,
+          y: y - 7.5,
+          width: 3.5,
+          height: 2,
+          rx: 0.5,
+          fill: ink,
+        });
+        const signal = battery - 7 - 12;
+        draw("path", {
+          d: `M ${signal} ${y + 6} L ${signal + 12} ${y + 6} L ${signal + 12} ${y - 6} Z`,
+          fill: ink,
+        });
+        const wifi = signal - 6 - 9.2;
+        draw("path", {
+          d: `M ${wifi} ${y + 6} L ${arc(wifi, y + 6, 13, 45).slice(2)} Z`,
+          fill: ink,
+        });
+
+        const navigation = height - bottom / 2;
+        const stroke = {
+          fill: "none",
+          stroke: ink,
+          "stroke-width": 2,
+          "stroke-linejoin": "round",
+          "stroke-opacity": 0.8,
+        };
+        const back = width * 0.25;
+        draw("path", {
+          d: `M ${back - 6} ${navigation} L ${back + 6} ${navigation - 7} L ${back + 6} ${navigation + 7} Z`,
+          ...stroke,
+        });
+        draw("circle", { cx: width / 2, cy: navigation, r: 7.5, ...stroke });
+        draw("rect", {
+          x: width * 0.75 - 6.5,
+          y: navigation - 6.5,
+          width: 13,
+          height: 13,
+          rx: 1.5,
+          ...stroke,
+        });
+      }
     </script>
   </body>
 </html>
