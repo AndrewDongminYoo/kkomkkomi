@@ -20,6 +20,16 @@ dev:
     (description): Runs the production flavor on the attached device.
     (scripts): flutter run --flavor production --target lib/main_production.dart
 
+hard:
+  (description): Upgrades Flutter and its packages, then resolves the Swift packages of iOS and macOS
+  (scripts):
+    - flutter upgrade
+    - flutter packages upgrade --major-versions --tighten
+    - xcodebuild -workspace ios/Runner.xcworkspace -scheme production -resolvePackageDependencies
+    - xcodebuild -project ios/Runner.xcodeproj -scheme production -resolvePackageDependencies
+    - xcodebuild -workspace macos/Runner.xcworkspace -scheme production -resolvePackageDependencies
+    - xcodebuild -project macos/Runner.xcodeproj -scheme production -resolvePackageDependencies
+
 # --- Quality gates ----------------------------------------------------------
 analyze:
   (description): Static analysis with very_good_analysis (zero tolerance, matches CI).
