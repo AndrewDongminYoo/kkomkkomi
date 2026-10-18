@@ -53,15 +53,15 @@
         "file": "pubspec.yaml"
       },
       "inputs": ["fastlane/metadata/ios", "fastlane/screenshots/ios"],
-      "metadata": "fastlane/store-state/ios-listing-1.1.1-build5.json",
-      "remote": "fastlane/store-state/ios-remote-1.1.1-build5.json",
+      "metadata": "fastlane/store-state/ios-listing-1.1.1-build5-insets.json",
+      "remote": "fastlane/store-state/ios-remote-1.1.1-build5-after-u5.json",
       "replacement": {
         "locales": ["en-US", "ko"],
         "slots": ["APP_IPHONE_67"],
-        "allow_delete": false
+        "allow_delete": true
       },
       "assets": {
-        "manifest": "fastlane/store-state/assets/8238321d2e504886df09520f4ccadfcc0e40464e83758b4e63e6eae25edb3091/manifest.json"
+        "manifest": "fastlane/store-state/assets/0cc7163cb7af02c1b6992e311346d16150f727ff9278977446cfe7c1b13abebf/manifest.json"
       }
     }
   }
