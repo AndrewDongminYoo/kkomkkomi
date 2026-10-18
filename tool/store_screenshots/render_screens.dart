@@ -43,15 +43,15 @@ const _devices = <_Device>[
     topInset: 62,
     bottomInset: 34,
   ),
-  // 1080 x 1920, the 9:16 phone size of Google Play. The insets are status_bar_height and navigation_bar_height of the
-  // Android framework.
+  // 1080 x 1920, the 9:16 phone size of Google Play. The insets are the status bar beside the camera cutout and the
+  // gesture navigation bar, as `dumpsys window` reported them on the Pixel 10 emulator: 142 and 63 pixels at 420 dpi.
   (
     name: 'android',
     platform: TargetPlatform.android,
     logicalSize: Size(432, 768),
     pixelRatio: 2.5,
-    topInset: 24,
-    bottomInset: 48,
+    topInset: 54,
+    bottomInset: 24,
   ),
 ];
 
