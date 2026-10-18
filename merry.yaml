@@ -23,7 +23,7 @@ dev:
 hard:
   (description): Upgrades Flutter and its packages, then resolves the Swift packages of iOS and macOS
   (scripts):
-    - flutter upgrade --force
+    - flutter upgrade
     - flutter packages upgrade --major-versions --tighten
     - xcodebuild -workspace ios/Runner.xcworkspace -scheme production -resolvePackageDependencies
     - xcodebuild -project ios/Runner.xcodeproj -scheme production -resolvePackageDependencies
