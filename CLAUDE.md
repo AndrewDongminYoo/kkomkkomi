@@ -203,6 +203,7 @@ Trunk does not format `fastlane/store-state/`, because the profile and the plan 
 From the repository root, `PYTHONPATH=tools/app-store-assets python3 -B -m app_store_assets doctor --target ios` checks the runtime pin and the inputs, and `PYTHONPATH=tools/app-store-assets python3 -B -m app_store_assets plan --target ios --operation images` writes a plan that executes nothing and needs that snapshot.
 Neither command makes a store call.
 The pinned runtime also exposes `AppStoreAssets.transfer_screenshots` with read-only and transfer modes; both require a plan, a separate approval record for its digest and exact target, and matching live state including the attached build.
+`bundle exec fastlane ios store_screenshots_verify plan:<path> approval:<path>` runs the read-only mode and `store_screenshots_transfer` with the same options runs the transfer mode, both after the pin, doctor, and pin checks of `export_store_snapshot`; the paths are relative to the repository root, and keeping the plan and the approval under `build/store-assets/` keeps them out of the bound inputs.
 The guarded transfer requires an exclusive writer window and explicit approval for each operation; `allow_delete: false` refuses a different non-empty screenshot group before any write.
 The pinned runtime's `AppStoreAssets.prepare` refuses legacy screenshot transfer, but the existing metadata lane loads a separate runtime path and is not wired to this pin.
 Use `skip_screenshots:true` for that lane's metadata-only operation.
