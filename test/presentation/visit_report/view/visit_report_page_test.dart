@@ -719,12 +719,37 @@ void main() {
         expect(tester.getTopLeft(linkButton()).dy, lessThan(tester.getTopLeft(pdfButton()).dy));
       });
 
+      /// A backend that refuses the page write for a client that already has its page, so that a press of Share link
+      /// ends refused without the notice of a first link.
+      FakePublisher refusingPublisher() {
+        publishing.pagesById['page-1'] = ClientPage(
+          id: 'page-1',
+          clientId: client.id,
+          createdAt: DateTime.utc(2026, 10),
+        );
+        return FakePublisher()
+          ..failures['writePage'] = [const PublishException(PublishErrorKind.refused, 'permission-denied')];
+      }
+
+      testWidgets('offers the approval request only after the backend refused the link', (tester) async {
+        await pumpPage(tester, publisher: refusingPublisher());
+        expect(find.text('Request link sharing approval'), findsNothing);
+
+        await tester.tap(linkButton());
+        await tester.pumpAndSettle();
+
+        expect(find.text('Request link sharing approval'), findsOneWidget);
+      });
+
       testWidgets('approval request exposes only its registration code and leaves PDF sharing available', (
         tester,
       ) async {
         final identity = FakeIdentity(userId: 'approval-uid');
         final links = FakeExternalLinks()..opens = false;
-        await pumpPage(tester, publisher: FakePublisher(), identity: identity, externalLinks: links);
+        await pumpPage(tester, publisher: refusingPublisher(), identity: identity, externalLinks: links);
+        await tester.tap(linkButton());
+        await tester.pumpAndSettle();
+        final jobs = publishing.jobs.length;
         expect(identity.calls, 0);
         await tester.tap(find.text('Request link sharing approval'));
         await tester.pumpAndSettle();
@@ -737,22 +762,33 @@ void main() {
         await tester.tap(find.widgetWithText(TextButton, 'Cancel'));
         await tester.pumpAndSettle();
         expect(tester.widget<OutlinedButton>(pdfButton()).onPressed, isNotNull);
-        expect(publishing.jobs, isEmpty);
+        // The request publishes nothing.
+        expect(publishing.jobs, hasLength(jobs));
       });
 
-      for (final (locale, button, title, email, close) in [
-        (const Locale('en'), 'Request link sharing approval', 'Link sharing approval', 'Open email app', 'Cancel'),
-        (const Locale('ko'), '링크 공유 승인 요청하기', '링크 공유 승인', '메일 앱 열기', '닫기'),
+      for (final (locale, share, button, title, email, close) in [
+        (
+          const Locale('en'),
+          'Share link',
+          'Request link sharing approval',
+          'Link sharing approval',
+          'Open email app',
+          'Cancel',
+        ),
+        (const Locale('ko'), '링크로 공유하기', '링크 공유 승인 요청하기', '링크 공유 승인', '메일 앱 열기', '닫기'),
       ]) {
         testWidgets('approval request fits a narrow screen in ${locale.languageCode}', (tester) async {
           tester.useNarrowScreenWithLargestText();
           await pumpPage(
             tester,
-            publisher: FakePublisher(),
+            publisher: refusingPublisher(),
             identity: FakeIdentity(userId: 'fictional-approval-uid'),
             locale: locale,
             keepScreen: true,
           );
+          await tester.ensureVisible(linkButton(share));
+          await tester.tap(linkButton(share));
+          await tester.pumpAndSettle();
           final request = find.text(button);
           await tester.ensureVisible(request);
           await tester.tap(request);
@@ -769,7 +805,9 @@ void main() {
       testWidgets('approval request handles delayed and unavailable identity without sending email', (tester) async {
         final identity = FakeIdentity()..gate = Completer<void>();
         final links = FakeExternalLinks();
-        await pumpPage(tester, publisher: FakePublisher(), identity: identity, externalLinks: links);
+        await pumpPage(tester, publisher: refusingPublisher(), identity: identity, externalLinks: links);
+        await tester.tap(linkButton());
+        await tester.pumpAndSettle();
         await tester.tap(find.text('Request link sharing approval'));
         await tester.pump();
         expect(find.byType(CircularProgressIndicator), findsOneWidget);
@@ -1398,6 +1436,11 @@ void main() {
           await pumpView(tester, shown(VisitReportStatus.ready));
 
           expect(find.text(english), findsOneWidget);
+          // Only a refusal offers the approval request.
+          expect(
+            find.text('Request link sharing approval'),
+            linkState.failure == PublishFailure.refused ? findsOneWidget : findsNothing,
+          );
           // Only a job that stopped is a failure. One that waits for its next try is still on its way.
           expect(
             tester.noticeToneOf(english),
@@ -1427,8 +1470,9 @@ void main() {
 
           await pumpView(tester, shown(VisitReportStatus.ready));
 
+          // The link and the PDF controls only: no message, and no approval request without a refusal.
           final bar = find.ancestor(of: find.text('Share link'), matching: find.byType(Column)).first;
-          expect(find.descendant(of: bar, matching: find.byType(KeepAllText)), findsNWidgets(3));
+          expect(find.descendant(of: bar, matching: find.byType(KeepAllText)), findsNWidgets(2));
         });
       }
 

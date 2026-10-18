@@ -11,6 +11,7 @@ The landing inquiry form does not send messages.
 ## Enrollment
 
 Use the app's **Request link sharing approval** action to obtain the publisher's anonymous registration code.
+The visit report screen shows that action only after the backend refused a link share, because the app does not read its grant; a publisher without a grant presses **Share link** once first.
 Confirm that the request belongs to a legitimate intended publisher using the operator's existing relationship; an email address or replacement UID alone is not sufficient.
 Do not grant every existing anonymous UID or restore approval merely because an account was replaced.
 Use privileged Firestore console access to create `publishingGrants/{uid}`.

@@ -580,7 +580,10 @@ class _ShareBar extends StatelessWidget {
                 const SizedBox(height: 8),
               ],
               if (hasLink) ...[
-                TextButton(onPressed: () => _requestApproval(context), child: KeepAllText(l10n.reportApprovalButton)),
+                // The app cannot read whether the operator approved the account, so the approval request shows only
+                // after the backend refused a publish, under the message that explains the refusal.
+                if (linkState.failure == PublishFailure.refused)
+                  TextButton(onPressed: () => _requestApproval(context), child: KeepAllText(l10n.reportApprovalButton)),
                 FilledButton(
                   onPressed: onShareLink,
                   child: linkState.status == ReportLinkStatus.publishing
