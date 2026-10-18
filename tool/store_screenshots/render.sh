@@ -66,7 +66,8 @@ frame() {
   local screen name
   for screen in "${screens[@]}"; do
     name="$(basename "${screen}" .png)"
-    shoot "frame.html?screen=${name}&lang=$2&image=file://${screen}" "${work}/frame.png" "$4" "$5"
+    shoot "frame.html?screen=${name}&lang=$2&platform=$1&device=file://${raw}/$1/device.js&image=file://${screen}" \
+      "${work}/frame.png" "$4" "$5"
     opaque "${work}/frame.png" "$3/${name}.png"
     rm "${work}/frame.png"
   done
