@@ -208,6 +208,7 @@ The guarded transfer requires an exclusive writer window and explicit approval f
 The pinned runtime's `AppStoreAssets.prepare` refuses legacy screenshot transfer, but the existing metadata lane loads a separate runtime path and is not wired to this pin.
 Use `skip_screenshots:true` for that lane's metadata-only operation.
 Every upload, deletion, or review submission still needs the operator's approval for that run.
+`fastlane/creative/ios/<locale>/header.png` and `search.png` are the App Store product page header and search result image that `merry run store` renders; no lane and no pinned runtime uploads them, so the operator adds them in App Store Connect (the Header and Search Results tab of the version page, or Asset Library) after checking them with its preview tool, because Apple publishes no safe area outside its design templates.
 `docs/notes/2026-10-02-first-test-distribution.md` lists the console steps that stay with the operator.
 
 ## Architecture
