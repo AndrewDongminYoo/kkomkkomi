@@ -166,6 +166,63 @@ def verify_store_runtime(runtime, checkout)
   end
 end
 
+# Checks the runtime that store-upload.json pins and the profile, loads the App
+# Store Connect key, and loads the bridge of that runtime. Returns the identity of
+# the iOS target of the profile at the version of pubspec.yaml.
+def checked_store_bridge
+  profile = JSON.parse(File.read(STORE_PROFILE))
+  runtime = profile.fetch("runtime")
+  target = profile.fetch("targets").fetch(STORE_PROFILE_IOS_TARGET)
+  checkout = File.join(ROOT, runtime.fetch("path"))
+  bridge = File.join(checkout, "lib/fastlane_assets.rb")
+  UI.user_error!("#{bridge} is missing. Run `git submodule update --init`.") unless File.file?(bridge)
+  # Only the runtime that store-upload.json pins reads the store. This file checks
+  # the pin itself before it runs any code of the checkout.
+  verify_store_runtime(runtime, checkout)
+  # The runtime's doctor then checks the profile and its inputs. It gets no
+  # credential variable; -E ignores PYTHON* variables, -s skips the user site
+  # directory and -S skips site initialization, so no .pth file or
+  # sitecustomize module of this machine runs before it (the runtime needs the
+  # standard library only); -B with PYTHONDONTWRITEBYTECODE keeps bytecode
+  # caches out of the checkout.
+  _, errors, status = Open3.capture3(
+    { "PATH" => ENV.fetch("PATH"), "HOME" => ENV.fetch("HOME"), "LANG" => "C.UTF-8", "PYTHONDONTWRITEBYTECODE" => "1" },
+    ENV.fetch("PYTHON", "python3"), "-B", "-E", "-s", "-S", "-m", "app_store_assets", "doctor",
+    "--root", ROOT, "--profile", File.basename(STORE_PROFILE), "--target", STORE_PROFILE_IOS_TARGET,
+    chdir: checkout, unsetenv_others: true
+  )
+  UI.user_error!("The runtime doctor refuses store-upload.json: #{errors.strip.lines.last.to_s.strip}") unless status.success?
+
+  name, build = pubspec_version
+  identity = target.slice("store", "platform", "account", "account_id", "app_id", "flavor", "stage")
+                   .merge("version" => { "name" => name, "build" => build.to_s })
+  # The doctor ran code of the checkout, so check the pin again before the
+  # credentials are loaded and the bridge runs.
+  verify_store_runtime(runtime, checkout)
+  # app_store_connect_api_key also sets Spaceship::ConnectAPI.token, which the bridge reads with.
+  app_store_connect_key
+  require bridge
+  identity
+end
+
+# The option `key` of a screenshot transfer lane: the path of a reviewed plan or
+# approval file, relative to the repository root.
+def store_transfer_file(options, key)
+  path = options[key].to_s
+  UI.user_error!("Pass #{key}:<path of the reviewed #{key} file, relative to the repository root>.") if path.empty?
+  UI.user_error!("#{key}: names no file: #{path}") unless File.file?(File.join(ROOT, path))
+  path
+end
+
+# Runs the guarded screenshot transfer of the pinned runtime in `mode`, read-only
+# or transfer, for the plan and the approval that the options name.
+def store_screenshot_transfer(options, mode)
+  plan = store_transfer_file(options, :plan)
+  approval = store_transfer_file(options, :approval)
+  identity = checked_store_bridge
+  AppStoreAssets.transfer_screenshots(root: ROOT, target: identity, plan: plan, approval: approval, mode: mode)
+end
+
 def play_release_status
   status = ENV.fetch(PLAY_RELEASE_STATUS, "draft").strip
   return status if PLAY_RELEASE_STATUSES.include?(status)
@@ -240,39 +297,18 @@ platform :ios do
     output = options[:output].to_s
     UI.user_error!("Pass output:<absolute path of a new file>.") unless output.start_with?("/")
 
-    profile = JSON.parse(File.read(STORE_PROFILE))
-    runtime = profile.fetch("runtime")
-    target = profile.fetch("targets").fetch(STORE_PROFILE_IOS_TARGET)
-    checkout = File.join(ROOT, runtime.fetch("path"))
-    bridge = File.join(checkout, "lib/fastlane_assets.rb")
-    UI.user_error!("#{bridge} is missing. Run `git submodule update --init`.") unless File.file?(bridge)
-    # Only the runtime that store-upload.json pins reads the store. This file checks
-    # the pin itself before it runs any code of the checkout.
-    verify_store_runtime(runtime, checkout)
-    # The runtime's doctor then checks the profile and its inputs. It gets no
-    # credential variable; -E ignores PYTHON* variables, -s skips the user site
-    # directory and -S skips site initialization, so no .pth file or
-    # sitecustomize module of this machine runs before it (the runtime needs the
-    # standard library only); -B with PYTHONDONTWRITEBYTECODE keeps bytecode
-    # caches out of the checkout.
-    _, errors, status = Open3.capture3(
-      { "PATH" => ENV.fetch("PATH"), "HOME" => ENV.fetch("HOME"), "LANG" => "C.UTF-8", "PYTHONDONTWRITEBYTECODE" => "1" },
-      ENV.fetch("PYTHON", "python3"), "-B", "-E", "-s", "-S", "-m", "app_store_assets", "doctor",
-      "--root", ROOT, "--profile", File.basename(STORE_PROFILE), "--target", STORE_PROFILE_IOS_TARGET,
-      chdir: checkout, unsetenv_others: true
-    )
-    UI.user_error!("The runtime doctor refuses store-upload.json: #{errors.strip.lines.last.to_s.strip}") unless status.success?
-
-    name, build = pubspec_version
-    identity = target.slice("store", "platform", "account", "account_id", "app_id", "flavor", "stage")
-                     .merge("version" => { "name" => name, "build" => build.to_s })
-    # The doctor ran code of the checkout, so check the pin again before the
-    # credentials are loaded and the bridge runs.
-    verify_store_runtime(runtime, checkout)
-    # app_store_connect_api_key also sets Spaceship::ConnectAPI.token, which export_snapshot reads with.
-    app_store_connect_key
-    require bridge
+    identity = checked_store_bridge
     AppStoreAssets.export_snapshot(target: identity, output: output)
+  end
+
+  desc "Checks with read calls only that App Store Connect still holds the remote state of the plan: of an images transfer, that the approval: approves that plan, and that the build of the target is attached. plan: and approval: are paths relative to the repository root. It uploads nothing."
+  lane :store_screenshots_verify do |options|
+    store_screenshot_transfer(options, "read-only")
+  end
+
+  desc "Makes the screenshot sets of the plan: on App Store Connect after the same checks as store_screenshots_verify, and deletes a different set only where the plan allows it. It never submits the app for review. The operator runs or approves each run."
+  lane :store_screenshots_transfer do |options|
+    store_screenshot_transfer(options, "transfer")
   end
 end
 

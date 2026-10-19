@@ -8,7 +8,7 @@ Read `CLAUDE.md` for this project's development and release rules. Where this fi
 The `export_store_snapshot` lane reads the App Store Connect state of its iOS target, and the offline `doctor` and `plan` commands of that runtime check the profile and plan a listing change without a store call; `CLAUDE.md`, section "Release", gives the commands.
 The pinned runtime also exposes `AppStoreAssets.transfer_screenshots`, which requires an exact plan, a separate approval record, live state checks, and an exclusive writer window.
 The legacy screenshot metadata lane still loads `APP_STORE_ASSETS_ROOT` or a sibling checkout; this submodule pin does not protect that route.
-Use the guarded entrypoint for an approved screenshot transfer.
+Use the guarded entrypoint, the `store_screenshots_verify` and `store_screenshots_transfer` lanes, for an approved screenshot transfer.
 Reuse existing project build and release gates; do not substitute a generic upload for a guarded native lane.
 Every upload, deletion, or review submission, of a binary or of a listing, is an external action that the operator runs or approves for that run, as `CLAUDE.md` says. A request to add or fix the pipeline does not authorize live uploads, review submission, or public release.
 Preserve authentication, permission, and processing failures and resume automation after the specific blocker is resolved.
