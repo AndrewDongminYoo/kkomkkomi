@@ -349,19 +349,26 @@ platform :android do
     )
   end
 
-  desc "Uploads the texts and images of fastlane/metadata/android to Google Play, without a bundle. The internal track must hold the bundle of the pubspec build number."
-  lane :metadata do
+  desc "Uploads the texts and images of fastlane/metadata/android to Google Play, without a bundle. The internal track must hold the bundle of the pubspec build number, or track: and version_code: name a release that exists, such as track:alpha for closed testing."
+  lane :metadata do |options|
     json_key = check_play_credentials
 
     # supply looks up a release on a track even when it uploads no bundle and
     # no changelog, and stops when it finds none. The production track has no
     # release, so the lane names the internal track and the build number of
     # pubspec.yaml, whose bundle the first upload by hand or the `internal`
-    # lane put there.
+    # lane put there. The store listing belongs to the app and not to that
+    # release, so track: and version_code: name another release that exists,
+    # such as one of the closed testing track (alpha), when the internal track
+    # holds none.
+    track = options[:track].to_s.strip
+    track = "internal" if track.empty?
+    version_code = options[:version_code].to_s.strip
+    version_code = version_code.empty? ? pubspec_build_number : Integer(version_code, 10)
     upload_to_play_store(
       json_key: json_key,
-      track: "internal",
-      version_code: pubspec_build_number,
+      track: track,
+      version_code: version_code,
       metadata_path: ANDROID_METADATA,
       skip_upload_apk: true,
       skip_upload_aab: true,
