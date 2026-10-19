@@ -180,7 +180,7 @@ The root `Gemfile` pins fastlane (run `bundle install` once), `fastlane/Fastfile
 - `merry run release metadata ios` and `merry run release metadata android` run the check, so that a text over its store limit stops before the upload.
   The iOS screenshot lane loads `AppStoreAssets.prepare` from `APP_STORE_ASSETS_ROOT` or the sibling checkout, so its behavior depends on that checkout and is not protected by the runtime pin below.
   Use the guarded entrypoint for an approved screenshot transfer; `bundle exec fastlane ios metadata skip_screenshots:true` uploads the texts only.
-  The Android lane uploads its metadata and images without a binary or review submission; it needs a release on the internal testing track that holds the build number of `pubspec.yaml`, because `supply` stops before it uploads when it finds no release on the track that it is given.
+  The Android lane uploads its metadata and images without a binary or review submission; it needs a release on the internal testing track that holds the build number of `pubspec.yaml`, because `supply` stops before it uploads when it finds no release on the track that it is given. The store listing belongs to the app and not to a release, so when the internal track holds none, `bundle exec fastlane android metadata track:alpha version_code:<code>` names a release of the closed testing track instead (on 2026-10-19 that track held version codes 3 and 1, and the internal track none).
 
 The build number is an integer that grows by one for each upload, so bump `pubspec.yaml`, add the changelogs, and commit before a release.
 iOS signs automatically with the `DEVELOPMENT_TEAM` of the Xcode project, without `match`.
