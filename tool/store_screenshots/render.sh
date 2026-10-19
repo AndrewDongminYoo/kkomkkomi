@@ -4,7 +4,9 @@
 #   2. the raw screens under build/store_screenshots/raw/, from render_screens.dart;
 #   3. the framed screenshots, from frame.html and copy.js, into fastlane/screenshots/ios/<locale>/ (1320x2868) and
 #      fastlane/metadata/android/<locale>/images/phoneScreenshots/ (1080x1920);
-#   4. the Play feature graphic, from feature.html, into fastlane/metadata/android/<locale>/images/featureGraphic.png.
+#   4. the Play feature graphic, from feature.html, into fastlane/metadata/android/<locale>/images/featureGraphic.png;
+#   5. the App Store creative assets, from creative.html, into fastlane/creative/ios/<locale>/: header.png (3840x1646)
+#      and search.png (3840x2560). No lane uploads them: the operator adds them in App Store Connect.
 #
 # Usage: CHROME=/path/to/chrome-headless-shell tool/store_screenshots/render.sh
 #
@@ -84,6 +86,19 @@ for pair in ko:ko-KR en:en-US; do
   shoot "feature.html?lang=${pair%%:*}" "${work}/feature.png" 1024 500
   opaque "${work}/feature.png" "${root}/fastlane/metadata/android/${pair#*:}/images/featureGraphic.png"
   rm "${work}/feature.png"
+done
+
+echo "App Store creative assets"
+for pair in ko:ko en:en-US; do
+  language="${pair%%:*}"
+  output="${root}/fastlane/creative/ios/${pair#*:}"
+  mkdir -p "${output}"
+  shoot "creative.html?kind=header&lang=${language}" "${work}/creative.png" 3840 1646
+  opaque "${work}/creative.png" "${output}/header.png"
+  shoot "creative.html?kind=search&lang=${language}&device=file://${raw}/ios/device.js&raw=file://${raw}/ios/${language}" \
+    "${work}/creative.png" 3840 2560
+  opaque "${work}/creative.png" "${output}/search.png"
+  rm "${work}/creative.png"
 done
 
 echo "Check"

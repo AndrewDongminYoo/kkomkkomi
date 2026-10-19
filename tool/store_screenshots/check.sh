@@ -53,6 +53,9 @@ check_set() {
 for locale in ko en-US; do
   # App Store: 1 to 10 screenshots of the iPhone 6.9-inch size.
   check_set "iPhone ${locale}" 1 10 1320 2868 "${root}/fastlane/screenshots/ios/${locale}/"*.png
+  # App Store creative assets: the 21:9 product page header and the 3:2 search result image at its largest size.
+  check_set "Creative header ${locale}" 1 1 3840 1646 "${root}/fastlane/creative/ios/${locale}/header.png"
+  check_set "Creative search result ${locale}" 1 1 3840 2560 "${root}/fastlane/creative/ios/${locale}/search.png"
 done
 for locale in ko-KR en-US; do
   images="${root}/fastlane/metadata/android/${locale}/images"

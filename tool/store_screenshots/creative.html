@@ -1,0 +1,315 @@
+<!doctype html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      rel="stylesheet"
+      href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700;800&display=swap" />
+    <style>
+      /*
+       * The App Store creative assets: the 21:9 product page header (3840x1646) and the 3:2 search result image
+       * (3840x2560), with the words of copy.js. render.sh opens it as creative.html?kind=header&lang=<ko|en> and as
+       * creative.html?kind=search&lang=<ko|en>&device=<device.js>&raw=<directory of the raw iOS screens>.
+       * Apple crops the header differently on each device and gives no safe area outside its templates, so every element
+       * stays in the middle 2300 pixels and the edges hold only the background. Check both images with the preview tool
+       * of App Store Connect before submitting them.
+       * The color tokens and the mark are copies from web/index.html and tool/app_icon/symbol.svg, so a change to them
+       * there must be repeated here.
+       */
+      :root {
+        --bg: #faf7f1;
+        --paper: #ffffff;
+        --paper-edge: #e6e0d4;
+        --ink: #16243b;
+        --ink-2: #4b5870;
+        --teal: #0f7f7a;
+        --teal-ink: #0a5e5a;
+        --teal-soft: #dff2ef;
+      }
+      * {
+        box-sizing: border-box;
+      }
+      html,
+      body {
+        margin: 0;
+        width: 100vw;
+        height: 100vh;
+        overflow: hidden;
+      }
+      body {
+        background: linear-gradient(
+          180deg,
+          var(--bg) 0%,
+          var(--bg) 55%,
+          var(--teal-soft) 100%
+        );
+        color: var(--ink);
+        font-family: "Noto Sans KR", sans-serif;
+        -webkit-font-smoothing: antialiased;
+        word-break: keep-all;
+      }
+      h1 {
+        margin: 0;
+        font-weight: 800;
+        letter-spacing: -0.02em;
+        line-height: 1.25;
+        text-wrap: balance;
+      }
+      h1 em {
+        font-style: normal;
+        color: var(--teal-ink);
+      }
+      p {
+        margin: 0;
+        font-weight: 500;
+        color: var(--ink-2);
+        line-height: 1.4;
+        text-wrap: balance;
+      }
+
+      /* The header: the brand and the words beside a before and after pair, in the middle 2300 pixels. */
+      .header {
+        height: 100%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      }
+      .header .content {
+        width: 2300px;
+        display: grid;
+        grid-template-columns: 1fr 1100px;
+        gap: 120px;
+        align-items: center;
+      }
+      .brand {
+        display: flex;
+        align-items: center;
+        gap: 40px;
+        font-size: 96px;
+        font-weight: 800;
+        letter-spacing: -0.02em;
+      }
+      .icon {
+        width: 170px;
+        height: 170px;
+        border-radius: 38px;
+        display: block;
+        box-shadow: 0 20px 48px -24px rgba(22, 36, 59, 0.45);
+      }
+      .header h1 {
+        margin-top: 64px;
+        font-size: 120px;
+      }
+      .header p {
+        margin-top: 44px;
+        font-size: 60px;
+      }
+      .sheet {
+        background: var(--paper);
+        border: 4px solid var(--paper-edge);
+        border-radius: 44px;
+        box-shadow:
+          0 4px 8px rgba(22, 36, 59, 0.06),
+          0 48px 120px -56px rgba(22, 36, 59, 0.28);
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 28px;
+        padding: 40px;
+      }
+      .shot {
+        position: relative;
+        border-radius: 24px;
+        overflow: hidden;
+        border: 4px solid var(--paper-edge);
+        aspect-ratio: 4 / 3;
+      }
+      /* The room comes from photos.html itself, in the 4:3 of the card, because the fixture JPEGs are portrait. */
+      .shot iframe {
+        display: block;
+        width: 100%;
+        height: 100%;
+        border: 0;
+      }
+      .lbl {
+        position: absolute;
+        left: 16px;
+        top: 16px;
+        background: var(--ink);
+        color: var(--bg);
+        font-size: 30px;
+        font-weight: 500;
+        line-height: 1.5;
+        padding: 2px 18px;
+        border-radius: 12px;
+      }
+      .lbl.after {
+        background: var(--teal);
+        color: #fff;
+      }
+
+      /* The search result: the words above three phones with the real screens, cut at the bottom edge. */
+      .search {
+        height: 100%;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        padding-top: 170px;
+        text-align: center;
+      }
+      .search h1 {
+        width: 2900px;
+        font-size: 132px;
+      }
+      .search p {
+        margin-top: 40px;
+        font-size: 66px;
+      }
+      .phones {
+        flex: 1 1 0;
+        min-height: 0;
+        margin-top: 120px;
+        display: flex;
+        gap: 120px;
+        align-items: flex-start;
+      }
+      .phone {
+        width: 820px;
+        padding: 26px 26px 0;
+        border-radius: 130px 130px 0 0;
+        background: var(--ink);
+        box-shadow: 0 48px 128px -48px rgba(22, 36, 59, 0.45);
+      }
+      .screen {
+        position: relative;
+        aspect-ratio: 1320 / 2868;
+        overflow: hidden;
+        border-radius: 106px 106px 0 0;
+      }
+      .screen img,
+      .screen svg {
+        position: absolute;
+        inset: 0;
+        display: block;
+        width: 100%;
+        height: 100%;
+      }
+      [hidden] {
+        display: none !important;
+      }
+    </style>
+    <script src="copy.js"></script>
+    <script src="bars.js"></script>
+  </head>
+  <body>
+    <section class="header" hidden>
+      <div class="content">
+        <div>
+          <div class="brand">
+            <svg class="icon" viewBox="0 0 256 256" aria-hidden="true">
+              <rect width="256" height="256" fill="#0f7f7a" />
+              <g
+                transform="translate(128 128) scale(0.64) translate(-128 -128)">
+                <path
+                  fill="#87bfbd"
+                  d="M41 36H84A32 32 0 0 1 116 68V202A18 18 0 0 1 80 202V76A6 6 0 0 0 74 70H41A17 17 0 0 1 41 36Z" />
+                <path
+                  fill="#fff"
+                  d="M157 36H200A32 32 0 0 1 232 68V202A18 18 0 0 1 196 202V76A6 6 0 0 0 190 70H157A17 17 0 0 1 157 36Z" />
+              </g>
+            </svg>
+            <span id="name"></span>
+          </div>
+          <h1 id="header-headline"></h1>
+          <p id="header-sub"></p>
+        </div>
+        <div class="sheet">
+          <div class="shot">
+            <iframe
+              src="photos.html?scene=entrance&amp;state=before"
+              title=""
+              tabindex="-1"></iframe>
+            <span class="lbl" id="before"></span>
+          </div>
+          <div class="shot">
+            <iframe
+              src="photos.html?scene=entrance&amp;state=after"
+              title=""
+              tabindex="-1"></iframe>
+            <span class="lbl after" id="after"></span>
+          </div>
+        </div>
+      </div>
+    </section>
+    <section class="search" hidden>
+      <h1 id="search-headline"></h1>
+      <p id="search-sub"></p>
+      <div class="phones" id="phones"></div>
+    </section>
+    <script>
+      const params = new URLSearchParams(location.search);
+      const kind = params.get("kind");
+      const lang = params.get("lang");
+      const copy = window.STORE_COPY.creative[kind]?.[lang];
+      if (!copy) throw new Error(`No creative copy for ${kind} in ${lang}`);
+      document.documentElement.lang = lang;
+
+      // Fills `node` with `text`, where a part between two asterisks becomes an accent.
+      function fill(node, text) {
+        text.split("*").forEach((part, index) => {
+          if (part === "") return;
+          if (index % 2 === 1) {
+            const em = document.createElement("em");
+            em.textContent = part;
+            node.append(em);
+          } else {
+            node.append(part);
+          }
+        });
+      }
+      fill(document.getElementById(`${kind}-headline`), copy.headline);
+      fill(document.getElementById(`${kind}-sub`), copy.sub);
+      document.querySelector(`.${kind}`).hidden = false;
+
+      if (kind === "header") {
+        const feature = window.STORE_COPY.feature[lang];
+        document.getElementById("name").textContent = feature.name;
+        document.getElementById("before").textContent = feature.before;
+        document.getElementById("after").textContent = feature.after;
+      } else {
+        // The capture, the report, and the client list, the screens that show what the app is for.
+        const phones = document.getElementById("phones");
+        const svgs = ["01_capture", "02_report", "04_clients"].map((screen) => {
+          const phone = document.createElement("div");
+          phone.className = "phone";
+          const frame = document.createElement("div");
+          frame.className = "screen";
+          const image = document.createElement("img");
+          image.alt = "";
+          image.src = `${params.get("raw")}/${screen}.png`;
+          const svg = document.createElementNS(
+            "http://www.w3.org/2000/svg",
+            "svg",
+          );
+          svg.setAttribute("aria-hidden", "true");
+          frame.append(image, svg);
+          phone.append(frame);
+          phones.append(phone);
+          return svg;
+        });
+        // device.js sets window.STORE_DEVICE, and bars.js draws the bars of each phone when it has loaded.
+        const geometry = document.createElement("script");
+        geometry.src = params.get("device");
+        geometry.onerror = () => {
+          throw new Error(`No device geometry at ${params.get("device")}`);
+        };
+        geometry.onload = () =>
+          svgs.forEach((svg) =>
+            window.drawSystemBars(svg, window.STORE_DEVICE, "ios"),
+          );
+        document.head.append(geometry);
+      }
+    </script>
+  </body>
+</html>

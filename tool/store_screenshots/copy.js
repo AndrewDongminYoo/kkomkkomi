@@ -1,5 +1,6 @@
-// The words of the store images: the headline and the line under it for each screenshot, and the product line of the
-// Play feature graphic, in Korean and in English. frame.html and feature.html read it; render.sh reads the screen
+// The words of the store images: the headline and the line under it for each screenshot, the product line of the
+// Play feature graphic, and the headline and the line under it of the App Store product page header and search result
+// image, in Korean and in English. frame.html, feature.html, and creative.html read it; render.sh reads the screen
 // names from the raw files, so each raw screen needs an entry here.
 //
 // Text between two asterisks shows in the accent color. Describe only features that M1 ships.
@@ -58,6 +59,29 @@ window.STORE_COPY = {
       line: "Cleaning reports with *before and after* photos",
       before: "Before",
       after: "After",
+    },
+  },
+  creative: {
+    header: {
+      ko: {
+        headline: "청소 *전후 사진*을 거래처 보고서로",
+        sub: "거래처는 링크 하나로 지난 보고서까지 볼 수 있어요",
+      },
+      en: {
+        headline: "Cleaning reports with *before and after* photos",
+        sub: "Clients open every past report from one link",
+      },
+    },
+    search: {
+      ko: {
+        headline: "구역마다 *전후 사진*을 찍어 보고서로 보내요",
+        sub: "보고서는 링크나 PDF로 공유해요",
+      },
+      en: {
+        headline:
+          "Photograph each zone *before and after*, then send the report",
+        sub: "Share it as a link or a PDF",
+      },
     },
   },
 };
