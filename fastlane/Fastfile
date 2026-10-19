@@ -329,15 +329,17 @@ platform :android do
     UI.success("The Google Play variables and the upload key source are set.")
   end
 
-  desc "Uploads the production App Bundle and its changelogs to the internal testing track."
-  lane :internal do
+  desc "Uploads the production App Bundle and its changelogs to the internal testing track, or to the track that track: names, such as track:alpha for closed testing."
+  lane :internal do |options|
     json_key = check_play_credentials
     release_status = play_release_status
     UI.user_error!("Production App Bundle not found: #{AAB}. Run `merry run build aab`.") unless File.file?(AAB)
+    track = options[:track].to_s.strip
+    track = "internal" if track.empty?
 
     upload_to_play_store(
       json_key: json_key,
-      track: "internal",
+      track: track,
       aab: AAB,
       release_status: release_status,
       metadata_path: ANDROID_METADATA,
