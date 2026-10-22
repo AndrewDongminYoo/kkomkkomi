@@ -3,12 +3,87 @@ updates:
   - package-ecosystem: github-actions
     directory: /
     schedule:
-      interval: daily
+      interval: weekly
+      day: monday
+      timezone: Asia/Seoul
+    groups:
+      github-actions:
+        patterns: ["*"]
+        update-types:
+          - minor
+          - patch
+      github-actions-security:
+        applies-to: security-updates
+        patterns:
+          - "*"
+    open-pull-requests-limit: 3
   - package-ecosystem: pub
     directory: /
     schedule:
-      interval: daily
+      interval: weekly
+      day: monday
+      timezone: Asia/Seoul
+    groups:
+      pub:
+        patterns: ["*"]
+        update-types:
+          - minor
+          - patch
+      pub-security:
+        applies-to: security-updates
+        patterns:
+          - "*"
+    open-pull-requests-limit: 3
   - package-ecosystem: npm
     directory: /test/rules
     schedule:
-      interval: daily
+      interval: weekly
+      day: monday
+      timezone: Asia/Seoul
+    groups:
+      test-rules:
+        patterns: ["*"]
+        update-types:
+          - minor
+          - patch
+      npm-security:
+        applies-to: security-updates
+        patterns:
+          - "*"
+    open-pull-requests-limit: 3
+  - package-ecosystem: gradle
+    directory: /android
+    schedule:
+      interval: weekly
+      day: monday
+      timezone: Asia/Seoul
+    open-pull-requests-limit: 3
+    groups:
+      gradle-minor-patch:
+        patterns:
+          - "*"
+        update-types:
+          - minor
+          - patch
+      gradle-security:
+        applies-to: security-updates
+        patterns:
+          - "*"
+  - package-ecosystem: bundler
+    directory: /
+    schedule:
+      interval: weekly
+      day: monday
+      timezone: Asia/Seoul
+    open-pull-requests-limit: 3
+    groups:
+      bundler-minor-patch:
+        patterns:
+          - "*"
+        update-types:
+          - minor
+          - patch
+      bundler-security:
+        applies-to: security-updates
+        patterns:
+          - "*"
