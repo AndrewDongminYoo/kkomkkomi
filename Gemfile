@@ -5,4 +5,4 @@
 # pins.
 source "https://rubygems.org"
 
-gem "fastlane", "~> 2.240"
+gem "fastlane", "~> 2.241"
