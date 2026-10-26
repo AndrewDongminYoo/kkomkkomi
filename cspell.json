@@ -35,7 +35,7 @@
   "allowCompoundWords": false,
   "enableGlobDot": true,
   "useGitignore": true,
-  "ignoreWords": ["meta-data", "plaintext", "white-space"],
+  "ignoreWords": ["meta-data", "plaintext", "white-space", "timezone"],
   "ignorePaths": [".git", ".gitignore", ".metadata", "web/google*.html"],
   "overrides": [
     {
