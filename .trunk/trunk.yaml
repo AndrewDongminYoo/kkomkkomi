@@ -21,13 +21,13 @@ lint:
     - dart
     - grype
   enabled:
-    - pinact@4.1.1: { commands: [lint, upgrade] }
+    - pinact@4.1.1!: { commands: [lint, upgrade] }
     - cspell@10.4.0
     - actionlint@1.7.12
-    - checkov@3.3.29
+    - checkov@3.3.30
     - git-diff-check
     - ktlint@1.8.0
-    - markdownlint@0.49.1
+    - markdownlint@0.50.0
     - osv-scanner@2.6.0
     - oxipng@10.2.1
     - prettier@3.9.10
