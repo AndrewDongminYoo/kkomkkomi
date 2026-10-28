@@ -82,6 +82,7 @@ SUBLANG
 subviews
 swiftpm
 SYMED
+taplo
 Testables
 TEXTINCLUDE
 WCAG
