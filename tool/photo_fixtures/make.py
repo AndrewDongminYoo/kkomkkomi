@@ -54,7 +54,10 @@ def ifd(entries, offset, order):
 
 
 def rationals(order, *pairs):
-    return b"".join(struct.pack(order + "II", numerator, denominator) for numerator, denominator in pairs)
+    return b"".join(
+        struct.pack(order + "II", numerator, denominator)
+        for numerator, denominator in pairs
+    )
 
 
 def exif(order):
@@ -78,7 +81,12 @@ def exif(order):
         ]
 
     size = len(ifd(first(0), 8, order))
-    tiff = mark + struct.pack(order + "HI", 42, 8) + ifd(first(8 + size), 8, order) + ifd(gps, 8 + size, order)
+    tiff = (
+        mark
+        + struct.pack(order + "HI", 42, 8)
+        + ifd(first(8 + size), 8, order)
+        + ifd(gps, 8 + size, order)
+    )
     return b"Exif\0\0" + tiff
 
 
@@ -96,7 +104,13 @@ def xmp():
 def iptc():
     city = b"KKOMKKOMI-IPTC-CITY"
     record = b"\x1c\x02\x5a" + struct.pack(">H", len(city)) + city
-    block = b"8BIM" + struct.pack(">H", 0x0404) + b"\0\0" + struct.pack(">I", len(record)) + record
+    block = (
+        b"8BIM"
+        + struct.pack(">H", 0x0404)
+        + b"\0\0"
+        + struct.pack(">I", len(record))
+        + record
+    )
     return b"Photoshop 3.0\0" + block + (b"\0" if len(record) % 2 else b"")
 
 
@@ -124,14 +138,21 @@ def main():
         )
         base = base_path.read_bytes()
 
-    assert base[:4] == b"\xff\xd8\xff\xe0", "the base image does not start with a JFIF header"
+    assert (
+        base[:4] == b"\xff\xd8\xff\xe0"
+    ), "the base image does not start with a JFIF header"
     after_header = 4 + struct.unpack(">H", base[4:6])[0]
-    assert base[-2:] == b"\xff\xd9", "the base image does not end with an end-of-image marker"
+    assert (
+        base[-2:] == b"\xff\xd9"
+    ), "the base image does not end with an end-of-image marker"
 
     FIXTURES.mkdir(parents=True, exist_ok=True)
     (FIXTURES / "photo_no_exif.jpg").write_bytes(base)
 
-    for order, name in (("<", "photo_gps_orientation_6.jpg"), (">", "photo_gps_orientation_6_mm.jpg")):
+    for order, name in (
+        ("<", "photo_gps_orientation_6.jpg"),
+        (">", "photo_gps_orientation_6_mm.jpg"),
+    ):
         metadata = (
             segment(0xE1, exif(order))
             + segment(0xE1, xmp())

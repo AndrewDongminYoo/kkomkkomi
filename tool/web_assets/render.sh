@@ -14,9 +14,9 @@ web="$(cd "${here}/../../web" && pwd)"
 
 # render <card> <output> <width> <height>
 render() {
-  "${CHROME}" --headless --hide-scrollbars --virtual-time-budget=8000 \
-    --force-device-scale-factor=1 --window-size="$3,$4" \
-    --screenshot="$2" "file://${here}/$1"
+	"${CHROME}" --headless --hide-scrollbars --virtual-time-budget=8000 \
+		--force-device-scale-factor=1 --window-size="$3,$4" \
+		--screenshot="$2" "file://${here}/$1"
 }
 
 render og.html "${web}/og.png" 1200 630

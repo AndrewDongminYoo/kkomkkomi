@@ -52,7 +52,11 @@ def read_png(data):
                 line[i] = (line[i] + (left + up) // 2) & 255
             elif kind == 4:
                 estimate = left + up - corner
-                nearest = min((abs(estimate - left), 0, left), (abs(estimate - up), 1, up), (abs(estimate - corner), 2, corner))
+                nearest = min(
+                    (abs(estimate - left), 0, left),
+                    (abs(estimate - up), 1, up),
+                    (abs(estimate - corner), 2, corner),
+                )
                 line[i] = (line[i] + nearest[2]) & 255
         previous = line
         if channels == 3:
@@ -73,7 +77,20 @@ def bitmap_entry(width, height, rows):
             red, green, blue, alpha = row[i : i + 4]
             pixels += bytes((blue, green, red, alpha))
     mask = bytes(((width + 31) // 32) * 4) * height
-    header = struct.pack("<IiiHHIIiiII", 40, width, height * 2, 1, 32, 0, len(pixels) + len(mask), 0, 0, 0, 0)
+    header = struct.pack(
+        "<IiiHHIIiiII",
+        40,
+        width,
+        height * 2,
+        1,
+        32,
+        0,
+        len(pixels) + len(mask),
+        0,
+        0,
+        0,
+        0,
+    )
     return header + bytes(pixels) + mask
 
 
@@ -83,13 +100,19 @@ def main(output, sources):
         with open(source, "rb") as file:
             data = file.read()
         width, height, rows = read_png(data)
-        assert width == height and width <= 256, f"{source}: an icon image is square and at most 256 pixels"
-        entries.append((width, data if width == 256 else bitmap_entry(width, height, rows)))
+        assert (
+            width == height and width <= 256
+        ), f"{source}: an icon image is square and at most 256 pixels"
+        entries.append(
+            (width, data if width == 256 else bitmap_entry(width, height, rows))
+        )
     directory = struct.pack("<HHH", 0, 1, len(entries))
     offset = 6 + 16 * len(entries)
     bodies = b""
     for size, body in entries:
-        directory += struct.pack("<BBBBHHII", size % 256, size % 256, 0, 0, 1, 32, len(body), offset)
+        directory += struct.pack(
+            "<BBBBHHII", size % 256, size % 256, 0, 0, 1, 32, len(body), offset
+        )
         offset += len(body)
         bodies += body
     with open(output, "wb") as file:
