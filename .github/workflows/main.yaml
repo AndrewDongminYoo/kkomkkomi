@@ -27,7 +27,7 @@ jobs:
   build:
     uses: VeryGoodOpenSource/very_good_workflows/.github/workflows/flutter_package.yml@bf86fc749b907c6cc60e655f7f2ef619287b1b15 # v2.0.3
     with:
-      flutter_version: 3.47.7
+      flutter_version: 3.47.8
       run_bloc_lint: true
       # Same as the analysis_options.yaml page_width.
       format_line_length: 120
@@ -42,7 +42,7 @@ jobs:
 
       - uses: subosito/flutter-action@1a449444c387b1966244ae4d4f8c696479add0b2 # v2.23.0
         with:
-          flutter-version: 3.47.7
+          flutter-version: 3.47.8
           channel: stable
           cache: true
 
@@ -66,7 +66,7 @@ jobs:
 
       - uses: subosito/flutter-action@1a449444c387b1966244ae4d4f8c696479add0b2 # v2.23.0
         with:
-          flutter-version: 3.47.7
+          flutter-version: 3.47.8
           channel: stable
           cache: true
 
@@ -86,7 +86,7 @@ jobs:
 
       - uses: subosito/flutter-action@1a449444c387b1966244ae4d4f8c696479add0b2 # v2.23.0
         with:
-          flutter-version: 3.47.7
+          flutter-version: 3.47.8
           channel: stable
           cache: true
 
