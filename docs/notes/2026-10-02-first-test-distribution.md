@@ -1,9 +1,18 @@
 # First test distribution: console steps
 
-This note lists what the operator does outside the repository before the first TestFlight build and the first Google Play internal testing release of version `1.0.0` build `1`.
+This note preserves the original console checklist for the first TestFlight build and Google Play internal testing release of version `1.0.0` build `1`, followed by dated observations.
 The brief is `docs/plans/2026-10-02-release-prep.md`.
-Nothing in this list was done by an agent: no store record, no upload, no signing with a real key.
+The original checklist did not record an agent creating a store record, uploading a build or signing with a real key.
 The deploys of the rules and Hosting are the one exception, made with the operator's approval, and `CLAUDE.md` owns their state.
+
+## Distribution observed on 2026-10-30
+
+Read-only store screens showed TestFlight `1.1.1(5)` testing in the internal group, which also held `1.0.0(1)`, `1.0.0(2)` and `1.1.0(3)`.
+Google Play closed Alpha testing was active with `1.1.1` (version code `5`); its internal testing track was inactive with no release.
+The [dated distribution record](2026-10-31-store-distribution-status.md) owns the evidence and limits.
+The original no-store-record premise of #40 is historical, but its Play internal-track criterion is still unmet.
+The remaining checklist and binary-to-source gaps are not completed by this snapshot, so #40 remains open.
+No store write or new build accompanied these reads.
 
 ## Open items before an external TestFlight review
 
@@ -28,15 +37,15 @@ This item stays open until the rollout and read-back are approved and verified.
 
 ## Values
 
-| Item                           | Value                                                                                            |
-| ------------------------------ | ------------------------------------------------------------------------------------------------ |
-| Bundle ID and application ID   | `kr.donminzzi.kkomkkomi` (production flavor)                                                     |
-| Version                        | `1.0.0`, build `1`, from `pubspec.yaml`                                                          |
-| iOS minimum version            | 15.0 (`IPHONEOS_DEPLOYMENT_TARGET`)                                                              |
-| iOS devices                    | iPhone only (`TARGETED_DEVICE_FAMILY = 1` in the Runner target, operator decision of 2026-10-04) |
-| Android minimum and target SDK | 24 and 36, read from the built bundle                                                            |
-| Privacy policy                 | `https://kkomkkomi.web.app/privacy/` (Korean), `https://kkomkkomi.web.app/privacy/en/` (English) |
-| App Store categories           | Business, then Productivity (`fastlane/metadata/ios/*_category.txt`)                             |
+| Item                           | Value                                                                                                              |
+| ------------------------------ | ------------------------------------------------------------------------------------------------------------------ |
+| Bundle ID and application ID   | `kr.donminzzi.kkomkkomi` (production flavor)                                                                       |
+| Initial target version         | `1.0.0`, build `1` (historical first-build target; see the dated distribution record for the later store versions) |
+| iOS minimum version            | 15.0 (`IPHONEOS_DEPLOYMENT_TARGET`)                                                                                |
+| iOS devices                    | iPhone only (`TARGETED_DEVICE_FAMILY = 1` in the Runner target, operator decision of 2026-10-04)                   |
+| Android minimum and target SDK | 24 and 36, read from the built bundle                                                                              |
+| Privacy policy                 | `https://kkomkkomi.web.app/privacy/` (Korean), `https://kkomkkomi.web.app/privacy/en/` (English)                   |
+| App Store categories           | Business, then Productivity (`fastlane/metadata/ios/*_category.txt`)                                               |
 
 `DEVELOPMENT_TEAM` is `393JTTV68D` in each of the nine build configurations of the Runner target in `ios/Runner.xcodeproj` (operator, 2026-10-02), so a signed build needs no manual team choice.
 
