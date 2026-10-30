@@ -1,0 +1,2 @@
+• The approval request button on a report appears only after link sharing is refused.
+• Other small updates.
