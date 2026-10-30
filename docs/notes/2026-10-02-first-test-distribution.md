@@ -216,3 +216,10 @@ The operator confirmed JPEG, PNG and HEIC gallery selection, gallery labels with
 The [gallery acceptance record](2026-10-30-gallery-device-acceptance.md) owns the exact development/release build and its limits.
 This was a local development-flavor pass, not a new production/backend, PDF, store or Android acceptance pass.
 Android and physical unsupported-input rejection remain unverified, and #82 stays open.
+
+### Camera time check on 2026-10-30
+
+The operator confirmed all five iPhone scenarios: in-app before/after capture with correct preview and actual PDF captions, persistence and retake cancellation, different-day capture dates, gallery replacement without a time, and recovery after leaving an uncaptured preview.
+No microphone permission request was observed.
+The [capture-time acceptance record](2026-10-30-capture-time-device-acceptance.md) identifies the reused DEV build, operator-reported results and remaining limits.
+This was a development-flavor pass; Android, unobserved camera failure/interruption paths and production/store acceptance remain separate, and #61 stays open.
