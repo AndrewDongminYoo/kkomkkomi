@@ -41,6 +41,9 @@ Show a supplied time in the PDF and preview only; publish no capture time to the
 A device clock is an app observation, not independently verified evidence.
 The in-app camera must manage lifecycle and cancellation and avoid recording audio.
 
+The [2026-10-30 iPhone camera record](../notes/2026-10-30-capture-time-device-acceptance.md) adds operator-reported correct preview/PDF time and different-day date captions, persistence, retake cancellation, gallery replacement and preview resume on the identified DEV build, with no microphone prompt observed.
+Android and unobserved camera failure/interruption paths remain unverified, so #61 stays open.
+
 ## Verification and release
 
 Test migration and round trips, replacement and cancellation, source labels in every output, phone/time omission from Firebase payloads, PDF text and pagination, and the profile/capture UI at large text sizes.
