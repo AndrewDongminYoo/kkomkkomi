@@ -153,3 +153,9 @@ The rules must deploy before an app version that writes `unbranded`, because the
 - Staff accounts (M3) and every M2 feature.
 - Store production activation and app review, which are release steps.
 - A durable account, and entitlement sharing between platforms.
+
+## Dated TestFlight evidence
+
+The [2026-10-30 billing baseline](../notes/2026-10-30-ios-restore-management-acceptance.md) records operator-reported no-purchase restoration, one approved Basic monthly purchase, successful in-place restoration with retained displayed state/local data, and management-link navigation on TestFlight `1.1.1(5)`.
+It does not establish the binary's source/SDK versions, actual subscription-management transitions, changed-identity ownership enforcement, Firebase claim propagation or Android acceptance.
+The original account/restore and trust-boundary questions remain subject to their unverified portions; #36 stays open.
