@@ -29,6 +29,9 @@ An unsupported or malformed image fails visibly and leaves the previous photo in
 Device acceptance must cover JPEG, PNG and real-device HEIC picking; simulated or unit decoding is separate evidence.
 The Android lost-picker path must preserve gallery provenance.
 
+The [2026-10-30 iPhone record](../notes/2026-10-30-gallery-device-acceptance.md) adds operator-reported successful JPEG, PNG and HEIC selection, labels, untimed gallery photos, cancellation preservation and reopen persistence on an identified development/release build.
+It does not establish Android acceptance, physical rejection or the on-device encoding at each import/conversion step; #82 remains open.
+
 ## Capture time (#61)
 
 Only a future in-app camera capture may supply its directly observed capture time.

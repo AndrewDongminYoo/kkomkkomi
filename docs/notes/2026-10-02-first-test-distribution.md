@@ -209,3 +209,10 @@ On 2026-10-03 the operator ran an iOS release build of the production flavor on 
 
 This is the first run of Firebase start, anonymous sign-in, the upload, the web report, the revoke, the reissue, and the deletion on a device; the automated tests replace Firebase with fakes.
 No Android build has run on a device, so the R8 item above stays open.
+
+### Gallery check on 2026-10-30
+
+The operator confirmed JPEG, PNG and HEIC gallery selection, gallery labels without capture times, preservation after cancellation and persistence after reopening a visit on the physical iPhone 16 Pro.
+The [gallery acceptance record](2026-10-30-gallery-device-acceptance.md) owns the exact development/release build and its limits.
+This was a local development-flavor pass, not a new production/backend, PDF, store or Android acceptance pass.
+Android and physical unsupported-input rejection remain unverified, and #82 stays open.
