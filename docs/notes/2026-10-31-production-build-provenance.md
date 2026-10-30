@@ -25,7 +25,7 @@ Both declared builds completed from clean commit `bcac1e4e7dbbdcf04c4241f082e695
 Their generated build records name that commit and match the SHA-256 of each preserved file.
 The toolchain was Flutter `3.47.9` (framework `c197ca5199e9ee5661e865596c9c07294dfab51c`), Dart `3.13.7`, Xcode `27.1` (`27A9275`) and iOS SDK `27.1`.
 The release builds used the existing production entry point and configuration; no dependency or native configuration was upgraded.
-Local input fingerprints cover the lockfiles, paired Swift package pins and ignored runtime configuration, without publishing credential contents.
+Local input fingerprints cover the lock files, paired Swift package pins and ignored runtime configuration, without publishing credential contents.
 
 | Artifact | Exported identity                                   | SHA-256                                                            |
 | -------- | --------------------------------------------------- | ------------------------------------------------------------------ |
@@ -34,7 +34,7 @@ Local input fingerprints cover the lockfiles, paired Swift package pins and igno
 
 The exported IPA passed `codesign --verify --deep --strict` and contains an unexpired App Store distribution profile with debugging disabled and no provisioned-device list.
 The AAB manifest records minimum SDK 24 and target SDK 36.
-`jarsigner -verify` reported `jar verified`; a separate `JarFile` read verified all 296 payload entries with the same production signer, and an unsigned fixture failed that check.
+JAR signature verification reported `jar verified`; a separate `JarFile` read verified all 296 payload entries with the same production signer, and an unsigned fixture failed that check.
 The signing check also reported a self-signed certificate, no timestamp and a manifest-order discrepancy for `JarInputStream`; the successful `JarFile` verification does not establish Play acceptance.
 The Android build emitted existing Gradle/AGP future-support and SDK XML warnings; no bypass flag or toolchain upgrade was applied.
 The Kotlin compiler's transient session file disappeared before the clean build record was generated.

@@ -215,7 +215,7 @@ Trunk does not format `fastlane/store-state/`, because the profile and the plan 
 From the repository root, `PYTHONPATH=tools/app-store-assets python3 -B -m app_store_assets doctor --target ios` checks the runtime pin and the inputs, and `PYTHONPATH=tools/app-store-assets python3 -B -m app_store_assets plan --target ios --operation images` writes a plan that executes nothing and needs that snapshot.
 Neither command makes a store call.
 The existing listing, remote and asset snapshots remain bound to `1.1.1(5)`.
-A binary-only version cut does not retarget those records or their screenshot approvals: while `pubspec.yaml` names the newer version, the offline profile's listing/image checks refuse the target mismatch until a separate listing operation regenerates its records.
+A binary-only version cut does not change the target of those records or their screenshot approvals: while `pubspec.yaml` names the newer version, the offline profile's listing/image checks refuse the target mismatch until a separate listing operation regenerates its records.
 The binary `beta` and Android `internal` lanes use the production version checks above and do not run that listing transfer.
 Do not hand-edit the immutable snapshots or reuse their approval for a new version.
 The pinned runtime also exposes `AppStoreAssets.transfer_screenshots` with read-only and transfer modes; both require a plan, a separate approval record for its digest and exact target, and matching live state including the attached build.
