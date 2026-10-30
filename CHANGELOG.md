@@ -6,6 +6,20 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 ## [Unreleased]
 
+## [1.1.2] - 2026-10-31
+
+Production TestFlight and Google Play internal-test upload candidate, build 6.
+The previous store binaries' source commits remain unverified; this entry does not reconstruct their exact code differences.
+
+### Fixed
+
+- The approval request button on a report appears only after link sharing is refused.
+
+### Internal
+
+- Include the tracked Flutter, Firebase and RevenueCat dependency updates and aligned native package pins.
+- Preserve a clean source commit and SHA-256 for each new production artifact, separately from store processing and distribution evidence.
+
 ## [1.1.1] - 2026-10-16
 
 Prepared for iOS TestFlight, build 5.

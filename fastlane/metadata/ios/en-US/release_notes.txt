@@ -1,1 +1,2 @@
-Take before and after cleaning photos with the rear camera directly in the app.
+• The approval request button on a report appears only after link sharing is refused.
+• Other small updates.

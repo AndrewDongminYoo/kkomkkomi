@@ -14,6 +14,13 @@ The original no-store-record premise of #40 is historical, but its Play internal
 The remaining checklist and binary-to-source gaps are not completed by this snapshot, so #40 remains open.
 No store write or new build accompanied these reads.
 
+## Production build preparation on 2026-10-31
+
+The operator authorized new production `1.1.2+6` artifacts and their TestFlight/Play internal-draft uploads.
+The [build provenance record](2026-10-31-production-build-provenance.md) separates exact source/hash evidence from any later upload, processing or tester-availability result.
+This direction includes no public rollout, store app-review submission, tester/account change, backend deploy or device installation.
+The dated distribution snapshot above is historical, and a new artifact alone does not satisfy the remaining #40 acceptance.
+
 ## Open items before an external TestFlight review
 
 The TestFlight overview says: "When you add the first build of your app to a group, the build gets sent to App Review …" (https://developer.apple.com/help/app-store-connect/test-a-beta-version/testflight-overview, read on 2026-10-02), and these items can block that review.
