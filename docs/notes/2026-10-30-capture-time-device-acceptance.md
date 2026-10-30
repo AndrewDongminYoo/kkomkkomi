@@ -17,17 +17,17 @@ CI uses Flutter 3.47.8, separately from the physical build.
 
 ## Operator observations
 
-The operator answered the complete five-item checklist with all items working normally.
+The operator answered the complete five-scenario checklist with all scenarios working normally.
 The results below inherit that response; they are not separate instrumented measurements.
 
-| Scenario                                         | Reported result                                                                                             |
+| Scenario or additional observation               | Reported result                                                                                             |
 | ------------------------------------------------ | ----------------------------------------------------------------------------------------------------------- |
 | Today-dated visit, in-app before/after capture   | Both photos worked normally, with correct orientation and local time captions in the preview and actual PDF |
 | Reopen visit/report and cancel a retake          | Saved photos and captions remained; closing the retake preserved the prior photo and caption                |
 | Previous-day visit, newly captured photo         | Preview and actual PDF showed the correct capture date, including year, and time                            |
 | Replace camera photo from gallery                | Gallery label replaced the camera caption, without a capture time                                           |
 | Leave and return to an uncaptured camera preview | Preview recovered without automatic capture; a deliberate capture worked normally                           |
-| Microphone permission                            | No request was observed in these scenarios                                                                  |
+| Additional observation: microphone permission    | No request was observed in these scenarios                                                                  |
 
 The time remains the app's device-clock observation immediately before dispatching an accepted shutter request.
 Correct display does not establish native sensor exposure time, trusted server time, or independent proof of when work happened.

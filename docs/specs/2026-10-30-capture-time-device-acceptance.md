@@ -51,7 +51,6 @@ No rendering implementation changed; the operator's confirmation concerns the ex
 
 ## Precedent and retrieval limit
 
-Fresh Oracle retrieval was blocked by the session's agent hook: \[TOOL_FAILED\], not \[no precedent found\].
-Retained project precedent `raw/sources/.claude/projects/-Users-dongminyu-Development-01-personal-kkomkkomi/memory/console-note-update-with-closing-pr.md` confirms current-screen instructions and same-PR distribution-note updates.
-Retained `wiki/concepts/authoring-time-vs-runtime-verification.md` confirms that controlled checks and operator-run physical observations support different claims.
-These sources confirm the bounded evidence approach; their current-source freshness was not reverified.
+Fresh precedent retrieval was unavailable during authoring.
+The [earlier gallery specification](2026-10-30-gallery-device-acceptance.md#precedent) records retained precedent for current-screen procedures and related documentation updates.
+This pass keeps controlled checks separate from operator-run physical observations without claiming fresh retrieval or source verification.
