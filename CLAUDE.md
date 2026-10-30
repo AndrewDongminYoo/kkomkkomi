@@ -19,6 +19,9 @@ Until then, keep pricing, validation criteria, sales channels, and unit economic
 The operator directed implementation to start on 2026-10-01, and M1 and M3 are both milestones in progress (operator, 2026-10-05).
 The operator started M2 work on 2026-10-06 with the report layout of #54 and the zone status of #60, which follows `docs/plans/2026-10-06-zone-status.md`.
 M1 waits for the first test distribution (#40), and M3 follows `docs/plans/2026-10-05-m3-subscriptions.md`.
+The store reads on 2026-10-30 found TestFlight `1.1.1(5)` in the internal group and Google Play `1.1.1` (version code `5`) active in closed Alpha testing; the Play internal track was inactive with no release.
+`docs/notes/2026-10-31-store-distribution-status.md` owns that dated snapshot and the unverified binary-to-source mapping.
+The Play internal-track criterion and the remaining distribution checklist keep #40 open; closed Alpha is not internal testing.
 The data layer of the M1 build exists: the domain model, the repository interfaces and use cases, and the SQLite repositories.
 The client list, the client detail, the visit capture, the company profile, and the plans screens use it, and the client list is the home screen.
 The client detail screen starts a visit and opens a past one, and the visit capture screen takes the before photo, the after photo, the status, and the note of each zone, and the reason of a zone that is partly done or not done.
