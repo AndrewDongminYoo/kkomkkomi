@@ -223,3 +223,10 @@ The operator confirmed all five iPhone scenarios: in-app before/after capture wi
 No microphone permission request was observed.
 The [capture-time acceptance record](2026-10-30-capture-time-device-acceptance.md) identifies the reused DEV build, operator-reported results and remaining limits.
 This was a development-flavor pass; Android, unobserved camera failure/interruption paths and production/store acceptance remain separate, and #61 stays open.
+
+### TestFlight billing baseline on 2026-10-30
+
+The operator confirmed an initial no-purchase restore, one approved Basic monthly purchase, then successful in-place restoration with Basic/monthly state, the management control and existing local data retained in TestFlight `1.1.1(5)`.
+The management link opened the actual App Store subscription list, where the test subscription was absent; no subscription change or cancellation was verified.
+The [billing baseline record](2026-10-30-ios-restore-management-acceptance.md) separates these operator observations from current-source tests and records the unidentified binary source/SDK versions and account-selection limits.
+This adds no store upload or backend deployment acceptance; Android, the remaining product/lifecycle matrix, identity transfer and Firebase claim propagation remain open in #36.
