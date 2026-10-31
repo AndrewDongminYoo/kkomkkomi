@@ -25,6 +25,9 @@ The Play internal-track criterion and the remaining distribution checklist keep 
 The operator authorized preparing production `1.1.2+6` and uploading the verified files to TestFlight and the Play internal track as a draft on 2026-10-31.
 `docs/notes/2026-10-31-production-build-provenance.md` owns the preparation evidence and separates an artifact's clean source/hash from upload, processing and tester availability.
 This direction authorizes no public rollout, app review submission, tester/account change, backend deployment or device installation.
+On 2026-10-31 the operator separately selected closed Alpha distribution of existing `1.1.2`, version code `6`.
+`docs/notes/2026-10-31-play-alpha-distribution.md` owns that operation and its review/publication and web-access evidence.
+The separate request includes the Alpha review step required for test distribution, while retaining the Android physical-device validation limit and the separate internal-track criterion of #40.
 The data layer of the M1 build exists: the domain model, the repository interfaces and use cases, and the SQLite repositories.
 The client list, the client detail, the visit capture, the company profile, and the plans screens use it, and the client list is the home screen.
 The client detail screen starts a visit and opens a past one, and the visit capture screen takes the before photo, the after photo, the status, and the note of each zone, and the reason of a zone that is partly done or not done.
