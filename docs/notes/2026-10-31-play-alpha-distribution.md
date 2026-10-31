@@ -18,12 +18,23 @@ The first confirmation to submit that single change was clicked while preliminar
 After the Console explicitly reported that checks had completed and changes could be sent, a second confirmation still left the same status.
 The submission-activity page showed no new submission record, and browser warning/error logs were empty.
 The cause is unconfirmed; automated submission stopped after those two attempts, with the exact single Alpha change preserved for operator diagnosis.
-This is not a confirmed review submission or completed publication.
+Those automated attempts did not establish successful submission or publication.
 The prior Alpha code 5 remained `PUBLISHED`, and internal code 6 remained `DRAFT` in the same read-back.
+
+## Operator submission and latest read-back
+
+The operator subsequently reported completing the native submission manually.
+A pure-read API check at 2026-10-31 11:17 Asia/Seoul confirmed Alpha `1.1.2`, code `6`, as `IN_REVIEW`.
+The prior Alpha code 5 was still `PUBLISHED`, and internal code 6 was still `DRAFT`.
+This resolves the submission blocker, but Google approval, publication and delivery of code 6 are not yet established.
+Managed publishing was already disabled when the single Alpha change was prepared, so approval may publish that authorized closed-test release without another manual publishing step.
+
+## Tester access and remaining limits
 
 The existing signed-in account's web participation page displayed `App not available`.
 A bounded read of the selected tester-list dialog found that account was not included; the dialog was closed without editing, and the tester-settings save action remained disabled.
 This establishes a blocked access check for that account, not availability of code 6 to an eligible tester.
+The operator reported that checking an already invited account was currently difficult, so eligible-account access remains unverified rather than passed or waived.
 No tester identities or addresses are recorded here.
 
 No Android device is available, so installation, device compatibility, the binary actually delivered and runtime behavior remain unverified.
