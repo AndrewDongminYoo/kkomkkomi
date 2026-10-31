@@ -26,8 +26,15 @@ The prior Alpha code 5 remained `PUBLISHED`, and internal code 6 remained `DRAFT
 The operator subsequently reported completing the native submission manually.
 A pure-read API check at 2026-10-31 11:17 Asia/Seoul confirmed Alpha `1.1.2`, code `6`, as `IN_REVIEW`.
 The prior Alpha code 5 was still `PUBLISHED`, and internal code 6 was still `DRAFT`.
-This resolves the submission blocker, but Google approval, publication and delivery of code 6 are not yet established.
+This resolved the submission blocker; that read did not establish Google approval, publication or delivery of code 6.
 Managed publishing was already disabled when the single Alpha change was prepared, so approval may publish that authorized closed-test release without another manual publishing step.
+
+## Published Alpha read-back
+
+A subsequent pure-read API check at 2026-10-31 12:10 Asia/Seoul confirmed Alpha `1.1.2`, code `6`, as `PUBLISHED`.
+Internal `1.1.2`, code `6`, remained `DRAFT`.
+This establishes the closed-track publication, while eligible-tester access and the version actually delivered remain unverified.
+No additional submission, binary upload or tester-setting change was performed for this read-back.
 
 ## Tester access and remaining limits
 
