@@ -13,7 +13,9 @@ No new binary, dependency update or worktree is required.
 2. Select existing code 6 in a native Alpha release and inspect the final target/content before publishing.
    Verify: retained operation identity and release-summary evidence, with no duplicate bundle upload.
 3. Submit only the authorized Alpha release and read its resulting review/publication state.
-   Verify: Console result and exact remote track read-back; reconcile before any retry.
+   Verify: Console result and exact remote track read-back.
+   Preserve and propagate specific authentication, permission or processing failures; resume only after the specific blocker is resolved.
+   Reconcile unknown outcomes before any retry.
 4. Read the existing tester opt-in and store access route with the signed-in personal account.
    Verify: visible membership/access state, with no enrollment or device action.
 5. Record measured outcomes in the [dated note](../notes/2026-10-31-play-alpha-distribution.md) and update affected release pointers in the same PR.
