@@ -21,6 +21,12 @@ The [build provenance record](2026-10-31-production-build-provenance.md) separat
 This direction includes no public rollout, store app-review submission, tester/account change, backend deploy or device installation.
 The dated distribution snapshot above is historical, and a new artifact alone does not satisfy the remaining #40 acceptance.
 
+## Closed Alpha continuation on 2026-10-31
+
+The operator separately selected closed Alpha distribution of existing production code 6.
+The [Alpha verification record](2026-10-31-play-alpha-distribution.md) separates native release preparation, Google review/publication and signed-in tester access.
+Android installation/runtime acceptance and the separate internal-track criterion of #40 remain independent checks.
+
 ## Open items before an external TestFlight review
 
 The TestFlight overview says: "When you add the first build of your app to a group, the build gets sent to App Review …" (https://developer.apple.com/help/app-store-connect/test-a-beta-version/testflight-overview, read on 2026-10-02), and these items can block that review.
