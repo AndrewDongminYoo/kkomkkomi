@@ -45,3 +45,17 @@ The [TestFlight billing baseline](2026-10-30-ios-restore-management-acceptance.m
 No new physical-device or provider acceptance follows from this snapshot.
 Future uploads, rollout changes, tester changes and device writes need their own concrete target and approval.
 The [spec](../specs/2026-10-31-store-distribution-status.md) and [plan](../plans/2026-10-31-store-distribution-status.md) bound this documentation pass.
+
+## Current state
+
+Moved unchanged from `CLAUDE.md` § Current state on 2026-11-02.
+
+The store reads on 2026-10-30 found TestFlight `1.1.1(5)` in the internal group and Google Play `1.1.1` (version code `5`) active in closed Alpha testing; the Play internal track was inactive with no release.
+`docs/notes/2026-10-31-store-distribution-status.md` owns that dated snapshot and the unverified binary-to-source mapping.
+The Play internal-track criterion and the remaining distribution checklist keep #40 open; closed Alpha is not internal testing.
+The operator authorized preparing production `1.1.2+6` and uploading the verified files to TestFlight and the Play internal track as a draft on 2026-10-31.
+`docs/notes/2026-10-31-production-build-provenance.md` owns the preparation evidence and separates an artifact's clean source/hash from upload, processing and tester availability.
+This direction authorizes no public rollout, app review submission, tester/account change, backend deployment or device installation.
+On 2026-10-31 the operator separately selected closed Alpha distribution of existing `1.1.2`, version code `6`.
+`docs/notes/2026-10-31-play-alpha-distribution.md` owns that operation and its review/publication and web-access evidence.
+The separate request includes the Alpha review step required for test distribution, while retaining the Android physical-device validation limit and the separate internal-track criterion of #40.
