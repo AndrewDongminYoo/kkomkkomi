@@ -129,9 +129,10 @@ class _ReportScaffold extends StatelessWidget {
     return BlocBuilder<VisitReportCubit, VisitReportState>(
       builder: (context, state) {
         final document = state.document;
-        // A person who leaves while the PDF is on its way would get a share sheet over another screen.
+        // A person who leaves while the PDF is on its way would get a share sheet over another screen. A person who
+        // leaves or starts a share while the approval request is on its way would lose the answer of the request.
         return SaveGuard(
-          isSaving: state.status == VisitReportStatus.sharing,
+          isSaving: state.status == VisitReportStatus.sharing || linkState.approval == ApprovalRequestStatus.sending,
           child: Scaffold(
             appBar: AppBar(title: KeepAllText(l10n.visitReportTitle)),
             body: SafeArea(

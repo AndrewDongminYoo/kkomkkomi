@@ -825,6 +825,49 @@ void main() {
         expect(find.text('Request link sharing approval'), findsOneWidget);
       });
 
+      testWidgets('takes no touch and no back press while the approval request is on its way', (tester) async {
+        final publisher = refusingPublisher();
+        await pumpPage(tester, publisher: publisher);
+        await tester.tap(linkButton());
+        await tester.pumpAndSettle();
+        final gate = publisher.gates['writeApprovalRequest'] = Completer<void>();
+
+        await tester.tap(find.text('Request link sharing approval'));
+        await tester.pumpAndSettle();
+        await tester.tap(find.widgetWithText(FilledButton, 'Send request'));
+        // The progress indicator of the request control never settles, so each step pumps a second, which is longer
+        // than a route takes to open or to close.
+        await tester.pump();
+        await tester.pump(const Duration(seconds: 1));
+        expect(
+          find.descendant(of: find.byType(TextButton), matching: find.byType(CircularProgressIndicator)),
+          findsOneWidget,
+        );
+        final calls = List.of(publisher.calls);
+        await tester.tap(linkButton(), warnIfMissed: false);
+        await tester.tap(pdfButton(), warnIfMissed: false);
+        await tester.pump();
+        await tester.pump(const Duration(seconds: 1));
+        expect(publisher.calls, calls);
+        expect(reportShare.shared, isEmpty);
+        await tester.binding.handlePopRoute();
+        await tester.pump();
+        await tester.pump(const Duration(seconds: 1));
+        expect(find.byType(VisitReportPage), findsOneWidget);
+
+        gate.complete();
+        await tester.pumpAndSettle();
+
+        expect(
+          find.text("Your approval request is waiting for the operator. Once it's approved, press Share link again."),
+          findsOneWidget,
+        );
+        expect(reportShare.shared, isEmpty);
+        await tester.binding.handlePopRoute();
+        await tester.pumpAndSettle();
+        expect(find.byType(VisitReportPage), findsNothing);
+      });
+
       testWidgets('shows a request that the backend holds as pending after a refused share', (tester) async {
         final publisher = refusingPublisher()..approvalRequests['user-1'] = null;
         await pumpPage(tester, publisher: publisher);
