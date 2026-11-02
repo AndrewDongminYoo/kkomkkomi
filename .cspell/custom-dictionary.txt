@@ -69,6 +69,7 @@ NOZORDER
 Onone
 ORGANIZATIONNAME
 OVERLAPPEDWINDOW
+oxipng
 parallelizable
 pbxproj
 pgrep
