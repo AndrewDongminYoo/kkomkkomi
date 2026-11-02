@@ -18,6 +18,7 @@ That client reads `publishingGrants/{uid}` in each share transaction, the deploy
 So no new link share of `1.1.2+6` succeeds against the deployed rules, for a paid user or a free one; a grant that the operator created would not help, because the deployed rules deny the read itself.
 Version code `6` showed `completed` on the Play internal, Alpha and production tracks on 2026-11-02 (`docs/notes/2026-10-31-play-internal-distribution.md`), which does not establish delivery to a user. No record establishes a TestFlight upload of `1.1.2(6)`.
 So a user who runs `1.1.2+6` can see the email flow now, and approval emails may already exist. No record shows whether any was sent; rollout step 2 of the operations note covers any that arrived (see "Ordering constraints").
+The sentence "No email has been sent or delivery verified." in `docs/notes/report-abuse-operations.md`, "State and authority", has not changed since `888af8a` (2026-10-08), before any distribution of `1.1.2+6`. So it does not cover the `mailto` messages that users write in that build, and it does not conflict with the line above.
 
 ## Problem and evidence
 
@@ -120,7 +121,7 @@ Issue #147 changes `docs/notes/report-abuse-operations.md` to match this spec:
   So one purchase can produce more than one grant over time, each with its full budgets.
   RevenueCat identity-transfer behavior is not verified for this app (`CLAUDE.md`, "Current state", issue #36), so this spec does not say when a transfer happens.
 - `paid()` reads the ID token that the client sends. A token issued before a subscription ended can still carry the claim until it expires, so a user can create a grant during that time.
-- Any anonymous account can create one request record. The number of records is limited only by the number of anonymous accounts. The operator can delete records in bulk, and no request gets a grant without review.
+- Any anonymous account can hold one stored request record at a time. It can delete that record and create a new one, so the rules limit stored records and not the number of requests over time. The number of stored records is limited only by the number of anonymous accounts. This spec adds no cooldown and no other limit on repeated requests. The operator can delete records in bulk, and no request gets a grant without review.
 - A paid UID whose grant the operator deleted can create a fresh grant with zero usage while it can still sign in. The check of the Auth account in "Operations note" closes that path. This spec does not establish whether the rules accept an ID token that was issued before the account was deleted.
 - A blocked paid publisher can come back through a new UID that holds the purchase. The block of its pages and the withdrawal of its old grant stay. This spec adds no store-account blocklist. A later decision can add one.
 
