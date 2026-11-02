@@ -126,6 +126,29 @@ jobs:
       - name: Test the security rules in the emulators
         run: firebase emulators:exec --project demo-kkomkkomi --only firestore,storage "npm --prefix test/rules test"
 
+  functions:
+    # Type-checks and tests the RevenueCat claims function under functions/, as
+    # `merry run functions` does. The tests replace Firebase Admin with fakes,
+    # so the job needs no Firebase project and no secret.
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: 24
+          cache: npm
+          cache-dependency-path: functions/package-lock.json
+
+      - name: Install the function packages
+        run: npm ci --prefix functions
+
+      - name: Type-check the function
+        run: npm --prefix functions run typecheck
+
+      - name: Test the function
+        run: npm --prefix functions test
+
   web:
     # Tests the web report page under web/report/ with fixture data in Node,
     # without a browser and without a network, as `merry run web` does.
