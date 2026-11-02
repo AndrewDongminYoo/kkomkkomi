@@ -162,6 +162,7 @@ export const createHandler = ({
       }
 
       const nowMs = now();
+      let writeFailed = false;
       await Promise.all(
         // Each user is queued on its own, and no task waits for the queue of
         // another user, so two transfers in opposite directions cannot block
@@ -191,10 +192,9 @@ export const createHandler = ({
                   : { [EVENT_TIMESTAMP_CLAIM]: eventTimestampMs }),
               });
             } catch (error) {
-              // As upstream does, a failed claim write is logged and the request
-              // still answers 200. A RevenueCat app user ID that is not a
-              // Firebase user, such as an anonymous RevenueCat ID, can never get
-              // a claim, so it is logged as a warning only.
+              // A RevenueCat app user ID that is not a Firebase user, such as an
+              // anonymous RevenueCat ID, can never get a claim, so it is logged
+              // as a warning only and the request still answers 200.
               if (isUserNotFound(error)) {
                 logger.warn(
                   `Skipped the claims of user ${userId}, who does not exist.`,
@@ -204,10 +204,21 @@ export const createHandler = ({
               logger.error(
                 `Could not write the claims of user ${userId}: ${messageOf(error)}`,
               );
+              writeFailed = true;
             }
           }),
         ),
       );
+
+      // Upstream answers 200 here. Any other failed write answers 500 after
+      // every user was tried, so that a sender that retries can send the event
+      // again: the retry carries the same timestamp, which is not stale.
+      if (writeFailed) {
+        throw new WebhookError(
+          500,
+          "A claim write failed, so the event can be sent again.",
+        );
+      }
 
       response.status(200).json({});
     } catch (error) {

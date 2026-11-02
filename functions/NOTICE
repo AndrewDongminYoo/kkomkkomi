@@ -33,8 +33,10 @@ Modifications made for kkomkkomi in 2026:
   instance, so that two overlapping events of one user cannot both pass the
   watermark check and let the older one write last. The upstream handler has
   no such serialization.
-- A claim write that fails is logged and answered with status 200, as before;
-  one that fails because the user does not exist is logged as a warning.
+- A claim write that fails is logged, and the request answers status 500 after
+  every user of the event was tried, where upstream answered 200; one that
+  fails because the user does not exist is logged as a warning and still
+  answers 200.
 - Error responses carry a message only, without an error code or extension
   version.
 - The tests were written for this repository; their token helper signs the

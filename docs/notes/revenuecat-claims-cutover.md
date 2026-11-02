@@ -77,8 +77,9 @@ Write down the old Trigger URL first, because the rollback needs it.
 If the write fails with a permission error, the runtime service account of the function lacks Firebase Authentication admin rights.
 Grant it `roles/firebaseauth.admin` with the operator's approval, then repeat the sandbox event.
 
-A failed claim write is logged as an error and answered with status 200, as the extension did, so Customer History shows the event as delivered even then.
-The function log of step 3 is the place where such a failure shows.
+A failed claim write is logged as an error and answered with status 500, where the extension answered 200, so Customer History does not show such an event as delivered.
+RevenueCat documentation does not say whether the Firebase integration sends a failed event again; a resend carries the same event timestamp, so the function applies it.
+A RevenueCat app user ID that is not a Firebase user is logged as a warning and still answered with 200.
 
 ## 5. Uninstall the extension
 

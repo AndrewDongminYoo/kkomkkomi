@@ -467,7 +467,7 @@ describe("failures", () => {
     });
   });
 
-  it("answers 200 and logs a claim write that fails, after it wrote the other user", async () => {
+  it("answers 500 and logs a claim write that fails, after it wrote the other user", async () => {
     const auth = new FakeAuth({ "new-owner": {}, "old-owner": {} });
     auth.failures.set(
       "new-owner",
@@ -481,8 +481,10 @@ describe("failures", () => {
       { auth },
     );
 
-    expect(response.statusCode).toBe(200);
-    expect(response.body).toEqual({});
+    expect(response.statusCode).toBe(500);
+    expect(response.body).toEqual({
+      message: "A claim write failed, so the event can be sent again.",
+    });
     expect(auth.writes.map((write) => write.uid)).toEqual(["old-owner"]);
     expect(logger.messages).toContainEqual({
       level: "error",
@@ -490,7 +492,39 @@ describe("failures", () => {
     });
   });
 
-  it("answers 200 and logs a failure that is not an error object", async () => {
+  it("applies the same event again after a claim write failed", async () => {
+    const auth = new FakeAuth({ "new-owner": {}, "old-owner": {} });
+    auth.failures.set(
+      "new-owner",
+      Object.assign(new Error("quota exceeded"), {
+        code: "auth/internal-error",
+      }),
+    );
+    const handler = createHandler({
+      auth,
+      getSecret: () => SECRET,
+      now: () => NOW,
+      logger: new FakeLogger(),
+    });
+    const token = signToken(transfer());
+
+    const first = new FakeResponse();
+    await handler({ body: { token } }, first);
+    auth.failures.delete("new-owner");
+    const retry = new FakeResponse();
+    await handler({ body: { token } }, retry);
+
+    expect(first.statusCode).toBe(500);
+    expect(retry.statusCode).toBe(200);
+    expect(auth.writes.map((write) => write.uid).sort()).toEqual([
+      "new-owner",
+      "old-owner",
+      "old-owner",
+    ]);
+    expect(claimsOf(auth, "new-owner")?.[ENTITLEMENTS_CLAIM]).toEqual(["pro"]);
+  });
+
+  it("answers 500 and logs a failure that is not an error object", async () => {
     const auth = new FakeAuth({ "firebase-user": {} });
     auth.failures.set("firebase-user", "unavailable");
 
@@ -499,7 +533,7 @@ describe("failures", () => {
       { auth },
     );
 
-    expect(response.statusCode).toBe(200);
+    expect(response.statusCode).toBe(500);
     expect(auth.writes).toEqual([]);
     expect(logger.messages).toContainEqual({
       level: "error",
