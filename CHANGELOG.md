@@ -6,6 +6,19 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 ## [Unreleased]
 
+## [1.1.3] - 2026-11-02
+
+TestFlight and Google Play internal-test upload candidate, build 7.
+
+### Added
+
+- A free publisher requests link sharing approval inside the app instead of by email, and the visit report shows that the request is pending (#147).
+- A publisher with a paid plan gets link sharing approval automatically after its first refused share, and the share runs again (#147).
+
+### Internal
+
+- Update the `material_ui` dependency.
+
 ## [1.1.2] - 2026-10-31
 
 Production TestFlight and Google Play internal-test upload candidate, build 6.
