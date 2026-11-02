@@ -9,7 +9,8 @@ service cloud.firestore {
       return request.auth != null;
     }
 
-    // Only privileged operator access issues grants and blocks pages. A replacement anonymous UID gets no grant.
+    // Privileged operator access issues grants and blocks pages. A user whose token holds a paid entitlement may also
+    // create its own grant, once and only as initialGrant(). A replacement anonymous UID without one gets no grant.
     function grant(uid) {
       return get(/databases/$(database)/documents/publishingGrants/$(uid)).data;
     }
@@ -38,6 +39,29 @@ service cloud.firestore {
       return signedIn()
         && request.auth.token.get('revenueCatEntitlements', []) is list
         && request.auth.token.get('revenueCatEntitlements', []).hasAny(['basic', 'pro']);
+    }
+
+    // The initial document of docs/notes/report-abuse-operations.md, "Enrollment". updatedAt is fixed in the past and
+    // never request.time, because validUsage requires one second after it, so the first charge in a separate write
+    // succeeds.
+    function initialGrant() {
+      return {
+        'enabled': true,
+        'pageLimit': 50,
+        'reportLimit': 1000,
+        'photoLimit': 2000,
+        'byteLimit': 1073741824,
+        'pages': 0,
+        'reports': 0,
+        'photos': 0,
+        'bytes': 0,
+        'reservations': {},
+        'type': 'page',
+        'pageId': 'initial',
+        'visitId': '',
+        'fileName': '',
+        'updatedAt': timestamp.date(2000, 1, 1)
+      };
     }
 
     function isPage(data) {
@@ -195,8 +219,22 @@ service cloud.firestore {
 
     match /publishingGrants/{uid} {
       allow get: if signedIn() && request.auth.uid == uid;
+      // A create fails over an existing grant, so a withdrawn grant stays withdrawn and no client resets its usage.
+      // approved() and validUsage never read paid(), so a grant stays after the subscription ends.
+      allow create: if paid() && request.auth.uid == uid && request.resource.data == initialGrant();
       // Operator-managed approval and budgets are immutable to clients; only bound usage changes are permitted.
       allow update: if validUsage(uid, resource.data, request.resource.data);
+    }
+
+    // The request of a user without a grant for link sharing approval. The operator reads it in the console, and
+    // creates the grant or deletes the request. The owner reads it to show that it waits, and deletes it; to send it
+    // again, the owner deletes it and creates it again.
+    match /publishingRequests/{uid} {
+      allow get, delete: if signedIn() && request.auth.uid == uid;
+      allow create: if signedIn() && request.auth.uid == uid
+        && request.resource.data.keys().hasOnly(['requestedAt', 'companyName'])
+        && request.resource.data.requestedAt == request.time
+        && (!request.resource.data.keys().hasAny(['companyName']) || text(request.resource.data.companyName, 100));
     }
 
     match /clientPages/{pageId} {
