@@ -65,6 +65,8 @@ Its shared secret is in Secret Manager, and `firebase.json` holds no `extensions
 Keep both collection parameters empty unless the privacy pages change first.
 Install, update, or reconfigure the extension only with the operator's approval.
 See `docs/notes/firebase-deploy-log.md` § RevenueCat extension (moved 2026-11-02).
+`functions/` holds `revenueCatWebhook`, the repository function that replaces the extension handler and writes the same claims, and `docs/notes/revenuecat-claims-cutover.md` owns its secret, deploy, URL change, verification, uninstall, and rollback steps.
+It has not been deployed; each of those steps needs the operator's approval.
 
 `storage.rules` reads the client page through `firestore.get`, which needs the Firebase Storage service agent (`service-146496738802@gcp-sa-firebasestorage.iam.gserviceaccount.com`) to hold `roles/firebaserules.firestoreServiceAgent`.
 The operator granted it on 2026-10-02, after the deploy. A `firebase deploy --only storage` with `--non-interactive` does not offer that grant, so a new project needs the grant by hand, and without it every Storage rule that reads the page denies.
@@ -126,6 +128,9 @@ dart run build_runner build
 # The web report page with fixture data, in Node (part of check)
 merry run web
 
+# Type-check and test the RevenueCat claims function under functions/ (needs Node 24)
+merry run functions
+
 # The store screenshots and the Play feature graphic, then their check
 CHROME=/path/to/chrome-headless-shell merry run store
 
@@ -157,6 +162,7 @@ The app bundles the regular and the bold weight of Noto Sans KR for the PDF, and
 - The `ios` job builds the development debug app without signing on `macos-latest`, from a checkout without `GoogleService-Info.plist`. No CI job builds the production flavor of iOS, and no CI job builds macOS.
 - The `windows` job is the only verification of the Windows build. Do not add a local Windows build script.
 - The `web` job runs `test/web/` in Node, as `merry run web` does.
+- The `functions` job type-checks and tests `functions/` in Node 24, as `merry run functions` does.
 - The `rules` job runs `test/rules/` against the Firestore and Storage emulators with the project ID `demo-kkomkkomi`, as `merry run rules` does. `merry run check` leaves it out, because the emulators need Java 21. Firebase documents that a project ID with the `demo-` prefix reaches emulators only (https://firebase.google.com/docs/emulator-suite/connect_firestore, "Choose a Firebase project"), so never run the rules tests under another project ID.
 
 Trunk installs a format hook on commit and a check hook on push (`.trunk/trunk.yaml`).

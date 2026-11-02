@@ -11,6 +11,7 @@ autorecalculates
 autoresizing
 Buildables
 COINIT
+cutover
 Deliverfile
 dists
 Dongmin
@@ -26,6 +27,7 @@ FILEFLAGSMASK
 FILEOS
 FILESUBTYPE
 FILEVERSION
+firebaseauth
 firebaserules
 firebasestorage
 flutterfire
@@ -74,6 +76,7 @@ parallelizable
 pbxproj
 pgrep
 pinact
+predeploy
 PRODUCTVERSION
 proguard
 protoc
