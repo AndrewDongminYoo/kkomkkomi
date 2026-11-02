@@ -6,6 +6,7 @@ Approved local direction for issue #86, based on main at `6cb836b78c1570aebdbe07
 The operator approved controlled publisher admission, the safety budgets and retaining the shared host on 2026-10-08.
 The approved baseline keeps report recipients anonymous and requires operator approval of each publishing account.
 The operator supplied `donminzzi@gmail.com` as the abuse-report address in this session.
+Reconciliation, 2026-11-02: `docs/specs/2026-11-02-publisher-approval-request.md` supersedes publisher admission only: a paid user gets the default grant automatically, and a free user requests approval in the app instead of by email; the budgets, blocks, and abuse reporting of this spec stay.
 
 ## Problem and evidence
 
