@@ -1308,6 +1308,203 @@ void main() {
     });
   });
 
+  group('a publish without a grant', () {
+    test('gives a paid user its grant and runs the job once more, which shares its first link', () async {
+      publisher.requiresGrant = true;
+      identity.paid = true;
+      final queue = newQueue();
+      final updates = <PublishJob>[];
+      queue.updates.listen(updates.add);
+
+      final job = await queue.publishVisit('visit-2');
+      await settle();
+
+      expect(publisher.calls, [
+        'writePage ${job.pageId}',
+        'createOwnGrant owner-1',
+        'writePage ${job.pageId}',
+        startsWith('uploadPhoto clientPages/${job.pageId}/visit-2/'),
+        'writeReport ${job.pageId}/visit-2',
+      ]);
+      expect(publisher.grants, {'owner-1'});
+      expect(await jobOf(job), job.succeed());
+      expect(updates, [job.succeed()]);
+      // One check before the grant, and the one of the report.
+      expect(identity.paidChecks, 2);
+    });
+
+    test('a free user gets no grant, and the job stops refused', () async {
+      publisher.requiresGrant = true;
+      final queue = newQueue();
+
+      final job = await queue.publishVisit('visit-2');
+      await settle();
+
+      expect(publisher.calls, ['writePage ${job.pageId}']);
+      expect(publisher.grants, isEmpty);
+      expect(identity.paidChecks, 1);
+      expect(await jobOf(job), job.fail(PublishFailure.refused));
+    });
+
+    test('a paid user whose grant exists, such as one that the operator withdrew, gets no second run', () async {
+      publisher
+        ..grants.add('owner-1')
+        ..failures['writePage'] = [FakePublisher.unapproved];
+      identity.paid = true;
+      final queue = newQueue();
+
+      final job = await queue.publishVisit('visit-2');
+      await settle();
+
+      expect(publisher.calls, ['writePage ${job.pageId}', 'createOwnGrant owner-1']);
+      expect(await jobOf(job), job.fail(PublishFailure.refused));
+    });
+
+    test('a second refusal after the grant stops the job without a third run', () async {
+      publisher.failures['writePage'] = [FakePublisher.unapproved, FakePublisher.unapproved];
+      identity.paid = true;
+      final queue = newQueue();
+
+      final job = await queue.publishVisit('visit-2');
+      await settle();
+
+      expect(publisher.calls, ['writePage ${job.pageId}', 'createOwnGrant owner-1', 'writePage ${job.pageId}']);
+      expect(identity.paidChecks, 1);
+      expect(await jobOf(job), job.fail(PublishFailure.refused));
+    });
+
+    test('a refusal for another reason asks for no entitlement and creates no grant', () async {
+      publisher.failures['writePage'] = [_refused];
+      identity.paid = true;
+      final queue = newQueue();
+
+      final job = await queue.publishVisit('visit-2');
+      await settle();
+
+      expect(publisher.calls, ['writePage ${job.pageId}']);
+      expect(identity.paidChecks, 0);
+      expect(await jobOf(job), job.fail(PublishFailure.refused));
+    });
+
+    test('a grant create that a retry can fix runs the job again later', () async {
+      publisher
+        ..requiresGrant = true
+        ..failures['createOwnGrant'] = [_transient];
+      identity.paid = true;
+      final queue = newQueue();
+
+      final job = await queue.publishVisit('visit-2');
+      await settle();
+
+      final stored = await jobOf(job);
+      expect(stored.status, PublishJobStatus.pending);
+      expect(stored.attempts, 1);
+      expect(publisher.grants, isEmpty);
+
+      clock.time = start.add(const Duration(seconds: 5));
+      activeTimers().single.fire();
+      await settle();
+
+      expect(publisher.grants, {'owner-1'});
+      expect(await jobOf(job), stored.succeed());
+    });
+
+    test('a check of the paid entitlement that does not answer in time stops the job refused', () async {
+      publisher.requiresGrant = true;
+      identity
+        ..paid = true
+        ..paidGate = Completer<void>();
+      final queue = newQueue(stepTimeout: const Duration(milliseconds: 10));
+
+      final job = await queue.publishVisit('visit-2');
+      await waitUntil(() async => (await jobOf(job)).status != PublishJobStatus.pending);
+
+      expect(publisher.calls, ['writePage ${job.pageId}']);
+      expect(await jobOf(job), job.fail(PublishFailure.refused));
+      identity.paidGate!.complete();
+    });
+
+    test('a revoke without a grant asks for no entitlement', () async {
+      final queue = newQueue();
+      await queue.publishVisit('visit-2');
+      await settle();
+      publisher
+        ..calls.clear()
+        ..failures['revokePage'] = [FakePublisher.unapproved];
+      identity.paid = true;
+      final checks = identity.paidChecks;
+
+      final page = (await queue.revokeClientPage('client-1'))!;
+      await settle();
+
+      expect(publisher.calls, ['revokePage ${page.id}']);
+      expect(identity.paidChecks, checks);
+      final revoke = (await queue.revokeJobsOf('client-1')).single;
+      expect(revoke.failure, PublishFailure.refused);
+    });
+  });
+
+  group('approval request', () {
+    test('sends the request of the signed-in user with the saved company name, once', () async {
+      final queue = newQueue();
+
+      await queue.requestApproval();
+      await queue.requestApproval();
+
+      expect(publisher.approvalRequests, {'owner-1': '꼼꼬미 청소'});
+      expect(await queue.hasApprovalRequest(), isTrue);
+    });
+
+    test('sends no company name when no company profile is saved', () async {
+      await repositories.localData.eraseAll();
+      final queue = newQueue();
+
+      await queue.requestApproval();
+
+      expect(publisher.approvalRequests, {'owner-1': null});
+    });
+
+    test('reads that the backend holds no request', () async {
+      final queue = newQueue();
+
+      expect(await queue.hasApprovalRequest(), isFalse);
+      expect(publisher.calls, ['hasApprovalRequest owner-1']);
+    });
+
+    test('fails without a call of the backend while no user is signed in', () async {
+      identity.userId = null;
+      final queue = newQueue();
+      final noUser = throwsA(isA<PublishException>().having((error) => error.kind, 'kind', PublishErrorKind.transient));
+
+      await expectLater(queue.requestApproval(), noUser);
+      await expectLater(queue.hasApprovalRequest(), noUser);
+      expect(publisher.calls, isEmpty);
+    });
+
+    test('fails without a write while the queue is held, because a deletion may have deleted the request', () async {
+      final queue = newQueue();
+      await queue.hold();
+
+      await expectLater(
+        queue.requestApproval(),
+        throwsA(isA<PublishException>().having((error) => error.kind, 'kind', PublishErrorKind.transient)),
+      );
+      expect(publisher.calls, isEmpty);
+      expect(publisher.approvalRequests, isEmpty);
+    });
+
+    test('fails when the backend does not take the request, and a deletion after it waits for nothing', () async {
+      publisher.failures['writeApprovalRequest'] = [_transient];
+      final queue = newQueue();
+
+      await expectLater(queue.requestApproval(), throwsA(_transient));
+      await queue.hold();
+      await queue.deletePublished();
+
+      expect(publisher.calls, ['writeApprovalRequest owner-1', 'deleteApprovalRequest owner-1']);
+    });
+  });
+
   group('start', () {
     test('runs at once the jobs that an earlier queue left, also a job inside its delay', () async {
       publisher.failures['writePage'] = [_transient];
@@ -1758,7 +1955,8 @@ void main() {
     });
 
     test(
-      'deletes the objects of every page, then the reports of every visit that a job published, then the pages',
+      'deletes the objects of every page, then the reports of every visit that a job published, then the pages, and '
+      'last the approval request',
       () async {
         final queue = newQueue();
         final revoked = await queue.publishVisit('visit-1');
@@ -1786,6 +1984,7 @@ void main() {
           'deleteReport ${open.pageId}/visit-2',
           'deletePage ${revoked.pageId}',
           'deletePage ${open.pageId}',
+          'deleteApprovalRequest owner-1',
         ]);
         expect(publisher.objects, isEmpty);
         expect(publisher.reports, isEmpty);
@@ -1798,14 +1997,46 @@ void main() {
       },
     );
 
-    test('does nothing, and asks for no user, when the app made no page', () async {
+    test('deletes only the request of the user when the app made no page', () async {
       final queue = newQueue();
+      publisher.approvalRequests['owner-1'] = null;
+      await queue.hold();
+
+      await queue.deletePublished();
+
+      expect(publisher.calls, ['deleteApprovalRequest owner-1']);
+      expect(publisher.approvalRequests, isEmpty);
+    });
+
+    test('waits for a request write that started before the hold, and deletes the request after it', () async {
+      final queue = newQueue();
+      final gate = publisher.gates['writeApprovalRequest'] = Completer<void>();
+      final request = queue.requestApproval();
+      await settle();
+      await queue.hold();
+
+      var deleted = false;
+      final deletion = queue.deletePublished().then((_) => deleted = true);
+      await settle();
+      expect(deleted, isFalse);
+      expect(publisher.calls, ['writeApprovalRequest owner-1']);
+
+      gate.complete();
+      await request;
+      await deletion;
+
+      expect(publisher.calls, ['writeApprovalRequest owner-1', 'deleteApprovalRequest owner-1']);
+      expect(publisher.approvalRequests, isEmpty);
+    });
+
+    test('deletes nothing, and does not fail, when the app made no page and no user is signed in', () async {
+      final queue = newQueue();
+      identity.userId = null;
       await queue.hold();
 
       await queue.deletePublished();
 
       expect(publisher.calls, isEmpty);
-      expect(identity.calls, 0);
     });
 
     test('fails before any delete when no user is signed in', () async {
@@ -1839,7 +2070,11 @@ void main() {
       publisher.calls.clear();
       await queue.deletePublished();
 
-      expect(publisher.calls, ['deleteReport ${job.pageId}/visit-2', 'deletePage ${job.pageId}']);
+      expect(publisher.calls, [
+        'deleteReport ${job.pageId}/visit-2',
+        'deletePage ${job.pageId}',
+        'deleteApprovalRequest owner-1',
+      ]);
       expect(publisher.pages, isEmpty);
     });
 

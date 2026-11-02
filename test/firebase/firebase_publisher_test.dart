@@ -94,6 +94,7 @@ void main() {
     registerFallbackValue(<String, Object?>{});
     registerFallbackValue(Uint8List(0));
     registerFallbackValue(SettableMetadata());
+    registerFallbackValue(const GetOptions());
   });
 
   late _MockFirestore firestore;
@@ -226,7 +227,7 @@ void main() {
       };
       await expectLater(
         publisher.writeReport(pageId: 'page-1', visitId: 'visit-1', report: report),
-        throwsA(isA<PublishException>().having((error) => error.kind, 'kind', PublishErrorKind.refused)),
+        throwsA(isA<PublishException>().having((error) => error.kind, 'kind', PublishErrorKind.unapproved)),
       );
       expect(values['clientPages/page-1/reports/visit-1'], isNull);
       expect(values['clientPages/page-1/reportValidation/visit-1/chunks/1'], isNotNull);
@@ -283,7 +284,10 @@ void main() {
 
     test('missing grants refuse publication and admitted withdrawn accounts can close an absent page', () async {
       firestore.transaction.values.remove('publishingGrants/owner-1');
-      await expectLater(publisher.writePage('new', page), throwsA(isA<PublishException>()));
+      await expectLater(
+        publisher.writePage('new', page),
+        throwsA(isA<PublishException>().having((error) => error.kind, 'kind', PublishErrorKind.unapproved)),
+      );
       firestore.transaction.values['publishingGrants/owner-1'] = {
         'enabled': false,
         'pages': 0,
@@ -565,6 +569,137 @@ void main() {
 
       await publisher.deletePage('page-1');
       verify(pageDocument.delete).called(1);
+    });
+
+    group('grant', () {
+      test('creates the initial grant of the operations note, with updatedAt at 2000-01-01 UTC', () async {
+        expect(await publisher.createOwnGrant('paid-1'), isTrue);
+
+        expect(written('publishingGrants/paid-1'), {
+          'enabled': true,
+          'pageLimit': 50,
+          'reportLimit': 1000,
+          'photoLimit': 2000,
+          'byteLimit': 1073741824,
+          'pages': 0,
+          'reports': 0,
+          'photos': 0,
+          'bytes': 0,
+          'reservations': <String, Object>{},
+          'type': 'page',
+          'pageId': 'initial',
+          'visitId': '',
+          'fileName': '',
+          'updatedAt': Timestamp.fromDate(DateTime.utc(2000)),
+        });
+      });
+
+      test('leaves a grant that exists as it is, also a withdrawn one', () async {
+        firestore.transaction.values['publishingGrants/owner-1']!['enabled'] = false;
+
+        expect(await publisher.createOwnGrant('owner-1'), isFalse);
+
+        verifyNever(() => documents['publishingGrants/owner-1']!.set(any()));
+        expect(firestore.transaction.values['publishingGrants/owner-1']!['enabled'], isFalse);
+      });
+
+      test('turns a refused create into a failure that a retry cannot fix', () async {
+        firestore.beforeTransaction = () =>
+            throw FirebaseException(plugin: 'cloud_firestore', code: 'permission-denied');
+
+        await expectLater(
+          publisher.createOwnGrant('free-1'),
+          throwsA(isA<PublishException>().having((error) => error.kind, 'kind', PublishErrorKind.refused)),
+        );
+      });
+    });
+
+    group('approval request', () {
+      test('writes the request time of the server and the company name', () async {
+        await publisher.writeApprovalRequest('free-1', companyName: '꼼꼬미 청소');
+
+        expect(written('publishingRequests/free-1'), {
+          'requestedAt': FieldValue.serverTimestamp(),
+          'companyName': '꼼꼬미 청소',
+        });
+      });
+
+      test('leaves the company name out when none is saved', () async {
+        await publisher.writeApprovalRequest('free-1');
+
+        expect(written('publishingRequests/free-1'), {'requestedAt': FieldValue.serverTimestamp()});
+      });
+
+      test('cuts a company name over 100 characters to the 100 that the rules take', () async {
+        await publisher.writeApprovalRequest('free-1', companyName: '가' * 101);
+
+        expect(written('publishingRequests/free-1')['companyName'], '가' * 100);
+      });
+
+      test('cuts a company name before a character that would end past the limit, without splitting it', () async {
+        // The emoji takes two UTF-16 code units, the 100th and the 101st.
+        await publisher.writeApprovalRequest('free-1', companyName: '${'a' * 99}😀b');
+
+        expect(written('publishingRequests/free-1')['companyName'], 'a' * 99);
+      });
+
+      test('leaves a request that exists as it is', () async {
+        firestore.transaction.values['publishingRequests/free-1'] = {'requestedAt': Timestamp.now()};
+
+        await publisher.writeApprovalRequest('free-1', companyName: 'Other');
+
+        verifyNever(() => documents['publishingRequests/free-1']!.set(any()));
+      });
+
+      test('reads from the server whether a request exists', () async {
+        final document = documents['publishingRequests/free-1'] = _MockDocument();
+        when(() => document.get(any())).thenAnswer((_) async => _DataSnapshot({'requestedAt': Timestamp.now()}));
+
+        expect(await publisher.hasApprovalRequest('free-1'), isTrue);
+        final options = verify(() => document.get(captureAny())).captured.single as GetOptions;
+        expect(options.source, Source.server);
+
+        when(() => document.get(any())).thenAnswer((_) async => _DataSnapshot<Map<String, dynamic>>(null));
+        expect(await publisher.hasApprovalRequest('free-1'), isFalse);
+
+        when(() => document.get(any())).thenThrow(FirebaseException(plugin: 'cloud_firestore', code: 'unavailable'));
+        await expectLater(
+          publisher.hasApprovalRequest('free-1'),
+          throwsA(isA<PublishException>().having((error) => error.kind, 'kind', PublishErrorKind.transient)),
+        );
+      });
+
+      test('deletes the request by its path', () async {
+        await publisher.deleteApprovalRequest('free-1');
+        verify(documents['publishingRequests/free-1']!.delete).called(1);
+      });
+
+      test('counts a refused delete as done, because rules without the request refuse its create too', () async {
+        // The rules of 135c67f, which stay deployed until the rollout, have no match for publishingRequests.
+        final refusing = _MockDocument();
+        when(() => firestore.doc(any())).thenReturn(refusing);
+        when(refusing.delete).thenThrow(FirebaseException(plugin: 'cloud_firestore', code: 'permission-denied'));
+
+        await publisher.deleteApprovalRequest('free-1');
+
+        verify(refusing.delete).called(1);
+      });
+
+      test('turns another failure of the delete into a publish exception', () async {
+        final failing = _MockDocument();
+        when(() => firestore.doc(any())).thenReturn(failing);
+        when(failing.delete).thenThrow(FirebaseException(plugin: 'cloud_firestore', code: 'unavailable'));
+        await expectLater(
+          publisher.deleteApprovalRequest('free-1'),
+          throwsA(isA<PublishException>().having((error) => error.kind, 'kind', PublishErrorKind.transient)),
+        );
+
+        when(failing.delete).thenThrow(FirebaseException(plugin: 'cloud_firestore', code: 'invalid-argument'));
+        await expectLater(
+          publisher.deleteApprovalRequest('free-1'),
+          throwsA(isA<PublishException>().having((error) => error.kind, 'kind', PublishErrorKind.refused)),
+        );
+      });
     });
 
     test('turns a refused delete of a report or a page into a failure that a retry cannot fix', () async {

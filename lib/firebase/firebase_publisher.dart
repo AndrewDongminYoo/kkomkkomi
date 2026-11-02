@@ -142,6 +142,75 @@ final class FirebasePublisher implements Publisher {
   @override
   Future<void> deletePage(String pageId) => _guard(() => _database.doc('clientPages/$pageId').delete());
 
+  @override
+  Future<bool> createOwnGrant(String uid) async {
+    var created = false;
+    await _guard(
+      () => _database.runTransaction((transaction) async {
+        final grant = _database.doc('publishingGrants/$uid');
+        // A write over an existing grant counts as an update, which the rules refuse, so an existing grant stays.
+        if ((await transaction.get(grant)).data() != null) return;
+        transaction.set(grant, _initialGrant);
+        created = true;
+      }),
+    );
+    return created;
+  }
+
+  @override
+  Future<void> writeApprovalRequest(String uid, {String? companyName}) => _guard(
+    () => _database.runTransaction((transaction) async {
+      final request = _database.doc('publishingRequests/$uid');
+      // The rules let no client update a request, so a request that exists stays as it is.
+      if ((await transaction.get(request)).data() != null) return;
+      transaction.set(request, {
+        'requestedAt': FieldValue.serverTimestamp(),
+        // The rules take a string of at most 100 characters, so a request without a saved name leaves the key out,
+        // and a longer name goes cut to that length.
+        if (companyName != null) 'companyName': _requestCompanyName(companyName),
+      });
+    }),
+  );
+
+  /// The longest company name that the rules take in a request for link sharing approval.
+  static const _requestCompanyNameLimit = 100;
+
+  /// [name] cut to at most [_requestCompanyNameLimit] UTF-16 code units, without splitting a character, so that the
+  /// rules take it whether they count code units or code points.
+  static String _requestCompanyName(String name) {
+    if (name.length <= _requestCompanyNameLimit) return name;
+    final cut = StringBuffer();
+    for (final rune in name.runes) {
+      final character = String.fromCharCode(rune);
+      if (cut.length + character.length > _requestCompanyNameLimit) break;
+      cut.write(character);
+    }
+    return cut.toString();
+  }
+
+  @override
+  Future<bool> hasApprovalRequest(String uid) async {
+    var exists = false;
+    await _guard(() async {
+      // The server decides, because the cache can still hold a request that the operator deleted.
+      final snapshot = await _database.doc('publishingRequests/$uid').get(const GetOptions(source: Source.server));
+      exists = snapshot.data() != null;
+    });
+    return exists;
+  }
+
+  /// A refused delete counts as done. Firestore refuses it before the rules that hold the request are deployed, also
+  /// when no request exists, and those rules refused its create too, so no request can exist then. The rules that hold
+  /// the request let its signed-in owner delete it, and the app deletes only the request of the signed-in user.
+  @override
+  Future<void> deleteApprovalRequest(String uid) => _guard(() async {
+    try {
+      await _database.doc('publishingRequests/$uid').delete();
+    } on FirebaseException catch (error) {
+      if (error.code != 'permission-denied') rethrow;
+    }
+  });
+
   Future<void> _publishReport({
     required String pageId,
     required String visitId,
@@ -297,7 +366,7 @@ final class FirebasePublisher implements Publisher {
 
   static void _approved(Map<String, dynamic>? access) {
     if (access?['enabled'] != true) {
-      throw const PublishException(PublishErrorKind.refused, 'Publishing needs operator approval');
+      throw const PublishException(PublishErrorKind.unapproved, 'Publishing needs an enabled grant');
     }
   }
 
@@ -357,6 +426,27 @@ final class FirebasePublisher implements Publisher {
     }
   }
 }
+
+/// The grant that a user with a paid entitlement creates for itself, which `firestore.rules` accepts only as it is
+/// here: the initial document of `docs/notes/report-abuse-operations.md`, "Enrollment", with `updatedAt` at
+/// 2000-01-01 UTC, so that the cooldown of the first charge has passed.
+final Map<String, Object> _initialGrant = Map.unmodifiable({
+  'enabled': true,
+  'pageLimit': 50,
+  'reportLimit': 1000,
+  'photoLimit': 2000,
+  'byteLimit': 1024 * 1024 * 1024,
+  'pages': 0,
+  'reports': 0,
+  'photos': 0,
+  'bytes': 0,
+  'reservations': const <String, Object>{},
+  'type': 'page',
+  'pageId': 'initial',
+  'visitId': '',
+  'fileName': '',
+  'updatedAt': Timestamp.fromDate(DateTime.utc(2000)),
+});
 
 /// The codes of Firestore and Storage failures that a retry cannot fix.
 ///

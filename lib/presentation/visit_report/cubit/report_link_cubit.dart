@@ -92,6 +92,50 @@ class ReportLinkCubit extends Cubit<ReportLinkState> {
     }
   }
 
+  /// Sends the request of the user for link sharing approval, after the backend refused a link share.
+  ///
+  /// The state says [ApprovalRequestStatus.pending] when the backend took the request, and
+  /// [ApprovalRequestStatus.failed] when it did not. A call does nothing while the state offers no request: see
+  /// [ReportLinkState.canRequestApproval].
+  Future<void> requestApproval() async {
+    if (!state.canRequestApproval) return;
+    _showApproval(ApprovalRequestStatus.sending);
+    try {
+      await _publishQueue.requestApproval();
+      _showApproval(ApprovalRequestStatus.pending);
+    } on Object catch (error, stackTrace) {
+      _report(error, stackTrace);
+      _showApproval(ApprovalRequestStatus.failed);
+    }
+  }
+
+  /// Reads whether the backend holds a request of the user, after a refused share. A read that fails offers the
+  /// request, which the backend takes once.
+  Future<void> _readApprovalRequest() async {
+    ApprovalRequestStatus approval;
+    try {
+      approval = await _publishQueue.hasApprovalRequest() ? ApprovalRequestStatus.pending : ApprovalRequestStatus.none;
+    } on Object catch (error, stackTrace) {
+      _report(error, stackTrace);
+      approval = ApprovalRequestStatus.none;
+    }
+    if (state.approval == ApprovalRequestStatus.unknown) _showApproval(approval);
+  }
+
+  /// Shows [approval] while the state is still the refusal that the request belongs to. A share that started in the
+  /// meantime replaced it.
+  void _showApproval(ApprovalRequestStatus approval) {
+    if (state.status != ReportLinkStatus.failed || state.failure != PublishFailure.refused) return;
+    _show(
+      ReportLinkState(
+        status: state.status,
+        isFirstShare: state.isFirstShare,
+        failure: state.failure,
+        approval: approval,
+      ),
+    );
+  }
+
   /// Whether [job] is a change of the job that [requested] names, in the generation that the request made.
   static bool _isUpdateOf(PublishJob requested, PublishJob job) =>
       job.id == requested.id && job.generation == requested.generation;
@@ -105,6 +149,7 @@ class ReportLinkCubit extends Cubit<ReportLinkState> {
       case PublishJobStatus.failed:
         _stopFollowing();
         _show(ReportLinkState(status: ReportLinkStatus.failed, failure: job.failure));
+        if (job.failure == PublishFailure.refused) await _readApprovalRequest();
       case PublishJobStatus.done:
         _stopFollowing();
         if (!(_mayOpenShareSheet?.call() ?? true)) {

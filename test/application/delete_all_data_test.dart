@@ -279,13 +279,17 @@ void main() {
   });
 
   group('DeleteAllData', () {
-    test('deletes the photos, the reports, the pages, the account, and then the data on the device', () async {
+    test('deletes the photos, the reports, the pages, the approval request, the account, and then the data on the '
+        'device', () async {
+      publisher.approvalRequests['owner-1'] = 'Fictional Cleaning';
+
       await deleteAllData()();
 
       expect(steps, [
         'deletePhoto $object',
         'deleteReport page-1/visit-1',
         'deletePage page-1',
+        'deleteApprovalRequest owner-1',
         'deleteAccount x1',
         'eraseAll',
         'deleteAll x0',
@@ -293,7 +297,49 @@ void main() {
       expect(localData.erasures, 1);
       expect(photoStore.deletionsOfAll, 1);
       expect(publisher.objects, isEmpty);
+      expect(publisher.approvalRequests, isEmpty);
       expect(queue.isHeld, isFalse);
+    });
+
+    test('stops before the account when the approval request does not delete, and a retry deletes it', () async {
+      publisher.approvalRequests['owner-1'] = null;
+      publisher.failures['deleteApprovalRequest'] = [transient];
+      final deletion = deleteAllData();
+
+      await expectLater(deletion(), failsAt(DeletionStep.publishedData));
+
+      expect(publisher.pages, isEmpty);
+      expect(publisher.approvalRequests, contains('owner-1'));
+      expect(identity.deletions, 0);
+      expect(localData.erasures, 0);
+      expect(queue.isHeld, isFalse);
+
+      await deletion();
+
+      expect(publisher.approvalRequests, isEmpty);
+      expect(identity.deletions, 1);
+      expect(localData.erasures, 1);
+    });
+
+    test('deletes the approval request before the account when the phone holds no page', () async {
+      // The account can outlive the local data, so the backend can hold a request of a phone without a page.
+      publishing.pagesById.clear();
+      publishing.jobs.clear();
+      publisher.approvalRequests['owner-1'] = 'Fictional Cleaning';
+      publisher.failures['deleteApprovalRequest'] = [transient];
+      final deletion = deleteAllData();
+
+      await expectLater(deletion(), failsAt(DeletionStep.publishedData));
+
+      expect(publisher.approvalRequests, contains('owner-1'));
+      expect(identity.deletions, 0);
+      expect(localData.erasures, 0);
+
+      await deletion();
+
+      expect(publisher.approvalRequests, isEmpty);
+      expect(identity.deletions, 1);
+      expect(localData.erasures, 1);
     });
 
     test('in a flavor without a backend, deletes only the data on the device', () async {
@@ -322,7 +368,11 @@ void main() {
       publisher.calls.clear();
       await deletion();
 
-      expect(publisher.calls, ['deleteReport page-1/visit-1', 'deletePage page-1']);
+      expect(publisher.calls, [
+        'deleteReport page-1/visit-1',
+        'deletePage page-1',
+        'deleteApprovalRequest owner-1',
+      ]);
       expect(identity.deletions, 1);
       expect(localData.erasures, 1);
       expect(queue.isHeld, isFalse);
@@ -407,7 +457,11 @@ void main() {
       await deletion();
 
       // The deletes of what is gone change nothing, and the object, whose record went with its delete, is not asked.
-      expect(publisher.calls, ['deleteReport page-1/visit-1', 'deletePage page-1']);
+      expect(publisher.calls, [
+        'deleteReport page-1/visit-1',
+        'deletePage page-1',
+        'deleteApprovalRequest owner-1',
+      ]);
       expect(identity.deletions, 2);
       expect(localData.erasures, 1);
       expect(photoStore.deletionsOfAll, 1);
@@ -546,6 +600,27 @@ void main() {
         expect(queue.isHeld, isFalse);
       });
 
+      test('waits for a request write that started before it, and the next try deletes the request', () async {
+        final gate = publisher.gates['writeApprovalRequest'] = Completer<void>();
+        final request = queue.requestApproval();
+        await pumpEventQueue();
+        final deletion = deleteAllData(stepTimeout: timeout);
+
+        await expectLater(deletion(), failsAt(DeletionStep.publishedData));
+        expect(publisher.calls.where((call) => call.startsWith('delete')), isEmpty);
+        expect(queue.isHeld, isTrue);
+
+        gate.complete();
+        await request;
+        await pumpEventQueue();
+        expect(queue.isHeld, isFalse);
+        expect(publisher.approvalRequests.keys, ['owner-1']);
+
+        await deletion();
+        expect(publisher.approvalRequests, isEmpty);
+        expect(localData.erasures, 1);
+      });
+
       test('keeps the queue held until a late report delete ends too', () async {
         final gate = publisher.gates['deleteReport'] = Completer<void>();
         final deletion = deleteAllData(stepTimeout: timeout);
@@ -656,7 +731,11 @@ void main() {
       identity.userId = 'owner-2';
       await deletion();
 
-      expect(publisher.calls, ['deleteReport page-1/visit-1', 'deletePage page-1']);
+      expect(publisher.calls, [
+        'deleteReport page-1/visit-1',
+        'deletePage page-1',
+        'deleteApprovalRequest owner-2',
+      ]);
       expect(identity.deletions, 2);
       expect(localData.erasures, 1);
       expect(photoStore.deletionsOfAll, 1);

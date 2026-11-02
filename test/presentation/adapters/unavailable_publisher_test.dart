@@ -37,6 +37,10 @@ void main() {
       await expectLater(publisher.deletePhoto('o'), refused);
       await expectLater(publisher.deleteReport(pageId: 'p', visitId: 'v'), refused);
       await expectLater(publisher.deletePage('p'), refused);
+      await expectLater(publisher.createOwnGrant('u'), refused);
+      await expectLater(publisher.writeApprovalRequest('u', companyName: 'c'), refused);
+      await expectLater(publisher.hasApprovalRequest('u'), refused);
+      await expectLater(publisher.deleteApprovalRequest('u'), refused);
     });
   });
 }

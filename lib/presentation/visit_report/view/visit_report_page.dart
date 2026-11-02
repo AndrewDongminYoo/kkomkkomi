@@ -559,6 +559,7 @@ class _ShareBar extends StatelessWidget {
     final hasLink = linkState.status != ReportLinkStatus.unavailable;
     final pdfLabel = isSharing ? _Progress(label: l10n.reportShareButton) : KeepAllText(l10n.reportShareButton);
     final message = _linkMessageOf(linkState, l10n);
+    final approvalMessage = _approvalMessageOf(linkState, l10n);
     return SafeArea(
       minimum: const EdgeInsets.all(16),
       // At a large text size the message and the two controls can be taller than the screen allows a bar, so the bar
@@ -579,11 +580,24 @@ class _ShareBar extends StatelessWidget {
                 ),
                 const SizedBox(height: 8),
               ],
+              if (approvalMessage case (final text, final tone)) ...[
+                Semantics(
+                  liveRegion: true,
+                  child: Notice(tone: tone, children: [KeepAllText(text)]),
+                ),
+                const SizedBox(height: 8),
+              ],
               if (hasLink) ...[
                 // The app cannot read whether the operator approved the account, so the approval request shows only
-                // after the backend refused a publish, under the message that explains the refusal.
-                if (linkState.failure == PublishFailure.refused)
-                  TextButton(onPressed: () => _requestApproval(context), child: KeepAllText(l10n.reportApprovalButton)),
+                // after the backend refused a publish and the backend holds no request of the user, under the message
+                // that explains the refusal.
+                if (linkState.canRequestApproval || linkState.approval == ApprovalRequestStatus.sending)
+                  TextButton(
+                    onPressed: linkState.canRequestApproval ? () => unawaited(_requestApproval(context)) : null,
+                    child: linkState.approval == ApprovalRequestStatus.sending
+                        ? _Progress(label: l10n.reportApprovalButton)
+                        : KeepAllText(l10n.reportApprovalButton),
+                  ),
                 FilledButton(
                   onPressed: onShareLink,
                   child: linkState.status == ReportLinkStatus.publishing
@@ -601,62 +615,30 @@ class _ShareBar extends StatelessWidget {
     );
   }
 
+  /// Asks before the request for link sharing approval, which says what the request sends, and sends it when the
+  /// person goes on.
   static Future<void> _requestApproval(BuildContext context) async {
     final l10n = context.l10n;
-    final identity = context.read<Identity>().currentUserId();
-    final links = context.read<ExternalLinks>();
-    await showDialog<void>(
+    final cubit = context.read<ReportLinkCubit>();
+    final goOn = await showConfirmDialog(
       context: context,
-      builder: (context) => AlertDialog(
-        scrollable: true,
-        title: KeepAllText(l10n.reportApprovalTitle),
-        content: SingleChildScrollView(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              KeepAllText(l10n.reportApprovalMessage),
-              const SizedBox(height: 12),
-              FutureBuilder<String?>(
-                future: identity,
-                builder: (context, snapshot) {
-                  if (snapshot.connectionState != ConnectionState.done) return const CircularProgressIndicator();
-                  final uid = snapshot.data;
-                  if (uid == null) return KeepAllText(l10n.reportApprovalUnavailable);
-                  return Column(
-                    mainAxisSize: MainAxisSize.min,
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      SelectableText(uid),
-                      TextButton(
-                        onPressed: () {
-                          unawaited(
-                            links.open(
-                              Uri(
-                                scheme: 'mailto',
-                                path: 'donminzzi@gmail.com',
-                                query:
-                                    'subject=${Uri.encodeComponent(l10n.reportApprovalTitle)}&body=${Uri.encodeComponent(uid)}',
-                              ),
-                            ),
-                          );
-                        },
-                        child: KeepAllText(l10n.reportApprovalEmailButton),
-                      ),
-                    ],
-                  );
-                },
-              ),
-              KeepAllText(l10n.reportApprovalFallback),
-            ],
-          ),
-        ),
-        actions: [
-          TextButton(onPressed: () => Navigator.of(context).pop(), child: KeepAllText(l10n.dialogCancelButton)),
-        ],
-      ),
+      title: l10n.reportApprovalTitle,
+      message: l10n.reportApprovalMessage,
+      confirmLabel: l10n.reportApprovalSendButton,
     );
+    if (goOn) await cubit.requestApproval();
   }
+
+  /// What the screen says about the request for link sharing approval in [state] and in which tone, or null when it
+  /// says nothing.
+  static (String, NoticeTone)? _approvalMessageOf(ReportLinkState state, AppLocalizations l10n) =>
+      state.failure != PublishFailure.refused
+      ? null
+      : switch (state.approval) {
+          ApprovalRequestStatus.pending => (l10n.reportApprovalPendingMessage, NoticeTone.info),
+          ApprovalRequestStatus.failed => (l10n.reportApprovalFailedMessage, NoticeTone.error),
+          ApprovalRequestStatus.unknown || ApprovalRequestStatus.none || ApprovalRequestStatus.sending => null,
+        };
 
   /// What the screen says about the link share in [state] and in which tone, or null when it says nothing.
   ///

@@ -10,7 +10,7 @@ import 'package:kkomkkomi/application/publish_queue.dart';
 
 /// A step of [DeleteAllData], in the order in which it runs.
 enum DeletionStep {
-  /// The photos, the reports, and the client pages on the backend.
+  /// The photos, the reports, the client pages, and the request for link sharing approval on the backend.
   publishedData,
 
   /// The anonymous account on the backend.

@@ -37,4 +37,16 @@ final class UnavailablePublisher implements Publisher {
 
   @override
   Future<void> deletePage(String pageId) async => throw _unavailable;
+
+  @override
+  Future<bool> createOwnGrant(String uid) async => throw _unavailable;
+
+  @override
+  Future<void> writeApprovalRequest(String uid, {String? companyName}) async => throw _unavailable;
+
+  @override
+  Future<bool> hasApprovalRequest(String uid) async => throw _unavailable;
+
+  @override
+  Future<void> deleteApprovalRequest(String uid) async => throw _unavailable;
 }

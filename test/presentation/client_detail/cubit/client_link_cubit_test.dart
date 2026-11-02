@@ -451,7 +451,7 @@ void main() {
 
         final job = publishing.jobs.values.singleWhere((job) => job.kind == PublishJobKind.revoke);
         expect((job.status, job.failure), (PublishJobStatus.failed, PublishFailure.deletion));
-        expect(publisher.calls.last, startsWith('deletePage'));
+        expect(publisher.calls.where((call) => call.startsWith('deletePage')), hasLength(1));
         expect(cubit.state, const ClientLinkState(status: ClientLinkStatus.ready, hasClosedLink: true));
         await cubit.close();
       });

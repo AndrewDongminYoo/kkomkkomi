@@ -475,7 +475,7 @@ void main() {
         failure: PublishFailure.refused,
       );
 
-      expect(state.toString(), 'ReportLinkState(failed, true, refused)');
+      expect(state.toString(), 'ReportLinkState(failed, true, refused, unknown)');
       expect(
         state.hashCode,
         const ReportLinkState(
@@ -485,6 +485,154 @@ void main() {
         ).hashCode,
       );
       expect(state, isNot(const ReportLinkState(status: ReportLinkStatus.failed, isFirstShare: true)));
+      expect(
+        state,
+        isNot(
+          const ReportLinkState(
+            status: ReportLinkStatus.failed,
+            isFirstShare: true,
+            failure: PublishFailure.refused,
+            approval: ApprovalRequestStatus.pending,
+          ),
+        ),
+      );
+    });
+
+    group('approval request', () {
+      /// A backend whose rules refuse each page write of a user without a grant.
+      void refuseWithoutGrant() => publisher.requiresGrant = true;
+
+      test('a paid user shares its first link without a refusal and reads no request', () async {
+        refuseWithoutGrant();
+        final paidQueue = publishQueueOf(
+          repositories,
+          publisher: publisher,
+          photoStore: photoStore,
+          networkMonitor: network,
+          identity: FakeIdentity(userId: 'user-1')..paid = true,
+        );
+        addTearDown(paidQueue.dispose);
+        final cubit = ReportLinkCubit(
+          visitId: visitId,
+          visits: repositories.visits,
+          publishQueue: paidQueue,
+          linkShare: linkShare,
+        );
+        await cubit.load();
+
+        await cubit.share();
+        await until(cubit, (state) => state.status == ReportLinkStatus.ready);
+
+        expect(linkShare.shared, hasLength(1));
+        expect(publisher.grants, {'user-1'});
+        expect(publisher.calls.where((call) => call.contains('ApprovalRequest')), isEmpty);
+        await cubit.close();
+      });
+
+      test('reads after a refusal that no request exists, and offers one', () async {
+        refuseWithoutGrant();
+        final cubit = build();
+        await cubit.load();
+        expect(publisher.calls, isEmpty);
+
+        await cubit.share();
+        await until(cubit, (state) => state.approval == ApprovalRequestStatus.none);
+
+        expect(cubit.state.failure, PublishFailure.refused);
+        expect(cubit.state.canRequestApproval, isTrue);
+        expect(publisher.calls.last, 'hasApprovalRequest user-1');
+        await cubit.close();
+      });
+
+      test('sends the request, which then shows as pending, also after the next refused share', () async {
+        refuseWithoutGrant();
+        final cubit = build();
+        await cubit.load();
+        await cubit.share();
+        await until(cubit, (state) => state.approval == ApprovalRequestStatus.none);
+
+        final states = <ApprovalRequestStatus>[];
+        final subscription = cubit.stream.listen((state) => states.add(state.approval));
+        await cubit.requestApproval();
+        await pumpEventQueue();
+        await subscription.cancel();
+
+        expect(states, [ApprovalRequestStatus.sending, ApprovalRequestStatus.pending]);
+        expect(publisher.approvalRequests, {'user-1': '깔끔클린'});
+        expect(cubit.state.canRequestApproval, isFalse);
+        // A second press while the request is pending sends nothing.
+        await cubit.requestApproval();
+        expect(publisher.calls.where((call) => call.startsWith('writeApprovalRequest')), hasLength(1));
+
+        await cubit.share();
+        await until(cubit, (state) => state.approval == ApprovalRequestStatus.pending);
+        expect(cubit.state.status, ReportLinkStatus.failed);
+        await cubit.close();
+      });
+
+      test('offers the request again when it does not reach the backend', () async {
+        refuseWithoutGrant();
+        publisher.failures['writeApprovalRequest'] = [const PublishException(PublishErrorKind.transient, 'offline')];
+        final cubit = build();
+        await cubit.load();
+        await cubit.share();
+        await until(cubit, (state) => state.approval == ApprovalRequestStatus.none);
+
+        await cubit.requestApproval();
+
+        expect(cubit.state.approval, ApprovalRequestStatus.failed);
+        expect(cubit.state.canRequestApproval, isTrue);
+        expect(observer.errors.single, isA<PublishException>());
+
+        await cubit.requestApproval();
+        expect(cubit.state.approval, ApprovalRequestStatus.pending);
+        await cubit.close();
+      });
+
+      test('offers the request when the read of the request fails', () async {
+        refuseWithoutGrant();
+        publisher.failures['hasApprovalRequest'] = [const PublishException(PublishErrorKind.transient, 'offline')];
+        final cubit = build();
+        await cubit.load();
+
+        await cubit.share();
+        await until(cubit, (state) => state.approval == ApprovalRequestStatus.none);
+
+        expect(observer.errors.single, isA<PublishException>());
+        await cubit.close();
+      });
+
+      test('does nothing without a refusal', () async {
+        final cubit = build();
+        await cubit.load();
+
+        await cubit.requestApproval();
+
+        expect(cubit.state, const ReportLinkState(status: ReportLinkStatus.ready, isFirstShare: true));
+        expect(publisher.calls, isEmpty);
+        await cubit.close();
+      });
+
+      test('keeps a share that started while the request was on its way', () async {
+        refuseWithoutGrant();
+        final cubit = build();
+        await cubit.load();
+        await cubit.share();
+        await until(cubit, (state) => state.approval == ApprovalRequestStatus.none);
+        final gate = publisher.gates['writeApprovalRequest'] = Completer<void>();
+
+        final request = cubit.requestApproval();
+        await pumpEventQueue();
+        publisher.gates['writePage'] = Completer<void>();
+        await cubit.share();
+        gate.complete();
+        await request;
+
+        expect(cubit.state.status, ReportLinkStatus.publishing);
+        expect(cubit.state.approval, ApprovalRequestStatus.unknown);
+        publisher.gates['writePage']!.complete();
+        await cubit.close();
+      });
     });
   });
 }

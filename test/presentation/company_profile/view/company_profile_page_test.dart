@@ -444,7 +444,7 @@ void main() {
         createdAt: DateTime.utc(2026, 10),
       );
       localData.onErase = () {
-        expect(publisher.calls, ['deletePage page-1']);
+        expect(publisher.calls, ['deletePage page-1', 'deleteApprovalRequest owner-1']);
         expect(identity.deletions, 1);
       };
 
