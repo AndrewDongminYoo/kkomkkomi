@@ -30,7 +30,7 @@ The visit capture screen opens the visit report screen, which previews the compl
 In the production flavor, the visit report screen also publishes the visit and then shares the link of its web report, and the web report page under `web/report/` shows that report and the list of the reports of the client.
 The production flavor starts Firebase and signs in anonymously.
 The publish queue publishes a visit as a report under the fixed page of its client and reads the user ID before each job, and in the production flavor the client detail screen closes the link of its client or replaces it with a new link.
-A report goes without the footer when a newly issued ID token of the user holds a paid entitlement in its `revenueCatEntitlements` claim, which the RevenueCat Firebase extension writes; the queue reads that claim and never asks `Entitlements`.
+A report goes without the footer when a newly issued ID token of the user holds a paid entitlement in its `revenueCatEntitlements` claim, which the repository function `revenueCatWebhook` has written since 2026-11-02 in place of the RevenueCat Firebase extension; the queue reads that claim and never asks `Entitlements`.
 The company profile stores the name and optional business phone.
 The phone appears in the preview and PDF only, and the web publisher sends no phone (`docs/specs/2026-10-07-report-photo-and-company-metadata.md`).
 The company profile screen deletes all data: what the app published, the anonymous account, and the data on the phone.
@@ -66,7 +66,8 @@ Keep both collection parameters empty unless the privacy pages change first.
 Install, update, or reconfigure the extension only with the operator's approval.
 See `docs/notes/firebase-deploy-log.md` § RevenueCat extension (moved 2026-11-02).
 `functions/` holds `revenueCatWebhook`, the repository function that replaces the extension handler and writes the same claims, and `docs/notes/revenuecat-claims-cutover.md` owns its secret, deploy, URL change, verification, uninstall, and rollback steps.
-It has not been deployed; each of those steps needs the operator's approval.
+It was deployed from `1343768` on 2026-11-02 and has received the RevenueCat events since the operator changed the integration's Trigger URL that day; the extension stays installed without events until a subscription expiry is verified, and `docs/notes/firebase-deploy-log.md` § RevenueCat claims function owns the record.
+Each further step, including the extension uninstall, needs the operator's approval.
 
 `storage.rules` reads the client page through `firestore.get`, which needs the Firebase Storage service agent (`service-146496738802@gcp-sa-firebasestorage.iam.gserviceaccount.com`) to hold `roles/firebaserules.firestoreServiceAgent`.
 The operator granted it on 2026-10-02, after the deploy. A `firebase deploy --only storage` with `--non-interactive` does not offer that grant, so a new project needs the grant by hand, and without it every Storage rule that reads the page denies.

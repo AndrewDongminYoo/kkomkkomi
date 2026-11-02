@@ -10,6 +10,7 @@ Autolayout
 autorecalculates
 autoresizing
 Buildables
+cloudfunctions
 COINIT
 cutover
 Deliverfile
@@ -21,6 +22,7 @@ dwmapi
 DWMCOLORIZATIONCOLORCHANGED
 DWMWA
 endfunction
+Eventarc
 Fastfile
 FILEFLAGS
 FILEFLAGSMASK
@@ -82,6 +84,8 @@ proguard
 protoc
 PYTHONPATH
 refetches
+revenuecatwebhook
+secretmanager
 shfmt
 SRCROOT
 SUBLANG

@@ -5,7 +5,8 @@ This runbook moves the writer of the `revenueCatEntitlements` custom claim from 
 
 ## State and authority
 
-The function is not deployed, its secret has no value, and the extension still writes the claim.
+Steps 1 to 3 were done on 2026-11-02, and step 4 is done except its expiry check (4.6); `docs/notes/firebase-deploy-log.md` § RevenueCat claims function owns the dated record.
+The extension stays installed, without events, until step 4.6 passes.
 The operator approved this plan on 2026-11-02 and approves each step below separately: setting the secret, the deploy, the RevenueCat integration change, and the extension uninstall.
 Each step is an external action on the production project `kkomkkomi`, which the paying users of Google Play production `1.1.2` (version code `6`) depend on.
 Record each completed step, with its date and commit, in `docs/notes/firebase-deploy-log.md`.
@@ -39,10 +40,13 @@ firebase deploy --only functions:revenueCatWebhook --project kkomkkomi
 
 - The `predeploy` step of `firebase.json` builds `functions/lib/` first.
 - The first functions deploy can ask to enable the Cloud Functions, Cloud Build, Artifact Registry, Cloud Run, and Secret Manager APIs; read the prompt before accepting it.
+  On 2026-11-02 it enabled Cloud Run and Eventarc and then failed with "Could not create or update Cloud Run service revenuecatwebhook. The service has encountered an internal error."; the same command again succeeded as an update.
+  An update does not add the public invoker that Firebase adds when it creates the service, so check the 403 case below after such a retry.
+- Each deploy ends with a warning that `asia-northeast3` has no Artifact Registry cleanup policy and exits non-zero although the function deployed; `firebase functions:artifacts:setpolicy` sets one, which is the operator's decision.
 - Now that `firebase.json` holds a `functions` block, a bare `firebase deploy` includes the function.
   Keep naming the target with `--only`, as the rules and Hosting deploys already do.
 - The function runs in `asia-northeast3` on `nodejs24`, with at most one instance.
-  Its URL is in the deploy output and in Firebase console > Functions.
+  The deploy prints its `run.app` URL; it also answers at `https://asia-northeast3-kkomkkomi.cloudfunctions.net/revenueCatWebhook`, which `gcloud functions describe revenueCatWebhook --region asia-northeast3 --format='value(url)'` prints and which step 3 needs.
 - Firebase Auth has no compare-and-set, so the function orders the events of one user by reading the watermark and writing the claims inside a per-user queue of its one instance.
   Two requests that two instances or two revisions serve at the same time, for example while a deploy replaces the revision, are not ordered, and an older event can then write last until the next event of that customer.
   The same holds at the URL change of step 3, when an event that the extension still handles can overlap one that the function handles.
@@ -58,10 +62,16 @@ curl -sS -X POST -H 'Content-Type: application/json' -d '{}' <function URL>
 The expected answer is status 401 with `{"message":"The webhook token could not be verified with the shared secret."}`.
 A 500 with `The webhook shared secret is not configured.` means step 1 is missing.
 An HTML 403 page from Google means the function does not allow unauthenticated calls, which RevenueCat needs.
+Grant the invoker with the operator's approval, then probe again:
+
+```sh
+gcloud run services add-iam-policy-binding revenuecatwebhook --region asia-northeast3 --project kkomkkomi --member=allUsers --role=roles/run.invoker
+```
 
 ## 3. Change the RevenueCat integration URL
 
-In the RevenueCat Firebase Extension settings page, replace the Trigger URL of the extension with the URL of `revenueCatWebhook`.
+In the RevenueCat Firebase Extension settings page, replace the Trigger URL of the extension with the `cloudfunctions.net` URL of `revenueCatWebhook` from step 2.
+The field rejected the `run.app` URL on 2026-11-02.
 Leave the shared secret as it is.
 Write down the old Trigger URL first, because the rollback needs it.
 
@@ -73,6 +83,8 @@ Write down the old Trigger URL first, because the rollback needs it.
 4. Read the user with the Firebase Admin SDK or `firebase auth:export`, and confirm that its custom claims hold `revenueCatEntitlements` with the purchased entitlement and a `revenueCatEventTimestampMs`, and keep any other claim that the user had.
 5. Confirm on the device that a new visit report has no footer text.
 6. Cancel or let the sandbox subscription expire, and confirm that the next event empties the list.
+   A purchase in a TestFlight build renews daily, up to 6 times within a week, whatever its period ([Apple](https://developer.apple.com/help/app-store-connect/test-a-beta-version/testing-subscriptions-and-in-app-purchases-in-testflight), read on 2026-11-02), and no on-device cancel path was found: the app's management link opens the App Store list, which does not show it.
+   RevenueCat `GET /v1/subscribers/<app user ID>` with the iOS public SDK key answers the current `expires_date` of each entitlement.
 
 If the write fails with a permission error, the runtime service account of the function lacks Firebase Authentication admin rights.
 Grant it `roles/firebaseauth.admin` with the operator's approval, then repeat the sandbox event.

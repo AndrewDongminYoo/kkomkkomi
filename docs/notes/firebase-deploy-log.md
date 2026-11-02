@@ -17,3 +17,14 @@ Hosting alone was deployed again from `59b1c84` on 2026-10-07, after #74, #76, #
 ## RevenueCat extension
 
 Issue #51 tracks the update to 0.2.0 before Cloud Functions decommissions `nodejs20` on 2026-10-30, and the replacement of the extension before Firebase Extensions shuts down on 2027-03-31.
+
+## RevenueCat claims function
+
+The operator approved each step of `docs/notes/revenuecat-claims-cutover.md` on 2026-11-02 (issue #51).
+
+- Step 1: secret `REVENUECAT_WEBHOOK_SECRET` version 1 was created from version 2 of the extension secret; the two values were compared by hash, and neither was printed.
+- Step 2: `revenueCatWebhook` was deployed from `1343768` (#143) to `asia-northeast3` on `nodejs24`. The first deploy enabled the Cloud Run and Eventarc APIs and failed while it created the Cloud Run service; the second succeeded as an update without the public invoker, and the operator added `allUsers` `roles/run.invoker` by hand. The deploy also granted the default compute service account `roles/secretmanager.secretAccessor` on the new secret. An empty POST then answered 401, and a token signed with the secret for a user that does not exist answered 200 with the "does not exist" warning.
+- Step 3: the operator replaced the RevenueCat Firebase integration's Trigger URL with `https://asia-northeast3-kkomkkomi.cloudfunctions.net/revenueCatWebhook` at about 02:35 UTC; the field rejected the `run.app` URL. The previous URL, for the rollback, is `https://asia-northeast3-kkomkkomi.cloudfunctions.net/ext-firestore-revenuecat-purchases-handler`.
+- Step 4: a TestFlight Pro monthly purchase by the operator reached the function as two requests at 02:44:07 UTC, both answered 200 with no warning or error. The buyer's claims then read `revenueCatEntitlements: ["basic","pro"]` with `revenueCatEventTimestampMs` 02:44:06 UTC, the extension handler logged nothing after 02:30 UTC, and the operator saw no footer text on a new visit report. RevenueCat answered an entitlement expiry of 2026-11-03 02:44:04 UTC, one TestFlight renewal day, so the expiry check (4.6) waits for the end of the TestFlight renewals, around 2026-11-09.
+- Step 5 has not run; the extension instance `firestore-revenuecat-purchases` 0.1.19 is still installed on `nodejs20` and receives no events.
+- No Artifact Registry cleanup policy is set in `asia-northeast3`.
