@@ -27,6 +27,12 @@ The operator separately selected closed Alpha distribution of existing productio
 The [Alpha verification record](2026-10-31-play-alpha-distribution.md) separates native release preparation, Google review/publication and signed-in tester access.
 Android installation/runtime acceptance and the separate internal-track criterion of #40 remain independent checks.
 
+## Internal testing continuation on 2026-10-31
+
+The operator resumed the existing internal `1.1.2`, code `6`, draft after Alpha publication.
+The [internal verification record](2026-10-31-play-internal-distribution.md) separates native release completion, tester access and the unverified Android physical-device pass.
+Its read-back on 2026-11-02 showed code `6` `completed` on the internal, Alpha and production tracks, and the operator confirmed that the production release was intended.
+
 ## Open items before an external TestFlight review
 
 The TestFlight overview says: "When you add the first build of your app to a group, the build gets sent to App Review …" (https://developer.apple.com/help/app-store-connect/test-a-beta-version/testflight-overview, read on 2026-10-02), and these items can block that review.
