@@ -52,7 +52,7 @@ iOS and macOS do not list `GoogleService-Info.plist` as a resource of the Runner
 A fresh clone needs `flutterfire configure` before a production build for Android, iOS, or macOS, and before no other build.
 After `flutterfire configure`, run `dart format lib/firebase_options.dart`, because the local format check reads that file and CI never sees it.
 
-The local controls of issue #86 require operator-issued anonymous publisher approval and resource-bound safety budgets; `docs/specs/2026-10-08-report-abuse-controls.md` owns the limits and `docs/notes/report-abuse-operations.md` owns enrollment and takedown.
+The local controls of issue #86 require publisher approval and resource-bound safety budgets: the operator issues a grant after an in-app request, and a paid user creates its own default grant (`docs/specs/2026-11-02-publisher-approval-request.md`); `docs/specs/2026-10-08-report-abuse-controls.md` owns the limits and `docs/notes/report-abuse-operations.md` owns enrollment and takedown.
 They have not been deployed.
 `firestore.rules` and `storage.rules` let anyone read a client page, its reports, and their photos by page ID while the page is open, and let the owner delete them.
 See `docs/notes/firebase-deploy-log.md` § Current state (moved 2026-11-02).
