@@ -306,19 +306,56 @@ describe("the privacy policy pages", () => {
       assert.ok(rights.includes(officer[lang]));
     });
 
-    test(`the ${lang} page lists the four steps of the deletion in the app, in their order`, () => {
+    test(`the ${lang} page lists the five steps of the deletion in the app, in their order`, () => {
       const steps = [
         ...deletionSection(read(page.file)).matchAll(/<li>([\s\S]*?)<\/li>/g),
       ]
-        .slice(0, 4)
+        .slice(0, 5)
         // The line breaks of the formatter folded into spaces.
         .map((match) => match[1].replace(/\s+/g, " "));
 
-      assert.equal(steps.length, 4);
+      assert.equal(steps.length, 5);
       assert.match(steps[0], /Cloud Storage/);
       assert.match(steps[1], /Cloud Firestore/);
-      assert.match(steps[2], /Firebase Authentication/);
-      assert.doesNotMatch(steps[3], /Firebase|Cloud/);
+      // `PublishQueue.deletePublished` deletes the request after the pages and before the account.
+      assert.match(steps[2], lang === "ko" ? /승인 요청/ : /approval request/);
+      assert.match(steps[2], /Cloud Firestore/);
+      assert.match(steps[3], /Firebase Authentication/);
+      assert.doesNotMatch(steps[4], /Firebase|Cloud/);
+    });
+
+    test(`the ${lang} page discloses the automatic approval of a paid account and the approval request`, () => {
+      const html = read(page.file);
+      const signIn = sectionText(html, "sign-in");
+      const retention = sectionText(html, "retention");
+
+      // `FirebaseIdentity.hasPaidEntitlement` reads this claim before `FirebasePublisher.createOwnGrant`.
+      assert.ok(signIn.includes("revenueCatEntitlements"));
+      assert.match(
+        signIn,
+        lang === "ko"
+          ? /구독이 끝난 뒤에도 남습니다/
+          : /stays after the subscription ends/,
+      );
+      // The fields of `publishingRequests/{uid}` in firestore.rules.
+      assert.match(
+        signIn,
+        lang === "ko"
+          ? /서울 리전의 Cloud Firestore에 사용자 ID를 문서 ID로 하여 저장되며, 요청 시각과 저장한 경우 회사 이름/
+          : /Cloud Firestore document in the Seoul region whose ID is the user ID, and it holds the time of the request and, if saved, the company name/,
+      );
+      assert.doesNotMatch(
+        signIn,
+        lang === "ko"
+          ? /등록 코드|이메일 주소를/
+          : /registration code|email address\./,
+      );
+      assert.match(
+        retention,
+        lang === "ko"
+          ? /링크 공유 승인 요청: 운영자가 승인하거나 거절할 때까지/
+          : /approval request for link sharing: until the operator approves or declines it/,
+      );
     });
 
     test(`the ${lang} page lists the mark of a report without the footer text among what a link share sends`, () => {

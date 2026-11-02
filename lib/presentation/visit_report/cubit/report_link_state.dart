@@ -31,8 +31,31 @@ enum ReportLinkStatus {
   published,
 }
 
+/// Where the request for link sharing approval is, after the backend refused a link share.
+enum ApprovalRequestStatus {
+  /// The screen does not know of a request: no share was refused, or the cubit reads the request.
+  unknown,
+
+  /// The backend holds no request, so the screen offers to send one.
+  none,
+
+  /// The request is on its way to the backend.
+  sending,
+
+  /// The backend holds the request, which waits for the operator.
+  pending,
+
+  /// The request did not reach the backend, so the screen offers to send it again.
+  failed,
+}
+
 final class ReportLinkState {
-  const new({this.status = ReportLinkStatus.loading, this.isFirstShare = false, this.failure});
+  const new({
+    this.status = ReportLinkStatus.loading,
+    this.isFirstShare = false,
+    this.failure,
+    this.approval = ApprovalRequestStatus.unknown,
+  });
 
   final ReportLinkStatus status;
 
@@ -43,6 +66,14 @@ final class ReportLinkState {
   /// Why the publish job stopped, while [status] is [ReportLinkStatus.failed]. It is null when the request did not
   /// reach the queue.
   final PublishFailure? failure;
+
+  /// Where the request for link sharing approval is, while [failure] is [PublishFailure.refused].
+  final ApprovalRequestStatus approval;
+
+  /// Whether the screen offers to send a request for link sharing approval.
+  bool get canRequestApproval =>
+      failure == PublishFailure.refused &&
+      (approval == ApprovalRequestStatus.none || approval == ApprovalRequestStatus.failed);
 
   /// Whether a link share can start. A share while the job waits for its retry runs the job again now.
   bool get canShare => switch (status) {
@@ -59,11 +90,12 @@ final class ReportLinkState {
       other is ReportLinkState &&
       other.status == status &&
       other.isFirstShare == isFirstShare &&
-      other.failure == failure;
+      other.failure == failure &&
+      other.approval == approval;
 
   @override
-  int get hashCode => Object.hash(status, isFirstShare, failure);
+  int get hashCode => Object.hash(status, isFirstShare, failure, approval);
 
   @override
-  String toString() => 'ReportLinkState(${status.name}, $isFirstShare, ${failure?.name})';
+  String toString() => 'ReportLinkState(${status.name}, $isFirstShare, ${failure?.name}, ${approval.name})';
 }

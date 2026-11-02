@@ -830,20 +830,20 @@
     "@reportApprovalTitle": {
         "description": "Publisher approval and safety limits."
     },
-    "reportApprovalMessage": "Link sharing needs operator approval. Email the registration code below. The default usage limits are 50 client pages, 1,000 reports, 2,000 photos and 1 GiB of photo data. Deletion does not restore the allowance. Each report allows up to 20 zones, 100 characters per name and 2,000 characters per note or reason. Capture and PDF sharing work without approval.",
+    "reportApprovalMessage": "Link sharing needs operator approval. The request sends the company name saved in the company profile, and the operator reviews it. Without a company name the operator can't approve the request, so save one in the company profile first. The default usage limits are 50 client pages, 1,000 reports, 2,000 photos and 1 GiB of photo data. Deletion does not restore the allowance. Each report allows up to 20 zones, 100 characters per name and 2,000 characters per note or reason. Capture and PDF sharing work without approval.",
     "@reportApprovalMessage": {
         "description": "Publisher approval and safety limits."
     },
-    "reportApprovalEmailButton": "Open email app",
-    "@reportApprovalEmailButton": {
+    "reportApprovalSendButton": "Send request",
+    "@reportApprovalSendButton": {
         "description": "Publisher approval and safety limits."
     },
-    "reportApprovalFallback": "If the email app does not open, send the registration code to donminzzi@gmail.com.",
-    "@reportApprovalFallback": {
+    "reportApprovalPendingMessage": "Your approval request is waiting for the operator. Once it's approved, press Share link again.",
+    "@reportApprovalPendingMessage": {
         "description": "Publisher approval and safety limits."
     },
-    "reportApprovalUnavailable": "Cannot load the registration code. Check your connection and request approval again.",
-    "@reportApprovalUnavailable": {
+    "reportApprovalFailedMessage": "Can't send the approval request. Check your connection and try again.",
+    "@reportApprovalFailedMessage": {
         "description": "Publisher approval and safety limits."
     },
     "reportLinkRefusedMessage": "Link sharing was refused. Check approval, usage limits and report content. You can share the PDF for now.",

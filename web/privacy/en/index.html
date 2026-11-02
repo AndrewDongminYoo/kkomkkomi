@@ -42,7 +42,7 @@
       <article class="sheet">
         <header class="sheet-head">
           <h1>Kkomkkomi Privacy Policy</h1>
-          <p>Effective date: October 8, 2026</p>
+          <p>Effective date: November 2, 2026</p>
           <p>
             Privacy officer and contact: Dongmin Yu (유동민), ydm2790@gmail.com
           </p>
@@ -156,10 +156,24 @@
         </p>
 
         <p>
-          Link sharing is available only to anonymous accounts approved by the
-          operator. When you send an approval request, the operator receives
-          your registration code (user ID) and email address. Capture and PDF
-          sharing do not need approval.
+          Link sharing is available only to anonymous accounts with publication
+          approval. Capture and PDF sharing do not need approval.
+        </p>
+        <p>
+          An account with a paid subscription gets link sharing automatically.
+          When its first link share is refused for lack of approval, the app
+          reads the purchase entitlement from the sign-in token (the
+          revenueCatEntitlements claim) and creates the account's approval with
+          the default limits. That approval stays after the subscription ends.
+        </p>
+        <p>
+          Any other account sends an approval request inside the app. The
+          request is a Cloud Firestore document in the Seoul region whose ID is
+          the user ID, and it holds the time of the request and, if saved, the
+          company name. Only the app of that account and the operator read it.
+          It is deleted when the operator approves or declines the request, or
+          when you delete all data in the app (section 6). It has no automatic
+          deletion.
         </p>
 
         <h2 id="publish">3. What a link share sends</h2>
@@ -324,6 +338,9 @@
             The visit report documents, then the client page documents (Cloud
             Firestore), closed pages included
           </li>
+          <li>
+            The approval request for link sharing, if any (Cloud Firestore)
+          </li>
           <li>The anonymous account (Firebase Authentication)</li>
           <li>
             The database on the phone (the company name and optional business
@@ -459,6 +476,11 @@
           </li>
           <li>IP addresses logged by Firebase Hosting: a few months</li>
           <li>
+            The approval request for link sharing: until the operator approves
+            or declines it, or you delete all data (section 6). It has no
+            automatic deletion.
+          </li>
+          <li>
             The customer record at RevenueCat (the user ID and the purchase
             history): the app has no control that deletes it. It stays until the
             operator deletes it at RevenueCat at your request.
@@ -479,11 +501,15 @@
           operates, to prevent the same address from becoming public again.
         </p>
         <p>
-          Approval requests and abuse reports contain the sender's email
-          address, the registration code or report address, and text the sender
-          adds. The operator uses them only to handle approval or abuse reports
-          and deletes the emails when processing is complete. Please do not add
-          sensitive content or photos to an email.
+          The app sends an approval request inside the app and uses no email for
+          it. An earlier version of the app asked for approval by email.
+        </p>
+        <p>
+          Abuse reports, and approval emails from that earlier version, contain
+          the sender's email address, the report address or registration code,
+          and text the sender adds. The operator uses them only to handle abuse
+          reports or approval and deletes the emails when processing is
+          complete. Please do not add sensitive content or photos to an email.
         </p>
 
         <h2 id="location">
@@ -492,12 +518,12 @@
         </h2>
         <p>
           Firebase, which Google operates, processes the data on the server
-          side. Cloud Firestore (page and report documents) and Cloud Storage
-          (photos) are in the Seoul region (asia-northeast3). Firebase
-          Authentication runs only from data centers in the United States, so
-          anonymous account data is processed in the United States. Firebase
-          Hosting runs on Google's global infrastructure, so the IP address of a
-          visitor can be processed outside Korea.
+          side. Cloud Firestore (page, report and approval request documents)
+          and Cloud Storage (photos) are in the Seoul region (asia-northeast3).
+          Firebase Authentication runs only from data centers in the United
+          States, so anonymous account data is processed in the United States.
+          Firebase Hosting runs on Google's global infrastructure, so the IP
+          address of a visitor can be processed outside Korea.
         </p>
         <p>
           The operator entrusts Google with the processing that the app and the

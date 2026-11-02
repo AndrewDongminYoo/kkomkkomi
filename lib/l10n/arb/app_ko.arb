@@ -721,20 +721,20 @@
     "@reportApprovalTitle": {
         "description": "Publisher approval and safety limits."
     },
-    "reportApprovalMessage": "링크로 공유하려면 운영자 승인이 필요해요. 아래 등록 코드를 이메일로 보내 주세요. 기본 사용량 한도는 거래처 페이지 50개, 보고서 1,000개, 사진 2,000개, 사진 용량 1 GiB예요. 삭제해도 사용량은 돌아오지 않아요. 보고서마다 구역은 20곳, 이름은 100자, 메모와 사유는 각각 2,000자까지 쓸 수 있어요. 촬영과 PDF 공유는 승인 없이 쓸 수 있어요.",
+    "reportApprovalMessage": "링크로 공유하려면 운영자 승인이 필요해요. 요청을 보내면 회사 정보에 저장한 회사 이름을 함께 보내고, 운영자가 확인해요. 회사 이름이 없으면 승인할 수 없으니 먼저 회사 정보에 저장해 주세요. 기본 사용량 한도는 거래처 페이지 50개, 보고서 1,000개, 사진 2,000개, 사진 용량 1 GiB예요. 삭제해도 사용량은 돌아오지 않아요. 보고서마다 구역은 20곳, 이름은 100자, 메모와 사유는 각각 2,000자까지 쓸 수 있어요. 촬영과 PDF 공유는 승인 없이 쓸 수 있어요.",
     "@reportApprovalMessage": {
         "description": "Publisher approval and safety limits."
     },
-    "reportApprovalEmailButton": "메일 앱 열기",
-    "@reportApprovalEmailButton": {
+    "reportApprovalSendButton": "요청 보내기",
+    "@reportApprovalSendButton": {
         "description": "Publisher approval and safety limits."
     },
-    "reportApprovalFallback": "메일 앱이 열리지 않으면 등록 코드를 donminzzi@gmail.com으로 보내 주세요.",
-    "@reportApprovalFallback": {
+    "reportApprovalPendingMessage": "승인 요청을 운영자가 확인하고 있어요. 승인되면 링크로 공유하기를 다시 눌러 주세요.",
+    "@reportApprovalPendingMessage": {
         "description": "Publisher approval and safety limits."
     },
-    "reportApprovalUnavailable": "등록 코드를 불러오지 못했어요. 인터넷 연결을 확인한 뒤 다시 요청해 주세요.",
-    "@reportApprovalUnavailable": {
+    "reportApprovalFailedMessage": "승인 요청을 보내지 못했어요. 인터넷 연결을 확인한 뒤 다시 시도해 주세요.",
+    "@reportApprovalFailedMessage": {
         "description": "Publisher approval and safety limits."
     },
     "reportLinkRefusedMessage": "링크 공유가 허용되지 않았어요. 승인 여부, 사용량 한도와 보고서 내용을 확인해 주세요. 지금은 PDF로 공유할 수 있어요.",

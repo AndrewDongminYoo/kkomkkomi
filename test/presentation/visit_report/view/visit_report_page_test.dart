@@ -118,7 +118,7 @@ void main() {
       locale: locale,
       repositories: repositories,
       // The queue has no backend unless the test gives one, as in the development and staging flavors.
-      publishQueue: publishQueueOf(repositories, publisher: publisher, photoStore: photoStore),
+      publishQueue: publishQueueOf(repositories, publisher: publisher, photoStore: photoStore, identity: identity),
       photoStore: photoStore,
       reportShare: reportShare,
       linkShare: linkShare,
@@ -741,41 +741,164 @@ void main() {
         expect(find.text('Request link sharing approval'), findsOneWidget);
       });
 
-      testWidgets('approval request exposes only its registration code and leaves PDF sharing available', (
-        tester,
-      ) async {
+      testWidgets('a paid user shares its first link with no approval request', (tester) async {
+        final publisher = FakePublisher()..requiresGrant = true;
+        await pumpPage(
+          tester,
+          publisher: publisher,
+          identity: FakeIdentity(userId: 'paid-uid')..paid = true,
+        );
+
+        await tester.tap(linkButton());
+        await tester.pumpAndSettle();
+        await tester.tap(find.widgetWithText(FilledButton, 'Share'));
+        await tester.pumpAndSettle();
+
+        expect(linkShare.shared, hasLength(1));
+        expect(publisher.grants, {'paid-uid'});
+        expect(find.text('Request link sharing approval'), findsNothing);
+        expect(find.byType(AlertDialog), findsNothing);
+      });
+
+      testWidgets('approval request sends the request without email or registration code, then shows it as '
+          'pending', (tester) async {
         final identity = FakeIdentity(userId: 'approval-uid');
-        final links = FakeExternalLinks()..opens = false;
-        await pumpPage(tester, publisher: refusingPublisher(), identity: identity, externalLinks: links);
+        final links = FakeExternalLinks();
+        final publisher = refusingPublisher();
+        await pumpPage(tester, publisher: publisher, identity: identity, externalLinks: links);
         await tester.tap(linkButton());
         await tester.pumpAndSettle();
         final jobs = publishing.jobs.length;
-        expect(identity.calls, 0);
+
         await tester.tap(find.text('Request link sharing approval'));
         await tester.pumpAndSettle();
-        expect(find.text('approval-uid'), findsOneWidget);
-        expect(find.textContaining('donminzzi@gmail.com'), findsOneWidget);
-        await tester.tap(find.text('Open email app'));
+        expect(find.widgetWithText(AlertDialog, 'Link sharing approval'), findsOneWidget);
+        expect(find.textContaining('save one in the company profile first'), findsOneWidget);
+        expect(find.text('approval-uid'), findsNothing);
+        expect(find.textContaining('donminzzi@gmail.com'), findsNothing);
+        expect(find.text('Open email app'), findsNothing);
+        await tester.tap(find.widgetWithText(FilledButton, 'Send request'));
         await tester.pumpAndSettle();
-        expect(links.opened.single.path, 'donminzzi@gmail.com');
-        expect(links.opened.single.queryParameters['body'], 'approval-uid');
-        await tester.tap(find.widgetWithText(TextButton, 'Cancel'));
-        await tester.pumpAndSettle();
+
+        expect(publisher.approvalRequests, {'approval-uid': '깔끔클린'});
+        expect(
+          find.text("Your approval request is waiting for the operator. Once it's approved, press Share link again."),
+          findsOneWidget,
+        );
+        expect(find.text('Request link sharing approval'), findsNothing);
+        expect(links.opened, isEmpty);
         expect(tester.widget<OutlinedButton>(pdfButton()).onPressed, isNotNull);
         // The request publishes nothing.
         expect(publishing.jobs, hasLength(jobs));
       });
 
-      for (final (locale, share, button, title, email, close) in [
+      testWidgets('approval request sends nothing when the person closes the question', (tester) async {
+        final publisher = refusingPublisher();
+        await pumpPage(tester, publisher: publisher);
+        await tester.tap(linkButton());
+        await tester.pumpAndSettle();
+
+        await tester.tap(find.text('Request link sharing approval'));
+        await tester.pumpAndSettle();
+        await tester.tap(find.widgetWithText(TextButton, 'Cancel'));
+        await tester.pumpAndSettle();
+
+        expect(publisher.approvalRequests, isEmpty);
+        expect(find.text('Request link sharing approval'), findsOneWidget);
+      });
+
+      testWidgets('approval request that does not reach the backend says so and is offered again', (tester) async {
+        final publisher = refusingPublisher()
+          ..failures['writeApprovalRequest'] = [const PublishException(PublishErrorKind.transient, 'offline')];
+        await pumpPage(tester, publisher: publisher);
+        await tester.tap(linkButton());
+        await tester.pumpAndSettle();
+
+        await tester.tap(find.text('Request link sharing approval'));
+        await tester.pumpAndSettle();
+        await tester.tap(find.widgetWithText(FilledButton, 'Send request'));
+        await tester.pumpAndSettle();
+
+        const failed = "Can't send the approval request. Check your connection and try again.";
+        expect(find.text(failed), findsOneWidget);
+        expect(tester.noticeToneOf(failed), NoticeTone.error);
+        expect(find.text('Request link sharing approval'), findsOneWidget);
+      });
+
+      testWidgets('takes no touch and no back press while the approval request is on its way', (tester) async {
+        final publisher = refusingPublisher();
+        await pumpPage(tester, publisher: publisher);
+        await tester.tap(linkButton());
+        await tester.pumpAndSettle();
+        final gate = publisher.gates['writeApprovalRequest'] = Completer<void>();
+
+        await tester.tap(find.text('Request link sharing approval'));
+        await tester.pumpAndSettle();
+        await tester.tap(find.widgetWithText(FilledButton, 'Send request'));
+        // The progress indicator of the request control never settles, so each step pumps a second, which is longer
+        // than a route takes to open or to close.
+        await tester.pump();
+        await tester.pump(const Duration(seconds: 1));
+        expect(
+          find.descendant(of: find.byType(TextButton), matching: find.byType(CircularProgressIndicator)),
+          findsOneWidget,
+        );
+        final calls = List.of(publisher.calls);
+        await tester.tap(linkButton(), warnIfMissed: false);
+        await tester.tap(pdfButton(), warnIfMissed: false);
+        await tester.pump();
+        await tester.pump(const Duration(seconds: 1));
+        expect(publisher.calls, calls);
+        expect(reportShare.shared, isEmpty);
+        await tester.binding.handlePopRoute();
+        await tester.pump();
+        await tester.pump(const Duration(seconds: 1));
+        expect(find.byType(VisitReportPage), findsOneWidget);
+
+        gate.complete();
+        await tester.pumpAndSettle();
+
+        expect(
+          find.text("Your approval request is waiting for the operator. Once it's approved, press Share link again."),
+          findsOneWidget,
+        );
+        expect(reportShare.shared, isEmpty);
+        await tester.binding.handlePopRoute();
+        await tester.pumpAndSettle();
+        expect(find.byType(VisitReportPage), findsNothing);
+      });
+
+      testWidgets('shows a request that the backend holds as pending after a refused share', (tester) async {
+        final publisher = refusingPublisher()..approvalRequests['user-1'] = null;
+        await pumpPage(tester, publisher: publisher);
+
+        await tester.tap(linkButton());
+        await tester.pumpAndSettle();
+
+        expect(
+          find.text("Your approval request is waiting for the operator. Once it's approved, press Share link again."),
+          findsOneWidget,
+        );
+        expect(find.text('Request link sharing approval'), findsNothing);
+      });
+
+      for (final (locale, share, button, title, send, pending) in [
         (
           const Locale('en'),
           'Share link',
           'Request link sharing approval',
           'Link sharing approval',
-          'Open email app',
-          'Cancel',
+          'Send request',
+          "Your approval request is waiting for the operator. Once it's approved, press Share link again.",
         ),
-        (const Locale('ko'), '링크로 공유하기', '링크 공유 승인 요청하기', '링크 공유 승인', '메일 앱 열기', '닫기'),
+        (
+          const Locale('ko'),
+          '링크로 공유하기',
+          '링크 공유 승인 요청하기',
+          '링크 공유 승인',
+          '요청 보내기',
+          '승인 요청을 운영자가 확인하고 있어요. 승인되면 링크로 공유하기를 다시 눌러 주세요.',
+        ),
       ]) {
         testWidgets('approval request fits a narrow screen in ${locale.languageCode}', (tester) async {
           tester.useNarrowScreenWithLargestText();
@@ -795,31 +918,15 @@ void main() {
           await tester.pumpAndSettle();
           tester.expectWholeText(title);
           final scrollable = find.descendant(of: find.byType(AlertDialog), matching: find.byType(Scrollable)).first;
-          await tester.scrollUntilVisible(find.text(email), 80, scrollable: scrollable);
-          tester.expectWholeText(email);
-          await tester.tap(find.widgetWithText(TextButton, close));
+          await tester.scrollUntilVisible(find.text(send), 80, scrollable: scrollable);
+          tester.expectWholeText(send);
+          await tester.tap(find.widgetWithText(FilledButton, send));
           await tester.pumpAndSettle();
+          final notice = find.text(pending);
+          await tester.ensureVisible(notice);
+          tester.expectWholeText(pending);
         });
       }
-
-      testWidgets('approval request handles delayed and unavailable identity without sending email', (tester) async {
-        final identity = FakeIdentity()..gate = Completer<void>();
-        final links = FakeExternalLinks();
-        await pumpPage(tester, publisher: refusingPublisher(), identity: identity, externalLinks: links);
-        await tester.tap(linkButton());
-        await tester.pumpAndSettle();
-        await tester.tap(find.text('Request link sharing approval'));
-        await tester.pump();
-        expect(find.byType(CircularProgressIndicator), findsOneWidget);
-        identity.gate!.complete();
-        await tester.pumpAndSettle();
-        expect(
-          find.text('Cannot load the registration code. Check your connection and request approval again.'),
-          findsOneWidget,
-        );
-        expect(find.text('Open email app'), findsNothing);
-        expect(links.opened, isEmpty);
-      });
 
       testWidgets('offers the PDF alone in a flavor without a backend', (tester) async {
         await pumpPage(tester);
@@ -1436,11 +1543,8 @@ void main() {
           await pumpView(tester, shown(VisitReportStatus.ready));
 
           expect(find.text(english), findsOneWidget);
-          // Only a refusal offers the approval request.
-          expect(
-            find.text('Request link sharing approval'),
-            linkState.failure == PublishFailure.refused ? findsOneWidget : findsNothing,
-          );
+          // Only a refusal offers the approval request, after the cubit read that the backend holds none.
+          expect(find.text('Request link sharing approval'), findsNothing);
           // Only a job that stopped is a failure. One that waits for its next try is still on its way.
           expect(
             tester.noticeToneOf(english),
@@ -1448,6 +1552,94 @@ void main() {
           );
         });
       }
+
+      group('approval request', () {
+        const refused = ReportLinkState(status: ReportLinkStatus.failed, failure: PublishFailure.refused);
+        ReportLinkState refusedWith(ApprovalRequestStatus approval) =>
+            ReportLinkState(status: ReportLinkStatus.failed, failure: PublishFailure.refused, approval: approval);
+        const pending =
+            "Your approval request is waiting for the operator. Once it's approved, press Share link again.";
+        const failed = "Can't send the approval request. Check your connection and try again.";
+        Finder request() => find.widgetWithText(TextButton, 'Request link sharing approval');
+
+        testWidgets('offers the request when the backend holds none', (tester) async {
+          when(() => linkCubit.state).thenReturn(refusedWith(ApprovalRequestStatus.none));
+
+          await pumpView(tester, shown(VisitReportStatus.ready));
+
+          expect(tester.widget<TextButton>(request()).onPressed, isNotNull);
+          expect(find.text(pending), findsNothing);
+          expect(find.text(failed), findsNothing);
+          expect(refused.canRequestApproval, isFalse);
+        });
+
+        testWidgets('keeps the name of the request control for a screen reader while the request is on its way', (
+          tester,
+        ) async {
+          final semantics = tester.ensureSemantics();
+          when(() => linkCubit.state).thenReturn(refusedWith(ApprovalRequestStatus.sending));
+
+          await pumpView(tester, shown(VisitReportStatus.ready));
+
+          final control = find.ancestor(of: find.byType(CircularProgressIndicator), matching: find.byType(TextButton));
+          expect(tester.widget<TextButton>(control).onPressed, isNull);
+          expect(tester.getSemantics(control).label, 'Request link sharing approval');
+          semantics.dispose();
+        });
+
+        testWidgets('says that a request waits for the operator, and offers no second one', (tester) async {
+          when(() => linkCubit.state).thenReturn(refusedWith(ApprovalRequestStatus.pending));
+
+          await pumpView(tester, shown(VisitReportStatus.ready));
+
+          expect(find.text(pending), findsOneWidget);
+          expect(tester.noticeToneOf(pending), NoticeTone.info);
+          expect(request(), findsNothing);
+        });
+
+        testWidgets('says that a request failed, and offers it again', (tester) async {
+          when(() => linkCubit.state).thenReturn(refusedWith(ApprovalRequestStatus.failed));
+
+          await pumpView(tester, shown(VisitReportStatus.ready));
+
+          expect(find.text(failed), findsOneWidget);
+          expect(tester.noticeToneOf(failed), NoticeTone.error);
+          expect(tester.widget<TextButton>(request()).onPressed, isNotNull);
+        });
+
+        testWidgets('sends the request only when the person goes on', (tester) async {
+          when(() => linkCubit.state).thenReturn(refusedWith(ApprovalRequestStatus.none));
+          when(() => linkCubit.requestApproval()).thenAnswer((_) async {});
+          await pumpView(tester, shown(VisitReportStatus.ready));
+
+          await tester.tap(request());
+          await tester.pumpAndSettle();
+          await tester.tap(find.widgetWithText(TextButton, 'Cancel'));
+          await tester.pumpAndSettle();
+          verifyNever(() => linkCubit.requestApproval());
+
+          await tester.tap(request());
+          await tester.pumpAndSettle();
+          await tester.tap(find.widgetWithText(FilledButton, 'Send request'));
+          await tester.pumpAndSettle();
+          verify(() => linkCubit.requestApproval()).called(1);
+        });
+
+        testWidgets('says nothing of a request without a refusal', (tester) async {
+          when(() => linkCubit.state).thenReturn(
+            const ReportLinkState(
+              status: ReportLinkStatus.failed,
+              failure: PublishFailure.revoked,
+              approval: ApprovalRequestStatus.pending,
+            ),
+          );
+
+          await pumpView(tester, shown(VisitReportStatus.ready));
+
+          expect(find.text(pending), findsNothing);
+          expect(request(), findsNothing);
+        });
+      });
 
       testWidgets('keeps the name of the link control for a screen reader while the report uploads', (tester) async {
         final semantics = tester.ensureSemantics();

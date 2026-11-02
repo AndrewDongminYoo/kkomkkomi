@@ -10,12 +10,20 @@ The landing inquiry form does not send messages.
 
 ## Enrollment
 
-Use the app's **Request link sharing approval** action to obtain the publisher's anonymous registration code.
-The visit report screen shows that action only after the backend refused a link share, because the app does not read its grant; a publisher without a grant presses **Share link** once first.
-Confirm that the request belongs to a legitimate intended publisher using the operator's existing relationship; an email address or replacement UID alone is not sufficient.
-Do not grant every existing anonymous UID or restore approval merely because an account was replaced.
-Use privileged Firestore console access to create `publishingGrants/{uid}`.
-Clients can read only their own document and cannot issue or delete grants or modify operator approval and limits.
+`docs/specs/2026-11-02-publisher-approval-request.md` owns the admission decision of issue #146; this section is the operator procedure.
+A publisher without a grant presses **Share link** once first, because the app does not read its grant before a share.
+
+- A paid publisher: after that refusal, the app asks for a newly issued ID token, and when its `revenueCatEntitlements` claim holds `basic` or `pro`, the app creates `publishingGrants/{uid}` itself with the initial document below and shares again. The operator does nothing.
+- A free publisher: the visit report screen offers **Request link sharing approval**, and its dialog writes `publishingRequests/{uid}` with `requestedAt` and, when the company profile is saved, `companyName`. No email is sent, and the screen shows the request as pending.
+
+Find pending requests in the Firestore console under `publishingRequests`; the document ID is the UID.
+Confirm the company name against the operator's existing relationship; the UID alone, an email address, or a replacement UID is not sufficient.
+Do not approve a replacement UID because an earlier UID was blocked or deleted, and do not grant every existing anonymous UID.
+To approve, use privileged Firestore console access to create `publishingGrants/{uid}`, then delete the request.
+To decline, delete the request.
+When the company cannot be identified, decline the request or leave it pending; a declined request is never kept.
+The app learns the result only at its next share or its next read of the request.
+Clients can read only their own grant, can create one only with a paid token and only as the initial document below, and cannot update approval or limits or delete a grant.
 
 The initial document has these fields:
 
@@ -45,7 +53,12 @@ Seed each existing photo reservation as `pageId/visitId/fileName: byteLength`.
 If legitimate existing usage exceeds a default, increase the operator-managed limit after approval; preserve the counters.
 Reserve at most 2,000 active photo paths per document and keep keys at most 384 characters; do not raise that structural limit by changing only a grant.
 Read back the exact UID, approval, limits and inventory counters before testing with that user.
-A new or deleted UID needs a new approval; store purchase entitlements do not grant publication approval.
+A new or deleted UID needs a new approval.
+A paid entitlement admits a UID only through the self-created initial grant; it never raises limits, resets counters, or re-enables a withdrawn grant, and the grant stays after the subscription ends.
+
+Builds without issue #147, such as `1.1.2+6`, still show the email dialog with the registration code (the UID).
+Handle such an email as a request record: confirm the sender against an existing relationship before creating a grant, and delete the email after handling.
+A paid publisher on such a build gets its grant automatically after it updates to a build that holds #147, so ask it to update rather than granting by hand.
 
 ## Reports and takedown
 
@@ -77,7 +90,8 @@ An admitted account may reconcile an absent page as closed after withdrawal with
 
 App deletion removes photos and their active reservations, reports, private report reservation headers and their seven validation chunks, pages, the anonymous Auth account and device data.
 The account's approval and lifetime usage document remains until operator deletion on request; the app cannot reset its allowance.
-On a verified deletion request, remove that UID's grant document after checking the relevant pages have been removed.
+On a verified deletion request, remove that UID's grant document after checking the relevant pages have been removed, and remove its `publishingRequests/{uid}` document if one remains.
+Before removing the grant, confirm in the Authentication console that the Auth account of that UID no longer exists; otherwise a paid UID that can still sign in creates a fresh grant with zero usage.
 Do not create a fresh grant automatically as a side effect of deletion.
 Durable blocks retain only blocked page IDs and times while the report-sharing service operates, to prevent the same address being reopened.
 Both privacy pages disclose these records and email handling.
@@ -85,8 +99,8 @@ Both privacy pages disclose these records and email handling.
 ## Compatibility and rollout
 
 1. Deploy the web reporting action and both privacy pages with Hosting approval, and read back the files before collecting approval requests or issuing grant records.
-2. Obtain approval to inventory existing publishers and their usage, and enroll only legitimate users with accurate counters and reservations. Review remaining existing pages and apply the approved takedown procedure where legitimacy cannot be established; requiring a grant for new writes does not hide old content by itself.
-3. Deliver the compatible app before enforcement. Its page transaction charges one bound resource; each changed report reserves a private slot, validates seven chunks in separate transactions, then atomically publishes the whole report; its photo upload reserves bytes and compares uncertain prior bytes instead of overwriting an object.
+2. Obtain approval to inventory existing publishers and their usage, paid ones included, and enroll only legitimate users with accurate counters and reservations. A self-created grant starts at zero usage, and the create rule refuses a second grant, so an enrolled paid publisher keeps its seeded counters. Review remaining existing pages and apply the approved takedown procedure where legitimacy cannot be established; requiring a grant for new writes does not hide old content by itself.
+3. Deliver the compatible app before enforcement: a build that holds issue #147, so that a paid publisher gets its grant and a free publisher sends an in-app request. Its page transaction charges one bound resource; each changed report reserves a private slot, validates seven chunks in separate transactions, then atomically publishes the whole report; its photo upload reserves bytes and compares uncertain prior bytes instead of overwriting an object.
 4. Deploy Firestore and Storage rules as one approved rollout and read back the deployed sources. Storage must retain the existing Firestore service-agent role described in `CLAUDE.md`.
 5. Test one approved publisher, an unapproved UID, an exact allowance, a blocked fictional page, approval fallback and anonymous recipient reads before widening distribution.
 
@@ -103,7 +117,7 @@ The shared host still exposes the landing/privacy host to approved-publisher con
 ## Local verification
 
 Use fictional data and only the `demo-kkomkkomi` project in emulators.
-The rules suite exercises direct API bypass, quotas, payload validation, retry, deletion, operator blocks and the real token-free web reader.
+The rules suite exercises direct API bypass, quotas, payload validation, retry, deletion, operator blocks, the paid self-grant, the approval request record and the real token-free web reader.
 The mailbox is not exercised by this command.
 
 ```sh

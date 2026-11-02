@@ -46,6 +46,23 @@ abstract interface class Publisher {
   /// Deletes the client page with [pageId]. A page that does not exist is no failure. The reports of the page are
   /// separate documents, which [deleteReport] deletes.
   Future<void> deletePage(String pageId);
+
+  /// Creates the publishing grant of the user with [uid] with the default budgets, and answers whether it created one.
+  ///
+  /// The rules accept it only from a user whose token holds a paid entitlement. A grant that exists, also one that the
+  /// operator withdrew, stays as it is, and the call answers false.
+  Future<bool> createOwnGrant(String uid);
+
+  /// Stores the request of the user with [uid] for link sharing approval, with [companyName] when one is saved. A
+  /// request that the backend holds already stays as it is.
+  Future<void> writeApprovalRequest(String uid, {String? companyName});
+
+  /// Whether the backend holds a request of the user with [uid] for link sharing approval.
+  Future<bool> hasApprovalRequest(String uid);
+
+  /// Deletes the request of the user with [uid] for link sharing approval. A request that does not exist is no
+  /// failure.
+  Future<void> deleteApprovalRequest(String uid);
 }
 
 /// Whether a retry can fix a failed call of a [Publisher].
@@ -55,6 +72,10 @@ enum PublishErrorKind {
 
   /// A retry cannot fix it, for example a write that the rules of the backend refuse.
   refused,
+
+  /// The user has no enabled publishing grant, so the backend refuses every write that charges it. A retry cannot fix
+  /// it until the user has a grant.
+  unapproved,
 }
 
 /// A call of a [Publisher] failed.

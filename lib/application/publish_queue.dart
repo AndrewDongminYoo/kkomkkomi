@@ -121,6 +121,10 @@ final class PublishQueue {
   /// The objects whose upload a cancel did not end, while the upload is on its way.
   final _unsettled = <String>{};
 
+  /// The writes of the request for link sharing approval that are on their way, each as a future that completes
+  /// without an error when its write ended.
+  final _approvalWrites = <Future<void>>{};
+
   /// Each job after a run of it changed its state, for a screen that shows where a job is and why it stopped.
   Stream<PublishJob> get updates => _updates.stream;
 
@@ -237,7 +241,8 @@ final class PublishQueue {
   /// Stops the queue, and completes when the job that runs now ended.
   ///
   /// Until [release], no job runs: not at a request, not at its retry delay, and not when the network returns. A
-  /// request still adds its job, which runs after the release. A call while the queue is held completes at once.
+  /// request still adds its job, which runs after the release, and [requestApproval] fails. A call while the queue is
+  /// held completes at once.
   Future<void> hold() async {
     _held = true;
     _timer?.cancel();
@@ -261,7 +266,9 @@ final class PublishQueue {
   Future<void> forgetArrivedUploads() => _repository.forgetArrivedUploads();
 
   /// Deletes from the backend everything that the app published under each of its pages, open and revoked: first
-  /// the objects of the photos that it uploaded or started to upload, then the reports, then the pages.
+  /// the objects of the photos that it uploaded or started to upload, then the reports, then the pages, and last the
+  /// request of the user for link sharing approval. Without a page, only that request goes, and nothing goes while no
+  /// user is signed in.
   ///
   /// Before the first delete, every pending job stops with [PublishFailure.deletion], so that no job publishes again
   /// what this call deleted, also after a failure or a restart of the app. A later publish request, which the person
@@ -282,19 +289,29 @@ final class PublishQueue {
   ///
   /// Throws a [StateError] while the queue is not held, because a job that runs at the same time could write again
   /// what this call deleted. Throws a [PublishException] that a retry can fix while an upload that a cancel did not
-  /// end is on its way, before any delete, because that upload could create its object after the delete.
+  /// end is on its way, before any delete, because that upload could create its object after the delete. A write of
+  /// the approval request that is on its way runs through [timed] before any delete, for the same reason.
   Future<void> deletePublished({TimedDelete? timed}) async {
     final run = timed ?? _step;
     if (!_held) throw StateError('The queue must be held while the published data is deleted');
     if (_unsettled.isNotEmpty) {
       throw PublishException(PublishErrorKind.transient, 'An upload to ${_unsettled.first} has not ended');
     }
-    final pages = await _repository.pages();
-    if (pages.isEmpty) return;
-    // The rules let only the signed-in owner delete, and the answer also means that the backend started.
-    if (await _step(_identity.currentUserId()) == null) {
-      throw const PublishException(PublishErrorKind.transient, 'No user is signed in');
+    // A request write that started before the hold could create the request again after its delete, so the deletion
+    // waits for it first.
+    for (final write in _approvalWrites.toList()) {
+      await run(write);
     }
+    final pages = await _repository.pages();
+    if (pages.isEmpty) {
+      // The local data and the account can part, for example when an account outlives a reinstall, so the request of
+      // the account goes even without a page. Without a user no client can delete a request, so nothing goes then.
+      final uid = await _step(_identity.currentUserId());
+      if (uid != null) await run(_publisher.deleteApprovalRequest(uid));
+      return;
+    }
+    // The rules let only the signed-in owner delete, and the answer also means that the backend started.
+    final uid = await _signedInUser();
     // A delete may reach the backend even when its answer does not reach the app, so the jobs stop before the first.
     final stopped = await _repository.stopPendingJobs(PublishFailure.deletion);
     if (!_disposed) {
@@ -316,6 +333,8 @@ final class PublishQueue {
     for (final page in pages) {
       await run(_deletePageAndRecord(page));
     }
+    // The rules let only the signed-in owner delete the request, so it goes before the account.
+    await run(_publisher.deleteApprovalRequest(uid));
   }
 
   /// Keep persistence and notifications inside the future tracked through a deletion timeout.
@@ -409,7 +428,7 @@ final class PublishQueue {
       if (ownerUid == null) throw const PublishException(PublishErrorKind.transient, 'No user is signed in');
       switch (job.kind) {
         case PublishJobKind.publish:
-          await _publish(job, ownerUid);
+          await _publishAdmitted(job, ownerUid);
         case PublishJobKind.revoke:
           await _revoke(job, ownerUid);
       }
@@ -417,7 +436,7 @@ final class PublishQueue {
     } on _Stop catch (stop) {
       result = job.fail(stop.reason);
     } on Object catch (error, stackTrace) {
-      if (error is PublishException && error.kind == PublishErrorKind.refused) {
+      if (error is PublishException && error.kind != PublishErrorKind.transient) {
         log('A publish job was refused: $error');
         result = job.fail(PublishFailure.refused);
       } else {
@@ -435,6 +454,58 @@ final class PublishQueue {
   }
 
   Future<T> _step<T>(Future<T> step) => step.timeout(_stepTimeout);
+
+  /// Runs [_publish], and when the backend refuses it because the user has no grant, gives a user with a paid
+  /// entitlement its grant and runs the job once more.
+  ///
+  /// The grant is a write of its own, before the page write of the second run: the rules read the grant of a charge
+  /// as it was before the request. A user who has a grant never reaches the check, and a free user, or a user whose
+  /// grant exists but is withdrawn, ends refused as before.
+  Future<void> _publishAdmitted(PublishJob job, String ownerUid) async {
+    try {
+      await _publish(job, ownerUid);
+      return;
+    } on PublishException catch (error) {
+      if (error.kind != PublishErrorKind.unapproved) rethrow;
+      // A check that does not answer in time counts as free, so that the job ends as the refusal ended it.
+      final paid = await _identity.hasPaidEntitlement().timeout(_stepTimeout, onTimeout: () => false);
+      if (!paid || !await _step(_publisher.createOwnGrant(ownerUid))) rethrow;
+      log('A publish job was refused without a grant, so the paid user got its grant');
+    }
+    await _publish(job, ownerUid);
+  }
+
+  /// The ID of the signed-in user, for a call that the rules allow only to the owner.
+  Future<String> _signedInUser() async {
+    final uid = await _step(_identity.currentUserId());
+    if (uid == null) throw const PublishException(PublishErrorKind.transient, 'No user is signed in');
+    return uid;
+  }
+
+  /// Whether the backend holds the request of the user for link sharing approval.
+  ///
+  /// Throws a [PublishException] when no user is signed in or the backend does not answer.
+  Future<bool> hasApprovalRequest() async => await _step(_publisher.hasApprovalRequest(await _signedInUser()));
+
+  /// Sends the request of the user for link sharing approval, with the company name that the app holds. The operator
+  /// reads it and creates the grant or deletes the request. A request that the backend holds already stays.
+  ///
+  /// The queue keeps the write until it ends, also after a timeout, and [deletePublished] waits for it before it
+  /// deletes the request, so that a write that ends late cannot create the request again after the deletion.
+  ///
+  /// Throws a [PublishException] when no user is signed in or the backend does not take the request, and one that a
+  /// retry can fix while the queue is held, because a deletion that holds it may already have deleted the request.
+  Future<void> requestApproval() async {
+    final uid = await _signedInUser();
+    final profile = await _companyProfile.load();
+    // The check is right before the write, so that no hold falls between the two.
+    if (_held) throw const PublishException(PublishErrorKind.transient, 'The queue is held');
+    final write = _publisher.writeApprovalRequest(uid, companyName: profile?.name);
+    late final Future<void> settled;
+    settled = write.then<void>((_) {}, onError: (Object _) {}).whenComplete(() => _approvalWrites.remove(settled));
+    _approvalWrites.add(settled);
+    await _step(write);
+  }
 
   Future<PublishedPage> _pageContent(ClientPage page, String ownerUid) async {
     // A page belongs to a client, and a client is deleted only with every page and job, while the queue is held.

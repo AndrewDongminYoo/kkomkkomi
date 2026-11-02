@@ -955,6 +955,7 @@ class FakePublisher implements Publisher {
   @override
   Future<void> writePage(String pageId, PublishedPage page) async {
     await _call('writePage', pageId);
+    if (requiresGrant && !grants.contains(page.ownerUid)) throw unapproved;
     pages[pageId] = page;
   }
 
@@ -1009,6 +1010,43 @@ class FakePublisher implements Publisher {
     await _call('deletePage', pageId);
     pages.remove(pageId);
     revokedPages.remove(pageId);
+  }
+
+  /// The users that hold a grant. A test puts a user here for a grant that the operator created.
+  final grants = <String>{};
+
+  /// Whether a page write needs a grant of its owner, as the rules of the backend do. A page write without one throws
+  /// [unapproved], which is the first write of a publish job.
+  bool requiresGrant = false;
+
+  /// What a write without a grant throws, as the adapter does.
+  static const unapproved = PublishException(PublishErrorKind.unapproved, 'Publishing needs an enabled grant');
+
+  @override
+  Future<bool> createOwnGrant(String uid) async {
+    await _call('createOwnGrant', uid);
+    return grants.add(uid);
+  }
+
+  /// The stored requests for link sharing approval, as the company name of each by user ID.
+  final approvalRequests = <String, String?>{};
+
+  @override
+  Future<void> writeApprovalRequest(String uid, {String? companyName}) async {
+    await _call('writeApprovalRequest', uid);
+    approvalRequests.putIfAbsent(uid, () => companyName);
+  }
+
+  @override
+  Future<bool> hasApprovalRequest(String uid) async {
+    await _call('hasApprovalRequest', uid);
+    return approvalRequests.containsKey(uid);
+  }
+
+  @override
+  Future<void> deleteApprovalRequest(String uid) async {
+    await _call('deleteApprovalRequest', uid);
+    approvalRequests.remove(uid);
   }
 }
 
