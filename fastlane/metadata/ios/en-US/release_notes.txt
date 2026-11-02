@@ -1,2 +1,3 @@
-• The approval request button on a report appears only after link sharing is refused.
-• Other small updates.
+• You can now request link sharing approval right in the app, without email.
+• If you're on a paid plan, you can now share links right away, without waiting for approval.
+• Plus other small updates.
