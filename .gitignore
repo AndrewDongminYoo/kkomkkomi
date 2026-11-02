@@ -126,6 +126,10 @@ lib/firebase_options.dart
 # Firebase CLI deploy cache
 .firebase/
 
+# The compiled output of the Cloud Functions under functions/, which the
+# predeploy step of firebase.json builds
+functions/lib/
+
 # The packages of the security rules tests under test/rules/, and the logs of
 # the emulators that run them
 node_modules/
