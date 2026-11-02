@@ -20,6 +20,9 @@ The operator directed implementation to start on 2026-10-01, and M1 and M3 are b
 The operator started M2 work on 2026-10-06 with the report layout of #54 and the zone status of #60, which follows `docs/plans/2026-10-06-zone-status.md`.
 M1 waits for the first test distribution (#40), and M3 follows `docs/plans/2026-10-05-m3-subscriptions.md`.
 See `docs/notes/2026-10-31-store-distribution-status.md` § Current state (moved 2026-11-02).
+A read-only track check on 2026-11-02 found Google Play `1.1.2`, version code `6`, with status `completed` on the internal, closed Alpha and production tracks, and the operator confirmed that the production release was intended.
+`docs/notes/2026-10-31-play-internal-distribution.md` owns that read-back and its limits; tester eligibility on the internal track and an Android physical-device pass keep #40 open.
+No check has read the App Store production state.
 The data layer of the M1 build exists: the domain model, the repository interfaces and use cases, and the SQLite repositories.
 The client list, the client detail, the visit capture, the company profile, and the plans screens use it, and the client list is the home screen.
 The client detail screen starts a visit and opens a past one, and the visit capture screen takes the before photo, the after photo, the status, and the note of each zone, and the reason of a zone that is partly done or not done.
