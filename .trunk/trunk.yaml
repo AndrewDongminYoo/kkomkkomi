@@ -17,6 +17,11 @@ runtimes:
     - python@3.14.4
 # This is the section where you manage your linters. (https://docs.trunk.io/check/configuration)
 lint:
+  definitions:
+    - name: pinact
+      commands:
+        - name: upgrade
+          enabled: true
   disabled:
     - bandit
     - dart
@@ -31,16 +36,15 @@ lint:
     - isort@9.0.2
     - ktlint@1.8.0
     - markdownlint@0.50.0
-    - osv-scanner@2.6.0
+    - osv-scanner@2.7.0
     - oxipng@10.2.1
-    - pinact@4.1.1!:
-        commands: [lint, upgrade]
+    - pinact@4.1.1!
     - prettier@3.9.10
     - ruff@0.17.3
     - shellcheck@0.11.0
-    - shfmt@3.13.1
+    - shfmt@3.14.1
     - svgo@4.1.0
-    - trufflehog@3.97.9
+    - trufflehog@3.99.7
     - yamllint@1.38.0
   ignore:
     # Google Play asks for the Play Store icon as a 32-bit PNG, and oxipng drops an alpha channel that is opaque.

@@ -73,11 +73,13 @@ oxipng
 parallelizable
 pbxproj
 pgrep
+pinact
 PRODUCTVERSION
 proguard
 protoc
 PYTHONPATH
 refetches
+shfmt
 SRCROOT
 SUBLANG
 subviews
