@@ -10,7 +10,7 @@ The pinned runtime also exposes `AppStoreAssets.transfer_screenshots`, which req
 The legacy screenshot metadata lane still loads `APP_STORE_ASSETS_ROOT` or a sibling checkout; this submodule pin does not protect that route.
 Use the guarded entrypoint, the `store_screenshots_verify` and `store_screenshots_transfer` lanes, for an approved screenshot transfer.
 Reuse existing project build and release gates; do not substitute a generic upload for a guarded native lane.
-Every upload, deletion, or review submission, of a binary or of a listing, is an external action that the operator runs or approves for that run, as `CLAUDE.md` says. A request to add or fix the pipeline does not authorize live uploads, review submission, or public release.
+Every upload, deletion, or review submission, of a binary or of a listing, is an external action that the user runs or approves for that run, as `CLAUDE.md` says. A request to add or fix the pipeline does not authorize live uploads, review submission, or public release.
 Preserve authentication, permission, and processing failures and resume automation after the specific blocker is resolved.
 From the repository root, `PYTHONPATH=tools/app-store-assets python3 -B -m app_store_assets doctor --target ios` checks the runtime pin and the inputs, and `PYTHONPATH=tools/app-store-assets python3 -B -m app_store_assets plan --target ios --operation images` writes a plan that executes nothing and needs that snapshot.
 Neither command makes a store call.

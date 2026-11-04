@@ -11,16 +11,16 @@ The source of this section is the business plan dated 2026-10-01, which is not c
 
 ### Public repository
 
-The repository is public while implementation is in progress, and the operator makes it private when the business starts (operator decision, 2026-10-01).
+The repository is public while implementation is in progress, and Dongmin Yu makes it private when the business starts (decision of 2026-10-01).
 Until then, keep pricing, validation criteria, sales channels, and unit economics out of every tracked file, `docs/` included.
 
 ### Current state
 
-The operator directed implementation to start on 2026-10-01, and M1 and M3 are both milestones in progress (operator, 2026-10-05).
-The operator started M2 work on 2026-10-06 with the report layout of #54 and the zone status of #60, which follows `docs/plans/2026-10-06-zone-status.md`.
+Dongmin Yu directed implementation to start on 2026-10-01, and M1 and M3 are both milestones in progress (Dongmin Yu, 2026-10-05).
+Dongmin Yu started M2 work on 2026-10-06 with the report layout of #54 and the zone status of #60, which follows `docs/plans/2026-10-06-zone-status.md`.
 M1 waits for the first test distribution (#40), and M3 follows `docs/plans/2026-10-05-m3-subscriptions.md`.
 See `docs/notes/2026-10-31-store-distribution-status.md` § Current state (moved 2026-11-02).
-A read-only track check on 2026-11-02 found Google Play `1.1.2`, version code `6`, with status `completed` on the internal, closed Alpha and production tracks, and the operator confirmed that the production release was intended.
+A read-only track check on 2026-11-02 found Google Play `1.1.2`, version code `6`, with status `completed` on the internal, closed Alpha and production tracks, and Dongmin Yu confirmed that the production release was intended.
 `docs/notes/2026-10-31-play-internal-distribution.md` owns that read-back and its limits; tester eligibility on the internal track and an Android physical-device pass keep #40 open.
 No check has read the App Store production state.
 The data layer of the M1 build exists: the domain model, the repository interfaces and use cases, and the SQLite repositories.
@@ -57,20 +57,20 @@ They have not been deployed.
 `firestore.rules` and `storage.rules` let anyone read a client page, its reports, and their photos by page ID while the page is open, and let the owner delete them.
 See `docs/notes/firebase-deploy-log.md` § Current state (moved 2026-11-02).
 The deployed Firestore rules equal the tracked ones at `135c67f`, the deployed Hosting files equal the tracked ones at `59b1c84`, and the deployed Storage rules equal the tracked ones at `34d5d23`.
-A deploy is the operator's decision each time: do not deploy rules or Hosting without that approval.
+A deploy is the user's decision each time: do not deploy rules or Hosting without that approval.
 
-The operator installed the RevenueCat Firebase extension from the Firebase console on 2026-10-05, as the instance `firestore-revenuecat-purchases`.
+Dongmin Yu installed the RevenueCat Firebase extension from the Firebase console on 2026-10-05, as the instance `firestore-revenuecat-purchases`.
 It is version 0.1.19 in `asia-northeast3`, with `SET_CUSTOM_CLAIMS` enabled and both collection parameters empty, so it writes the `revenueCatEntitlements` claim and nothing in Firestore.
 Its shared secret is in Secret Manager, and `firebase.json` holds no `extensions` block.
 Keep both collection parameters empty unless the privacy pages change first.
-Install, update, or reconfigure the extension only with the operator's approval.
+Install, update, or reconfigure the extension only with the user's approval.
 See `docs/notes/firebase-deploy-log.md` § RevenueCat extension (moved 2026-11-02).
 `functions/` holds `revenueCatWebhook`, the repository function that replaces the extension handler and writes the same claims, and `docs/notes/revenuecat-claims-cutover.md` owns its secret, deploy, URL change, verification, uninstall, and rollback steps.
-It was deployed from `1343768` on 2026-11-02 and has received the RevenueCat events since the operator changed the integration's Trigger URL that day; the extension stays installed without events until a subscription expiry is verified, and `docs/notes/firebase-deploy-log.md` § RevenueCat claims function owns the record.
-Each further step, including the extension uninstall, needs the operator's approval.
+It was deployed from `1343768` on 2026-11-02 and has received the RevenueCat events since Dongmin Yu changed the integration's Trigger URL that day; the extension stays installed without events until a subscription expiry is verified, and `docs/notes/firebase-deploy-log.md` § RevenueCat claims function owns the record.
+Each further step, including the extension uninstall, needs the user's approval.
 
 `storage.rules` reads the client page through `firestore.get`, which needs the Firebase Storage service agent (`service-146496738802@gcp-sa-firebasestorage.iam.gserviceaccount.com`) to hold `roles/firebaserules.firestoreServiceAgent`.
-The operator granted it on 2026-10-02, after the deploy. A `firebase deploy --only storage` with `--non-interactive` does not offer that grant, so a new project needs the grant by hand, and without it every Storage rule that reads the page denies.
+Dongmin Yu granted it on 2026-10-02, after the deploy. A `firebase deploy --only storage` with `--non-interactive` does not offer that grant, so a new project needs the grant by hand, and without it every Storage rule that reads the page denies.
 
 ### Milestones
 
@@ -170,15 +170,15 @@ Trunk installs a format hook on commit and a check hook on push (`.trunk/trunk.y
 
 Codex reviews every pull request, and CodeRabbit was attached on 2026-10-01 after pull request 1.
 `/pr-loop` keeps its usual terminal conditions, so a CodeRabbit verdict or skip notice counts when one arrives.
-If CodeRabbit posts nothing on a pull request, the operator's ruling of 2026-10-01 applies: the merge needs a clean Codex verdict on the head commit, every check passing, and no unresolved review thread, and the report states that one reviewer ran.
+If CodeRabbit posts nothing on a pull request, Dongmin Yu's ruling of 2026-10-01 applies: the merge needs a clean Codex verdict on the head commit, every check passing, and no unresolved review thread, and the report states that one reviewer ran.
 
 ## Release
 
-A release runs on the operator's machine with fastlane, and no CI job releases.
+A release runs on the user's machine with fastlane, and no CI job releases.
 The root `Gemfile` pins fastlane (run `bundle install` once), `fastlane/Fastfile` holds the lanes, `fastlane/Appfile` holds the bundle ID, and `merry.yaml` owns the scripts that run them.
 
 - `merry run release check` is offline. It fails for a working tree with uncommitted changes, for a version of `pubspec.yaml` without its entry in `CHANGELOG.md`, for a build number without `fastlane/metadata/android/<locale>/changelogs/<build>.txt` in each locale, for a store text that the metadata lanes upload when it is over its store limit in `tool/release_check.dart`, and when `config/revenuecat.json` is missing or does not hold each of its two keys as a string. The metadata lanes run it with `--metadata`, which leaves out the keys file, because they build nothing.
-- `merry run build apk`, `merry run build aab`, and `merry run build ipa` read the RevenueCat public SDK keys from `config/revenuecat.json` with `--dart-define-from-file`, as `REVENUECAT_IOS_API_KEY` and `REVENUECAT_ANDROID_API_KEY`. Git ignores the file, so the keys are never tracked (operator, 2026-10-05), and `config/revenuecat.example.json` shows its two keys with empty values. A file with empty keys builds an app without subscriptions on purpose, and the release check of `release ios` and `release android` stops for a missing file, a file that is not a JSON object, and a missing or misspelled key, so that no build lacks the keys by accident.
+- `merry run build apk`, `merry run build aab`, and `merry run build ipa` read the RevenueCat public SDK keys from `config/revenuecat.json` with `--dart-define-from-file`, as `REVENUECAT_IOS_API_KEY` and `REVENUECAT_ANDROID_API_KEY`. Git ignores the file, so the keys are never tracked (Dongmin Yu, 2026-10-05), and `config/revenuecat.example.json` shows its two keys with empty values. A file with empty keys builds an app without subscriptions on purpose, and the release check of `release ios` and `release android` stops for a missing file, a file that is not a JSON object, and a missing or misspelled key, so that no build lacks the keys by accident.
 - `merry run build aab` and `merry run build ipa` delete the file of the last build first, and after the build write `build-record.txt` beside the new file with `tool/build_record.sh`: the commit of HEAD and the SHA-256 of the file. A tree with uncommitted changes gets no record. No tool reads the record since the `./store-upload` launcher was removed.
 - `merry run release ios` runs the check, checks the credentials, deletes `build/ios/ipa`, builds the production IPA, and uploads it to TestFlight. The upload lane stops for an IPA whose version and build number are not those of `pubspec.yaml`, because `flutter build ipa` exits 0 when the export of the IPA fails after the archive.
 - `merry run release android` runs the check, checks the credentials, builds the production App Bundle, and uploads it with its changelogs to the internal testing track. To upload to the closed testing track instead, run the same steps by hand and end with `bundle exec fastlane android internal track:alpha`.
@@ -200,10 +200,10 @@ iOS signs automatically with the `DEVELOPMENT_TEAM` of the Xcode project, withou
 | `ANDROID_KEYSTORE_PATH`, `ANDROID_KEYSTORE_ALIAS`, `ANDROID_KEYSTORE_PASSWORD`, `ANDROID_KEYSTORE_PRIVATE_KEY_PASSWORD` | the App Bundle build | The upload key, which `android/app/build.gradle.kts` reads, or else `android/key.properties` |
 
 A lane without its variables, or with a path that names no file, stops before any network call and names the variable.
-Every script but `release check` publishes to a store, which is an external action: the operator runs it or approves each run.
+Every script but `release check` publishes to a store, which is an external action: the user runs it or approves each run.
 See `AGENTS.md` § Store Uploads (moved 2026-11-02).
-`fastlane/creative/ios/<locale>/header.png` and `search.png` are the App Store product page header and search result image that `merry run store` renders; no lane and no pinned runtime uploads them, so the operator adds them in App Store Connect (the Header and Search Results tab of the version page, or Asset Library) after checking them with its preview tool, because Apple publishes no safe area outside its design templates.
-`docs/notes/2026-10-02-first-test-distribution.md` lists the console steps that stay with the operator.
+`fastlane/creative/ios/<locale>/header.png` and `search.png` are the App Store product page header and search result image that `merry run store` renders; no lane and no pinned runtime uploads them, so the user adds them in App Store Connect (the Header and Search Results tab of the version page, or Asset Library) after checking them with its preview tool, because Apple publishes no safe area outside its design templates.
+`docs/notes/2026-10-02-first-test-distribution.md` lists the console steps that stay with the user.
 
 ## Architecture
 
