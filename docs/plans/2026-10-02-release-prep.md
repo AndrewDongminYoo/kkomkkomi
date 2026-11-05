@@ -5,12 +5,12 @@ This brief depends on the privacy policy brief, whose page is at `https://kkomkk
 
 ## Goal
 
-Everything in the repository that the first TestFlight and Google Play internal testing upload needs, proven by a release build of each platform, and a written list of the console steps that only the operator can take.
+Everything in the repository that the first TestFlight and Google Play internal testing upload needs, proven by a release build of each platform, and a written list of the console steps that only the user can take.
 
-## Decisions taken for the operator
+## Decisions taken for the user
 
-- The bundle and application ID is `kr.donminzzi.kkomkkomi` (operator, 2026-10-02). iOS and Android already use it. Change only the macOS production ID in `macos/Runner/Configs/AppInfo.xcconfig`, which is still `com.example.myApp`. Do not run `flutterfire configure`. The Firebase macOS app is still registered as `com.example.myApp`: report that mismatch as a console item, because macOS is not a target.
-- Store metadata follows the operator's two-store Flutter repositories: `fastlane/metadata/ios/{ko,en-US}` and `fastlane/metadata/android/{ko-KR,en-US}`. Create the tree without asking.
+- The bundle and application ID is `kr.donminzzi.kkomkkomi` (decided 2026-10-02). iOS and Android already use it. Change only the macOS production ID in `macos/Runner/Configs/AppInfo.xcconfig`, which is still `com.example.myApp`. Do not run `flutterfire configure`. The Firebase macOS app is still registered as `com.example.myApp`: report that mismatch as a console item, because macOS is not a target.
+- Store metadata follows my two-store Flutter repositories: `fastlane/metadata/ios/{ko,en-US}` and `fastlane/metadata/android/{ko-KR,en-US}`. Create the tree without asking.
 - The first version is `1.0.0+1`, which `pubspec.yaml` already holds.
 
 ## In scope
@@ -24,11 +24,11 @@ Everything in the repository that the first TestFlight and Google Play internal 
 5. Checks with sources:
    - Whether the app target needs a `PrivacyInfo.xcprivacy`. Read the privacy manifests that the plugins bundle, and add the app manifest if a required-reason API needs it.
    - Whether the `targetSdk` of the Flutter version in use meets the current Google Play minimum for a new app.
-6. `docs/notes/2026-10-02-first-test-distribution.md` with the console steps for the operator: the Apple Developer bundle ID, the App Store Connect app record, the TestFlight group, the Play Console app, the internal testing track, the real upload key and where it lives, and draft answers for App Store "App Privacy" and Play "Data safety" derived from the code and from the privacy policy page.
+6. `docs/notes/2026-10-02-first-test-distribution.md` with the console steps for the user: the Apple Developer bundle ID, the App Store Connect app record, the TestFlight group, the Play Console app, the internal testing track, the real upload key and where it lives, and draft answers for App Store "App Privacy" and Play "Data safety" derived from the code and from the privacy policy page.
 
 ## Do not
 
-- Do not guess `DEVELOPMENT_TEAM`. Read it from the `project.pbxproj` of another of the operator's personal apps that the parent session names, report it, and do not set it unless the operator confirms it.
+- Do not guess `DEVELOPMENT_TEAM`. Read it from the `project.pbxproj` of another of my personal apps that the parent session names, report it, and do not set it unless I confirm it.
 - Do not create store records, upload a build, or sign anything with a real key.
 - Do not add fastlane lanes that upload. Metadata files only.
 

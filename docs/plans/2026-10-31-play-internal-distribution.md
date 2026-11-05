@@ -21,7 +21,7 @@ The existing Alpha operation and unrelated production review are separate.
 5. Read back the internal release and existing tester-access configuration.
    Verify: store status and web eligibility separately, retaining the Android physical-device limit.
 6. Update the [dated evidence note](../notes/2026-10-31-play-internal-distribution.md) and affected release pointers, then complete scoped review, commits, PR checks and the delegated gated merge.
-   Verify: current-head evidence, final live PR body, operator assignment at readiness and visible completion/state retirement after merge.
+   Verify: current-head evidence, final live PR body, assignment to me at readiness and visible completion/state retirement after merge.
 
 ## Evidence boundaries
 

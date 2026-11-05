@@ -1,7 +1,7 @@
 # deepmerge@4.3.1 reaches this lockfile only through jest -> @jest/core -> jest-config,
 # a dev dependency; `npm ls deepmerge --omit=dev` is empty, so the deployed function
-# does not contain it. The advisory lists no patched version. Operator approved this
-# suppression on 2026-11-02; recheck by the date below.
+# does not contain it. The advisory lists no patched version. The suppression was approved
+# on 2026-11-02; recheck by the date below.
 [[IgnoredVulns]]
 id = "GHSA-gcqx-w48m-w2h4"
 ignoreUntil = 2027-02-01T00:00:00Z

@@ -18,7 +18,7 @@ A clean checkout builds the iOS development flavor without any Firebase config f
 
 1. Reproduce the failure first: a CI job, or a local `flutter build ios --no-codesign --debug --flavor development --target lib/main_development.dart` in a clean worktree when the machine load allows one platform build.
 2. Make the plist optional in the iOS and macOS Runner targets, in the same spirit as Android, which skips the google-services task for the development and staging variants. One way: remove the plist from the Resources phase and copy it with a Run Script build phase only when the file exists. Choose the way, and state it in the pull request body.
-3. A production build with the plist present must still bundle it. Check the built app bundle for the file in the operator's main checkout only if the parent session allows it; otherwise state that the production bundle was not checked.
+3. A production build with the plist present must still bundle it. Check the built app bundle for the file in the main checkout only if the parent session allows it; otherwise state that the production bundle was not checked.
 4. Add an `ios` job to `.github/workflows/main.yaml` on `macos-latest` that runs `flutter pub get` and the development build above. Pin actions by SHA, as the other jobs do.
 5. Correct the `CLAUDE.md` sentence about `flutterfire configure`.
 

@@ -2,7 +2,7 @@
 
 ## Authority and workspace
 
-The operator invoked `$pr-loop #82`, identified the absence of an Android phone and requested prevention of post-merge memory and repository-document drift.
+I invoked `$pr-loop #82`, identified the absence of an Android phone and requested prevention of post-merge memory and repository-document drift.
 Use the existing main workspace on `test/gallery-device-82`, based on `a2cf0b334480774a3c28f821f4a81457bddcd505`.
 The [acceptance spec](../specs/2026-10-30-gallery-device-acceptance.md) bounds the work.
 Device writes remain separately authorized.
@@ -32,13 +32,13 @@ Keep generated fixtures, media, logs and the build proposal in the visible sibli
 4. Prepare a source-identified release-mode development build after checking machine capacity, without installing it.
    Verify its bundle identifier, version/build and toolchain, and present the exact device-pass proposal.
    Use release mode for manual home-screen relaunch: Flutter debug apps require Flutter tooling to launch on iOS 14 and later.
-5. Obtain approval for each required device operation and perform or receive the operator-run iPhone observations.
+5. Obtain approval for each required device operation and perform or receive the manually run iPhone observations.
    Keep Android and unobserved rejection scenarios explicitly incomplete.
 6. Record actual evidence and audit the directly affected documentation before review.
    If no physical results or actionable defect exist, keep the loop waiting instead of publishing a preparation-only PR as completed acceptance.
 7. Run applicable Markdown checks and local adversarial review; run the full project gates if behavior changes.
    TDD is not applicable to procedure-only changes and existing-regression execution.
 8. Commit the bounded evidence and documentation, push, open a non-closing PR, and complete current-head CI and required hosted review.
-9. Read back the final PR body, assign the operator at review readiness, and merge only after the remaining PR gates pass.
-   Review and, if needed, correct project memory after verified merge under the operator's scoped request.
+9. Read back the final PR body, assign me at review readiness, and merge only after the remaining PR gates pass.
+   Review and, if needed, correct project memory after verified merge under the scoped request.
    Preserve the completion receipt and retire only this loop's settled control state.

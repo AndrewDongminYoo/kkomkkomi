@@ -2,7 +2,7 @@
 
 ## Status and workspace
 
-The operator approved admission, budgets and shared-host retention in the matching spec on 2026-10-08.
+Admission, budgets and shared-host retention were approved in the matching spec on 2026-10-08.
 Reuse the main workspace and preserve the existing build artifacts.
 Do not create a worktree or begin live rollout.
 The root owns staging, final verification, and any later explicitly authorized publication.
@@ -13,13 +13,13 @@ Inspect and modify `firestore.rules`, `storage.rules`, `lib/firebase/firebase_pu
 Add narrowly scoped quota and reservation support only when required to preserve the Publisher API and queue retry behavior.
 The grant explanation and request path may require the visit report or company profile UI, associated localization inputs, and their tests.
 Add the report-abuse action to the existing web view and tests, with minimal styling.
-Update both privacy pages, their tests, relevant `CLAUDE.md` architecture descriptions, the first-test console note, and one operator runbook under `docs/notes/`.
+Update both privacy pages, their tests, relevant `CLAUDE.md` architecture descriptions, the first-test console note, and one runbook under `docs/notes/`.
 Do not rewrite the queue, introduce another identity system, add Cloud Functions, migrate Hosting, or upgrade dependencies.
 Summarize the exact owned paths after admission approval and before source edits.
 
 ## Execution order
 
-1. Resolve publisher admission, quota defaults, and residual shared-host acceptance with the operator.
+1. Resolve publisher admission, quota defaults, and residual shared-host acceptance with the user.
 2. Create failing emulator tests for unapproved and replacement accounts, grant escalation, and page/photo takedown.
 3. Implement the grant and block rule boundaries while preserving recipient anonymous reads and owner deletion.
 4. Add failing transaction and emulator tests for resource-bound quotas, reserved photo bytes, repeated jobs, concurrent writes, and cooldown periods.
@@ -27,7 +27,7 @@ Summarize the exact owned paths after admission approval and before source edits
 6. Add field and zone validation with exact-boundary and malformed-later-zone fixtures; prove the rules remain within evaluation limits.
 7. Add approval-required app feedback and a request path with narrow-screen and local/PDF compatibility tests.
 8. Add the report-abuse action with the provided address, privacy minimization, unavailable-view coverage, and browser verification.
-9. Write and exercise the fictional-data operator runbook; update both privacy pages and the console note together.
+9. Write and exercise the fictional-data runbook; update both privacy pages and the console note together.
 10. Run the project gates, with at most one heavy mobile job at a time and a load check before each.
 11. Perform structured adversarial review at the final diff's depth and repair verified in-scope findings.
 12. Report local implementation and evidence; commits, push, PR, deployment, and store uploads remain separate authorization boundaries.
@@ -46,4 +46,4 @@ Summarize the exact owned paths after admission approval and before source edits
 1. Backend controls → verify: positive legitimate anonymous publishing and all direct-API bypass denials in `merry run rules`.
 2. App compatibility → verify: adapter, queue, deletion, and approval-feedback tests through `merry run check`, plus `merry run coverage`.
 3. Recipient reporting → verify: Node tests and an isolated browser read of fictional report, history, unavailable, and unbranded views.
-4. Operator rollout → verify: runbook actions reproduced in emulators and explicit deployment prerequisites recorded without production mutation.
+4. Rollout → verify: runbook actions reproduced in emulators and explicit deployment prerequisites recorded without production mutation.

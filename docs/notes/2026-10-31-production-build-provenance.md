@@ -2,7 +2,7 @@
 
 ## Direction and store preflight
 
-On 2026-10-31 the operator authorized preparing new production artifacts with source commits and file hashes, then uploading them to TestFlight and Google Play internal testing.
+Authorized on 2026-10-31: preparing new production artifacts with source commits and file hashes, then uploading them to TestFlight and Google Play internal testing.
 Fresh read-only store lists showed TestFlight builds through `1.1.1(5)` and three Play App Bundles: codes 5, 3 and 1, with 5 active.
 The new target is `1.1.2+6`; the earlier `1.1.1(5)` source/SDK mapping remains unverified.
 The [spec](../specs/2026-10-31-production-build-provenance.md) and [plan](../plans/2026-10-31-production-build-provenance.md) define the build, review, merge and upload gates.

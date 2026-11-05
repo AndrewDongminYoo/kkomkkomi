@@ -26,7 +26,7 @@ const pages = {
   },
 };
 
-/** The privacy officer and the contact, which the operator gave on 2026-10-02. */
+/** The privacy officer and the contact, given on 2026-10-02. */
 const officer = {
   ko: "유동민, ydm2790@gmail.com",
   en: "Dongmin Yu (유동민), ydm2790@gmail.com",
@@ -469,7 +469,7 @@ describe("the privacy policy pages", () => {
     }
   });
 
-  test("neither page says that an anonymous account is deleted after 30 days, which the operator turned off", () => {
+  test("neither page says that an anonymous account is deleted after 30 days, which was turned off", () => {
     for (const page of Object.values(pages)) {
       assert.doesNotMatch(read(page.file), /30\s*일|30\s+days/);
     }

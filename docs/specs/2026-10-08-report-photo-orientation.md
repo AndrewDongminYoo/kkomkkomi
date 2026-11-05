@@ -1,7 +1,7 @@
 # Report photo slot orientation
 
 Date: 2026-10-08.
-The operator approved the proposed behavior of issue #62 and proceeding now instead of waiting for field comparison.
+Approved: the proposed behavior of issue #62 and proceeding now instead of waiting for field comparison.
 
 ## Contract
 
@@ -28,4 +28,4 @@ The M1 local-first design owns the existing units and report model.
 - Check that portrait pagination keeps names and pairs together, retains every zone and stays within page margins.
 - Check Korean and English previews at 320 pixels with the largest supported text scale.
 - Run the project check and 100% line-coverage gates, then review rendered preview and PDF artifacts.
-- Operator visual approval remains required before merge.
+- Visual approval remains required before merge.

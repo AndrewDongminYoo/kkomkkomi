@@ -3,7 +3,7 @@
 ## Workspace and authority
 
 Use the existing main workspace on `codex/production-build-40`, based on `5042a76c35987020b00732caa8a74c5f97ae35d1`.
-The operator approved the [spec](../specs/2026-10-31-production-build-provenance.md), including TestFlight and Play internal-draft upload, through the explicit PR Loop request.
+The [spec](../specs/2026-10-31-production-build-provenance.md) was approved, including TestFlight and Play internal-draft upload, through the explicit PR Loop request.
 Gated merge is delegated; cleanup, memory publication, public rollout and other excluded actions are not included.
 No worktree or dependency upgrade is needed.
 

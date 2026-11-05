@@ -192,7 +192,7 @@ final class FirebasePublisher implements Publisher {
   Future<bool> hasApprovalRequest(String uid) async {
     var exists = false;
     await _guard(() async {
-      // The server decides, because the cache can still hold a request that the operator deleted.
+      // The server decides, because the cache can still hold a request that was deleted.
       final snapshot = await _database.doc('publishingRequests/$uid').get(const GetOptions(source: Source.server));
       exists = snapshot.data() != null;
     });

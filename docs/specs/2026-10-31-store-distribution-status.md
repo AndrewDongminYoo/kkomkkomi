@@ -4,7 +4,7 @@
 
 Issue #40 still describes the initial build as undistributed and both store app records as absent.
 Read-only inspection on 2026-10-30 found later TestFlight internal and Play closed-Alpha distribution.
-The operator approved recording this status in a documentation-only PR on 2026-10-31, keeping #40 open.
+Recording this status in a documentation-only PR was approved on 2026-10-31, keeping #40 open.
 
 ## Scope and evidence
 

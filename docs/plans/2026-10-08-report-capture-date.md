@@ -4,7 +4,7 @@
 
 Use the main workspace on `report-capture-date-83`, based on merged main at `f541d6b3e73a3e4b2fd098878e5f1d48390bd515`.
 The approved direction is the matching capture-date spec and issue #83.
-The PR loop authorizes implementation, scoped commits, push, PR creation and review responses; merge remains with the operator.
+The PR loop authorizes implementation, scoped commits, push, PR creation and review responses; merge remains with the user.
 Deployment, branch cleanup and memory recording are outside this invocation.
 
 Owned paths are this plan, `docs/specs/2026-10-08-report-capture-date.md`, `lib/presentation/visit_report/view/visit_report_page.dart`, both files under `lib/l10n/arb/`, and `test/presentation/visit_report/view/visit_report_page_test.dart`.
@@ -19,7 +19,7 @@ Generated localizations remain ignored and must be regenerated from the ARB inpu
 5. Run explicit-path Dart formatting, `merry run check` and `merry run coverage` after checking machine capacity.
 6. Render fictional preview and actual PDF artifacts, inspect them, and complete the scoped local review.
 7. Commit the coherent fix and contract, push, open the PR, and observe current-head CI and hosted reviews.
-8. Request operator visual approval after technical gates complete, then request operator merge.
+8. Request visual approval after technical gates complete, then request a merge.
 
 ## Boundaries
 

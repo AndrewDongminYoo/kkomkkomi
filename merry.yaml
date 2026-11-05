@@ -181,7 +181,7 @@ build:
 
 # --- Store release ----------------------------------------------------------
 # CLAUDE.md, section "Release", owns the environment variables. Every script
-# with 🚨 publishes to a store: the operator runs or approves it each time.
+# with 🚨 publishes to a store: the user runs or approves it each time.
 #
 # A script list runs on after a failed script unless it sets
 # `(execution): once`, so each publish script sets it: a failed check stops

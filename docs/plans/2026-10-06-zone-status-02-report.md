@@ -45,7 +45,7 @@ No screen sets a status yet, so a release build of this pull request shows done 
 - `report_pdf_test.dart`: the summary line and its absence without a zone, the exception lines in order, the badge text, the empty slot texts, and more exceptions with a longer reason than one page holds, with every line in the PDF.
 - `visit_report_page_test.dart`: the summary and the exception lines, the badge, the semantic label of an empty slot, `reportLabelsOf` in both languages, and the narrow screen with the largest text.
 - `visit_report_cubit_test.dart`: a not done record without photos stays out of `zonesLackingPhoto`.
-- Sample PDFs for the operator before the merge.
+- Sample PDFs for review before the merge.
 - The store screenshot `02_report.png` shows the summary line after this change, so render it again and commit only the images whose content changes.
 
 ## Verification

@@ -46,7 +46,7 @@ The effective date of both pages becomes the date of this pull request, as earli
 
 ## Deploy
 
-The pages go live only with a Hosting deploy, which needs the approval of the operator after the merge. The Firestore and Storage rules do not change, so the deploy is Hosting only. It comes before the first build that holds PR 4.
+The pages go live only with a Hosting deploy, which needs the approval of the user after the merge. The Firestore and Storage rules do not change, so the deploy is Hosting only. It comes before the first build that holds PR 4.
 
 ## Tests
 

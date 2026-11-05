@@ -13,7 +13,7 @@ Read-only reviewers inspect source equivalence and tooling independently.
 4. Repair the configuration's own spelling check and rerun sorting only within the approved scope.
 5. Run `merry run check`, `merry run coverage`, spelling checks, token equivalence, and diff checks.
 6. Commit the import policy and mechanical changes together, then commit scoped spelling fixes; push and open a PR.
-7. Complete hosted CI and current-head review, verify unresolved threads, and request an operator merge.
+7. Complete hosted CI and current-head review, verify unresolved threads, and request a merge.
 
 ## Verification evidence
 

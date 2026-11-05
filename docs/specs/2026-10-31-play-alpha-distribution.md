@@ -2,7 +2,7 @@
 
 ## Approved outcome
 
-On 2026-10-31 the operator explicitly selected the closed `alpha` track for existing production `1.1.2`, version code `6`.
+On 2026-10-31 the closed `alpha` track was explicitly selected for existing production `1.1.2`, version code `6`.
 The earlier internal draft is a different track and is not the distribution target of this request.
 Reuse the uploaded bundle from clean source `bcac1e4e7dbbdcf04c4241f082e695cde5fde5f8` and its [verified provenance](../notes/2026-10-31-production-build-provenance.md).
 

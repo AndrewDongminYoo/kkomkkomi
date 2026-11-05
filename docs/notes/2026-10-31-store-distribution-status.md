@@ -2,7 +2,7 @@
 
 This record was written on 2026-10-31 from the read-only store inspection on 2026-10-30.
 It is a dated snapshot, not a new store check on the writing date.
-The operator approved a documentation-only PR after the inspection; no upload or distribution change is included.
+A documentation-only PR was approved after the inspection; no upload or distribution change is included.
 
 ## Live store observations
 
@@ -53,9 +53,9 @@ Moved unchanged from `CLAUDE.md` § Current state on 2026-11-02.
 The store reads on 2026-10-30 found TestFlight `1.1.1(5)` in the internal group and Google Play `1.1.1` (version code `5`) active in closed Alpha testing; the Play internal track was inactive with no release.
 `docs/notes/2026-10-31-store-distribution-status.md` owns that dated snapshot and the unverified binary-to-source mapping.
 The Play internal-track criterion and the remaining distribution checklist keep #40 open; closed Alpha is not internal testing.
-The operator authorized preparing production `1.1.2+6` and uploading the verified files to TestFlight and the Play internal track as a draft on 2026-10-31.
+Authorized: preparing production `1.1.2+6` and uploading the verified files to TestFlight and the Play internal track as a draft on 2026-10-31.
 `docs/notes/2026-10-31-production-build-provenance.md` owns the preparation evidence and separates an artifact's clean source/hash from upload, processing and tester availability.
 This direction authorizes no public rollout, app review submission, tester/account change, backend deployment or device installation.
-On 2026-10-31 the operator separately selected closed Alpha distribution of existing `1.1.2`, version code `6`.
+Selected separately on 2026-10-31: closed Alpha distribution of existing `1.1.2`, version code `6`.
 `docs/notes/2026-10-31-play-alpha-distribution.md` owns that operation and its review/publication and web-access evidence.
 The separate request includes the Alpha review step required for test distribution, while retaining the Android physical-device validation limit and the separate internal-track criterion of #40.

@@ -2,7 +2,7 @@
 
 ## Contract and workspace
 
-The operator approved the [spec](../specs/2026-10-31-store-distribution-status.md) after the read-only discovery.
+The [spec](../specs/2026-10-31-store-distribution-status.md) was approved after the read-only discovery.
 Use the existing main workspace on `codex/distribution-status-40`, based on `b9854fd7be88f2d753e1e08abcc4776b690862af`.
 The explicit PR Loop delegates scoped commits, PR publication and gated merge; store/device writes remain excluded.
 Branch cleanup and new memory recording are not requested in this pass.

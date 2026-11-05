@@ -79,7 +79,7 @@ abstract interface class RevenueCatStore {
 /// identifier of the store.
 typedef RevenueCatPackage = ({String id, String price, String productId});
 
-/// The plan and the period of each package identifier that the operator sets in the RevenueCat dashboard, in the
+/// The plan and the period of each package identifier that is set in the RevenueCat dashboard, in the
 /// order of the offers. A package with another identifier is not sold.
 const Map<String, (Plan, BillingPeriod)> _packages = {
   'basic_monthly': (Plan.basic, BillingPeriod.monthly),

@@ -1,7 +1,7 @@
 # Report photo and company metadata
 
 Date: 2026-10-07.
-The operator approved this scope in the all-issues session.
+This scope was approved in the all-issues session.
 The M1 local-first design owns the existing units, report and persistence model.
 This spec resolves the choices in #39, #59 and #61 without changing photo-slot ratios (#62).
 
@@ -29,7 +29,7 @@ An unsupported or malformed image fails visibly and leaves the previous photo in
 Device acceptance must cover JPEG, PNG and real-device HEIC picking; simulated or unit decoding is separate evidence.
 The Android lost-picker path must preserve gallery provenance.
 
-The [2026-10-30 iPhone record](../notes/2026-10-30-gallery-device-acceptance.md) adds operator-reported successful JPEG, PNG and HEIC selection, labels, gallery photos without capture times, cancellation preservation and reopen persistence on an identified development/release build.
+The [2026-10-30 iPhone record](../notes/2026-10-30-gallery-device-acceptance.md) adds reported successful JPEG, PNG and HEIC selection, labels, gallery photos without capture times, cancellation preservation and reopen persistence on an identified development/release build.
 It does not establish Android acceptance, physical rejection or the on-device encoding at each import/conversion step; #82 remains open.
 
 ## Capture time (#61)
@@ -41,7 +41,7 @@ Show a supplied time in the PDF and preview only; publish no capture time to the
 A device clock is an app observation, not independently verified evidence.
 The in-app camera must manage lifecycle and cancellation and avoid recording audio.
 
-The [2026-10-30 iPhone camera record](../notes/2026-10-30-capture-time-device-acceptance.md) adds operator-reported correct preview/PDF time and different-day date captions, persistence, retake cancellation, gallery replacement and preview resume on the identified DEV build, with no microphone prompt observed.
+The [2026-10-30 iPhone camera record](../notes/2026-10-30-capture-time-device-acceptance.md) adds reported correct preview/PDF time and different-day date captions, persistence, retake cancellation, gallery replacement and preview resume on the identified DEV build, with no microphone prompt observed.
 Android and unobserved camera failure/interruption paths remain unverified, so #61 stays open.
 
 ## Verification and release
@@ -49,4 +49,4 @@ Android and unobserved camera failure/interruption paths remain unverified, so #
 Test migration and round trips, replacement and cancellation, source labels in every output, phone/time omission from Firebase payloads, PDF text and pagination, and the profile/capture UI at large text sizes.
 Run the repository check and coverage gates.
 Real-device camera/gallery acceptance remains a release check.
-Hosting, rules and app distribution require their own operator approval; this spec authorizes code only.
+Hosting, rules and app distribution require their own approval by the user; this spec authorizes code only.

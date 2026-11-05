@@ -14,7 +14,7 @@ Use the existing main workspace and the scoped task branch.
 5. Run `merry run check`, `merry run coverage`, and `merry run rules`, with at most one heavy mobile job at a time.
 6. Check the rendered local pages at a narrow viewport, review the bounded diff, and run scoped Trunk checks.
 7. Commit by concern, push normally, open the PR, and use `ci-babysit` with the hosted review round handler until current-head terminal gates pass.
-8. Request operator merge; retain Hosting deployment as a separate approved action.
+8. Request merge; retain Hosting deployment as a separate approved action.
 
 ## Success criteria
 

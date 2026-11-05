@@ -17,7 +17,7 @@
 - Each check of the claim asks Firebase Auth for a newly issued token, so a claim that the extension removed after an expiry or a transfer does not survive in a cached token. This replaces the spec's "refresh when `Entitlements` says paid and the token does not": a fresh token on every check needs no second source, and it leaves RevenueCat out of the publish path.
 - A refused report write that carried `unbranded: true` is written again in the same job without the key, so the report appears with the footer instead of stopping with `PublishFailure.refused`. Any other refusal keeps today's behavior.
 - `Identity.hasPaidEntitlement()` never throws: any failure, no account, and no network give false, so the report keeps the footer.
-- The rules of PR 1 must be deployed (operator approval) before an app build of this pull request reaches a tester. The pull request body says so.
+- The rules of PR 1 must be deployed (the user's approval) before an app build of this pull request reaches a tester. The pull request body says so.
 - Coverage of `lib` stays at 100%, and `merry run check` passes.
 - Name no price, billing term, or fee: the repository is public.
 
@@ -94,7 +94,7 @@
 - [ ] **Step 1:** cspell and `trunk check` on the changed Markdown.
 - [ ] **Step 2:** Commit `docs: describe the unbranded report write`.
 
-The pull request body lists, under "After the merge": the rules of #42 deploy before any build of this pull request reaches a tester, with the operator's approval.
+The pull request body lists, under "After the merge": the rules of #42 deploy before any build of this pull request reaches a tester, with the user's approval.
 
 ## Reconciliation, 2026-10-05
 

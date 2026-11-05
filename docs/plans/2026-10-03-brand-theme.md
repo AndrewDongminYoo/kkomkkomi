@@ -4,7 +4,7 @@ Read `CLAUDE.md`, `lib/app/view/app.dart`, `lib/app/view/startup_failure_app.dar
 
 ## Why
 
-A UI/UX review on 2026-10-03 (static source review, `flutter-ui-ux-review` in full mode) found that the app still runs the theme of the project template, and the operator wants the app to stop looking like an example app.
+A UI/UX review on 2026-10-03 (static source review, `flutter-ui-ux-review` in full mode) found that the app still runs the theme of the project template, and the app should stop looking like an example app.
 
 - `lib/app/view/app.dart` passes `ThemeData(appBarTheme: …, useMaterial3: true)` without a color scheme, so every screen uses the default Material 3 purple scheme. `StartupFailureApp` has no theme.
 - The AppBar color reads `Theme.of(context).colorScheme.inversePrimary` above `MaterialApp`, where it gets the fallback theme, so the AppBar stays lavender whatever theme the app passes.
@@ -31,7 +31,7 @@ Every screen uses one theme built from the product tokens, a destructive confirm
 
 ## Out of scope
 
-- A dark theme. `CLAUDE.md` records that the launch screen is white because the first screen is light; a dark theme changes that decision and needs the operator.
+- A dark theme. `CLAUDE.md` records that the launch screen is white because the first screen is light; a dark theme changes that decision and needs the user.
 - The client name on the visit capture screen: a separate brief.
 - Moving primary actions between the top and the bottom of a screen.
 - Any change to `web/`.

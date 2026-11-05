@@ -20,7 +20,7 @@ No new binary, dependency update or worktree is required.
    Verify: visible membership/access state, with no enrollment or device action.
 5. Record measured outcomes in the [dated note](../notes/2026-10-31-play-alpha-distribution.md) and update affected release pointers in the same PR.
    Verify: links, Markdown checks, source formatting/analysis and a scope-calibrated local review.
-6. Commit/push, complete current-head CI/reviews, read back the final body and assign the operator at merge readiness, then perform the delegated gated merge.
+6. Commit/push, complete current-head CI/reviews, read back the final body and assign me at merge readiness, then perform the delegated gated merge.
    Preserve a visible receipt and retire only settled owned control state.
 
 ## Evidence boundaries

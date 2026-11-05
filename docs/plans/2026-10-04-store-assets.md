@@ -7,8 +7,8 @@ Load the `user-facing-copy` skill before you write any headline.
 
 The first TestFlight and Google Play listings need screenshots and a feature graphic, and the repository has none.
 Simulator captures are ruled out: on 2026-10-03 three boots of the iOS simulator saturated this machine (load average above 80) before one screen was captured.
-The operator chose on 2026-10-04 to render the screens with Flutter at store resolution, from fixture data, without a device.
-The operator also chose an iPhone-only app (the release flow brief changes the device family), so no iPad set is needed.
+It was chosen on 2026-10-04 to render the screens with Flutter at store resolution, from fixture data, without a device.
+An iPhone-only app was also chosen (the release flow brief changes the device family), so no iPad set is needed.
 
 ## Store requirements (read on 2026-10-04)
 

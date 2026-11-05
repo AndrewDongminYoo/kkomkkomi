@@ -6,7 +6,7 @@
 #      fastlane/metadata/android/<locale>/images/phoneScreenshots/ (1080x1920);
 #   4. the Play feature graphic, from feature.html, into fastlane/metadata/android/<locale>/images/featureGraphic.png;
 #   5. the App Store creative assets, from creative.html, into fastlane/creative/ios/<locale>/: header.png (3840x1646)
-#      and search.png (3840x2560). No lane uploads them: the operator adds them in App Store Connect.
+#      and search.png (3840x2560). No lane uploads them: the user adds them in App Store Connect.
 #
 # Usage: CHROME=/path/to/chrome-headless-shell tool/store_screenshots/render.sh
 #

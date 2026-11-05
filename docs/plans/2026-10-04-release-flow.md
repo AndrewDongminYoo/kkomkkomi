@@ -5,8 +5,8 @@ Read `CLAUDE.md`, `merry.yaml`, `android/app/build.gradle.kts` (the `ANDROID_KEY
 ## Why
 
 The repository holds store metadata but no way to build and upload a release.
-The operator's other personal Flutter apps release locally with fastlane, keep CI out of releases, sign iOS automatically without `match`, read the Play key from `SUPPLY_JSON_KEY`, and split a release script into a check and a publish step; follow that shape.
-Decisions of the operator on 2026-10-04:
+My other personal Flutter apps release locally with fastlane, keep CI out of releases, sign iOS automatically without `match`, read the Play key from `SUPPLY_JSON_KEY`, and split a release script into a check and a publish step; follow that shape.
+Decisions of 2026-10-04:
 
 - The app becomes iPhone-only.
 - iOS uploads authenticate with an App Store Connect API key, whose file stays outside the repository.
@@ -27,7 +27,7 @@ Decisions of the operator on 2026-10-04:
    - `release ios` and `release android`: run the check, build the production release (`flutter build ipa` with the production flavor, and `merry run build aab` for Android), and run the upload lane;
    - separate scripts for the metadata lanes.
 4. `.gitignore` entries for fastlane output and for credential files (`*.p8`, service account JSON, `fastlane/report.xml`), if missing.
-5. `CLAUDE.md`: a short release section that names the scripts, the environment variables, and that a publish is an external action that the operator runs or approves each time. Update `docs/notes/2026-10-02-first-test-distribution.md` so that its build and upload steps use the scripts, and record there that Google Play needs the first bundle uploaded by hand in Play Console before `supply` works (https://docs.fastlane.tools/actions/supply/, "set up your app manually first by uploading at least one build").
+5. `CLAUDE.md`: a short release section that names the scripts, the environment variables, and that a publish is an external action that the user runs or approves each time. Update `docs/notes/2026-10-02-first-test-distribution.md` so that its build and upload steps use the scripts, and record there that Google Play needs the first bundle uploaded by hand in Play Console before `supply` works (https://docs.fastlane.tools/actions/supply/, "set up your app manually first by uploading at least one build").
 
 ## Out of scope
 
@@ -39,9 +39,9 @@ Decisions of the operator on 2026-10-04:
 ## Requirements
 
 - `bundle exec fastlane lanes` lists the lanes, and `merry run release check` passes on a clean tree at the current version and fails once for each check when its input is broken; show each failure in the pull request body.
-- No credential, key path of the operator, or account email in any tracked file.
+- No credential, key path of the user, or account email in any tracked file.
 
 ## Acceptance criteria
 
 - `merry run check` and `merry run coverage` pass; CI passes, the `ios` job included.
-- The pull request body lists the lanes, the scripts, the environment variables, and the console steps that stay with the operator.
+- The pull request body lists the lanes, the scripts, the environment variables, and the console steps that stay with the user.

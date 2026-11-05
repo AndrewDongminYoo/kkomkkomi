@@ -204,7 +204,7 @@ It would also change the current behavior after an early remote failure by barri
 Leave that extra state and behavior outside this minimum scope.
 Do not infer success or invent legacy confirmations to hide the gap.
 
-Operator decision, 2026-10-03: retain this minimum acknowledgement-only design and defer durable deletion intent and quarantine to [issue #29](https://github.com/AndrewDongminYoo/kkomkkomi/issues/29).
+Decision, 2026-10-03: retain this minimum acknowledgement-only design and defer durable deletion intent and quarantine to [issue #29](https://github.com/AndrewDongminYoo/kkomkkomi/issues/29).
 The follow-up tracks the failure window, early-failure behavior, recovery decisions, and acceptance tests raised in [the CodeRabbit review](https://github.com/AndrewDongminYoo/kkomkkomi/pull/28#discussion_r4171729803).
 This is an intentional deferral; the gap remains and no stronger guarantee is implemented here.
 
@@ -259,7 +259,7 @@ None of these future implementation gates is evidence that this design is alread
 
 ## Reconciliation, 2026-10-04
 
-This brief was not implemented as written: the operator approved the combined design in [the durable page deletion specification](../specs/2026-10-03-durable-page-deletion-design.md), which adds a deletion intent recorded before the remote delete to the confirmation that this brief proposes, and pull request #32 implemented that specification as `1b1b93a`.
+This brief was not implemented as written: the combined design was approved in [the durable page deletion specification](../specs/2026-10-03-durable-page-deletion-design.md), which adds a deletion intent recorded before the remote delete to the confirmation that this brief proposes, and pull request #32 implemented that specification as `1b1b93a`.
 The shipped code under `lib/` and its tests are the authority; the specification's own reconciliation section lists the evidence.
 For issue #26 itself, `test/application/delete_all_data_test.dart` ("confirmation remains when … deletion fails", run once for the account step and once for the database transaction) shows that a page whose deletion the backend confirmed is no longer open after a later step fails, and `test/presentation/client_detail/view/client_detail_page_test.dart` ("confirmed deletion uses closed copy without a revoke job") shows that the screen then offers no old-link controls.
 Issue #26 was closed on 2026-10-04.

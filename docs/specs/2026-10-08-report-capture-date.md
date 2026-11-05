@@ -4,7 +4,7 @@
 
 Issue #83 identifies that a camera photo taken on another day shows only its time under a report headed with the visit date.
 The in-app camera of merged PR #79 now records an observed capture time, so that caption can mislead a report recipient.
-The operator approved continuing #83 through the PR loop after its selection.
+Continuing #83 through the PR loop was approved after its selection.
 
 ## Behavior
 
@@ -30,4 +30,4 @@ The issue is https://github.com/AndrewDongminYoo/kkomkkomi/issues/83.
 `reportLabelsOf` owns the localized callback used by both outputs; `VisitDate` is explicitly a calendar date without a time zone.
 Project-scoped Oracle retrieval for capture time and report date returned \[no precedent found\].
 Device-local presentation can differ when a report is generated in another time zone; this preserves the existing behavior rather than introducing a location or time zone record.
-Operator visual approval of rendered preview and PDF artifacts remains required before merge.
+Visual approval of rendered preview and PDF artifacts remains required before merge.

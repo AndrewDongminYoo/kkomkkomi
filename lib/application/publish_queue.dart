@@ -487,8 +487,8 @@ final class PublishQueue {
   /// Throws a [PublishException] when no user is signed in or the backend does not answer.
   Future<bool> hasApprovalRequest() async => await _step(_publisher.hasApprovalRequest(await _signedInUser()));
 
-  /// Sends the request of the user for link sharing approval, with the company name that the app holds. The operator
-  /// reads it and creates the grant or deletes the request. A request that the backend holds already stays.
+  /// Sends the request of the user for link sharing approval, with the company name that the app holds. It is read
+  /// in the console; the grant is created or the request deleted. A request that the backend holds already stays.
   ///
   /// The queue keeps the write until it ends, also after a timeout, and [deletePublished] waits for it before it
   /// deletes the request, so that a write that ends late cannot create the request again after the deletion.

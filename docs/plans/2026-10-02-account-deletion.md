@@ -7,7 +7,7 @@ This brief depends on the brief for issue #20, which also edits the privacy poli
 
 App Store Review Guideline 5.1.1(v) asks that an app that creates an account lets the person delete it, and Apple's guidance names accounts that the app creates on its own.
 The app signs in anonymously, and an external TestFlight build goes through review.
-The operator decided on 2026-10-02 to build this before the trial.
+It was decided on 2026-10-02 to build this before the trial.
 
 ## Goal
 
@@ -25,16 +25,16 @@ From the company profile screen, a person deletes everything the app holds for t
      In the development and staging flavors, where publishing is unavailable, the action deletes the local data only.
 3. `firestore.rules`: allow the owner to delete a client page and its reports, and nobody else. Add rules tests for the owner, a non-owner, and a reader without sign-in.
 4. The privacy policy pages, Korean and English:
-   - the privacy officer and contact: 유동민 (Dongmin Yu), ydm2790@gmail.com (operator, 2026-10-02);
-   - remove the statement that Firebase deletes anonymous accounts after 30 days: the operator turned that setting off on 2026-10-02 (issue #21);
+   - the privacy officer and contact: 유동민 (Dongmin Yu), ydm2790@gmail.com (given 2026-10-02);
+   - remove the statement that Firebase deletes anonymous accounts after 30 days: that setting was turned off on 2026-10-02 (issue #21);
    - describe the new deletion, and what remains after it, if anything;
-   - name the diagnostic data that the Firebase SDKs declare in their privacy manifests (operator decision, 2026-10-02: declare it as the SDKs do);
-   - fill the remaining placeholders with defaults, each with its source: the effective date is the date the pull request merges; a request by email is answered within the period the Personal Information Protection Act sets, cited from the law or its decree. For the legal basis and for who is responsible for the people in a photo, write a plain default and list both in the pull request body as items the operator should have reviewed by someone qualified. Do not claim that a default is legal advice.
+   - name the diagnostic data that the Firebase SDKs declare in their privacy manifests (decided 2026-10-02: declare it as the SDKs do);
+   - fill the remaining placeholders with defaults, each with its source: the effective date is the date the pull request merges; a request by email is answered within the period the Personal Information Protection Act sets, cited from the law or its decree. For the legal basis and for who is responsible for the people in a photo, write a plain default and list both in the pull request body as items to be reviewed by someone qualified. Do not claim that a default is legal advice.
 5. `docs/notes/2026-10-02-first-test-distribution.md`: the App Privacy row for Other Diagnostic Data is declared, the Data safety answer about deletion is "yes, in the app", and the account deletion item is closed.
 
-## Also in this pull request (operator, 2026-10-02)
+## Also in this pull request (2026-10-02)
 
-These two are unrelated to the deletion. The operator asked to carry them in the next pull request. Commit each one separately.
+These two are unrelated to the deletion. Carrying them in the next pull request was requested. Commit each one separately.
 
 - Set `DEVELOPMENT_TEAM = 393JTTV68D` for every build configuration of the iOS Runner target, so that a signed build needs no manual team choice. The `ios` CI job builds with `--no-codesign`, which must keep passing.
 - `android/app/build.gradle.kts` names `proguard-rules.pro` in the release build type, and the file does not exist. Add the file with the keep rules the app needs, or with a comment that says no rule is needed yet, and state which plugin consumer rules R8 already applies. A release App Bundle build is not required again, unless the file adds a rule.
@@ -52,4 +52,4 @@ These two are unrelated to the deletion. The operator asked to carry them in the
 ## Acceptance criteria
 
 - `merry run check`, `merry run coverage`, and `merry run rules` pass.
-- The pull request body lists the deletion order, what remains after a deletion, and the defaults that need the operator's review.
+- The pull request body lists the deletion order, what remains after a deletion, and the defaults that need review.

@@ -9,14 +9,14 @@ A capture of the development build on an iOS simulator (iPhone 18 Pro, Korean, 2
 Flutter has no keep-all line breaking for Korean; the upstream issues are https://github.com/flutter/flutter/issues/59284 and https://github.com/flutter/flutter/issues/19584, both open.
 Korean is the primary locale, so this touches the text of every screen, and more so at large text sizes.
 
-## Approach (operator, 2026-10-03, revised the same day)
+## Approach (2026-10-03, revised the same day)
 
 Insert a word joiner (U+2060) between the grapheme clusters of each whitespace-separated word that contains Hangul, so that the line breaker can break only at spaces and newlines.
 U+2060 is the character that Unicode defines to prohibit a line break, and it does not join clusters the way the zero-width joiner (U+200D) does, so do not use U+200D.
-The operator has used this technique before and gave its current form on 2026-10-03. Implement it in this repository as a small function; do not add the `text_ko` package, which does the same.
-The operator's pull request https://github.com/curogom/text_ko/pull/1 shows why the function must remove existing joiners first: U+2060 is a grapheme cluster of its own, so a second pass would otherwise join the joiners again.
+This technique has been used before, and its current form was given on 2026-10-03. Implement it in this repository as a small function; do not add the `text_ko` package, which does the same.
+My pull request https://github.com/curogom/text_ko/pull/1 shows why the function must remove existing joiners first: U+2060 is a grapheme cluster of its own, so a second pass would otherwise join the joiners again.
 
-The operator also found that a line break placed by hand reads best where a layout is fixed.
+It was also found that a line break placed by hand reads best where a layout is fixed.
 It does not replace the joiners here: the app must not overflow at 320 px with the largest text size, and the capture shows that at that size even "아직 거래처가" does not fit one line, so a hand-placed break after it would still break "거래처 / 가".
 Do not add `\n` to the ARB strings in this pull request.
 

@@ -1,8 +1,8 @@
 # Gallery photos: deferred to M2
 
-On 2026-10-03 the operator ran the production release build of `339cd34` (brand theme, client name on the capture screen, Korean keep-all line breaks) on an iPhone and approved the new design.
-The operator also noted that a zone photo can only be taken with the camera, and that a photo from the gallery cannot be used.
-The operator chose to keep this for M2.
+On 2026-10-03 the production release build of `339cd34` (brand theme, client name on the capture screen, Korean keep-all line breaks) was run on an iPhone and the new design was approved.
+It was also noted that a zone photo can only be taken with the camera, and that a photo from the gallery cannot be used.
+Keeping this for M2 was chosen.
 
 ## Where the app stands
 

@@ -1,11 +1,11 @@
 # Zone status and report summary
 
 Date: 2026-10-06.
-Status: written specification for review. The operator approved the design in conversation on 2026-10-06. This document implements no change.
+Status: written specification for review. The design was approved in conversation on 2026-10-06. This document implements no change.
 Refs #60: [Show the status of each zone and a summary on the completion report](https://github.com/AndrewDongminYoo/kkomkkomi/issues/60).
 
 The code observations use main at `be6f396`, verified on 2026-10-06.
-The operator chose #60 as the next implementation on 2026-10-06, which starts M2 work beside M1 and M3.
+#60 was chosen as the next implementation on 2026-10-06, which starts M2 work beside M1 and M3.
 
 ## Purpose
 
@@ -28,7 +28,7 @@ Success criteria:
 
 ## Decisions
 
-The operator made these choices on 2026-10-06:
+These choices were made on 2026-10-06:
 
 1. **Done by default.** Every zone record is done. The person sets a status only for an exception: partly done, or not done.
 2. **The reason is the follow-up.** An exception has one free-text reason, for example "전자레인지 안쪽은 다음 방문에". The summary on the first page lists each exception with its reason. No separate follow-up field exists.
@@ -87,7 +87,7 @@ Rejected options, for the record:
 ## Privacy
 
 - The status and the reason are new data that the app keeps, and the status and the reason of an exception are new published data. Both privacy pages (`web/privacy/index.html` and `web/privacy/en/index.html`) add them to the list of what the phone database keeps, to the list of what a shared report holds, and to the list of what stays on the server, in one change.
-- The new pages go live only with a Hosting deploy, which needs the approval of the operator. That deploy comes before the first build that holds the capture screen change, because only that change lets a person set an exception.
+- The new pages go live only with a Hosting deploy, which needs the approval of the user. That deploy comes before the first build that holds the capture screen change, because only that change lets a person set an exception.
 - The data stays on the device until the person shares a link, as the notes do. The draft App Privacy answers in `docs/notes/2026-10-02-first-test-distribution.md` declare "User Content: Other User Content" for the names, the notes, and the visit date that a link share uploads, so the status and the reason join that row. The implementation checks the Data safety answers of the same note for the same row.
 
 ## Out of scope

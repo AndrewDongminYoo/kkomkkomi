@@ -2,9 +2,9 @@
 
 Read `CLAUDE.md`, issue #7, and the decision list of pull request 6 before you write code.
 
-## Decisions taken for the operator
+## Decisions taken for the user
 
-The operator asked to continue without stopping, so these defaults apply. The pull request body repeats them.
+Continuing without stopping was requested, so these defaults apply. The pull request body repeats them.
 
 - Repair this in M1. Issue #7 offers to wait for the camera preview of M2, which removes the camera app from the flow. M2 starts only after real use of M1, and a photo lost during that use falls on the evaluation itself, so the wait comes too late.
 - After the restart, the app opens the visit that the capture belonged to, with the recovered photo in its slot.

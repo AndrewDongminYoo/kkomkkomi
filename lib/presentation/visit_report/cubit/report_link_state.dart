@@ -42,7 +42,7 @@ enum ApprovalRequestStatus {
   /// The request is on its way to the backend.
   sending,
 
-  /// The backend holds the request, which waits for the operator.
+  /// The backend holds the request, which waits for approval.
   pending,
 
   /// The request did not reach the backend, so the screen offers to send it again.

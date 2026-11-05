@@ -3,9 +3,9 @@
 Read `CLAUDE.md` and issue #8 before you write code.
 This brief depends on the brief `docs/plans/2026-10-02-ios-ci-build.md`: the `ios` CI job must exist, because it is the only check of the Xcode project file.
 
-## Decisions taken for the operator
+## Decisions taken for the user
 
-The operator asked to continue without stopping, so these defaults apply. The pull request body repeats them.
+Continuing without stopping was requested, so these defaults apply. The pull request body repeats them.
 
 - `NSPhotoLibraryUsageDescription` stays. The `image_picker` README gives the App Store policy reason for it. Check that the README still says so, and quote it in the pull request body.
 - The Korean texts stay as they are in `ios/Runner/Info.plist`.

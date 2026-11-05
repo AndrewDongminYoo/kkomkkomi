@@ -2,7 +2,7 @@
 
 ## Approved scope
 
-The operator invoked the PR loop for [issue #36](https://github.com/AndrewDongminYoo/kkomkkomi/issues/36), starting with iOS Sandbox build/account identification and purchase restoration and management.
+The PR loop was invoked for [issue #36](https://github.com/AndrewDongminYoo/kkomkkomi/issues/36), starting with iOS Sandbox build/account identification and purchase restoration and management.
 Retain the [subscription design](2026-10-04-m3-subscriptions-design.md#accounts-and-restore) and [M3 plan](../plans/2026-10-05-m3-subscriptions.md).
 The issue's recorded iOS purchases and branding checks from 2026-10-06 are historical evidence; restoration and management were left untested.
 Android, complete lifecycle coverage, account migration and backend replacement are separate remaining work.
@@ -10,7 +10,7 @@ No dependency, restore-policy or product-design change is proposed without a rep
 
 ## Build and account prerequisites
 
-The operator identified the installed production-bundle app as TestFlight `1.1.1(5)`.
+The installed production-bundle app was identified as TestFlight `1.1.1(5)`.
 Native app inventory confirms bundle `kr.donminzzi.kkomkkomi` with that version/build, but does not establish its source commit or embedded RevenueCat/Flutter versions.
 No corresponding local production IPA/archive or build record was present during discovery.
 Do not claim a current-source or upgraded-SDK device pass unless an immutable build/source mapping is obtained.
@@ -19,7 +19,7 @@ The known DEV camera/gallery build uses `FreeEntitlements` and cannot establish 
 
 [Apple documents](https://developer.apple.com/help/app-store-connect/test-a-beta-version/testing-subscriptions-and-in-app-purchases-in-testflight) that TestFlight apps automatically use the Sandbox purchase environment.
 This does not identify which account owns historical test purchases, prove an active entitlement, or isolate the production flavor's Firebase and RevenueCat services.
-The operator initially did not know whether the prior test account remained available.
+Initially it was not known whether the prior test account remained available.
 Record account availability and purchase state without collecting email addresses, passwords, tokens or receipt bytes in public artifacts.
 Do not sign out of the daily phone's Media and Purchases account, create an account, reset purchase history or reinstall merely to manufacture a test state.
 Existing authenticated store access was not established during discovery; do not infer App Store Connect or RevenueCat dashboard settings from local configuration.
@@ -31,7 +31,7 @@ Existing authenticated store access was not established during discovery; do not
 2. Confirm the intended test-account context and whether an active Sandbox entitlement exists.
    An old or expired subscription does not establish the positive-restoration precondition.
    A separate Sandbox account is needed for some Apple test controls; do not change the device's account configuration implicitly.
-3. After the exact context and operator action are agreed, restore and record the visible result and resulting plan/product state.
+3. After the exact context and action are agreed, restore and record the visible result and resulting plan/product state.
    Distinguish an active purchase restored, no active purchase found, cancellation/authentication interruption and a failure.
    A no-purchase result without a known active entitlement is not a restoration defect.
 4. When a management link is available, inspect where it opens and return to the app.
@@ -54,4 +54,4 @@ Do not publish preparation as completed acceptance, add an automatic issue-closi
 Any rendered implementation change requires its own final visual approval.
 Fresh precedent retrieval was unavailable during authoring; the existing tracked subscription contracts govern this bounded pass.
 
-The [dated TestFlight record](../notes/2026-10-30-ios-restore-management-acceptance.md) separates completed operator observations from pending or unverified checks.
+The [dated TestFlight record](../notes/2026-10-30-ios-restore-management-acceptance.md) separates completed reported observations from pending or unverified checks.
