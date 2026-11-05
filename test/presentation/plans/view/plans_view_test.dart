@@ -1,3 +1,6 @@
+// 🐦 Flutter imports:
+import 'package:flutter/foundation.dart';
+
 // 📦 Package imports:
 import 'package:bloc_test/bloc_test.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -229,22 +232,28 @@ void main() {
       verify(() => cubit.openManagement()).called(1);
     });
 
-    for (final (locale, privacy) in [
-      (const Locale('en'), 'https://kkomkkomi.web.app/privacy/en/'),
-      (const Locale('ko'), 'https://kkomkkomi.web.app/privacy/'),
-    ]) {
-      testWidgets('opens the terms of use of Apple and the privacy policy in ${locale.languageCode}', (tester) async {
-        await pumpView(tester, _loaded, locale: locale);
-        final english = locale.languageCode == 'en';
+    for (final platform in [TargetPlatform.android, TargetPlatform.iOS]) {
+      for (final (locale, privacy, androidTerms) in [
+        (const Locale('en'), 'https://kkomkkomi.web.app/privacy/en/', 'https://kkomkkomi.web.app/terms/en/'),
+        (const Locale('ko'), 'https://kkomkkomi.web.app/privacy/', 'https://kkomkkomi.web.app/terms/'),
+      ]) {
+        testWidgets('opens the $platform terms and privacy policy in ${locale.languageCode}', (tester) async {
+          debugDefaultTargetPlatformOverride = platform;
+          addTearDown(() => debugDefaultTargetPlatformOverride = null);
+          await pumpView(tester, _loaded, locale: locale);
+          final english = locale.languageCode == 'en';
 
-        await tester.ensureVisible(button(english ? 'Terms of Use' : '이용약관'));
-        await tester.tap(button(english ? 'Terms of Use' : '이용약관'));
-        await tester.tap(button(english ? 'Privacy Policy' : '개인정보 처리방침'));
+          await tester.ensureVisible(button(english ? 'Terms of Use' : '이용약관'));
+          await tester.tap(button(english ? 'Terms of Use' : '이용약관'));
+          await tester.tap(button(english ? 'Privacy Policy' : '개인정보 처리방침'));
 
-        verify(() => cubit.open(Uri.parse('https://www.apple.com/legal/internet-services/itunes/dev/stdeula/')))
-            .called(1);
-        verify(() => cubit.open(Uri.parse(privacy))).called(1);
-      });
+          final terms = platform == TargetPlatform.iOS
+              ? 'https://www.apple.com/legal/internet-services/itunes/dev/stdeula/'
+              : androidTerms;
+          verify(() => cubit.open(Uri.parse(terms))).called(1);
+          verify(() => cubit.open(Uri.parse(privacy))).called(1);
+        });
+      }
     }
 
     for (final (notice, tone, text) in [
@@ -374,3 +383,4 @@ void main() {
     });
   });
 }
+
