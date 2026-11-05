@@ -239,19 +239,22 @@ void main() {
       ]) {
         testWidgets('opens the $platform terms and privacy policy in ${locale.languageCode}', (tester) async {
           debugDefaultTargetPlatformOverride = platform;
-          addTearDown(() => debugDefaultTargetPlatformOverride = null);
-          await pumpView(tester, _loaded, locale: locale);
-          final english = locale.languageCode == 'en';
+          try {
+            await pumpView(tester, _loaded, locale: locale);
+            final english = locale.languageCode == 'en';
 
-          await tester.ensureVisible(button(english ? 'Terms of Use' : '이용약관'));
-          await tester.tap(button(english ? 'Terms of Use' : '이용약관'));
-          await tester.tap(button(english ? 'Privacy Policy' : '개인정보 처리방침'));
+            await tester.ensureVisible(button(english ? 'Terms of Use' : '이용약관'));
+            await tester.tap(button(english ? 'Terms of Use' : '이용약관'));
+            await tester.tap(button(english ? 'Privacy Policy' : '개인정보 처리방침'));
 
-          final terms = platform == TargetPlatform.iOS
-              ? 'https://www.apple.com/legal/internet-services/itunes/dev/stdeula/'
-              : androidTerms;
-          verify(() => cubit.open(Uri.parse(terms))).called(1);
-          verify(() => cubit.open(Uri.parse(privacy))).called(1);
+            final terms = platform == TargetPlatform.iOS
+                ? 'https://www.apple.com/legal/internet-services/itunes/dev/stdeula/'
+                : androidTerms;
+            verify(() => cubit.open(Uri.parse(terms))).called(1);
+            verify(() => cubit.open(Uri.parse(privacy))).called(1);
+          } finally {
+            debugDefaultTargetPlatformOverride = null;
+          }
         });
       }
     }
