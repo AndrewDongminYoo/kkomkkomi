@@ -20,9 +20,12 @@ import 'package:kkomkkomi/presentation/shared/notice.dart';
 import 'package:kkomkkomi/presentation/shared/save_guard.dart';
 
 /// The iOS license remains Apple's standard EULA. Other platforms use the localized service terms.
-Uri termsOfUseUrlFor(Locale locale) => defaultTargetPlatform == TargetPlatform.iOS
-    ? Uri.parse('https://www.apple.com/legal/internet-services/itunes/dev/stdeula/')
-    : Uri.parse('$reportSiteOrigin/terms/${locale.languageCode == 'ko' ? '' : 'en/'}');
+Uri termsOfUseUrlFor(Locale locale) {
+  if (defaultTargetPlatform == TargetPlatform.iOS) {
+    return Uri.parse('https://www.apple.com/legal/internet-services/itunes/dev/stdeula/');
+  }
+  return Uri.parse('$reportSiteOrigin/terms/${locale.languageCode == 'ko' ? '' : 'en/'}');
+}
 
 /// The privacy policy in the language of [locale]: Korean at `/privacy/`, and English at `/privacy/en/` otherwise.
 Uri privacyPolicyUrlFor(Locale locale) =>
@@ -263,4 +266,3 @@ class _ActionNotice extends StatelessWidget {
     return Notice(tone: tone, children: [KeepAllText(message)]);
   }
 }
-
