@@ -183,7 +183,7 @@ void main() {
 
       await tapButton(tester, find.widgetWithText(OutlinedButton, 'Manage Subscription'));
       await tapButton(tester, find.widgetWithText(TextButton, 'Terms of Use'));
-      expect(links.opened, [entitlements.management, termsOfUseUrl]);
+      expect(links.opened, [entitlements.management, Uri.parse('https://kkomkkomi.web.app/terms/en/')]);
 
       links.opens = false;
       await tapButton(tester, find.widgetWithText(TextButton, 'Privacy Policy'));

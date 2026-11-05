@@ -18,6 +18,8 @@ const _proMonthly = PlanOffer(id: 'pro_monthly', plan: Plan.pro, period: Billing
 const _proAnnual = PlanOffer(id: 'pro_annual', plan: Plan.pro, period: BillingPeriod.annual, price: 'p4');
 const List<PlanOffer> _offers = [_basicMonthly, _basicAnnual, _proMonthly, _proAnnual];
 
+final Uri _externalPage = Uri.parse('https://kkomkkomi.web.app/terms/en/');
+
 final Uri _management = Uri.parse('https://apps.apple.com/account/subscriptions');
 
 void main() {
@@ -497,9 +499,9 @@ void main() {
         'opens a link and says nothing when it opens',
         build: build,
         seed: () => loaded,
-        act: (cubit) => cubit.open(termsOfUseUrl),
+        act: (cubit) => cubit.open(_externalPage),
         expect: () => <PlansState>[],
-        verify: (_) => expect(links.opened, [termsOfUseUrl]),
+        verify: (_) => expect(links.opened, [_externalPage]),
       );
 
       blocTest<PlansCubit, PlansState>(
@@ -507,7 +509,7 @@ void main() {
         setUp: () => links.opens = false,
         build: build,
         seed: () => loaded,
-        act: (cubit) => cubit.open(termsOfUseUrl),
+        act: (cubit) => cubit.open(_externalPage),
         expect: () => [loaded.withAction(isBusy: false, notice: PlansNotice.linkFailed)],
       );
 
@@ -520,7 +522,7 @@ void main() {
             ..opens = false
             ..gate = Completer<void>();
           entitlements.purchaseGate = Completer<void>();
-          final open = cubit.open(termsOfUseUrl);
+          final open = cubit.open(_externalPage);
           final purchase = cubit.purchase(_proMonthly);
           links.gate!.complete();
           await open;
@@ -553,7 +555,7 @@ void main() {
         'opens no link while an action is on its way',
         build: build,
         seed: () => loaded.withAction(isBusy: true),
-        act: (cubit) => cubit.open(termsOfUseUrl),
+        act: (cubit) => cubit.open(_externalPage),
         verify: (_) => expect(links.opened, isEmpty),
       );
     });
@@ -912,7 +914,7 @@ void main() {
         ..opens = false
         ..gate = Completer<void>();
       final opening = build()..emit(loaded);
-      final open = opening.open(termsOfUseUrl);
+      final open = opening.open(_externalPage);
       await opening.close();
       links.gate!.complete();
       await open;
