@@ -1,6 +1,9 @@
 // 🎯 Dart imports:
 import 'dart:async';
 
+// 🐦 Flutter imports:
+import 'package:flutter/foundation.dart';
+
 // 📦 Package imports:
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:material_ui/material_ui.dart';
@@ -16,9 +19,10 @@ import 'package:kkomkkomi/presentation/shared/keep_all_text.dart';
 import 'package:kkomkkomi/presentation/shared/notice.dart';
 import 'package:kkomkkomi/presentation/shared/save_guard.dart';
 
-/// The standard end user license agreement of Apple, which is the terms of use of the subscriptions (decided
-/// 2026-10-05).
-final Uri termsOfUseUrl = Uri.parse('https://www.apple.com/legal/internet-services/itunes/dev/stdeula/');
+/// The iOS license remains Apple's standard EULA. Other platforms use the localized service terms.
+Uri termsOfUseUrlFor(Locale locale) => defaultTargetPlatform == TargetPlatform.iOS
+    ? Uri.parse('https://www.apple.com/legal/internet-services/itunes/dev/stdeula/')
+    : Uri.parse('$reportSiteOrigin/terms/${locale.languageCode == 'ko' ? '' : 'en/'}');
 
 /// The privacy policy in the language of [locale]: Korean at `/privacy/`, and English at `/privacy/en/` otherwise.
 Uri privacyPolicyUrlFor(Locale locale) =>
@@ -118,7 +122,7 @@ class _Plans extends StatelessWidget {
             spacing: 8,
             children: [
               TextButton(
-                onPressed: () => unawaited(cubit.open(termsOfUseUrl)),
+                onPressed: () => unawaited(cubit.open(termsOfUseUrlFor(Localizations.localeOf(context)))),
                 child: KeepAllText(l10n.plansTermsLink),
               ),
               TextButton(
@@ -259,3 +263,4 @@ class _ActionNotice extends StatelessWidget {
     return Notice(tone: tone, children: [KeepAllText(message)]);
   }
 }
+
