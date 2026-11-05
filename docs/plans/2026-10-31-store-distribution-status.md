@@ -24,6 +24,6 @@ Branch cleanup and new memory recording are not requested in this pass.
    Use a missing-target canary before trusting a custom link check.
    Check Dart formatting and static analysis under the project rules; run the required full test gate without a device build.
 4. Commit one coherent documentation change, publish a non-closing PR and complete current-head CI and hosted reviews.
-   Read back the final PR body and closing references, assign AndrewDongminYoo at readiness, then perform the delegated merge after all gates pass.
+   Read back the final PR body and closing references, assign me at readiness, then perform the delegated merge after all gates pass.
 5. Verify the exact merge, preserve a visible completion receipt and retire only this PR's settled control state.
    Keep #40 open for the unmet internal-track criterion, remaining checklist and provenance gaps.
