@@ -1346,7 +1346,7 @@ void main() {
       expect(await jobOf(job), job.fail(PublishFailure.refused));
     });
 
-    test('a paid user whose grant exists, such as one that the operator withdrew, gets no second run', () async {
+    test('a paid user whose grant exists, such as one that was withdrawn, gets no second run', () async {
       publisher
         ..grants.add('owner-1')
         ..failures['writePage'] = [FakePublisher.unapproved];

@@ -12,14 +12,14 @@
 
 ## Global Constraints
 
-- The operator decided on 2026-10-05 that the RevenueCat customer record of a deleted user is removed by hand on request: the app shows no deletion of that record and calls no backend for it. The privacy pages already say so; keep them consistent.
+- It was decided on 2026-10-05 that the RevenueCat customer record of a deleted user is removed by hand on request: the app shows no deletion of that record and calls no backend for it. The privacy pages already say so; keep them consistent.
 - The notice says, in the confirmation of Delete All Data and only in the production flavor (where `Entitlements` is not `FreeEntitlements`, decided without calling it, for example by a flag the page gets from the flavor, or by the identity being available): deleting the data does not cancel a subscription bought in the store, and how to cancel it.
   - Android: a link to `https://play.google.com/store/account/subscriptions` ("Use the following URL to direct users to the page that shows all of their subscriptions", https://developer.android.com/google/play/billing/subscriptions, read on 2026-10-05).
   - iOS: no link, the steps "In Settings, tap your name. Tap Subscriptions." (https://support.apple.com/en-us/118428, read on 2026-10-05), in the user's language. No Apple URL is used, because no Apple source for a subscriptions URL was found.
 - The App Store descriptions (`fastlane/metadata/ios/ko/description.txt`, `fastlane/metadata/ios/en-US/description.txt`) end with the terms of use link `https://www.apple.com/legal/internet-services/itunes/dev/stdeula/` and the privacy policy link (`https://kkomkkomi.web.app/privacy/` for Korean, `https://kkomkkomi.web.app/privacy/en/` for English), as Apple's subscriptions page requires ("your app and App Store metadata must include links to your Terms of Use and Privacy Policy", https://developer.apple.com/app-store/subscriptions/, read on 2026-10-05). `merry run release check` must still pass (store limits). Name no price.
 - Section 9 of both privacy pages, Google part, "When and how": add that the app asks Google for a new sign-in token when it publishes a report as a link (#44, `PublishQueue` before the report write), next to the visit report screen that #48 added.
 - User-facing text follows the `user-facing-copy` skill, every string is an ARB key in both languages, `KeepAllText`, no overflow at `tester.useNarrowScreenWithLargestText()`.
-- `CLAUDE.md` ("Deletion", "Current state"), the console note (the operator's manual RevenueCat deletion on request, and the App Store description links), and the split plan (PR 5 done; #36 stays open for the operator's purchases in the store test environments) are updated.
+- `CLAUDE.md` ("Deletion", "Current state"), the console note (the manual RevenueCat deletion on request, and the App Store description links), and the split plan (PR 5 done; #36 stays open for the purchases in the store test environments) are updated.
 - Coverage of `lib` stays at 100%, and `merry run check` passes.
 
 ## Review Focus
@@ -44,4 +44,4 @@
 - Create: this brief as the first commit of the pull request
 - [ ] `merry run release check` is not runnable on a dirty tree, so run `dart run tool/release_check.dart` only for its limit output, or the release check test; `merry run web`; cspell with `--gitignore-root`; `trunk check`; commits `chore(store): link the terms of use and the privacy policy from the App Store descriptions`, `docs(privacy): name the publish token request`, and `docs: record the end of the M3 split`.
 
-The pull request body lists the Hosting deploy after the merge, with the operator's approval.
+The pull request body lists the Hosting deploy after the merge, with the user's approval.

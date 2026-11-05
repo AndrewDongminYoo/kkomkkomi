@@ -16,7 +16,7 @@ import 'package:kkomkkomi/presentation/shared/keep_all_text.dart';
 import 'package:kkomkkomi/presentation/shared/notice.dart';
 import 'package:kkomkkomi/presentation/shared/save_guard.dart';
 
-/// The standard end user license agreement of Apple, which is the terms of use of the subscriptions (operator,
+/// The standard end user license agreement of Apple, which is the terms of use of the subscriptions (decided
 /// 2026-10-05).
 final Uri termsOfUseUrl = Uri.parse('https://www.apple.com/legal/internet-services/itunes/dev/stdeula/');
 

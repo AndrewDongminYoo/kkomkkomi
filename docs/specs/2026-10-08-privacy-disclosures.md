@@ -13,7 +13,7 @@ Keep the Korean and English pages consistent with `SqliteLocalDataRepository.era
 Preserve camera cleanup and optional device-only observation details as future disclosures, without presenting them as available in the distributed build.
 Change neither security rules nor page layout.
 Do not upload a build or deploy Hosting through this PR loop.
-The later Hosting deployment requires separate operator approval and verification of the live pages.
+The later Hosting deployment requires separate approval by the user and verification of the live pages.
 
 ## Acceptance
 

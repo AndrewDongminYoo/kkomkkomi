@@ -8,7 +8,7 @@
 
 **Tech Stack:** Flutter, `bloc`, `bloc_test`, `mocktail`, `pdf`.
 
-**Spec:** [`docs/specs/2026-10-04-m3-subscriptions-design.md`](../specs/2026-10-04-m3-subscriptions-design.md), section "Device rules". The split is [`2026-10-05-m3-subscriptions.md`](2026-10-05-m3-subscriptions.md); the operator split PR 4 into 4a (#45) and 4b on 2026-10-05 and chose the client limit as the second entry of the plans screen. Refs #36.
+**Spec:** [`docs/specs/2026-10-04-m3-subscriptions-design.md`](../specs/2026-10-04-m3-subscriptions-design.md), section "Device rules". The split is [`2026-10-05-m3-subscriptions.md`](2026-10-05-m3-subscriptions.md); PR 4 was split into 4a (#45) and 4b on 2026-10-05 and the client limit was chosen as the second entry of the plans screen. Refs #36.
 
 ## Global Constraints
 
@@ -56,4 +56,4 @@
 - Create: this brief as the first commit of the pull request
 - [ ] `merry run web`, cspell with `--gitignore-root` (the worktree root), `trunk check`; commit `docs(privacy): name the client limit check as a RevenueCat contact` and `docs: describe the client limit and the PDF footer`.
 
-The pull request body lists the departure from the spec, and the Hosting deploy after the merge, with the operator's approval.
+The pull request body lists the departure from the spec, and the Hosting deploy after the merge, with the user's approval.

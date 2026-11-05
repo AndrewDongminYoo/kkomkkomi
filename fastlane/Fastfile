@@ -306,7 +306,7 @@ platform :ios do
     store_screenshot_transfer(options, "read-only")
   end
 
-  desc "Makes the screenshot sets of the plan: on App Store Connect after the same checks as store_screenshots_verify, and deletes a different set only where the plan allows it. It never submits the app for review. The operator runs or approves each run."
+  desc "Makes the screenshot sets of the plan: on App Store Connect after the same checks as store_screenshots_verify, and deletes a different set only where the plan allows it. It never submits the app for review. The user runs or approves each run."
   lane :store_screenshots_transfer do |options|
     store_screenshot_transfer(options, "transfer")
   end

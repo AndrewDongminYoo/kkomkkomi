@@ -1,7 +1,7 @@
 # Durable client page deletion
 
 Date: 2026-10-03.
-Status: written specification for review. The operator approved the combined design; this document implements no change.
+Status: written specification for review. The combined design was approved; this document implements no change.
 Refs #26 and #29: [deletion confirmation](https://github.com/AndrewDongminYoo/kkomkkomi/issues/26) and [durable intent and recovery](https://github.com/AndrewDongminYoo/kkomkkomi/issues/29).
 
 The code observations use main at `8a689971e9a9c550f1febe0b6ce775abd0fc5483`, verified on 2026-10-03.
@@ -22,7 +22,7 @@ Persist a per-page intent before sending that page's delete, and prohibit writes
 Persist confirmation after the backend acknowledges the delete, so the screen can distinguish an unresolved deletion from a confirmed one.
 Both states survive restart while their database rows remain.
 
-The operator approved these choices:
+These choices were approved:
 
 - Include the Issue #26 model, migration, repository, queue, and screen foundation in the same design as Issue #29.
 - Preserve the three global deletion loops: all photos, then all reports, then pages. Record each page's intent immediately before its own page delete.
@@ -279,7 +279,7 @@ Document exact validation results in the implementation PR; this specification d
 
 ## Review and next step
 
-The combined design and fresh-ID policy are approved; this written specification still requires operator review.
+The combined design and fresh-ID policy are approved; this written specification still requires review.
 After that review, prepare the implementation plan and agree on its execution before product changes.
 This document is a specification, not an implementation plan or a claim that either issue is fixed.
 

@@ -226,8 +226,8 @@ service cloud.firestore {
       allow update: if validUsage(uid, resource.data, request.resource.data);
     }
 
-    // The request of a user without a grant for link sharing approval. The operator reads it in the console, and
-    // creates the grant or deletes the request. The owner reads it to show that it waits, and deletes it; to send it
+    // The request of a user without a grant for link sharing approval. It is read in the console, and
+    // the grant is created or the request deleted. The owner reads it to show that it waits, and deletes it; to send it
     // again, the owner deletes it and creates it again.
     match /publishingRequests/{uid} {
       allow get, delete: if signedIn() && request.auth.uid == uid;

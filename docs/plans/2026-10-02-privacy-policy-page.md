@@ -30,7 +30,7 @@ Trace every clause to a rule, a line of code, or a command output, and list the 
 ## Do not invent
 
 - The privacy officer and the contact address. Put a marked placeholder, `[운영자 확인 필요: 개인정보 보호책임자와 연락처]` in Korean and `[Operator to confirm: privacy officer and contact]` in English. The repository and the site are public.
-- Any legal conclusion. The business plan leaves open whether the company or the app operator is responsible for the people in the photos under the Korean Personal Information Protection Act. Mark that point for the operator's review, and do not decide it.
+- Any legal conclusion. The business plan leaves open whether the company or the app operator is responsible for the people in the photos under the Korean Personal Information Protection Act. Mark that point for review, and do not decide it.
 
 ## Account deletion
 
@@ -40,7 +40,7 @@ Do not build a deletion path in this brief. Report the answer, because it can bl
 ## Out of scope
 
 - Terms of service.
-- Any deploy. The page goes live only on a Hosting deploy, which needs the operator's approval.
+- Any deploy. The page goes live only on a Hosting deploy, which needs the user's approval.
 
 ## Acceptance criteria
 

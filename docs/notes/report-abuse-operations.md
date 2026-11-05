@@ -3,21 +3,21 @@
 ## State and authority
 
 These are the local controls of issue #86, not a record of live enrollment or deployment.
-The operator approved controlled publisher admission, the safety budgets and retaining `kkomkkomi.web.app` on 2026-10-08.
+Controlled publisher admission, the safety budgets and retaining `kkomkkomi.web.app` were approved on 2026-10-08.
 Every production grant, block, deletion, rule deploy, Hosting deploy and app upload still needs approval for that run.
 No email has been sent or delivery verified.
 The landing inquiry form does not send messages.
 
 ## Enrollment
 
-`docs/specs/2026-11-02-publisher-approval-request.md` owns the admission decision of issue #146; this section is the operator procedure.
+`docs/specs/2026-11-02-publisher-approval-request.md` owns the admission decision of issue #146; this section is the operational procedure.
 A publisher without a grant presses **Share link** once first, because the app does not read its grant before a share.
 
-- A paid publisher: after that refusal, the app asks for a newly issued ID token, and when its `revenueCatEntitlements` claim holds `basic` or `pro`, the app creates `publishingGrants/{uid}` itself with the initial document below and shares again. The operator does nothing.
+- A paid publisher: after that refusal, the app asks for a newly issued ID token, and when its `revenueCatEntitlements` claim holds `basic` or `pro`, the app creates `publishingGrants/{uid}` itself with the initial document below and shares again. No manual step is needed.
 - A free publisher: the visit report screen offers **Request link sharing approval**, and its dialog writes `publishingRequests/{uid}` with `requestedAt` and, when the company profile is saved, `companyName`. No email is sent, and the screen shows the request as pending.
 
 Find pending requests in the Firestore console under `publishingRequests`; the document ID is the UID.
-Confirm the company name against the operator's existing relationship; the UID alone, an email address, or a replacement UID is not sufficient.
+Confirm the company name against an existing relationship; the UID alone, an email address, or a replacement UID is not sufficient.
 Do not approve a replacement UID because an earlier UID was blocked or deleted, and do not grant every existing anonymous UID.
 To approve, use privileged Firestore console access to create `publishingGrants/{uid}`, then delete the request.
 To decline, delete the request.
@@ -50,7 +50,7 @@ Also set `updatedAt` to a Firestore timestamp in the past, such as 2000-01-01 UT
 The JSON above is a field reference; it is not a command to issue a live grant.
 For an existing publisher, inventory page/report counts and photo objects/bytes first and seed those totals, rather than resetting them to zero.
 Seed each existing photo reservation as `pageId/visitId/fileName: byteLength`.
-If legitimate existing usage exceeds a default, increase the operator-managed limit after approval; preserve the counters.
+If legitimate existing usage exceeds a default, increase the managed limit after approval; preserve the counters.
 Reserve at most 2,000 active photo paths per document and keep keys at most 384 characters; do not raise that structural limit by changing only a grant.
 Read back the exact UID, approval, limits and inventory counters before testing with that user.
 A new or deleted UID needs a new approval.
@@ -83,13 +83,13 @@ Page blocking denies current rules-based reads immediately.
 An already issued Storage download token bypasses subsequent rule reads, so blocking alone is insufficient: photo deletion is part of takedown.
 Cached or downloaded copies cannot be recalled.
 Grant withdrawal alone stops new writes but does not close previously published pages; use the page block and photo deletion too.
-Clients retain owner deletion and revoke access; they cannot erase durable operator blocks.
+Clients retain owner deletion and revoke access; they cannot erase durable blocks.
 An admitted account may reconcile an absent page as closed after withdrawal within its existing budget and cooldown.
 
 ## Retention and deletion requests
 
 App deletion removes photos and their active reservations, reports, private report reservation headers and their seven validation chunks, pages, the anonymous Auth account and device data.
-The account's approval and lifetime usage document remains until operator deletion on request; the app cannot reset its allowance.
+The account's approval and lifetime usage document remains until deletion on request; the app cannot reset its allowance.
 On a verified deletion request, remove that UID's grant document after checking the relevant pages have been removed, and remove its `publishingRequests/{uid}` document if one remains.
 Before removing the grant, confirm in the Authentication console that the Auth account of that UID no longer exists; otherwise a paid UID that can still sign in creates a fresh grant with zero usage.
 Do not create a fresh grant automatically as a side effect of deletion.
@@ -111,13 +111,13 @@ Deletion does not refund page, report, object or reserved-byte allowance, includ
 A report retry reuses its reserved slot; deleting the header and starting again consumes another slot.
 Removing a photo reservation and recreating its object consumes another object and byte allowance.
 Do not roll back to permissive anonymous writes as a routine recovery: withdraw grants or pause sharing while repairing a compatible client.
-Changes to budgets and retention are separate operator decisions; subscription plans do not override these safety controls.
+Changes to budgets and retention are separate decisions; subscription plans do not override these safety controls.
 The shared host still exposes the landing/privacy host to approved-publisher content and browser-reputation risk; there is no automated content moderation or complete defense against repeated fraudulent approval requests.
 
 ## Local verification
 
 Use fictional data and only the `demo-kkomkkomi` project in emulators.
-The rules suite exercises direct API bypass, quotas, payload validation, retry, deletion, operator blocks, the paid self-grant, the approval request record and the real token-free web reader.
+The rules suite exercises direct API bypass, quotas, payload validation, retry, deletion, blocks, the paid self-grant, the approval request record and the real token-free web reader.
 The mailbox is not exercised by this command.
 
 ```sh

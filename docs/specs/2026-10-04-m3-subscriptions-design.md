@@ -1,7 +1,7 @@
 # M3 subscriptions and entitlements
 
 Date: 2026-10-04.
-Status: written specification for review. The operator approved the design in conversation on 2026-10-04. This document implements no change.
+Status: written specification for review. The design was approved in conversation on 2026-10-04. This document implements no change.
 Refs #36: [Basic and Pro subscription billing and entitlements](https://github.com/AndrewDongminYoo/kkomkkomi/issues/36).
 
 The code observations use main at `a02a2884523304363046d32fb02069d90212dac9`, verified on 2026-10-04.
@@ -27,7 +27,7 @@ A plan changes two things in M3: the number of clients that a company can keep a
 Pro also gets the M2 features that issue 36 names (the monthly bundled PDF and view tracking) when M2 has shipped them.
 Gating those features is work for the time when both M2 and M3 exist, and this document does not design it.
 
-The operator made these choices on 2026-10-04:
+These choices were made on 2026-10-04:
 
 - RevenueCat verifies the purchases, and its Firebase extension gives the active entitlements to Firebase Auth as a custom claim.
 - The Firebase project `kkomkkomi` is on the Blaze plan already, which the extension needs.
@@ -107,7 +107,7 @@ They read the `CustomerInfo` that the RevenueCat SDK caches.
 - The PDF prints the footer unless the cached entitlements hold `basic` or `pro`.
 
 A changed app can skip a device rule.
-The operator accepts that risk for the client limit and the PDF.
+That risk is accepted for the client limit and the PDF.
 
 ## Units
 
@@ -129,15 +129,15 @@ The design follows the boundary pattern of `lib/firebase/`.
 ## Deletion and legal requirements
 
 - Delete All Data shows, before it starts, that a subscription keeps billing through the store, and it links to the store subscription management.
-- Open decision: how the RevenueCat customer record of a deleted user is removed. The RevenueCat REST API needs a secret key, so the app cannot call it. The plan names the options and the operator chooses.
+- Open decision: how the RevenueCat customer record of a deleted user is removed. The RevenueCat REST API needs a secret key, so the app cannot call it. The plan names the options and one of them is chosen.
 - The privacy pages (`web/privacy/` in Korean and English) add RevenueCat as a processor and the purchase history as data, in one change, as `CLAUDE.md` requires.
 - The App Privacy and Data safety answers in `docs/notes/2026-10-02-first-test-distribution.md` add the purchase history.
 - The paywall and the store metadata link to the terms of use and the privacy policy, as App Store Review Guideline 3.1.2 requires for auto-renewable subscriptions. The implementation plan quotes the guideline at that time.
-- The Free footer text becomes `꼼꼬미로 작성됨` (operator, 2026-10-04) in the ARB file and in `web/report/view.js`.
+- The Free footer text becomes `꼼꼬미로 작성됨` (decided 2026-10-04) in the ARB file and in `web/report/view.js`.
 
 ## Deploys
 
-The change of `isReport` in `firestore.rules` and the change of `web/report/view.js` each need a deploy, and the operator approves each deploy, as `CLAUDE.md` requires.
+The change of `isReport` in `firestore.rules` and the change of `web/report/view.js` each need a deploy, and the user approves each deploy, as `CLAUDE.md` requires.
 The deployed rules equal `34d5d23` today.
 The rules must deploy before an app version that writes `unbranded`, because the deployed rules refuse a report with a key that `isReport` does not list.
 
@@ -156,6 +156,6 @@ The rules must deploy before an app version that writes `unbranded`, because the
 
 ## Dated TestFlight evidence
 
-The [2026-10-30 billing baseline](../notes/2026-10-30-ios-restore-management-acceptance.md) records operator-reported no-purchase restoration, one approved Basic monthly purchase, successful in-place restoration with retained displayed state/local data, and management-link navigation on TestFlight `1.1.1(5)`.
+The [2026-10-30 billing baseline](../notes/2026-10-30-ios-restore-management-acceptance.md) records reported no-purchase restoration, one approved Basic monthly purchase, successful in-place restoration with retained displayed state/local data, and management-link navigation on TestFlight `1.1.1(5)`.
 It does not establish the binary's source/SDK versions, actual subscription-management transitions, changed-identity ownership enforcement, Firebase claim propagation or Android acceptance.
 The original account/restore and trust-boundary questions remain subject to their unverified portions; #36 stays open.

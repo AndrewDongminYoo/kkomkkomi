@@ -1012,7 +1012,7 @@ class FakePublisher implements Publisher {
     revokedPages.remove(pageId);
   }
 
-  /// The users that hold a grant. A test puts a user here for a grant that the operator created.
+  /// The users that hold a grant. A test puts a user here for a grant that was created by hand.
   final grants = <String>{};
 
   /// Whether a page write needs a grant of its owner, as the rules of the backend do. A page write without one throws

@@ -16,9 +16,9 @@
 - The paid entitlements are `basic` and `pro`. Any other identifier is not paid.
 - The only allowed value of `unbranded` is `true`. A report without the key shows the footer, so every report that exists today keeps it.
 - The privacy policy link stays in every footer. Only the footer text goes away.
-- The Free footer text is `꼼꼬미로 작성됨` (operator, 2026-10-04), in `web/report/view.js` and in `lib/l10n/arb/app_ko.arb`. The English ARB value `Report made with Kkomkkomi` stays as it is.
+- The Free footer text is `꼼꼬미로 작성됨` (decided 2026-10-04), in `web/report/view.js` and in `lib/l10n/arb/app_ko.arb`. The English ARB value `Report made with Kkomkkomi` stays as it is.
 - Name no price, billing term, or fee anywhere: the repository is public.
-- This pull request deploys nothing. A deploy of the rules or Hosting needs the operator's approval after the merge, as `CLAUDE.md` requires.
+- This pull request deploys nothing. A deploy of the rules or Hosting needs the user's approval after the merge, as `CLAUDE.md` requires.
 
 ## Review Focus
 
@@ -290,10 +290,10 @@ git commit -m "feat(l10n): print the Free footer text of M3 on the report"
 **Files:**
 
 - Create: `docs/plans/2026-10-05-m3-subscriptions.md` and this brief, `docs/plans/2026-10-05-m3-01-report-branding.md`, as the first commit of the pull request.
-- Modify: `CLAUDE.md`, "Current state" and "Milestones": M1 and M3 are both in progress (operator, 2026-10-05). M1 waits for the first test distribution (#40), and M3 follows `docs/plans/2026-10-05-m3-subscriptions.md`. Keep the rule that work stays inside a milestone in progress.
+- Modify: `CLAUDE.md`, "Current state" and "Milestones": M1 and M3 are both in progress (decided 2026-10-05). M1 waits for the first test distribution (#40), and M3 follows `docs/plans/2026-10-05-m3-subscriptions.md`. Keep the rule that work stays inside a milestone in progress.
 - Modify: `CLAUDE.md`, the "Web" bullet of "Architecture": after the sentence about `textContent`, add that a report with `unbranded: true` shows no footer text and keeps the privacy link, and that `firestore.rules` accepts that key only from a writer whose `revenueCatEntitlements` claim holds `basic` or `pro`.
 
 - [ ] **Step 1: Run `npx cspell@9 --config cspell.json "**/*.md"` and `trunk check` on the changed Markdown.**
 - [ ] **Step 2: Commit** with `docs: describe the report footer of the M3 plans`.
 
-The pull request body lists the deploys that the merge makes due: the rules, then Hosting, each with the operator's approval.
+The pull request body lists the deploys that the merge makes due: the rules, then Hosting, each with the user's approval.

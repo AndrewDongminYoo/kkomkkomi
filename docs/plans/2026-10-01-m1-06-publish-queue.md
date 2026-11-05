@@ -33,7 +33,7 @@ A worker publishes a visit, and the photos and the report document reach the bac
 - Each job step is safe to repeat: a photo upload uses a path that depends only on the page, the visit, the zone, and the slot.
 - The queue retries with a growing delay, resumes at launch, and resumes when the network returns.
 - A job that fails for a reason a retry cannot fix stops and shows its reason.
-- The security rules change opens published reports to readers without sign-in. State this in the pull request body under its own heading, and do not deploy the rules. The operator deploys them after review.
+- The security rules change opens published reports to readers without sign-in. State this in the pull request body under its own heading, and do not deploy the rules. They are deployed after review.
 - Do not write to the live project from a test. Use fakes for unit tests and the Firebase emulator for rules tests.
 
 ## Acceptance criteria

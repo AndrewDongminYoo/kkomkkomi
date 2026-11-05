@@ -3,7 +3,7 @@
 This note preserves the original console checklist for the first TestFlight build and Google Play internal testing release of version `1.0.0` build `1`, followed by dated observations.
 The brief is `docs/plans/2026-10-02-release-prep.md`.
 The original checklist did not record an agent creating a store record, uploading a build or signing with a real key.
-The deploys of the rules and Hosting are the one exception, made with the operator's approval, and `CLAUDE.md` owns their state.
+The deploys of the rules and Hosting are the one exception, made with approval, and `CLAUDE.md` owns their state.
 
 ## Distribution observed on 2026-10-30
 
@@ -16,22 +16,22 @@ No store write or new build accompanied these reads.
 
 ## Production build preparation on 2026-10-31
 
-The operator authorized new production `1.1.2+6` artifacts and their TestFlight/Play internal-draft uploads.
+New production `1.1.2+6` artifacts and their TestFlight/Play internal-draft uploads were authorized.
 The [build provenance record](2026-10-31-production-build-provenance.md) separates exact source/hash evidence from any later upload, processing or tester-availability result.
 This direction includes no public rollout, store app-review submission, tester/account change, backend deploy or device installation.
 The dated distribution snapshot above is historical, and a new artifact alone does not satisfy the remaining #40 acceptance.
 
 ## Closed Alpha continuation on 2026-10-31
 
-The operator separately selected closed Alpha distribution of existing production code 6.
+Closed Alpha distribution of existing production code 6 was selected separately.
 The [Alpha verification record](2026-10-31-play-alpha-distribution.md) separates native release preparation, Google review/publication and signed-in tester access.
 Android installation/runtime acceptance and the separate internal-track criterion of #40 remain independent checks.
 
 ## Internal testing continuation on 2026-10-31
 
-The operator resumed the existing internal `1.1.2`, code `6`, draft after Alpha publication.
+The existing internal `1.1.2`, code `6`, draft was resumed after Alpha publication.
 The [internal verification record](2026-10-31-play-internal-distribution.md) separates native release completion, tester access and the unverified Android physical-device pass.
-Its read-back on 2026-11-02 showed code `6` `completed` on the internal, Alpha and production tracks, and the operator confirmed that the production release was intended.
+Its read-back on 2026-11-02 showed code `6` `completed` on the internal, Alpha and production tracks, and the production release was confirmed as intended.
 
 ## Open items before an external TestFlight review
 
@@ -40,18 +40,18 @@ The same page allows up to 100 internal testers per app, who are App Store Conne
 
 1. **Account deletion (App Store Review Guideline 5.1.1(v)).** Closed by the brief `docs/plans/2026-10-02-account-deletion.md`: the company profile screen has a "delete all data" control, which deletes the published photos, reports, and client pages, the anonymous account, and the data on the phone. Pull request 19 quotes Apple's text under "Account deletion".
 2. **Photo location (issue 20).** Closed by pull request 23: `withoutLocation` removes the location when a photo is stored, before an upload, and before the PDF, on every platform. No device ran it. An object that a build before pull request 23 uploaded keeps its location in Storage.
-3. **Anonymous account clean-up (issue 21).** Closed: the operator turned the automatic clean-up off on 2026-10-02, and the privacy pages no longer say that an account is deleted after 30 days. Firebase documents that an account that was already scheduled for deletion when the clean-up was turned off stays scheduled (https://firebase.google.com/docs/auth/android/anonymous-auth, "Automatic clean-up").
+3. **Anonymous account clean-up (issue 21).** Closed: the automatic clean-up was turned off on 2026-10-02, and the privacy pages no longer say that an account is deleted after 30 days. Firebase documents that an account that was already scheduled for deletion when the clean-up was turned off stays scheduled (https://firebase.google.com/docs/auth/android/anonymous-auth, "Automatic clean-up").
 4. **Support contact.** Closed: `support_url.txt` names the privacy page of its locale, `https://kkomkkomi.web.app/privacy/` for `ko` and `https://kkomkkomi.web.app/privacy/en/` for `en-US`, which give the privacy officer and an email address at the top and in section 12, as `test/web/privacy.test.mjs` checks. Guideline 1.5 says: "Make sure your app and its Support URL include an easy way to contact you". The landing page `https://kkomkkomi.web.app/` has no working contact, because its inquiry form is a preview that sends nothing. The URL carries no fragment such as `#rights`, because the App Store snapshot export of `app-store-assets` refuses a URL fragment in a public record.
 5. **Privacy policy.** The pages at `/privacy/` and `/privacy/en/` are live since the Hosting deploy from `34d5d23`, and no placeholder of pull request 19 is left in them. Four clauses are agent defaults that a qualified person should review: the legal basis of the transfer abroad (Article 28-8(1)3 of the Personal Information Protection Act), the cleaning company as the party responsible for the people in the photos, the Firebase support URL as the contact of Google, and the effective date, which is the merge date of the last change to the pages (the pull request of `docs/plans/2026-10-05-m3-04b-limits-and-pdf.md`, which adds the add control of the client list at 2 or more active clients to the moments in sections 6 and 9 when the app reaches RevenueCat, after the pull request of `docs/plans/2026-10-05-m3-04a-plans-screen.md` added RevenueCat as a processor and a recipient abroad to sections 6, 8, 9, and 10; the pages say 2026-10-05, and a later merge changes the date).
    That pull request body lists each RevenueCat clause that the code does not show by itself.
 
 ## Report abuse controls before public release
 
-Issue #86 implements operator approval for anonymous publishers, fixed safety budgets and recipient email reporting locally.
+Issue #86 implements approval of anonymous publishers, fixed safety budgets and recipient email reporting locally.
 Read `docs/notes/report-abuse-operations.md` before enforcement: enroll approved existing UIDs and inventory prior usage, deliver a compatible app, then deploy the rules and Hosting with per-run approval.
 Build 3 predates this adapter and cannot create or change a report under the enforced rules; local capture, PDF and existing public links remain available.
 The email contact is `donminzzi@gmail.com`; no delivery test or live enrollment has been performed.
-The same Hosting domain remains in use with the operator's acceptance of its residual risk.
+The same Hosting domain remains in use, and its residual risk is accepted.
 This item stays open until the rollout and read-back are approved and verified.
 
 ## Values
@@ -61,19 +61,19 @@ This item stays open until the rollout and read-back are approved and verified.
 | Bundle ID and application ID   | `kr.donminzzi.kkomkkomi` (production flavor)                                                                       |
 | Initial target version         | `1.0.0`, build `1` (historical first-build target; see the dated distribution record for the later store versions) |
 | iOS minimum version            | 15.0 (`IPHONEOS_DEPLOYMENT_TARGET`)                                                                                |
-| iOS devices                    | iPhone only (`TARGETED_DEVICE_FAMILY = 1` in the Runner target, operator decision of 2026-10-04)                   |
+| iOS devices                    | iPhone only (`TARGETED_DEVICE_FAMILY = 1` in the Runner target, decision of 2026-10-04)                            |
 | Android minimum and target SDK | 24 and 36, read from the built bundle                                                                              |
 | Privacy policy                 | `https://kkomkkomi.web.app/privacy/` (Korean), `https://kkomkkomi.web.app/privacy/en/` (English)                   |
 | App Store categories           | Business, then Productivity (`fastlane/metadata/ios/*_category.txt`)                                               |
 
-`DEVELOPMENT_TEAM` is `393JTTV68D` in each of the nine build configurations of the Runner target in `ios/Runner.xcodeproj` (operator, 2026-10-02), so a signed build needs no manual team choice.
+`DEVELOPMENT_TEAM` is `393JTTV68D` in each of the nine build configurations of the Runner target in `ios/Runner.xcodeproj` (given 2026-10-02), so a signed build needs no manual team choice.
 
 ## Apple
 
 1. **Bundle ID.** In Certificates, Identifiers & Profiles, register the explicit App ID `kr.donminzzi.kkomkkomi`. The app uses no capability that needs a switch there: no push notification, no sign in with Apple, no app group.
-2. **App Store Connect app record.** Create a new iOS app with the bundle ID above, the primary language Korean, the name from `fastlane/metadata/ios/ko/name.txt`, and an SKU of your choice. The operator chose that name on 2026-10-04, after finding that an app named 꼼꼬미 already exists.
-3. **App information.** Set the category, the privacy policy URL, and the content rights. Answer the age rating questions. In Pricing and Availability, make the app free: the operator decided on 2026-10-04 that the app is free to download and that the paid plans are in-app subscriptions (M3, issue 36).
-4. **Export compliance.** Decided by the operator on 2026-10-04: `ios/Runner/Info.plist` declares `ITSAppUsesNonExemptEncryption` as `NO`, because no code under `lib/` or `ios/Runner/` encrypts anything and the Firebase SDKs use HTTPS. The build bundles the `openssl_grpc` framework of gRPC.
+2. **App Store Connect app record.** Create a new iOS app with the bundle ID above, the primary language Korean, the name from `fastlane/metadata/ios/ko/name.txt`, and an SKU of your choice. That name was chosen on 2026-10-04, after finding that an app named 꼼꼬미 already exists.
+3. **App information.** Set the category, the privacy policy URL, and the content rights. Answer the age rating questions. In Pricing and Availability, make the app free: it was decided on 2026-10-04 that the app is free to download and that the paid plans are in-app subscriptions (M3, issue 36).
+4. **Export compliance.** Decided on 2026-10-04: `ios/Runner/Info.plist` declares `ITSAppUsesNonExemptEncryption` as `NO`, because no code under `lib/` or `ios/Runner/` encrypts anything and the Firebase SDKs use HTTPS. The build bundles the `openssl_grpc` framework of gRPC.
 5. **App Store Connect API key.** In Users and Access, Integrations, generate a team API key whose role can upload builds and edit the app information. Keep the `.p8` file outside the repository, and set the three `APP_STORE_CONNECT_API_KEY_*` variables that the "Release" section of `CLAUDE.md` names.
 6. **Build and upload.** Run `merry run release ios`, which checks, builds, and uploads the IPA to TestFlight; the "Release" section of `CLAUDE.md` owns the scripts. The build needs `ios/Runner/GoogleService-Info.plist` from `flutterfire configure`, as `CLAUDE.md` says. `merry run release metadata ios` uploads the store texts of `fastlane/metadata/ios` without a binary and without a review submission.
 7. **TestFlight.** Make an internal group and add the testers. `merry run release ios` uploads the build without waiting for processing and adds it to no group (`skip_waiting_for_build_processing: true` and no `groups` in the `beta` lane of `fastlane/Fastfile`). Apple's page "Add internal testers" says: "If automatic distribution isn't enabled, you must manually add all builds to the group" (https://developer.apple.com/help/app-store-connect/test-a-beta-version/add-internal-testers, read on 2026-10-04). So when processing is done, open the group in the TestFlight tab, click Add Builds, choose build 1, click Next, paste the "What to Test" text below, and click Add. The same page describes the checkbox as Xcode delivery: "To enable Xcode to automatically deliver builds to all group members, select the "Enable automatic distribution" checkbox", and the lane uploads through fastlane, not Xcode, so check that build 1 shows in the group before the testers start. For an external group, settle the open items above first.
@@ -100,11 +100,11 @@ en-US:
 
 Version 1.1.0 build 3 is the second test build, and App Store Connect still has no released version, so the reason above holds.
 Paste the text of `fastlane/metadata/android/ko-KR/changelogs/3.txt` and `fastlane/metadata/android/en-US/changelogs/3.txt` into the field, in that order, as for build 1.
-App Store Connect held builds 1 and 2 of version 1.0.0 on 2026-10-07 (the operator), so `pubspec.yaml` carries build 3, which the `beta` lane checks against the IPA.
+App Store Connect held builds 1 and 2 of version 1.0.0 on 2026-10-07 (as reported), so `pubspec.yaml` carries build 3, which the `beta` lane checks against the IPA.
 
 ## Google Play
 
-1. **Play Console app.** Create the app with the default language Korean (`ko-KR`), the name from `fastlane/metadata/android/ko-KR/title.txt`, the type App, and Free (operator decision, 2026-10-04; the paid plans are in-app subscriptions, M3, issue 36). The choice is final: "Once your app has been offered for free, the app can't be changed to paid" (Play Console Help, "Set up your app's prices", https://support.google.com/googleplay/android-developer/answer/6334373, read on 2026-10-04).
+1. **Play Console app.** Create the app with the default language Korean (`ko-KR`), the name from `fastlane/metadata/android/ko-KR/title.txt`, the type App, and Free (decided 2026-10-04; the paid plans are in-app subscriptions, M3, issue 36). The choice is final: "Once your app has been offered for free, the app can't be changed to paid" (Play Console Help, "Set up your app's prices", https://support.google.com/googleplay/android-developer/answer/6334373, read on 2026-10-04).
 2. **Store settings.** Choose the category Business, and enter the contact details.
 3. **App content.** Enter the privacy policy URL. For app access, all functions work without a login. Ads: none. Answer the content rating questions and the target audience. Enter the Data safety answers below.
 4. **Internal testing track, first bundle by hand.** Build the first App Bundle with `merry run build aab`, create a release on the internal testing track in Play Console, upload the bundle there, add the testers' email list, and use `fastlane/metadata/android/<locale>/changelogs/1.txt` as the release notes. `supply` cannot make the first upload: "Before using _supply_ to connect to Google Play Store, you'll need to set up your app manually first by uploading at least one build to Google Play Store" (https://docs.fastlane.tools/actions/supply/, "Quick Start"; the same text is in the documentation of fastlane 2.240.1, which `Gemfile.lock` pins).
@@ -121,18 +121,18 @@ App Store Connect held builds 1 and 2 of version 1.0.0 on 2026-10-07 (the operat
 
 ## Firebase
 
-- The Firebase macOS app is registered as `com.example.myApp` (the `BUNDLE_ID` of `macos/Runner/GoogleService-Info.plist` in the operator's checkout), and the macOS production bundle ID is now `kr.donminzzi.kkomkkomi`. macOS is not a target, so this needs no action now. Before a macOS production build, register the macOS app again and run `flutterfire configure`.
+- The Firebase macOS app is registered as `com.example.myApp` (the `BUNDLE_ID` of `macos/Runner/GoogleService-Info.plist` in the local checkout), and the macOS production bundle ID is now `kr.donminzzi.kkomkkomi`. macOS is not a target, so this needs no action now. Before a macOS production build, register the macOS app again and run `flutterfire configure`.
 - Hosting serves the privacy policy URLs since the deploy from `34d5d23`, so a store listing can name them. A later deploy needs your approval again.
 
 ## Subscriptions (M3, issue 36)
 
 - **The RevenueCat keys.** Before a release build, create `config/revenuecat.json` from `config/revenuecat.example.json` and fill in the public SDK keys of the RevenueCat iOS and Android apps. The "Release" section of `CLAUDE.md` owns what the build and the release check do with the file.
-- **Release builds after 4b.** The plans screen of `docs/plans/2026-10-05-m3-04a-plans-screen.md` describes the client limit and the footer of each plan, and `docs/plans/2026-10-05-m3-04b-limits-and-pdf.md` ships both, so a release build is allowed again after 4b merges. Before a build that writes `unbranded` reaches a tester, the rules of #42 must be deployed with the operator's approval (`docs/plans/2026-10-05-m3-subscriptions.md`, "Operator steps outside the repository").
-- **RevenueCat dashboard.** In the RevenueCat project, create the entitlements `basic` and `pro`, and attach each Pro product to both. Put the four products in the default offering as the packages `basic_monthly`, `basic_annual`, `pro_monthly`, and `pro_annual`: the app shows a package only under one of these identifiers and ignores any other. Install the RevenueCat Firebase extension on the project `kkomkkomi`, as `docs/plans/2026-10-05-m3-subscriptions.md` lists. The operator installed it on 2026-10-05, and `CLAUDE.md` records its configuration. The RevenueCat Firebase integration has two parts that work independently: Google Analytics and the extension. Keep the Google Analytics part off. The app sets no `$firebaseAppInstanceId`, which that part requires, and the privacy pages name no analytics service. On 2026-10-05 the operator deleted the Google Analytics account that this part used and set up the integration again, with a new shared secret.
-- **Store products.** Create the four products in App Store Connect (one subscription group, Pro ranked above Basic) and the subscriptions `basic` and `pro` with a monthly and an annual base plan in Play Console, as the "Products" section of `docs/specs/2026-10-04-m3-subscriptions-design.md` describes. The app shows the price that the store gives, so no price goes into the repository. The operator created the two Play subscriptions on 2026-10-06, each with the base plans `monthly` and `annual`.
-- **Terms of use link.** The operator decided on 2026-10-05 that the terms of use are Apple's standard EULA, `https://www.apple.com/legal/internet-services/itunes/dev/stdeula/`, which the plans screen links. Apple's subscriptions page says: "Please note that your app and App Store metadata must include links to your Terms of Use and Privacy Policy" (https://developer.apple.com/app-store/subscriptions/, read on 2026-10-05). Since M3 PR 5, `fastlane/metadata/ios/ko/description.txt` and `fastlane/metadata/ios/en-US/description.txt` end with that link and the privacy policy link of their language, so `merry run release metadata ios` uploads them. Run it before a build with the plans screen goes to review.
-- **RevenueCat customer record on request.** The operator decided on 2026-10-05 to delete the RevenueCat customer record of a person by hand, in the RevenueCat dashboard, when that person asks through the contact in the privacy policy. Delete All Data does not delete it, and the app calls no backend for it, because the RevenueCat REST API needs a secret key. The RevenueCat app user ID is the Firebase user ID of the anonymous account (`lib/main_production.dart`).
-- **Play Billing Library before the Play products.** Android's "Getting ready" page says: "Once you've set up a developer account, you must publish a version of your app that includes the Google Play Billing Library. This step is required to enable billing-related features in the Google Play Console, such as configuring the products you want to sell" (https://developer.android.com/google/play/billing/getting-ready, read on 2026-10-05). `purchases_flutter` brings that library into the Android build, so upload a bundle of a build with it before you create the subscriptions in Play Console. The page does not say which tracks count. On 2026-10-06 the operator created the subscriptions while build 1 was a draft release on the internal testing track, so a draft release on that track was enough for this step.
+- **Release builds after 4b.** The plans screen of `docs/plans/2026-10-05-m3-04a-plans-screen.md` describes the client limit and the footer of each plan, and `docs/plans/2026-10-05-m3-04b-limits-and-pdf.md` ships both, so a release build is allowed again after 4b merges. Before a build that writes `unbranded` reaches a tester, the rules of #42 must be deployed with the user's approval (`docs/plans/2026-10-05-m3-subscriptions.md`, "Steps outside the repository").
+- **RevenueCat dashboard.** In the RevenueCat project, create the entitlements `basic` and `pro`, and attach each Pro product to both. Put the four products in the default offering as the packages `basic_monthly`, `basic_annual`, `pro_monthly`, and `pro_annual`: the app shows a package only under one of these identifiers and ignores any other. Install the RevenueCat Firebase extension on the project `kkomkkomi`, as `docs/plans/2026-10-05-m3-subscriptions.md` lists. It was installed on 2026-10-05, and `CLAUDE.md` records its configuration. The RevenueCat Firebase integration has two parts that work independently: Google Analytics and the extension. Keep the Google Analytics part off. The app sets no `$firebaseAppInstanceId`, which that part requires, and the privacy pages name no analytics service. On 2026-10-05 the Google Analytics account that this part used was deleted and the integration was set up again, with a new shared secret.
+- **Store products.** Create the four products in App Store Connect (one subscription group, Pro ranked above Basic) and the subscriptions `basic` and `pro` with a monthly and an annual base plan in Play Console, as the "Products" section of `docs/specs/2026-10-04-m3-subscriptions-design.md` describes. The app shows the price that the store gives, so no price goes into the repository. The two Play subscriptions were created on 2026-10-06, each with the base plans `monthly` and `annual`.
+- **Terms of use link.** It was decided on 2026-10-05 that the terms of use are Apple's standard EULA, `https://www.apple.com/legal/internet-services/itunes/dev/stdeula/`, which the plans screen links. Apple's subscriptions page says: "Please note that your app and App Store metadata must include links to your Terms of Use and Privacy Policy" (https://developer.apple.com/app-store/subscriptions/, read on 2026-10-05). Since M3 PR 5, `fastlane/metadata/ios/ko/description.txt` and `fastlane/metadata/ios/en-US/description.txt` end with that link and the privacy policy link of their language, so `merry run release metadata ios` uploads them. Run it before a build with the plans screen goes to review.
+- **RevenueCat customer record on request.** It was decided on 2026-10-05 to delete the RevenueCat customer record of a person by hand, in the RevenueCat dashboard, when that person asks through the contact in the privacy policy. Delete All Data does not delete it, and the app calls no backend for it, because the RevenueCat REST API needs a secret key. The RevenueCat app user ID is the Firebase user ID of the anonymous account (`lib/main_production.dart`).
+- **Play Billing Library before the Play products.** Android's "Getting ready" page says: "Once you've set up a developer account, you must publish a version of your app that includes the Google Play Billing Library. This step is required to enable billing-related features in the Google Play Console, such as configuring the products you want to sell" (https://developer.android.com/google/play/billing/getting-ready, read on 2026-10-05). `purchases_flutter` brings that library into the Android build, so upload a bundle of a build with it before you create the subscriptions in Play Console. The page does not say which tracks count. On 2026-10-06 the subscriptions were created while build 1 was a draft release on the internal testing track, so a draft release on that track was enough for this step.
 
 ## Draft answers for App Privacy (App Store Connect)
 
@@ -154,11 +154,11 @@ Apple's page says: "You need to identify all of the data you or your third-party
 For the IP address it says: "Declare the relevant data types based on how you use IP address, such as precise location, coarse location, device ID, or diagnostics."
 The definitions are on https://developer.apple.com/app-store/app-privacy-details/ (read on 2026-10-02).
 
-The Diagnostics row is declared, as the Firebase manifests declare it (operator decision, 2026-10-02).
+The Diagnostics row is declared, as the Firebase manifests declare it (decided 2026-10-02).
 The Purchase History row follows RevenueCat's own guidance, not only its manifest, because the plans screen of `docs/plans/2026-10-05-m3-04a-plans-screen.md` is the first code that reaches RevenueCat.
 RevenueCat's page (https://www.revenuecat.com/docs/platform-resources/apple-platform-resources/apple-app-privacy, read on 2026-10-05) says that "RevenueCat collects purchase history from users", and for the purposes: "All RevenueCat users must select these two options", which are Analytics and App Functionality.
 App Store Connect takes one answer for each data type, so this row replaces the manifest-only row of the pull request of `docs/plans/2026-10-05-m3-02-entitlements-port.md` (not linked, App Functionality only).
-For "Linked to the user" the page says: "If you are using an app user ID that can be tied to a user's email address or other contact information via your own server or other third-parties, you should select 'Yes'." The RevenueCat app user ID is the Firebase user ID, which the "Identifiers: User ID" row already declares as linked, and the client page of that user ID holds the company name, so the draft says Yes. Whether the company name counts as contact information is the operator's decision.
+For "Linked to the user" the page says: "If you are using an app user ID that can be tied to a user's email address or other contact information via your own server or other third-parties, you should select 'Yes'." The RevenueCat app user ID is the Firebase user ID, which the "Identifiers: User ID" row already declares as linked, and the client page of that user ID holds the company name, so the draft says Yes. Whether the company name counts as contact information is my decision.
 The same page says that RevenueCat "does not inherently use purchase history to track users across different apps for advertising", so the row is not for tracking.
 The app uses no integration with an advertising identifier, so no Device ID row follows from RevenueCat.
 Section 10 of the privacy policy names that data as the manifests declare it (Other Diagnostic Data, not linked to the user, not for tracking, for Analytics, in the Auth, Firestore, and Installations manifests of firebase-ios-sdk 12.19.0), and gives the example that Google's list names for Auth and Firestore: the Firebase user agent (device, OS version, SDK versions).
@@ -169,7 +169,7 @@ Section 10 also states the answer of the Purchase History row: RevenueCat collec
 The same sources apply.
 Data is encrypted in transit (HTTPS to Firebase; RevenueCat's Data safety page says: "RevenueCat encrypts data in transit").
 Deletion: the company profile screen deletes the account and all its data in the app, and the tracked privacy policy names the email of the privacy officer as the way to ask outside the app.
-The privacy policy is deployed, so the store answer is pending on one step: the operator's confirmation of the deletion path outside the app in Play Console.
+The privacy policy is deployed, so the store answer is pending on one step: the confirmation of the deletion path outside the app in Play Console.
 Until it is done, Google's account deletion requirement stays open; pull request 19 leaves it unresolved for an account that the app makes without an action of the person.
 
 | Data type                                  | Collected              | Shared    | Optional                      | Purpose                      |
@@ -186,7 +186,7 @@ Anyone with the link can also read the user ID, because the page document holds 
 So "Shared: No" is defensible for the rows that are collected, and the decision is yours. RevenueCat processes the purchase history as a service provider of the app.
 The Financial info row is from RevenueCat's page (https://www.revenuecat.com/docs/platform-resources/google-platform-resources/google-plays-data-safety, read on 2026-10-05): "RevenueCat collects purchase history from users", "Select the 'App functionality' and 'Analytics' checkboxes", and "This data collection is required and cannot be turned off".
 The same page names Personal info only for customer attributes with contact information and Device or other IDs only for integrations with an advertising identifier, and the app uses neither.
-Delete All Data does not delete the RevenueCat customer record; the page says "ensure your customers have a way to contact your support team to request a data deletion. You will be able to delete the customer directly from the RevenueCat dashboard or via REST API.", and the privacy pages tell the person to ask the operator.
+Delete All Data does not delete the RevenueCat customer record; the page says "ensure your customers have a way to contact your support team to request a data deletion. You will be able to delete the customer directly from the RevenueCat dashboard or via REST API.", and the privacy pages tell the person to ask at the contact given there.
 The same page says to declare IP addresses by their use, "where developers use IP addresses as a means to determine location", which the app does not do.
 
 ## What the release builds checked
@@ -225,7 +225,7 @@ Whether the minified app runs was not checked: no device and no emulator ran it.
 
 ### Device check
 
-On 2026-10-03 the operator ran an iOS release build of the production flavor on an iPhone, from a commit that has the client link screen (`bc4d57c` or later), and every step passed:
+On 2026-10-03 an iOS release build of the production flavor was run on an iPhone, from a commit that has the client link screen (`bc4d57c` or later), and every step passed:
 
 1. take the photos of a visit;
 2. share the report as a link;
@@ -240,21 +240,21 @@ No Android build has run on a device, so the R8 item above stays open.
 
 ### Gallery check on 2026-10-30
 
-The operator confirmed JPEG, PNG and HEIC gallery selection, gallery labels without capture times, preservation after cancellation and persistence after reopening a visit on the physical iPhone 16 Pro.
+Confirmed: JPEG, PNG and HEIC gallery selection, gallery labels without capture times, preservation after cancellation and persistence after reopening a visit on the physical iPhone 16 Pro.
 The [gallery acceptance record](2026-10-30-gallery-device-acceptance.md) owns the exact development/release build and its limits.
 This was a local development-flavor pass, not a new production/backend, PDF, store or Android acceptance pass.
 Android and physical unsupported-input rejection remain unverified, and #82 stays open.
 
 ### Camera time check on 2026-10-30
 
-The operator confirmed all five iPhone scenarios: in-app before/after capture with correct preview and actual PDF captions, persistence and retake cancellation, different-day capture dates, gallery replacement without a time, and recovery after leaving an uncaptured preview.
+All five iPhone scenarios were confirmed: in-app before/after capture with correct preview and actual PDF captions, persistence and retake cancellation, different-day capture dates, gallery replacement without a time, and recovery after leaving an uncaptured preview.
 No microphone permission request was observed.
-The [capture-time acceptance record](2026-10-30-capture-time-device-acceptance.md) identifies the reused DEV build, operator-reported results and remaining limits.
+The [capture-time acceptance record](2026-10-30-capture-time-device-acceptance.md) identifies the reused DEV build, reported results and remaining limits.
 This was a development-flavor pass; Android, unobserved camera failure/interruption paths and production/store acceptance remain separate, and #61 stays open.
 
 ### TestFlight billing baseline on 2026-10-30
 
-The operator confirmed an initial no-purchase restore, one approved Basic monthly purchase, then successful in-place restoration with Basic/monthly state, the management control and existing local data retained in TestFlight `1.1.1(5)`.
+Confirmed: an initial no-purchase restore, one approved Basic monthly purchase, then successful in-place restoration with Basic/monthly state, the management control and existing local data retained in TestFlight `1.1.1(5)`.
 The management link opened the actual App Store subscription list, where the test subscription was absent; no subscription change or cancellation was verified.
-The [billing baseline record](2026-10-30-ios-restore-management-acceptance.md) separates these operator observations from current-source tests and records the unidentified binary source/SDK versions and account-selection limits.
+The [billing baseline record](2026-10-30-ios-restore-management-acceptance.md) separates these reported observations from current-source tests and records the unidentified binary source/SDK versions and account-selection limits.
 This adds no store upload or backend deployment acceptance; Android, the remaining product/lifecycle matrix, identity transfer and Firebase claim propagation remain open in #36.

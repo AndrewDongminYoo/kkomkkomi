@@ -3,9 +3,9 @@
 ## Status and decision
 
 Approved local direction for issue #86, based on main at `6cb836b78c1570aebdbe0768cd3a632a2575bf97`.
-The operator approved controlled publisher admission, the safety budgets and retaining the shared host on 2026-10-08.
-The approved baseline keeps report recipients anonymous and requires operator approval of each publishing account.
-The operator supplied `donminzzi@gmail.com` as the abuse-report address in this session.
+Controlled publisher admission, the safety budgets and retaining the shared host were approved on 2026-10-08.
+The approved baseline keeps report recipients anonymous and requires approval of each publishing account.
+`donminzzi@gmail.com` was supplied as the abuse-report address in this session.
 Reconciliation, 2026-11-02: `docs/specs/2026-11-02-publisher-approval-request.md` supersedes publisher admission only: a paid user gets the default grant automatically, and a free user requests approval in the app instead of by email; the budgets, blocks, and abuse reporting of this spec stay.
 
 ## Problem and evidence
@@ -22,15 +22,15 @@ The issue does not establish that abusive content caused the Chrome warning in #
 ### Publisher admission and repeat abuse
 
 Keep anonymous Firebase authentication.
-Require an operator-managed publication grant for writes; a new anonymous UID has no grant by default.
+Require a manually managed publication grant for writes; a new anonymous UID has no grant by default.
 Clients cannot create, delete, copy, or modify approval and budget fields; rules permit only resource-bound usage and reservation updates.
-The operator approves identifiable legitimate publishers and does not approve a replacement UID merely because the previous UID was blocked.
+Identifiable legitimate publishers are approved, and a replacement UID is not approved merely because the previous UID was blocked.
 Existing publishers require explicit enrollment before enforcement.
 Account deletion or reinstall can require renewed approval, which is a deliberate cost of this baseline.
 Do not silently grandfather every anonymous account.
 
 Grant withdrawal stops new page, report, and photo writes.
-An operator-managed page block immediately denies public reads of the page, its reports, and its photos, independently of owner-controlled revoke fields.
+A manually managed page block immediately denies public reads of the page, its reports, and its photos, independently of owner-controlled revoke fields.
 Owners retain deletion access for their own data.
 The app must explain a denied publication and provide an approval-request path without preventing local capture or PDF sharing.
 
@@ -46,14 +46,14 @@ Keep the existing unique retake paths because delayed uploads must not overwrite
 
 Initial approval defaults are 50 pages, 1,000 reports, 2,000 photo objects, and 1 GiB of lifetime reserved photo bytes per grant.
 These are safety budgets independent of subscription entitlements.
-The operator can issue a larger trusted grant instead of resetting client-writable counters.
+A larger trusted grant can be issued instead of resetting client-writable counters.
 Per-report limits are 20 zones, 100 characters for company, client, and zone names, and 2,000 characters each for notes and exception reasons.
 Every zone and photo reference must be validated; a list-size check alone is insufficient.
 Include a rules-enforced cooldown for successful new publication or photo reservations, with idempotent retry exemptions, and test it using emulator time-compatible fixtures.
 Confirm rules expression and document-access limits before accepting this implementation approach.
 If those limits prevent correct enforcement, return with the concrete failure rather than adding a server service silently.
 
-### Abuse reporting and operator response
+### Abuse reporting and response
 
 Add an accessible report-abuse email action to report, history, and unavailable views, including unbranded reports.
 Compose a mail to `donminzzi@gmail.com` with the affected report or page link and a request for a short reason.
@@ -62,8 +62,8 @@ Show the address as a fallback when no mail app opens.
 The user reviews and sends the message; opening the page sends no abuse report automatically.
 Mailbox delivery cannot be verified without a separately authorized test message and receipt.
 
-Document and exercise operator actions with fictional emulator data: block one page and its photos, withdraw its publisher grant, inspect the result, and preserve enough evidence to investigate.
-Use privileged operator access for grants and page blocks; recipient requests cannot perform takedowns.
+Document and exercise the manual actions with fictional emulator data: block one page and its photos, withdraw its publisher grant, inspect the result, and preserve enough evidence to investigate.
+Use privileged access for grants and page blocks; recipient requests cannot perform takedowns.
 Record the minimum retained identifiers and the handling of abuse reports in both privacy pages.
 
 ### Shared host decision
@@ -71,13 +71,13 @@ Record the minimum retained identifiers and the handling of abuse reports in bot
 Retain the current host for this first controlled-publisher baseline.
 Do not create a Hosting site, migrate domains, or change public report URLs in this implementation.
 A separate host would reduce coupling between public URLs but does not establish independent browser reputation or prevent malicious publication.
-The operator accepted the residual shared-host risk for this implementation.
+The residual shared-host risk is accepted for this implementation.
 Approved publishers can still submit abusive content; admission, finite budgets, reporting, and takedown reduce risk without claiming automatic moderation or complete anti-Sybil protection.
 App Check may complement these controls, but is not a substitute for admission or quotas.
 
 ## Implementation constraints
 
-A single `publishingGrants/{uid}` document holds operator-managed limits and approval alongside validated counters and the immutable-size reservation map.
+A single `publishingGrants/{uid}` document holds manually managed limits and approval alongside validated counters and the immutable-size reservation map.
 At most 2,000 active reservation keys of at most 384 characters fit the fixed document budget; cumulative usage is not refunded.
 A private report header reserves a lifetime report slot before staging seven fixed chunks of up to three zones in separate transactions.
 Each private chunk rechecks approval and ownership, then verifies every zone below the request expression limit.
@@ -85,14 +85,14 @@ Header reservation and public publication bind account charges and the server co
 The final public report transaction reads all seven validated chunks and the header, checks their concatenation, and publishes the complete report atomically.
 Interrupted drafts consume a report slot and remain private; retries reuse the same slot, and updating an inventoried legacy report does not charge another slot.
 Deleting a draft does not refund its slot.
-Storage creates read only the page and grant; public reads check the page and a durable operator-only `blockedPages/{pageId}` record.
-Operator blocking writes `blockedAt` and the durable block together, then removes photos to invalidate issued download tokens.
+Storage creates read only the page and grant; public reads check the page and a durable `blockedPages/{pageId}` record reachable only with privileged access.
+Blocking writes `blockedAt` and the durable block together, then removes photos to invalidate issued download tokens.
 Client deletion cannot erase the block.
 Existing identical adapter retries perform no mutation and need no renewed approval; changed resources require approval.
 A previously admitted account may create a closed page after approval withdrawal, within its existing page budget and cooldown, to reconcile a revoke whose earlier page write never arrived.
 A UID without any grant cannot create such a page.
 Owner-only reads include closed reports for reconciliation; public reads remain restricted to open, unblocked pages.
-Approval and usage records survive app account deletion until operator deletion on request; page block identifiers remain while the service operates.
+Approval and usage records survive app account deletion until deletion on request; page block identifiers remain while the service operates.
 Emails are deleted after handling; no mail delivery has been exercised.
 
 ## Acceptance and verification

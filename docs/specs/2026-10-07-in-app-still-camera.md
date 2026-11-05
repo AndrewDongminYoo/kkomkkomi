@@ -1,6 +1,6 @@
 # In-app still camera for capture time (#61)
 
-Date: 2026-10-07. Status: written camera contract approved by the operator in the all-issues session; implementation continuation authorized. Approval covers the camera-only worker flow and shutter-request device-clock observation below. Device acceptance remains separate.
+Date: 2026-10-07. Status: written camera contract approved in the all-issues session; implementation continuation authorized. Approval covers the camera-only worker flow and shutter-request device-clock observation below. Device acceptance remains separate.
 
 ## Purpose and existing contracts
 
@@ -12,7 +12,7 @@ The [M1 design](2026-10-01-m1-local-first-design.md), especially Units, Photos a
 
 - Base this work on the final metadata foundation in PR #78, `103d7f979dace3a5e069b880a70651448da91b50`, which includes the phone and gallery work of PRs #76 and #77. PR #74 is independent billing work. All four PRs stay separate; this document authorizes no merge.
 - Keep SQLite version 8 and the existing `PhotoCapture`, `InAppPhotoCapture`, `ObservedCameraPhoto`, `Clock`, `PhotoStore` and report contracts. No timestamp backfill or new recovery table is needed.
-- M2 and the time semantics have existing operator approval. The operator also approved this written camera contract, including the preview controls, observation event and interrupted-session behavior, and requested implementation continuation.
+- M2 and the time semantics have existing approval. This written camera contract was also approved, including the preview controls, observation event and interrupted-session behavior, and requested implementation continuation.
 - `CLAUDE.md` specifies the document locations and release approvals, but does not itself require a new written-spec approval for each feature. The applied `superpowers:brainstorming` workflow requires written-spec review before implementation of a new subsystem. Its gate is separate from the existing product decisions.
 - The follow-up delegation authorizes a practical execution plan and native implementation by the single coordinator without repeating the same contract confirmation. Hosting, app distribution and other live changes retain their separate approvals.
 
@@ -80,6 +80,6 @@ Controlled tests, CI builds and emulators do not satisfy the real-device gate. A
 
 ## Approved execution handoff
 
-The operator approved this camera-only contract: rear-camera preview, one still per existing slot, immediate return/save without a second confirmation screen, device-clock observation at shutter-request dispatch, and the permission/interruption behavior above. The approved storage, source and output choices need no repeat decision. This is not approval for sensor-exposure evidence or wider M2 features.
+This camera-only contract was approved: rear-camera preview, one still per existing slot, immediate return/save without a second confirmation screen, device-clock observation at shutter-request dispatch, and the permission/interruption behavior above. The approved storage, source and output choices need no repeat decision. This is not approval for sensor-exposure evidence or wider M2 features.
 
 Follow `docs/plans/2026-10-07-in-app-still-camera.md` in native execution. Preserve the four existing PRs and create the camera implementation in its own worktree/PR linked to #61; rebase on the accepted foundation and verify the final head. Real-device evidence and live release actions remain separate gates.

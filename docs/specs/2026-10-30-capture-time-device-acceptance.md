@@ -2,7 +2,7 @@
 
 ## Approved scope
 
-The operator selected the remaining iPhone camera, preview and PDF acceptance of [issue #61](https://github.com/AndrewDongminYoo/kkomkkomi/issues/61) and invoked the PR loop on 2026-10-30.
+I selected the remaining iPhone camera, preview and PDF acceptance of [issue #61](https://github.com/AndrewDongminYoo/kkomkkomi/issues/61) and invoked the PR loop on 2026-10-30.
 Reuse the implemented [camera contract](2026-10-07-in-app-still-camera.md), [metadata contract](2026-10-07-report-photo-and-company-metadata.md) and [capture-date rule](2026-10-08-report-capture-date.md).
 The issue's original discussion predates those decisions: capture time belongs to the local preview and PDF, with no web timestamp or Firebase payload change.
 No new camera feature, dependency, schema, report layout or release operation joins this pass.
@@ -13,8 +13,8 @@ Change application behavior only for a reproduced defect within these contracts.
 Reuse the identified development/release app installed for the [gallery pass](../notes/2026-10-30-gallery-device-acceptance.md), rather than treating the shared version number as source identity.
 Its retained manifest identifies source `a2cf0b334480774a3c28f821f4a81457bddcd505` plus regenerated iOS pins, Flutter 3.47.9, Dart 3.13.7 and bundle `kr.donminzzi.kkomkkomi.dev` version `1.1.1+5`.
 Before reuse, compare the executable inputs and iOS pin hashes with current main and verify the preserved artifact's signature and manifest file hashes.
-The earlier installation record and operator continuity identify the installed app; this pass does not independently read its executable bytes from the phone.
-The operator runs the manual scenarios on non-private test data.
+The earlier installation record and the reported continuity identify the installed app; this pass does not independently read its executable bytes from the phone.
+The manual scenarios run on non-private test data.
 Agent-driven installation, launch, termination, photo import and other daily-phone writes require their own approval.
 
 ## Acceptance checks
@@ -39,18 +39,18 @@ Android physical acceptance remains unavailable; an iPhone-only result does not 
 
 ## Evidence and delivery
 
-Keep operator-reported device observations distinct from controlled camera tests, fixture decoding and PDF text assertions.
+Keep reported device observations distinct from controlled camera tests, fixture decoding and PDF text assertions.
 Record the exact tested build, device/OS, individual scenario result and any evidence gap in a dated result note only after observations arrive.
 Update applicable current claims in `CLAUDE.md`, the first-distribution note and directly affected specifications in the same PR.
 Do not publish a preparation-only PR as completed acceptance, use an issue-closing reference, or infer visual approval from the instruction to run the loop.
-Rendered-output changes require explicit operator approval of their final artifacts before merge.
+Rendered-output changes require explicit approval of their final artifacts before merge.
 This pass authorizes no store upload, backend publication, deployment or production billing action.
 
-The [dated result record](../notes/2026-10-30-capture-time-device-acceptance.md) contains the operator's completed five-item iPhone report and the remaining gaps.
-No rendering implementation changed; the operator's confirmation concerns the existing build's preview and actual PDF.
+The [dated result record](../notes/2026-10-30-capture-time-device-acceptance.md) contains the completed five-item iPhone report and the remaining gaps.
+No rendering implementation changed; the confirmation concerns the existing build's preview and actual PDF.
 
 ## Precedent and retrieval limit
 
 Fresh precedent retrieval was unavailable during authoring.
 The [earlier gallery specification](2026-10-30-gallery-device-acceptance.md#precedent) records retained precedent for current-screen procedures and related documentation updates.
-This pass keeps controlled checks separate from operator-run physical observations without claiming fresh retrieval or source verification.
+This pass keeps controlled checks separate from reported physical observations without claiming fresh retrieval or source verification.

@@ -2,42 +2,42 @@
 
 ## Build, account and evidence
 
-On 2026-10-30 the operator identified the regular Kkomkkomi app as TestFlight `1.1.1(5)`.
+On 2026-10-30 the regular Kkomkkomi app was identified as TestFlight `1.1.1(5)`.
 Native app inventory confirmed `kr.donminzzi.kkomkkomi`, version `1.1.1`, build `5`.
 The installed binary's source commit, Flutter version and embedded RevenueCat SDK versions were not established.
 No matching local production IPA/archive or build record was present.
 This is an existing store-build baseline, not proof of a build from current main or physical acceptance of the latest dependency upgrade.
 The separate DEV camera/gallery app has free-only entitlements and was not the billing test target.
 
-The operator reported that both Developer Sandbox Apple Account and Media and Purchases were signed in.
+It was reported that both Developer Sandbox Apple Account and Media and Purchases were signed in.
 No account identity, password, raw receipt or provider customer record was collected, and the account actually selected for each StoreKit request was not independently established.
 [Apple documents](https://developer.apple.com/help/app-store-connect/test-a-beta-version/testing-subscriptions-and-in-app-purchases-in-testflight) that TestFlight apps operate in the Sandbox purchase environment; a separate Sandbox account selection involves additional account settings.
 No account switch, reinstall or purchase-history reset was requested or reported in this pass.
 The purchase environment does not isolate the production flavor's Firebase and RevenueCat project services.
 
-These observations are operator-reported device results, not agent screen captures or direct Apple/RevenueCat/Firebase transaction reads.
+These observations are reported device results, not agent screen captures or direct Apple/RevenueCat/Firebase transaction reads.
 Exact execution times were not supplied.
 The [acceptance spec](../specs/2026-10-30-ios-restore-management-acceptance.md) and [plan](../plans/2026-10-30-ios-restore-management-acceptance.md) bound the pass.
 
 ## Observations
 
-| Observation                                      | Operator-reported result                                                                                              |
-| ------------------------------------------------ | --------------------------------------------------------------------------------------------------------------------- |
-| Initial plan and controls                        | Plan section and purchase-restoration control displayed; management control absent; operator reported no subscription |
-| Initial restore                                  | Displayed the no-purchase notice, retained the free plan and showed no management control                             |
-| One approved Basic monthly purchase              | Purchase completed successfully; Basic and its five-client limit were displayed                                       |
-| Management navigation after purchase             | Control appeared and opened the actual App Store subscription list; the test subscription was not listed there        |
-| Restore after the purchase and return to the app | The operator reported the successful-restoration notice; Basic/monthly state and the management control remained      |
-| Existing local data after restoration            | The operator reported that existing clients, photos and reports remained                                              |
+| Observation                                      | Reported result                                                                                                |
+| ------------------------------------------------ | -------------------------------------------------------------------------------------------------------------- |
+| Initial plan and controls                        | Plan section and purchase-restoration control displayed; management control absent; no subscription reported   |
+| Initial restore                                  | Displayed the no-purchase notice, retained the free plan and showed no management control                      |
+| One approved Basic monthly purchase              | Purchase completed successfully; Basic and its five-client limit were displayed                                |
+| Management navigation after purchase             | Control appeared and opened the actual App Store subscription list; the test subscription was not listed there |
+| Restore after the purchase and return to the app | The successful-restoration notice was reported; Basic/monthly state and the management control remained        |
+| Existing local data after restoration            | Existing clients, photos and reports were reported to remain                                                   |
 
 The initial restore establishes the visible no-active-purchase path, not the absence of every historical transaction.
 The current source maps no active paid entitlement to its no-purchase notice, but no receipt contents or provider-side state were inspected here.
 Management-link navigation does not establish that the Sandbox subscription can be changed or cancelled in that list.
 No actual subscription-management transition was performed.
-The approved single purchase was consumed by the successful operator transaction; it grants no authority for additional purchases or account changes.
-The operator reported both restore outcomes: the initial no-purchase notice and the successful-restoration notice after the approved purchase.
+The approved single purchase was consumed by the successful transaction; it grants no authority for additional purchases or account changes.
+Both restore outcomes were reported: the initial no-purchase notice and the successful-restoration notice after the approved purchase.
 These are in-place observations on the same installed app, not recovery after reinstall or a controlled transfer between identities.
-Local-data preservation is operator-reported; no pre/post database or file inventory was captured.
+Local-data preservation is reported; no pre/post database or file inventory was captured.
 Returning from management without a store-side change establishes the retained displayed state, not a subscription-transition refresh.
 
 ## Controlled checks and limits

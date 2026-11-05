@@ -1,9 +1,9 @@
 # M1 local-first design
 
 Date: 2026-10-01.
-Status: written by the agent under the operator's mandate to work without review for this session, so every decision here is open to revision by the operator.
+Status: written by the agent under a mandate to work without review for this session, so every decision here is open to revision.
 
-This document is the source of truth for the M1 build until the operator replaces it.
+This document is the source of truth for the M1 build until it is replaced.
 `CLAUDE.md` owns the product rules and the milestone table, and this document does not restate them.
 
 ## Goal
@@ -22,7 +22,7 @@ Phase A is the flow above: briefs 1 to 4, local storage and the PDF, with no bac
 Phase B publishes a report as a web link: briefs 5 to 7, on the Firebase project `kkomkkomi`.
 
 The first version of this document left Phase B out, because no Firebase project existed.
-The operator created the project later on 2026-10-01, so the "Phase B" section below replaces that exclusion.
+The project was created later on 2026-10-01, so the "Phase B" section below replaces that exclusion.
 
 `CLAUDE.md` calls the PDF a secondary output, and it stays secondary: the web link takes the primary place when Phase B ships.
 
@@ -114,9 +114,9 @@ The Windows build must keep passing in CI, and Windows runtime behavior is not a
 - Firestore exists in `asia-northeast3`, and its rules deny every read and write.
 - Anonymous sign-in is enabled.
 - Hosting serves `web/` at `https://kkomkkomi.web.app`, and the landing page is live there.
-- Storage is set up, and its rules deny every read and write. The operator set it up in the Firebase console later on 2026-10-01, after the first version of this section said it was absent.
-- The two items above describe the deployed rules. Pull request 12 changed the tracked `firestore.rules` and `storage.rules` to the rules in "Security rules" below, and nothing deployed them. The operator deploys them after review.
-- 2026-10-02: the operator approved the deploy, and the rules and Hosting of `ab6d8d7` were deployed. The deployed rule texts equal the tracked files. The operator then granted `roles/firebaserules.firestoreServiceAgent` to the Storage service agent, which the cross-service reads of `storage.rules` need. `CLAUDE.md` owns the current state.
+- Storage is set up, and its rules deny every read and write. It was set up in the Firebase console later on 2026-10-01, after the first version of this section said it was absent.
+- The two items above describe the deployed rules. Pull request 12 changed the tracked `firestore.rules` and `storage.rules` to the rules in "Security rules" below, and nothing deployed them. They are deployed after review.
+- 2026-10-02: the deploy was approved, and the rules and Hosting of `ab6d8d7` were deployed. The deployed rule texts equal the tracked files. Then `roles/firebaserules.firestoreServiceAgent` was granted to the Storage service agent, which the cross-service reads of `storage.rules` need. `CLAUDE.md` owns the current state.
 
 ### Decisions
 
@@ -135,7 +135,7 @@ The Windows build must keep passing in CI, and Windows runtime behavior is not a
 ### Security rules
 
 These rules make published reports readable without sign-in, which is what a link opened from KakaoTalk needs.
-The operator must review them before they are deployed.
+They must be reviewed before they are deployed.
 
 - Anyone can read one client page by its ID, and its reports, while `revokedAt` is unset.
 - No one can list the `clientPages` collection.

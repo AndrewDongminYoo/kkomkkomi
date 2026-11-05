@@ -2,7 +2,7 @@
 
 ## Approved outcome
 
-The operator explicitly requested new production builds with preserved source commits and file hashes, followed by upload, on 2026-10-31.
+New production builds with preserved source commits and file hashes, followed by upload, were explicitly requested on 2026-10-31.
 Target the existing production bundle `kr.donminzzi.kkomkkomi`: TestFlight on iOS and the Google Play internal track with `draft` status on Android.
 Fresh read-only store lists showed maximum build/version code 5 on both platforms.
 Use `1.1.2+6`: the next integer build and a patch version for a binary that differs from an already distributed build.
@@ -26,7 +26,7 @@ This does not infer the source or embedded SDKs of the previous `1.1.1(5)` binar
 
 No public rollout, store app-review submission, tester/account change, device write, additional purchase, backend deployment or listing/screenshot transfer is included.
 Keep credentials and account/tester identities out of tracked files and public PR text.
-Use the operator-provided credential locations only in the task's process environment, preserving project/account boundaries.
+Use the provided credential locations only in the task's process environment, preserving project/account boundaries.
 The earlier `1.1.1(5)` listing snapshots and screenshot approvals remain unchanged; a listing/image target mismatch must fail closed rather than silently rebind them.
 No product UI or rendered asset changes are proposed, so no new visual implementation approval is required.
 

@@ -589,7 +589,7 @@ class _ShareBar extends StatelessWidget {
                 const SizedBox(height: 8),
               ],
               if (hasLink) ...[
-                // The app cannot read whether the operator approved the account, so the approval request shows only
+                // The app cannot read whether the account was approved, so the approval request shows only
                 // after the backend refused a publish and the backend holds no request of the user, under the message
                 // that explains the refusal.
                 if (linkState.canRequestApproval || linkState.approval == ApprovalRequestStatus.sending)

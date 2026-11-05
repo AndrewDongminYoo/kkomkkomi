@@ -3,7 +3,7 @@
 ## Approved outcome
 
 Continue issue #40 with the existing production `1.1.2`, version code `6`, on Play internal testing.
-The operator requested this continuation after the remaining internal-track distribution gap was identified.
+This continuation was requested after the remaining internal-track distribution gap was identified.
 The bundle is already uploaded; reuse its internal draft and the [verified production provenance](../notes/2026-10-31-production-build-provenance.md).
 
 ## Invariants
@@ -21,5 +21,5 @@ Read back internal code 6 and distinguish draft, submitted and published states 
 Inspect existing tester participation configuration without enrollment or account changes.
 Without an Android physical device, installation, compatibility, delivered version and runtime behavior remain unverified.
 No rebuild, duplicate upload, new version, listing/image transfer, backend deployment, device operation or public production rollout is included.
-Issue #40 stays open for acceptance not yet observed; the initial build 1 wording is historical context for this operator-selected build 6 continuation.
+Issue #40 stays open for acceptance not yet observed; the initial build 1 wording is historical context for this selected build 6 continuation.
 No product UI changes require visual implementation approval.

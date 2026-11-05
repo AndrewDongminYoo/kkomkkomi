@@ -1,6 +1,6 @@
 # In-app Still Camera Implementation Plan
 
-> **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking. The operator chose a single coordinator and approved implementation continuation; do not ask again about the accepted contract or dispatch a review fleet.
+> **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking. A single coordinator was chosen and implementation continuation was approved; do not ask again about the accepted contract or dispatch a review fleet.
 
 **Goal:** Complete the #61 camera producer with one mobile still capture and its directly observed shutter-request time.
 
@@ -8,7 +8,7 @@
 
 **Tech Stack:** Flutter, bloc, camera 0.12.1, existing image/image_picker and SQLite version 8.
 
-**Spec:** `docs/specs/2026-10-07-in-app-still-camera.md`, written camera contract approved by the operator on 2026-10-07.
+**Spec:** `docs/specs/2026-10-07-in-app-still-camera.md`, written camera contract approved on 2026-10-07.
 
 ## Global Constraints
 

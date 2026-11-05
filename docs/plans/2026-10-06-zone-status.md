@@ -21,12 +21,12 @@ Until it ships, no person can set an exception, so every report shows done zones
 ## Release builds
 
 A release build is allowed after each merge, with one condition: the Hosting deploy of the privacy pages of PR 3 comes before the first build that holds PR 4, because PR 4 is the first change that lets a person set an exception and publish its reason.
-The deploy needs the approval of the operator, and the deploy record in `CLAUDE.md` follows it.
+The deploy needs the approval of the user, and the deploy record in `CLAUDE.md` follows it.
 
 ## Verification of each pull request
 
 - `merry run check` and `merry run coverage` (100% of `lib`).
 - PR 1 adds a test of the upgrade from version 4 with stored records.
-- PR 2 sends sample PDFs to the operator before the merge, as #63 did.
+- PR 2 sends sample PDFs for review before the merge, as #63 did.
 - PR 3 runs `merry run web` and `merry run rules`.
 - PR 4 runs the capture screen tests at the narrow screen with the largest text.

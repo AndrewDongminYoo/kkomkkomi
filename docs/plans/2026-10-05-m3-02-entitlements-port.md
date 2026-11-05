@@ -14,7 +14,7 @@
 
 - RevenueCat entitlement identifiers: `basic` and `pro`. A Pro product grants both. Any other identifier is ignored.
 - The RevenueCat app user ID is the Firebase user ID from `Identity.currentUserId()`. The adapter never configures RevenueCat with another ID and never makes a purchase before it has that ID.
-- The public SDK keys are never tracked (operator, 2026-10-05). `config/revenuecat.json` holds them, git ignores it, and the production build reads it with `--dart-define-from-file`. A tracked `config/revenuecat.example.json` shows its two keys with empty values.
+- The public SDK keys are never tracked (decided 2026-10-05). `config/revenuecat.json` holds them, git ignores it, and the production build reads it with `--dart-define-from-file`. A tracked `config/revenuecat.example.json` shows its two keys with empty values.
 - An empty key, a platform other than iOS and Android, and the development and staging flavors all use the Free-only adapter.
 - `lib/billing/` is the one directory under `lib/` that may import `purchases_flutter`, and `lib/main_production.dart` is the one file outside it that may import it, as `test/firebase/boundary_test.dart` enforces for FlutterFire.
 - Coverage of `lib` stays at 100%, and `merry run check` passes.
@@ -179,12 +179,12 @@ Behavior:
 - Modify: `CLAUDE.md`: "Units" (the `billing/` unit and the `Entitlements` port), "Entry points" (the builder argument and the flavor's adapter), "Release" (the keys file and the release check), and "Current state" (the app reads the plan, and no screen uses it yet).
 - Modify: `docs/notes/2026-10-02-first-test-distribution.md`:
   - Before the first Play subscription can be created, Play needs a published build that holds the Play Billing Library ("Once you've set up a developer account, you must publish a version of your app that includes the Google Play Billing Library", https://developer.android.com/google/play/billing/getting-ready, read on 2026-10-05). State as an assumption, not as a fact, that a rollout on the internal testing track counts as publishing.
-  - The operator creates `config/revenuecat.json` from the example before a release build.
-  - The App Privacy draft: the privacy manifest of `purchases-ios` 5.92.0, which `purchases_flutter` 10.14.0 bundles, declares Purchase History, not linked to the user, not for tracking, for App Functionality (https://raw.githubusercontent.com/RevenueCat/purchases-ios/5.92.0/Sources/PrivacyInfo.xcprivacy, read on 2026-10-05). Add that row as the existing Diagnostics row follows the Firebase manifests (operator decision, 2026-10-02), and add the SDK to the list of manifests in the "Privacy manifest" section.
+  - The user creates `config/revenuecat.json` from the example before a release build.
+  - The App Privacy draft: the privacy manifest of `purchases-ios` 5.92.0, which `purchases_flutter` 10.14.0 bundles, declares Purchase History, not linked to the user, not for tracking, for App Functionality (https://raw.githubusercontent.com/RevenueCat/purchases-ios/5.92.0/Sources/PrivacyInfo.xcprivacy, read on 2026-10-05). Add that row as the existing Diagnostics row follows the Firebase manifests (decided 2026-10-02), and add the SDK to the list of manifests in the "Privacy manifest" section.
 - Modify: `web/privacy/index.html` and `web/privacy/en/index.html`, section 10, which names the data that the bundled manifests declare: add Purchase History as the RevenueCat manifest declares it, in both languages together, and keep `test/web/privacy.test.mjs` passing. Do not describe RevenueCat as a processor that receives data yet: PR 3 does that when the app first contacts it.
 - Modify: `docs/plans/2026-10-05-m3-subscriptions.md`: the privacy pages and the store answers for RevenueCat as a processor move from PR 5 to PR 3, the first pull request that calls `currentPlan()`.
 
 - [ ] **Step 1:** cspell and `trunk check` on the changed Markdown.
 - [ ] **Step 2:** Commit `docs: describe the entitlements port and the RevenueCat keys`.
 
-The pull request body lists the Hosting deploy that the merge makes due for the privacy pages, with the operator's approval.
+The pull request body lists the Hosting deploy that the merge makes due for the privacy pages, with the user's approval.

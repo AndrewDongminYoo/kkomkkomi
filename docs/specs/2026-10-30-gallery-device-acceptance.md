@@ -3,10 +3,10 @@
 ## Scope
 
 Run the existing gallery flow for JPEG, PNG and HEIC on a physical iPhone, and record the exact build and source formats.
-This is partial acceptance of [issue #82](https://github.com/AndrewDongminYoo/kkomkkomi/issues/82): the operator has no Android phone, so Android physical acceptance remains open.
+This is partial acceptance of [issue #82](https://github.com/AndrewDongminYoo/kkomkkomi/issues/82): I have no Android phone, so Android physical acceptance remains open.
 The [report metadata spec](2026-10-07-report-photo-and-company-metadata.md) owns normalization, provenance and failure behavior.
 No conversion dependency or product behavior change is justified without a reproduced failure.
-The [iPhone result record](../notes/2026-10-30-gallery-device-acceptance.md) contains the completed operator observations and the remaining evidence gaps.
+The [iPhone result record](../notes/2026-10-30-gallery-device-acceptance.md) contains the completed reported observations and the remaining evidence gaps.
 
 ## Evidence boundaries
 
@@ -46,7 +46,7 @@ An iPhone-only record may be reviewed and merged without closing #82 or claiming
 Do not use an automatic issue-closing reference in that PR.
 The final record distinguishes observed results, automated results and remaining gaps.
 Update applicable claims in `CLAUDE.md`, the original metadata spec and the first-distribution note in the same PR when the evidence changes those claims.
-After merge, the operator-requested memory review records only a needed project-scoped correction, with the final evidence as its source.
+After merge, the requested memory review records only a needed project-scoped correction, with the final evidence as its source.
 
 ## Precedent
 

@@ -1,6 +1,6 @@
 # Approved report metadata implementation
 
-Source: `docs/specs/2026-10-07-report-photo-and-company-metadata.md` and operator approval on 2026-10-07.
+Source: `docs/specs/2026-10-07-report-photo-and-company-metadata.md` and approval on 2026-10-07.
 
 1. Add the optional local business phone, forward migration, profile form, preview/PDF header and privacy copy.
    Verify old-profile upgrades, clearing the field and omission from public payloads.
@@ -13,7 +13,7 @@ Source: `docs/specs/2026-10-07-report-photo-and-company-metadata.md` and operato
    Publish a draft PR for #61, clearly separating tested metadata from camera/device acceptance.
 
 Keep each PR reviewable; do not merge or deploy.
-Never insert the operator's private report URL into tracked files.
+Never insert a private report URL into tracked files.
 
 ## Capture-time implementation boundary
 

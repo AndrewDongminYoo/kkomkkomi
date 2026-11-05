@@ -6,7 +6,7 @@ Read `CLAUDE.md` ("Publishing", "Deletion", "Product rules that constrain code")
 
 The product rules in `CLAUDE.md` require per-client access removal and reissue of a report link.
 `PublishQueue.revokeClientPage` and `PublishQueue.reissueClientPage` implement both, and no screen calls them: `CLAUDE.md` says "no screen revokes or reissues a page yet", and section 5 of the privacy policy says the app has no way to close the link of one client ("예정").
-The operator approved this work on 2026-10-02.
+This work was approved on 2026-10-02.
 
 ## Goal
 
@@ -30,7 +30,7 @@ From the client detail screen, a person closes the link of that client, or repla
 - A button that shares the history link of a client. The web report page links to the history, so a report link reaches it.
 - Archiving a client does not revoke its page. Do not change that here; name it in the pull request body as a follow-up if you find that it matters.
 - Any change to `firestore.rules` or `storage.rules`: the rules already allow the owner to revoke.
-- Any deploy. The parent session asks the operator to deploy Hosting after the merge, because the privacy pages change.
+- Any deploy. The parent session asks the user to deploy Hosting after the merge, because the privacy pages change.
 
 ## Requirements
 

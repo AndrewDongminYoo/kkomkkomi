@@ -1,7 +1,7 @@
 # Report photo slot orientation implementation
 
 Date: 2026-10-08.
-Approved direction: issue #62 and the operator's instruction to proceed.
+Approved direction: issue #62 and the instruction to proceed.
 The [slot orientation spec](../specs/2026-10-08-report-photo-orientation.md) owns the behavior.
 
 ## Steps
@@ -15,12 +15,12 @@ The [slot orientation spec](../specs/2026-10-08-report-photo-orientation.md) own
 4. Update the report contract in `CLAUDE.md` and affected pagination expectations.
    Test state preservation, rotated photos, unreadable images, source captions and long-note pagination.
 5. Run scoped tests, `dart format` on changed Dart paths, `merry run check` and `merry run coverage`.
-   Perform one structured local review of the final diff and render fictional-photo previews and PDFs for operator review.
+   Perform one structured local review of the final diff and render fictional-photo previews and PDFs for review.
 
 ## Ownership and authority
 
 The root agent owns changes in the four report production files, the three corresponding report test files, the PDF test reader and the documentation named above.
 Use the main workspace and preserve unrelated edits.
 The initial approval covered local implementation and verification.
-The operator subsequently invoked `pr-loop`, authorizing scoped commits, push, a PR and hosted review.
+`pr-loop` was subsequently invoked, authorizing scoped commits, push, a PR and hosted review.
 Merge, device writes and deployment retain their separate approval boundaries.
