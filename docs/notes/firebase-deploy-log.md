@@ -13,6 +13,7 @@ Hosting alone was deployed from `0da9ccf` on 2026-10-06, after #55 merged, which
 Hosting alone was deployed again from `6bae5df` on 2026-10-06, after #57 merged, which added `web/sitemap.xml` and `web/robots.txt`.
 Hosting alone was deployed from `300add7` on 2026-10-07, after #69 merged, which changed the web report and both privacy pages for the zone status. No other file under `web/` had changed since `6bae5df`.
 Hosting alone was deployed again from `59b1c84` on 2026-10-07, after #74, #76, #77, #78, and #80 merged, which changed the web report (the gallery mark of #77) and both privacy pages (#76, #77, #78). No other file under `web/` had changed since `300add7`.
+Hosting was deployed from `101fd6d` on 2026-11-10 as rollout step 1 of the #86 controls, and the Firestore and Storage rules were deployed together from `101fd6d` the same day as rollout step 4; `docs/notes/2026-11-10-emudhra-firestore-patch.md` owns the read-back of both.
 
 ## RevenueCat extension
 
