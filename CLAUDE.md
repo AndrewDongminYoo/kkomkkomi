@@ -22,7 +22,7 @@ M1 waits for the first test distribution (#40), and M3 follows `docs/plans/2026-
 See `docs/notes/2026-10-31-store-distribution-status.md` § Current state (moved 2026-11-02).
 A read-only track check on 2026-11-02 found Google Play `1.1.2`, version code `6`, with status `completed` on the internal, closed Alpha and production tracks, and the production release was confirmed as intended.
 `docs/notes/2026-10-31-play-internal-distribution.md` owns that read-back and its limits; tester eligibility on the internal track and an Android physical-device pass keep #40 open.
-No check has read the App Store production state.
+A read-only App Store Connect read on 2026-11-10 found iOS `1.1.1` (build 5) for sale, which holds a Firestore SDK affected by the eMudhra CA compromise, and `1.1.3` (build 7) waiting for review with release after approval; `docs/notes/2026-11-10-emudhra-firestore-patch.md` owns that read.
 The data layer of the M1 build exists: the domain model, the repository interfaces and use cases, and the SQLite repositories.
 The client list, the client detail, the visit capture, the company profile, and the plans screens use it, and the client list is the home screen.
 The client detail screen starts a visit and opens a past one, and the visit capture screen takes the before photo, the after photo, the status, and the note of each zone, and the reason of a zone that is partly done or not done.
@@ -53,10 +53,10 @@ A fresh clone needs `flutterfire configure` before a production build for Androi
 After `flutterfire configure`, run `dart format lib/firebase_options.dart`, because the local format check reads that file and CI never sees it.
 
 The local controls of issue #86 require publisher approval and resource-bound safety budgets: a grant is issued after an in-app request, and a paid user creates its own default grant (`docs/specs/2026-11-02-publisher-approval-request.md`); `docs/specs/2026-10-08-report-abuse-controls.md` owns the limits and `docs/notes/report-abuse-operations.md` owns enrollment and takedown.
-They have not been deployed.
+They were deployed on 2026-11-10, after the one existing publisher was found already enrolled; `docs/notes/2026-11-10-emudhra-firestore-patch.md` owns the rollout record, and rollout step 5 has not been run.
 `firestore.rules` and `storage.rules` let anyone read a client page, its reports, and their photos by page ID while the page is open, and let the owner delete them.
 See `docs/notes/firebase-deploy-log.md` § Current state (moved 2026-11-02).
-The deployed Firestore rules equal the tracked ones at `135c67f`, the deployed Hosting files equal the tracked ones at `59b1c84`, and the deployed Storage rules equal the tracked ones at `34d5d23`.
+The deployed Firestore rules, Storage rules, and Hosting files equal the tracked ones at `101fd6d`.
 A deploy is the user's decision each time: do not deploy rules or Hosting without that approval.
 
 The RevenueCat Firebase extension was installed from the Firebase console on 2026-10-05, as the instance `firestore-revenuecat-purchases`.
