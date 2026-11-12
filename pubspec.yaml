@@ -35,18 +35,18 @@ dependencies:
   url_launcher: ^6.3.3
 
 dev_dependencies:
-  analyzer: ^13.3.0
+  analyzer: ^14.4.0
   bloc_lint: ^0.4.3
   bloc_test: ^10.0.0
   bloc_tools: ^0.1.0-dev.25
-  build_runner: ^2.16.1
+  build_runner: ^2.16.2
   camera_platform_interface: ^2.15.0
   flutter_gen_runner: ^5.15.0
   flutter_test:
     sdk: flutter
   import_sorter: ^4.6.0
   mocktail: ^1.0.5
-  sqflite_common_ffi: ^2.4.6
+  sqflite_common_ffi: ^2.4.7
   very_good_analysis: ^11.0.0
   yaml: ^3.1.4
 
