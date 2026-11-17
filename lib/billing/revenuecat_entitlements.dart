@@ -162,7 +162,7 @@ final class RevenueCatEntitlements implements Entitlements {
       _onEntitlements(await _store.purchasePackage(offer.id));
       return PurchaseOutcome.purchased;
     } on PlatformException catch (error, stackTrace) {
-      switch (_errorCodeOf(error)) {
+      switch (PurchasesErrorHelper.getErrorCode(error)) {
         case PurchasesErrorCode.purchaseCancelledError:
           return PurchaseOutcome.cancelled;
         case PurchasesErrorCode.paymentPendingError:
@@ -286,14 +286,5 @@ final class RevenueCatEntitlements implements Entitlements {
     if (plan == _plan) return;
     _plan = plan;
     _changes.add(plan);
-  }
-}
-
-/// The error code of [error], or null when its code is no number, which `PurchasesErrorHelper.getErrorCode` parses.
-PurchasesErrorCode? _errorCodeOf(PlatformException error) {
-  try {
-    return PurchasesErrorHelper.getErrorCode(error);
-  } on FormatException {
-    return null;
   }
 }
