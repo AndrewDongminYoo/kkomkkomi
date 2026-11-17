@@ -14,8 +14,8 @@
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/google/app-check.git",
       "state" : {
-        "revision" : "c7eb17e5545f36e43dc50e70da09c2e999714e16",
-        "version" : "12.0.0"
+        "revision" : "b7c71458b70284cc0f5a87103f66f0b1d98b1873",
+        "version" : "12.1.0"
       }
     },
     {
@@ -23,8 +23,8 @@
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/firebase/firebase-ios-sdk",
       "state" : {
-        "revision" : "dc6dfd442b1f3ec215ed62b8beb2623ffab010d6",
-        "version" : "13.1.1"
+        "revision" : "efad2b784dfae43404dc1fcfdf272981b235e71f",
+        "version" : "13.2.0"
       }
     },
     {
@@ -32,8 +32,8 @@
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/googleads/google-ads-on-device-conversion-ios-sdk",
       "state" : {
-        "revision" : "0208e2681ec81f8a9c81084696f60fcce26cb7ee",
-        "version" : "3.7.0"
+        "revision" : "665eb0eab22172138bf5b3ce6d75e62b82c2ab59",
+        "version" : "3.8.0"
       }
     },
     {
@@ -41,8 +41,8 @@
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/google/GoogleAppMeasurement.git",
       "state" : {
-        "revision" : "1a3546fb9189292e9d64db9e72add7a286c0f85a",
-        "version" : "13.0.1"
+        "revision" : "abc3a85c786aa7077d93ab7f6709dfc9e1b6d557",
+        "version" : "13.2.0"
       }
     },
     {
@@ -122,8 +122,8 @@
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/RevenueCat/purchases-hybrid-common.git",
       "state" : {
-        "revision" : "b1e41a14ebd7eb415b8ed18733b6926b8e1e1203",
-        "version" : "20.3.0"
+        "revision" : "82c71383d54f8a4aa1d8ed2f1a40ee5d62da5859",
+        "version" : "20.9.0"
       }
     },
     {
@@ -131,8 +131,8 @@
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/RevenueCat/purchases-ios-spm",
       "state" : {
-        "revision" : "14a93c5a1b35710fd16bb42ac1a4cdc12b172a70",
-        "version" : "5.100.0"
+        "revision" : "7276de1d6f8b2cd1fe184c1239a6389a53383600",
+        "version" : "5.103.0"
       }
     }
   ],
