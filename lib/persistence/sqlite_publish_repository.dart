@@ -48,8 +48,8 @@ final class SqlitePublishRepository implements PublishRepository {
     if (_pageFromRow(pages.single).isQuarantined) throw StateError('The page is quarantined');
     final rows = await transaction.query(
       'publish_jobs',
-      where: 'kind = ? AND page_id = ? AND visit_id IS ? AND status = ?',
-      whereArgs: [job.kind.name, job.pageId, job.visitId, PublishJobStatus.pending.name],
+      where: 'kind = ? AND page_id = ? AND visit_id ${job.visitId == null ? 'IS NULL' : '= ?'} AND status = ?',
+      whereArgs: [job.kind.name, job.pageId, ?job.visitId, PublishJobStatus.pending.name],
     );
     if (rows.isEmpty) {
       await transaction.insert('publish_jobs', _jobToRow(job));
