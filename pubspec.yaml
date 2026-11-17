@@ -11,25 +11,25 @@ dependencies:
   bloc: ^9.2.1
   camera: ^0.12.2
   characters: ^1.4.1
-  cloud_firestore: ^7.1.0
+  cloud_firestore: ^7.2.0
   connectivity_plus: ^7.3.2
-  firebase_auth: ^7.0.1
-  firebase_core: ^5.1.0
-  firebase_storage: ^14.0.1
+  firebase_auth: ^7.1.0
+  firebase_core: ^5.2.0
+  firebase_storage: ^14.1.0
   flutter:
     sdk: flutter
   flutter_bloc: ^9.1.1
   flutter_localizations:
     sdk: flutter
-  image: ^4.12.0
+  image: ^4.13.1
   image_picker: ^1.2.4
   intl: ^0.20.3
-  material_ui: ^1.11.0
+  material_ui: ^1.11.1
   path: ^1.9.1
   path_provider: ^2.1.6
   pdf: ^3.13.1
   printing: ^5.15.1
-  purchases_flutter: ^11.0.1
+  purchases_flutter: ^11.0.3
   share_plus: ^13.3.1
   sqflite: ^2.4.6
   url_launcher: ^6.3.3
