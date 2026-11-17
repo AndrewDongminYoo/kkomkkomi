@@ -1,3 +1,6 @@
+// 🎯 Dart imports:
+import 'dart:async';
+
 // 📦 Package imports:
 import 'package:flutter_test/flutter_test.dart';
 import 'package:sqflite_common_ffi/sqflite_ffi.dart';
@@ -275,6 +278,24 @@ void main() {
       expect(stored.generation, 1);
       expect((stored.attempts, stored.nextAttemptAt), (0, null));
       expect(await repository.pendingJobs(), [stored]);
+    });
+
+    test('enqueue restarts a pending revoke without null argument warnings', () async {
+      final messages = <String>[];
+      await runZoned(
+        () async {
+          await repository.enqueue(job('publish'));
+          final revoke = job('revoke', visitId: null, kind: PublishJobKind.revoke, minute: 1);
+          expect(await repository.enqueue(revoke), revoke);
+          expect(
+            await repository.enqueue(job('duplicate', visitId: null, kind: PublishJobKind.revoke, minute: 2)),
+            revoke.restart(),
+          );
+          expect(await repository.pendingJobs(), [job('publish'), revoke.restart()]);
+        },
+        zoneSpecification: ZoneSpecification(print: (_, _, _, message) => messages.add(message)),
+      );
+      expect(messages.where((message) => message.contains('Invalid argument')), isEmpty);
     });
 
     test('saveJob does not save a run that read a job before a restart of it', () async {
