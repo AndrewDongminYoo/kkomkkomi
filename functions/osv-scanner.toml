@@ -6,3 +6,7 @@
 id = "GHSA-gcqx-w48m-w2h4"
 ignoreUntil = 2027-02-01T00:00:00Z
 reason = "Dev-only dependency of jest with no patched version; not in the deployed function."
+
+[[IgnoredVulns]]
+id = "GHSA-fc5q-39xc-vjpf"
+reason = "picomatch@2.3.2 and picomatch@4.0.7 have no patched release as of 2026-11-18. GitHub advisory data reports no first patched version for the affected range <= 4.0.7, and npm view picomatch versions ends at 4.0.7. Reachability evidence: in functions/, npm ls picomatch --all --omit=dev is empty; both lockfile entries are dev-only, reached through jest (jest-haste-map, anymatch, fdir, @parcel/watcher), ts-jest (jest-util) and @types/jest (jest-message-util). The deploy runs tsc without a bundler and installs only the prod dependencies (firebase-admin, firebase-functions, njwt), and functions/src uses no glob library. Re-evaluate before passing user-supplied glob patterns to any tool. Approved on 2026-11-18. Remove when a picomatch release outside the affected range is available."
