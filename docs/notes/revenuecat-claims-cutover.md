@@ -5,8 +5,8 @@ This runbook moves the writer of the `revenueCatEntitlements` custom claim from 
 
 ## State and authority
 
-Steps 1 to 3 were done on 2026-11-02, and step 4 was done on 2026-11-02 except its expiry check (4.6), which passed on 2026-11-19; `docs/notes/firebase-deploy-log.md` § RevenueCat claims function owns the dated record.
-The extension stays installed, without events, until step 5 is approved.
+Steps 1 to 3 were done on 2026-11-02, and step 4 was done on 2026-11-02 except its expiry check (4.6), which passed on 2026-11-19, and step 5 was done on 2026-11-19; `docs/notes/firebase-deploy-log.md` § RevenueCat claims function owns the dated record.
+The rollback below no longer applies after step 5, because the extension is gone.
 This plan was approved on 2026-11-02, and each step below is approved separately: setting the secret, the deploy, the RevenueCat integration change, and the extension uninstall.
 Each step is an external action on the production project `kkomkkomi`, which the paying users of Google Play production `1.1.2` (version code `6`) depend on.
 Record each completed step, with its date and commit, in `docs/notes/firebase-deploy-log.md`.
