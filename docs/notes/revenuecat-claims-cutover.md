@@ -5,8 +5,8 @@ This runbook moves the writer of the `revenueCatEntitlements` custom claim from 
 
 ## State and authority
 
-Steps 1 to 3 were done on 2026-11-02, and step 4 is done except its expiry check (4.6); `docs/notes/firebase-deploy-log.md` § RevenueCat claims function owns the dated record.
-The extension stays installed, without events, until step 4.6 passes.
+Steps 1 to 3 were done on 2026-11-02, and step 4 was done on 2026-11-02 except its expiry check (4.6), which passed on 2026-11-19; `docs/notes/firebase-deploy-log.md` § RevenueCat claims function owns the dated record.
+The extension stays installed, without events, until step 5 is approved.
 This plan was approved on 2026-11-02, and each step below is approved separately: setting the secret, the deploy, the RevenueCat integration change, and the extension uninstall.
 Each step is an external action on the production project `kkomkkomi`, which the paying users of Google Play production `1.1.2` (version code `6`) depend on.
 Record each completed step, with its date and commit, in `docs/notes/firebase-deploy-log.md`.
@@ -85,6 +85,7 @@ Write down the old Trigger URL first, because the rollback needs it.
 6. Cancel or let the sandbox subscription expire, and confirm that the next event empties the list.
    A purchase in a TestFlight build renews daily, up to 6 times within a week, whatever its period ([Apple](https://developer.apple.com/help/app-store-connect/test-a-beta-version/testing-subscriptions-and-in-app-purchases-in-testflight), read on 2026-11-02), and no on-device cancel path was found: the app's management link opens the App Store list, which does not show it.
    RevenueCat `GET /v1/subscribers/<app user ID>` with the iOS public SDK key answers the current `expires_date` of each entitlement.
+   Treat that request as a write: on 2026-11-19, RevenueCat recorded the detection of an expiry that was seven days old in the same second as the request, and its events reached the function one second later.
 
 If the write fails with a permission error, the runtime service account of the function lacks Firebase Authentication admin rights.
 Grant it `roles/firebaseauth.admin` with the user's approval, then repeat the sandbox event.
