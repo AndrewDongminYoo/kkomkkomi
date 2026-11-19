@@ -21,6 +21,7 @@ A read-only App Store Connect API read on 2026-11-10 found iOS `1.1.1` (build 5,
 Build 5 was uploaded before `6e042dd`, so it holds an affected SDK whatever its exact source commit.
 Builds 6 (`1.1.2`) and 7 (`1.1.3`) were `VALID`, and build 7 was uploaded 17 minutes after `c59e08b`.
 On 2026-11-10 version `1.1.3` with build 7 was submitted for review; a second read found it `WAITING_FOR_REVIEW` with the release type `AFTER_APPROVAL`, so it releases when Apple approves it.
+A read-only App Store Connect API read on 2026-11-19 found version `1.1.3` as `READY_FOR_SALE`; the date of the approval was not read.
 
 ## Why the rules went out first
 

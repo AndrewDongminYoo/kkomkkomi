@@ -22,7 +22,7 @@ M1 waits for the first test distribution (#40), and M3 follows `docs/plans/2026-
 See `docs/notes/2026-10-31-store-distribution-status.md` § Current state (moved 2026-11-02).
 A read-only track check on 2026-11-02 found Google Play `1.1.2`, version code `6`, with status `completed` on the internal, closed Alpha and production tracks, and the production release was confirmed as intended.
 `docs/notes/2026-10-31-play-internal-distribution.md` owns that read-back and its limits; tester eligibility on the internal track and an Android physical-device pass keep #40 open.
-A read-only App Store Connect read on 2026-11-10 found iOS `1.1.1` (build 5) for sale, which holds a Firestore SDK affected by the eMudhra CA compromise, and `1.1.3` (build 7) waiting for review with release after approval; `docs/notes/2026-11-10-emudhra-firestore-patch.md` owns that read.
+A read-only App Store Connect read on 2026-11-19 found iOS `1.1.3` (build 7) for sale, which replaces `1.1.1` (build 5) and its Firestore SDK affected by the eMudhra CA compromise; `docs/notes/2026-11-10-emudhra-firestore-patch.md` owns that read.
 The data layer of the M1 build exists: the domain model, the repository interfaces and use cases, and the SQLite repositories.
 The client list, the client detail, the visit capture, the company profile, and the plans screens use it, and the client list is the home screen.
 The client detail screen starts a visit and opens a past one, and the visit capture screen takes the before photo, the after photo, the status, and the note of each zone, and the reason of a zone that is partly done or not done.
@@ -66,7 +66,7 @@ Keep both collection parameters empty unless the privacy pages change first.
 Install, update, or reconfigure the extension only with the user's approval.
 See `docs/notes/firebase-deploy-log.md` § RevenueCat extension (moved 2026-11-02).
 `functions/` holds `revenueCatWebhook`, the repository function that replaces the extension handler and writes the same claims, and `docs/notes/revenuecat-claims-cutover.md` owns its secret, deploy, URL change, verification, uninstall, and rollback steps.
-It was deployed from `1343768` on 2026-11-02 and has received the RevenueCat events since the integration's Trigger URL was changed that day; the extension stays installed without events until a subscription expiry is verified, and `docs/notes/firebase-deploy-log.md` § RevenueCat claims function owns the record.
+It was deployed from `1343768` on 2026-11-02 and has received the RevenueCat events since the integration's Trigger URL was changed that day; a subscription expiry emptied the claim through it on 2026-11-19, the extension stays installed without events until its uninstall is approved, and `docs/notes/firebase-deploy-log.md` § RevenueCat claims function owns the record.
 Each further step, including the extension uninstall, needs the user's approval.
 
 `storage.rules` reads the client page through `firestore.get`, which needs the Firebase Storage service agent (`service-146496738802@gcp-sa-firebasestorage.iam.gserviceaccount.com`) to hold `roles/firebaserules.firestoreServiceAgent`.
