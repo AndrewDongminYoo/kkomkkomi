@@ -59,15 +59,11 @@ See `docs/notes/firebase-deploy-log.md` § Current state (moved 2026-11-02).
 The deployed Firestore rules, Storage rules, and Hosting files equal the tracked ones at `101fd6d`.
 A deploy is the user's decision each time: do not deploy rules or Hosting without that approval.
 
-The RevenueCat Firebase extension was installed from the Firebase console on 2026-10-05, as the instance `firestore-revenuecat-purchases`.
-It is version 0.1.19 in `asia-northeast3`, with `SET_CUSTOM_CLAIMS` enabled and both collection parameters empty, so it writes the `revenueCatEntitlements` claim and nothing in Firestore.
-Its shared secret is in Secret Manager, and `firebase.json` holds no `extensions` block.
-Keep both collection parameters empty unless the privacy pages change first.
-Install, update, or reconfigure the extension only with the user's approval.
-See `docs/notes/firebase-deploy-log.md` § RevenueCat extension (moved 2026-11-02).
-`functions/` holds `revenueCatWebhook`, the repository function that replaces the extension handler and writes the same claims, and `docs/notes/revenuecat-claims-cutover.md` owns its secret, deploy, URL change, verification, uninstall, and rollback steps.
-It was deployed from `1343768` on 2026-11-02 and has received the RevenueCat events since the integration's Trigger URL was changed that day; a subscription expiry emptied the claim through it on 2026-11-19, the extension stays installed without events until its uninstall is approved, and `docs/notes/firebase-deploy-log.md` § RevenueCat claims function owns the record.
-Each further step, including the extension uninstall, needs the user's approval.
+The RevenueCat Firebase extension, installed from the Firebase console on 2026-10-05 as the instance `firestore-revenuecat-purchases`, was uninstalled on 2026-11-19, and its Secret Manager secret went with it; `docs/notes/firebase-deploy-log.md` § RevenueCat extension owns the record.
+`functions/` holds `revenueCatWebhook`, the repository function that replaced the extension handler and writes the same claims, and `docs/notes/revenuecat-claims-cutover.md` owns its secret, deploy, URL change, verification, and rollback steps.
+It was deployed from `1343768` on 2026-11-02 and has received the RevenueCat events since the integration's Trigger URL was changed that day; a subscription expiry emptied the claim through it on 2026-11-19, and `docs/notes/firebase-deploy-log.md` § RevenueCat claims function owns the record.
+It writes the `revenueCatEntitlements` claim and nothing in Firestore; keep it that way unless the privacy pages change first.
+A deploy of the function is the user's decision each time.
 
 `storage.rules` reads the client page through `firestore.get`, which needs the Firebase Storage service agent (`service-146496738802@gcp-sa-firebasestorage.iam.gserviceaccount.com`) to hold `roles/firebaserules.firestoreServiceAgent`.
 That role was granted on 2026-10-02, after the deploy. A `firebase deploy --only storage` with `--non-interactive` does not offer that grant, so a new project needs the grant by hand, and without it every Storage rule that reads the page denies.
