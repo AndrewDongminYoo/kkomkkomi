@@ -31,7 +31,7 @@ lint:
     - actionlint@1.7.12
     - black@26.10.1
     - checkov@3.4.5
-    - cspell@10.5.1
+    - cspell@10.5.2
     - git-diff-check
     - isort@9.0.2
     - ktlint@1.8.0
