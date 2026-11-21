@@ -59,3 +59,7 @@ This direction authorizes no public rollout, app review submission, tester/accou
 Selected separately on 2026-10-31: closed Alpha distribution of existing `1.1.2`, version code `6`.
 `docs/notes/2026-10-31-play-alpha-distribution.md` owns that operation and its review/publication and web-access evidence.
 The separate request includes the Alpha review step required for test distribution, while retaining the Android physical-device validation limit and the separate internal-track criterion of #40.
+
+On 2026-11-21 the site moved to `https://kkomkkomi.donminzzi.kr` (#166). The Play Console privacy policy URL was changed to `https://kkomkkomi.donminzzi.kr/privacy/` and sent for review the same day, and it was reported live afterwards.
+App Store Connect still shows the `kkomkkomi.web.app` privacy policy URL, support URLs, and description links, because its App Privacy page answers that a change of the privacy policy needs a new app version, and the support URL and the description belong to a version.
+The next iOS version must upload the metadata of `fastlane/metadata/ios/`, which already holds the new URLs. Until then the old URLs still open the same Hosting site, so nothing is broken.
