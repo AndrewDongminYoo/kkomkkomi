@@ -1,4 +1,4 @@
 User-agent: *
 Allow: /
 
-Sitemap: https://kkomkkomi.web.app/sitemap.xml
+Sitemap: https://kkomkkomi.donminzzi.kr/sitemap.xml

@@ -273,9 +273,9 @@ describe("the privacy policy pages", () => {
         ),
       ].map(([, hreflang, href]) => [hreflang, href]);
       assert.deepEqual(alternates, [
-        ["ko", `https://kkomkkomi.web.app${pages.ko.path}`],
-        ["en", `https://kkomkkomi.web.app${pages.en.path}`],
-        ["x-default", `https://kkomkkomi.web.app${pages.ko.path}`],
+        ["ko", `https://kkomkkomi.donminzzi.kr${pages.ko.path}`],
+        ["en", `https://kkomkkomi.donminzzi.kr${pages.en.path}`],
+        ["x-default", `https://kkomkkomi.donminzzi.kr${pages.ko.path}`],
       ]);
     });
 
@@ -293,7 +293,7 @@ describe("the privacy policy pages", () => {
       assert.match(html, /default-src 'none'; style-src 'self';/);
       assert.doesNotMatch(
         html,
-        /script-src|unsafe-inline|unsafe-eval|https?:\/\/(?!kkomkkomi\.web\.app)/,
+        /script-src|unsafe-inline|unsafe-eval|https?:\/\/(?!kkomkkomi\.donminzzi\.kr)/,
       );
     });
 
