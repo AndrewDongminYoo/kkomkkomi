@@ -56,7 +56,7 @@ The local controls of issue #86 require publisher approval and resource-bound sa
 They were deployed on 2026-11-10, after the one existing publisher was found already enrolled; `docs/notes/2026-11-10-emudhra-firestore-patch.md` owns the rollout record, and rollout step 5 has not been run.
 `firestore.rules` and `storage.rules` let anyone read a client page, its reports, and their photos by page ID while the page is open, and let the owner delete them.
 See `docs/notes/firebase-deploy-log.md` § Current state (moved 2026-11-02).
-The deployed Firestore rules, Storage rules, and Hosting files equal the tracked ones at `101fd6d`.
+The deployed Firestore rules and Storage rules equal the tracked ones at `101fd6d`, and the deployed Hosting files equal the tracked ones at `17a3a57`.
 A deploy is the user's decision each time: do not deploy rules or Hosting without that approval.
 
 The RevenueCat Firebase extension, installed from the Firebase console on 2026-10-05 as the instance `firestore-revenuecat-purchases`, was uninstalled on 2026-11-19, and its Secret Manager secret went with it; `docs/notes/firebase-deploy-log.md` § RevenueCat extension owns the record.

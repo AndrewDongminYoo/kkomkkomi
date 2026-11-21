@@ -14,6 +14,9 @@ Hosting alone was deployed again from `6bae5df` on 2026-10-06, after #57 merged,
 Hosting alone was deployed from `300add7` on 2026-10-07, after #69 merged, which changed the web report and both privacy pages for the zone status. No other file under `web/` had changed since `6bae5df`.
 Hosting alone was deployed again from `59b1c84` on 2026-10-07, after #74, #76, #77, #78, and #80 merged, which changed the web report (the gallery mark of #77) and both privacy pages (#76, #77, #78). No other file under `web/` had changed since `300add7`.
 Hosting was deployed from `101fd6d` on 2026-11-10 as rollout step 1 of the #86 controls, and the Firestore and Storage rules were deployed together from `101fd6d` the same day as rollout step 4; `docs/notes/2026-11-10-emudhra-firestore-patch.md` owns the read-back of both.
+Hosting alone was deployed from `17a3a57` on 2026-11-21, after #166 merged, which moved the canonical and alternate links, `og:url`, `og:image`, the sitemap, and `robots.txt` to `https://kkomkkomi.donminzzi.kr` and added the Naver site verification tag to `web/index.html`; the same deploy carried the formatting-only change of `web/index.html` and the terms pages from `33db887`. After the deploy, `sitemap.xml` and `/privacy/` from `https://kkomkkomi.web.app` were byte-equal to the tracked files.
+The custom domain `kkomkkomi.donminzzi.kr` was registered on the Hosting site at 2026-11-21 01:56 UTC, and Firebase asked for one record, a CNAME to `kkomkkomi.web.app`, which Cloudflare serves without its proxy.
+At 02:37 UTC the same day, Firebase read `HOST_ACTIVE` and `OWNERSHIP_ACTIVE`, with a `TEMPORARY` certificate in `CERT_PROPAGATING`; `/`, `/privacy/`, `/sitemap.xml`, and `/robots.txt` answered 200 at the custom domain, the sitemap and `robots.txt` were byte-equal to the tracked files, and the landing page held the Naver tag.
 
 ## RevenueCat extension
 
