@@ -82,10 +82,11 @@ Write down the old Trigger URL first, because the rollback needs it.
 3. In the Cloud Functions logs of `revenueCatWebhook`, confirm the request and that no error was logged.
 4. Read the user with the Firebase Admin SDK or `firebase auth:export`, and confirm that its custom claims hold `revenueCatEntitlements` with the purchased entitlement and a `revenueCatEventTimestampMs`, and keep any other claim that the user had.
 5. Confirm on the device that a new visit report has no footer text.
-6. Cancel or let the sandbox subscription expire, and confirm that the next event empties the list.
+6. Cancel or let the sandbox subscription expire, then check RevenueCat Customer History for a delivered expiration event and confirm that the Firebase claim list is empty.
    A purchase in a TestFlight build renews daily, up to 6 times within a week, whatever its period ([Apple](https://developer.apple.com/help/app-store-connect/test-a-beta-version/testing-subscriptions-and-in-app-purchases-in-testflight), read on 2026-11-02), and no on-device cancel path was found: the app's management link opens the App Store list, which does not show it.
-   RevenueCat `GET /v1/subscribers/<app user ID>` with the iOS public SDK key answers the current `expires_date` of each entitlement.
-   Treat that request as a write: on 2026-11-19, RevenueCat recorded the detection of an expiry that was seven days old in the same second as the request, and its events reached the function one second later.
+   If Customer History shows no expiration event, record the expiration check as unverified.
+   The subscriber endpoint can trigger webhook writes, so use Customer History for status checks.
+   The [Firebase deploy log](firebase-deploy-log.md#revenuecat-claims-function) records the observed side effect on 2026-11-19.
 
 If the write fails with a permission error, the runtime service account of the function lacks Firebase Authentication admin rights.
 Grant it `roles/firebaseauth.admin` with the user's approval, then repeat the sandbox event.
