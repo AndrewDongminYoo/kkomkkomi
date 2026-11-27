@@ -8,7 +8,7 @@ environment:
   flutter: ^3.47.8
 
 dependencies:
-  bloc: ^9.2.1
+  bloc: ^9.2.2
   camera: ^0.12.2
   characters: ^1.4.1
   cloud_firestore: ^7.2.0
@@ -18,7 +18,7 @@ dependencies:
   firebase_storage: ^14.1.0
   flutter:
     sdk: flutter
-  flutter_bloc: ^9.1.1
+  flutter_bloc: ^9.1.2
   flutter_localizations:
     sdk: flutter
   image: ^4.13.1
@@ -29,16 +29,16 @@ dependencies:
   path_provider: ^2.1.6
   pdf: ^3.13.1
   printing: ^5.15.1
-  purchases_flutter: ^11.0.4
+  purchases_flutter: ^12.0.0
   share_plus: ^13.3.1
   sqflite: ^2.4.6
   url_launcher: ^6.3.3
 
 dev_dependencies:
-  analyzer: ^14.4.0
-  bloc_lint: ^0.4.3
-  bloc_test: ^10.0.0
-  bloc_tools: ^0.1.0-dev.25
+  analyzer: ^14.7.0
+  bloc_lint: ^0.4.4
+  bloc_test: ^10.0.1
+  bloc_tools: ^0.1.0-dev.26
   build_runner: ^2.16.2
   camera_platform_interface: ^2.15.1
   flutter_gen_runner: ^5.15.0
